@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：b3c4392 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：a382e27 · Branch：main · Clean：yes
 
 ---
 
@@ -46,4 +46,4 @@ npm run build      → pass
 
 ## 本次会话改动
 
-（空）
+- M0.5 AI Context Infrastructure 完成（docs/ai/ 5 文件 + AGENTS §15 + CHANGELOG）
