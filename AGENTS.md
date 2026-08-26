@@ -58,7 +58,8 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
 ### 2.2 禁止清单（永久）
 - ORM / Query Builder（后端直写 SQL）
 - CSS 框架（Tailwind 等）、UI 组件库、图标库
-- D3.js / PixiJS / Three.js / Manim / markmap（可视化走 Trace 管线与自研布局，TECH_DESIGN §7/§8）
+  - D3 全家桶（渲染/选择集模块）；**唯一例外 `d3-force` 物理计算单模块（ADR-007）**；
+    PixiJS / Three.js / Manim / markmap 同禁（可视化走 §8 两套管线：Knowledge Universe 与 Trace）
 - LangChain / LlamaIndex 及一切 AI 编排框架（管线手写）
 - 向量数据库与 embedding 服务（实测性能瓶颈之前）
 - 状态管理库除 Zustand 外不再增加
@@ -201,6 +202,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/version-control/git-policy.md` | 分支/提交/标签/发布策略 |
 | `docs/data-model/INDEX.md` | 数据模型变更索引 |
 | `docs/architecture/integration-upmark.md` | UpMark 联动计划（挂起中，未排期） |
+| `docs/architecture/separation.md` | 分层架构规范（四层职责/接口先行/契约测试） |
 | `docs/tasks/TASKS.md` | 任务列表与完成报告（见 §11） |
 | `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
 | `README.md` | 入口说明 |
@@ -216,13 +218,39 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 - 报告必须包含：做了什么 · 改动文件 · **测试了什么（实际执行的测试命令+预期/实际结果表）** · 遗留问题
 - 未回填报告的任务视为未完成；里程碑收尾三件事：依赖审计 → CHANGELOG → tag
 
+## 12. 分层架构纪律（前后端分离，强制）
+
+四层职责固定：**Frontend**(web/) · **Backend**(routers/) · **Core**(server/core/) · **Data**(workspace/)。
+唯一合法调用链：
+
+```
+Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问函数 → SQLite/文件
+```
+
+- Frontend 禁止：直连 SQLite/文件系统、业务规则、AI 调用、图谱算法、持久化核心数据
+- Backend 禁止：UI 代码、控制页面逻辑、保存前端状态
+- Core 不 import FastAPI；LLM 请求只允许在 `core/ai/*`；图谱算法只在 core；同步协议只在 syncengine
+- API 全部版本化 `/api/v1/*`；响应形状以 `shared/types/*.ts` 为唯一契约，pytest 契约测试锁定
+- 白名单/黑名单与模块隔离细则见 `docs/architecture/separation.md`
+
+### 写码前输出协议（强制）
+
+任何功能生成代码前，必须先输出以下 8 项并等待用户确认：
+
+```
+1 功能目标   2 架构位置(层/模块)   3 Frontend 改动   4 Backend 改动
+5 Core 改动  6 Data 改动          7 API 设计(路径/schema/错误码)   8 文件变化列表
+```
+
+禁止先写页面再临时拼后端。
+
 ## 快速参考
 
 | 事项 | 约定 |
 |---|---|
 | 后端 | Python 3.12 + FastAPI + sqlite3（venv + pip + requirements.txt） |
 | 前端 | React + TypeScript + Vite + Zustand + 单一 global.css |
-| 端口 | FastAPI 默认 :8000（绑 127.0.0.1），环境变量 `PORT` 可覆盖——与 UpMark 共存时用 `PORT=8100`；Vite :5173（proxy `/api` → 后端） |
+| 端口 | FastAPI 默认 :8000（绑 127.0.0.1），环境变量 `PORT` 可覆盖——与 UpMark 共存时用 `PORT=8100`；Vite :5173（proxy `/api/v1` → 后端） |
 | 测试 | pytest（server/tests），vitest（web）——只测 core 逻辑，不为 UI 写测试 |
 | 任务跟踪 | docs/tasks/TASKS.md（完成必须回填测试报告） |
 | 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
