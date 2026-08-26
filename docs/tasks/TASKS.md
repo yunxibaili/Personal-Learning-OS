@@ -30,7 +30,7 @@
 
 - [ ] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/v1/settings
 - [ ] web/：Vite React TS + Zustand store 骨架 + global.css + 六视图占位路由切换 + api client
-- [ ] 联调：Vite proxy `/api`→8000；两条启动命令验证通过
+- [ ] 联调：Vite proxy `/api/v1`→8000；两条启动命令验证通过
 - [ ] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/v1/settings 读写往返）；vitest 占位
 - [ ] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
 
@@ -59,6 +59,23 @@
   | git push origin main | 远程与本地一致 | ✅ 85fde9b..f6d519d |
 
 - **结果与遗留**：文档体系与已批准决策一致；M0 尚未开工（下一任务）
+
+### T-DOC-002 全库文档审计 + 任务列表可见性（2026-08-26）
+- **做了什么**：21 个入库文件全量核对；修复 3 处错误（表数 11→12、proxy `/api`→`/api/v1`、
+  §2.2 模块图统一为 server/app/ 包布局与 README 启动命令一致）；README 新增「当前进度」
+  看板入口；AGENTS §11 增补强制规则——每次会话干活前必读 TASKS、收工前必同步
+- **改动文件**：TECH_DESIGN · TASKS · AGENTS · README
+- **测试了什么**：
+
+  | 检查 | 预期 | 实际 |
+  |---|---|---|
+  | POLICY.md 残留引用 | 仅历史记录 | ✅ 2 处均为合法历史/报告行 |
+  | 无版本 `/api/*` 本项目引用 | 0 | ✅ UpMark 自家接口除外（应保留） |
+  | TODO/TBD/M2c/§13 游离标记 | 0 | ✅ |
+  | M3b/M10/concepts.origin/api-v1 跨文档一致 | 全部对齐 | ✅ TECH_DESIGN·TASKS·REGISTRY·ADR-007·separation |
+  | AGENTS 文档地图 ↔ 实际文件 | 一一存在 | ✅ 14 项全在（git ls-files 核对） |
+
+- **结果与遗留**：文档基线可视为完整；M0 编码未开工
 
 ## 完成报告模板（复制使用）
 

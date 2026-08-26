@@ -52,7 +52,7 @@ web/ (React + TS + Zustand)
  ├─ views: NoteEditor / GraphView / MindMapView(M2b) / TutorPanel / ReviewQueue / MemoryDashboard
  └─ lib: api client, trace StepPlayer (M9)
         │ fetch /api/*
-server/ ▼
+server/app/ ▼         # Python 包（启动：uvicorn app.main:app）
  ├─ main.py          FastAPI 入口（绑定 127.0.0.1，PORT 环境变量可覆盖默认 8000）+ 静态托管前端构建产物
  ├─ db.py            sqlite3 连接、migration runner
  ├─ routers/         notes concepts graph mastery chat review settings sync(M7) trace(M9)
@@ -114,7 +114,7 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 | 备选 | 否决理由 |
 |---|---|
 | Electron | 包体/内存大；业务全在 Python 后端，Electron 无额外价值。Tauri Rust 层只是薄壳 |
-| SQLAlchemy / SQLModel | ~11 张表的规模，ORM 是纯抽象税。stdlib sqlite3 参数化查询足够 |
+| SQLAlchemy / SQLModel | ~12 张表的规模，ORM 是纯抽象税。stdlib sqlite3 参数化查询足够 |
 | LangChain / LlamaIndex | RAG/Tutor 管线手写 <200 行且完全可控；框架引入黑盒抽象与版本地狱 |
 | openai SDK | 只用 `/chat/completions` 一个端点，SSE 流式解析 ~40 行，标准库可胜任 |
 | Tailwind + shadcn/ui | 与最小依赖纪律冲突（拉入 Radix 全家桶）；单一 global.css 足够个人应用 |
