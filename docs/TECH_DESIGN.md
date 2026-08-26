@@ -9,6 +9,9 @@
 
 **一句话**：Local-first 的 AI 个人学习操作系统——以 Markdown 为内容，以 Knowledge Graph 为结构，以 Learning Memory 为核心，以 AI Tutor 为智能层。
 
+**产品形态**：多端 Local-first——Tauri 桌面应用（Windows 先行）+ React Native 移动端（Android 先行），
+设备间经局域网文件同步（§2.4 与 ADR-005/006）。浏览器只是开发期前端视图，交付物是桌面与手机 App。
+
 它不是：
 - 普通笔记软件（Obsidian/Notion 替代品）
 - AI 聊天工具
@@ -17,7 +20,7 @@
 差异化壁垒（按优先级）：
 1. **Learning Graph**：知识图谱 × 用户学习状态（掌握度/错误/遗忘），AI 因此知道"我学过什么、哪里薄弱"
 2. **记忆感知 AI Tutor**：回答前查询图谱与记忆，针对性讲解；回答后自动更新状态
-3. **Visual Learning Engine**（M7+）：代码执行 → Trace → 动画
+3. **Visual Learning Engine**（M9+）：代码执行 → Trace → 动画
 
 ---
 
@@ -26,34 +29,39 @@
 ### 2.1 形态演进
 
 ```
-M0–M5：本地 Web 应用
-  浏览器 ──HTTP 127.0.0.1:8000──▶ FastAPI Core ──▶ SQLite + vault/
+M0–M5：浏览器仅作前端开发视图（App-first 数据规约自第一天生效）
+  浏览器 ──HTTP 127.0.0.1:${PORT:-8000}──▶ FastAPI Core ──▶ SQLite(缓存) + workspace/
 
-M6：包 Tauri 壳（桌面版）
+M6：Tauri 桌面版（首个正式交付形态）
   Tauri WebView(加载同一 React 构建产物)
     └─ sidecar 子进程：PyInstaller 打包的 FastAPI 可执行文件
   对后端代码零改动，只加 src-tauri/ 目录
+
+M7：LAN Sync v1 —— 桌面成为同步宿主（ADR-005）
+M8：React Native Android 客户端 —— 混合内核离线可用（ADR-006）
 ```
 
 选择 Tauri 而非 Electron：包体小、内存占用低；Rust 层仅做窗口与 sidecar 管理，无业务逻辑。
-开发期（M0–M5）不装 Rust 工具链，浏览器直接访问。
+选择 React Native 而非 Flutter：复用 TS 类型/API client/Zustand 心智，避免第二语言栈（ADR-006）。
+开发期（M0–M5）不装 Rust/RN 工具链，浏览器直接访问。
 
 ### 2.2 模块图
 
 ```
 web/ (React + TS + Zustand)
  ├─ views: NoteEditor / GraphView / MindMapView(M2b) / TutorPanel / ReviewQueue / MemoryDashboard
- └─ lib: api client, trace StepPlayer (M7)
+ └─ lib: api client, trace StepPlayer (M9)
         │ fetch /api/*
 server/ ▼
- ├─ main.py          FastAPI 入口 + 静态托管前端构建产物
+ ├─ main.py          FastAPI 入口（绑定 127.0.0.1，PORT 环境变量可覆盖默认 8000）+ 静态托管前端构建产物
  ├─ db.py            sqlite3 连接、migration runner
- ├─ routers/         notes concepts graph mastery chat review settings trace(M7)
+ ├─ routers/         notes concepts graph mastery chat review settings sync(M7) trace(M9)
  └─ core/            纯逻辑层（可单测，不依赖 FastAPI）
      ├─ knowledge.py   笔记索引、双链解析、概念/边 CRUD、递归 CTE 图查询
      ├─ mastery.py     掌握度计算、状态机、SM-2（§5）
      ├─ tutor.py       上下文组装 + 对话编排 + extractor（§6）
-     └─ llm.py         OpenAI-compatible HTTP client（裸 urllib/httpx?→标准库 urllib）
+     ├─ llm.py         OpenAI-compatible HTTP client（标准库 urllib）
+     └─ syncengine.py  manifest 对比、差量清单、冲突检测（M7，ADR-005）
 ```
 
 ### 2.3 关键原则
@@ -61,6 +69,19 @@ server/ ▼
 - **Folder 是视图，Graph 才是数据模型**：workspace/vault/ 下任意文件夹组织；概念 `特征值` 可同时关联多个领域，无需复制文件
 - **Markdown 文件是正文唯一事实源**：SQLite 存元数据/索引/学习状态；保存时增量重建该笔记的 FTS 索引与双链边；启动时全量扫描校验一致性（hash 不符则重索引）
 - **学习事件追加式**：掌握度永远可由事件流重放推导，表里存的是缓存值
+
+### 2.4 多端数据流（App-first 规约）
+
+```
+workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
+        ↑↓ 文件 = 同步唯一真相（manifest/sha256 三态对比，HTTP 差量传输）
+桌面 FastAPI（同步宿主 + 完整引擎）←LAN→ 手机 RN（expo-sqlite 缓存 + 事件回放内核）
+        ↘ AI 降级阶梯：在家走桌面引擎；外出直连云 LLM（ADR-006）
+```
+
+铁律：**凡需多端可见的状态必须以文件形式存在**；SQLite 在任何设备上都只是
+可重建的本地缓存/索引；db、settings、API key 永不参与同步。
+详细设计见 ADR-005（同步模型）与 ADR-006（移动端栈）。
 
 ---
 
@@ -252,8 +273,12 @@ learning-os/                 # 应用源码，Git 管理
     │   ├── 数学/特征值.md
     │   ├── 数学/特征值.mindmap.json
     │   └── 编程/python/梯度下降.md
-    ├── attachments/         # 图片 / PDF
-    └── db/learning-os.db    # SQLite
+    ├── attachments/         # 图片 / PDF（同步）
+    ├── metadata/            # 同步与设备数据（ADR-005）
+    │   ├── eventlogs/       # learning_events 追加日志 <yyyy-mm>.jsonl —— 跨端的学习状态真相
+    │   ├── devices.json     # 已配对设备注册表（同步）
+    │   └── manifest.json    # 本机文件指纹缓存（每设备私有，不同步）
+    └── db/learning-os.db    # SQLite 本地缓存/索引 —— 永不同步
 ```
 
 - 工作区路径默认 `<repo>/workspace`，可改为任意本地目录（桌面版迁移至 Tauri userData）；
@@ -261,6 +286,10 @@ learning-os/                 # 应用源码，Git 管理
 - 标题 = 文件名去 `.md`；`[[标题]]` 按 title 全库唯一解析（重名时报错提示改名）
 - YAML front-matter 支持 `tags:`，索引进 notes.tags_json
 - 附件统一放 `workspace/attachments/`，笔记内相对路径引用
+- 学习状态跨端：写入 learning_events 表的同一事务内追加一行 JSON 到
+  `metadata/eventlogs/<yyyy-mm>.jsonl`（含 device_id 与全局唯一 event id）；
+  同步后各端按序回放重建 concept_mastery，回放按 event id 幂等去重
+- memories / conversations 属单设备内容，v1 不参与同步（对话导出 json 在 backlog）
 
 ---
 
@@ -276,7 +305,7 @@ learning-os/                 # 应用源码，Git 管理
 |---|---|---|
 | study（打开/编辑关联笔记） | 0.05 understanding | 每笔记每概念每天最多计 1 次 |
 | explain（AI 讲解一轮涉及） | 0.04 understanding | extractor 判定 |
-| visualize（看完一次可视化） | 0.06 understanding | M7 起 |
+| visualize（看完一次可视化） | 0.06 understanding | M9 起 |
 | code_run（运行相关代码成功） | 0.06 application | |
 | quiz_correct | 0.18 | 维度按题目标注 |
 | quiz_wrong | −0.10 固定 | 同时记 mistake、lapse++ |
@@ -306,6 +335,13 @@ quiz 得分 s∈[0,1] 映射 quality：`q = clamp(round(1 + s×4), 0, 5)`
 - q ≥ 3：ease += 0.1 − (5−q)×(0.08+(5−q)×0.02)；interval: reps1→1天，reps2→6天，否则 round(prev_interval×ease)
 
 复习队列 = `next_review_at ≤ now` 或 state=FORGOTTEN 的概念，按优先级（FORGOTTEN > 最久未复习）排序。
+
+### 5.4 事件日志导出（多端同步源，ADR-005）
+
+- 写入 learning_events 表的同一事务内，追加一行 JSON 到 `metadata/eventlogs/<yyyy-mm>.jsonl`
+  （表字段 + device_id + 全局唯一 event id）
+- 各端同步后按序回放 delta 重建掌握度；回放以 event id 幂等去重
+- 因此 mastery/sm2 计算必须保持纯函数性（禁止读墙钟做语义判断），这是 TS 移植版（M8）一致性的前提
 
 ---
 
@@ -423,7 +459,7 @@ schema v1：
 
 ---
 
-## §8 Visual Learning Engine 预设计（M7 实施）
+## §8 Visual Learning Engine 预设计（M9 实施）
 
 ### 7.1 定位
 
@@ -482,7 +518,10 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | GET/POST /conversations · GET /conversations/{id}/messages | 对话历史 |
 | POST /chat/stream (SSE) | Tutor 流式对话 |
 | GET/PUT /settings | 配置读写（API key 写后永不再返回明文） |
-| POST /trace/run (M7) | 运行并返回 TraceEvent[] |
+| GET /sync/pair (M7) | 生成一次性配对码/二维码 → 换取 LAN bearer token |
+| POST /sync/manifest (M7) | 交换双方文件指纹，返回三态差异清单（new/changed/conflict） |
+| POST /sync/fetch · /sync/push (M7) | 差量拉取/推送（vault+attachments+eventlogs 白名单范围） |
+| POST /trace/run (M9) | 运行并返回 TraceEvent[] |
 
 错误约定：`{error: {code, message}}`；业务异常 HTTP 400，内部错误 500 不泄露堆栈。
 
@@ -492,7 +531,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 
 | # | 内容 | 验收标准 |
 |---|---|---|
-| M0 | 脚手架 | `pip install -r requirements.txt && npm i` 后两条命令分别起前后端；页面显示框架布局；migration 跑通；本设计文档+AGENTS.md 就位 ✅ |
+| M0 | 脚手架 | `pip install -r requirements.txt && npm i` 后两条命令分别起前后端；页面显示框架布局；migration 跑通；FastAPI 绑定 127.0.0.1 且支持 `PORT` 环境变量；workspace 目录结构符合 §4.2（含 metadata/ 空骨架）；本设计文档+AGENTS.md 就位 ✅ |
 | M1 | 知识库核心 | 新建/编辑/删除笔记落盘 vault/；TipTap 编辑 `$LaTeX$` 即时渲染；图片/PDF 附件插入；重启后内容一致 |
 | M2 | 双链·反链·搜索·图谱 | `[[标题]]` 自动补全并可点击跳转；反链面板列出引用者；FTS5 搜索毫秒级返回；React Flow 全局图+双击节点局部图；Note↔Note、Note↔Concept 边可见 |
 | M2b | Mind Map 编辑器 | 笔记⇄导图双模式切换实时同步；Tab/Enter/拖拽改父（环检测生效）；折叠持久化；旁车 json 落盘；FTS 能命中导图文本；[[链接]] 经大纲段进入图谱 |
@@ -500,8 +539,10 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | M4 | AI Tutor | 设置页填任意 OpenAI-compatible 端点即通；流式回答渲染 Markdown+KaTeX；问"什么是特征值"时上下文透视可见注入的掌握度/错误记录；回合后 mastery 数值自动变化；auto-link 建议弹 Accept/Ignore；Concept 页「生成思维导图」一键产出旁车 json+大纲并全量 ai_suggested 入图 |
 | M5 | 复习闭环 | 今日复习队列可答题（自评+quiz 两种）；答题驱动 SM-2 重排；Dashboard 学习时间线可见事件流 |
 | M6 | Tauri 桌面版 | 安装 Rust 工具链；PyInstaller 打包后端；`tauri dev/build` 出 exe；双击启动=完整应用；数据目录迁移至 userData |
-| M7 | Visual Engine V1 | Python 单文件代码 trace 成功（含递归）；StepPlayer 三模板可播放；从 Concept 页一键可视化排序算法；visualize 事件计入掌握度 |
-| M8 | AI 生成可视化 | 对任意 Concept 让 LLM 生成示例代码→自动 trace→播放；生成结果可保存复用 |
+| M7 | LAN Sync v1 | 第二设备经配对码完成配对；双向同步 vault+attachments+eventlogs 三类白名单；新增/变更/删除三态正确；冲突保留双份并出现在解决列表；db/settings/密钥验证永不出现在传输内容中 |
+| M8 | Mobile MVP(Android) | RN 应用配对桌面→全量拉取→离线浏览/FTS 搜索/复习测验；SM-2 TS 内核与 Python 版通过同一事件夹具一致性测试；笔记轻编辑可推回；AI 在局域网走桌面引擎、外出提示降级或直连云 |
+| M9 | Visual Engine V1 | Python 单文件代码 trace 成功（含递归）；StepPlayer 三模板可播放；从 Concept 页一键可视化排序算法；visualize 事件计入掌握度 |
+| M10 | AI 生成可视化 | 对任意 Concept 让 LLM 生成示例代码→自动 trace→播放；生成结果可保存复用 |
 
 ### 路线图 backlog（有想法先记这里，不扩当前范围）
 
@@ -517,3 +558,5 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 - md 大纲段反向解析（在 markdown 模式手改大纲回写 json，ADR-002 后续项）
 - Mind Map 节点属性/图标/过滤器（Freeplane 式）
 - XMind(.xmind) / markmap(.mm) 文件导入
+- 同步增强：WebSocket 实时推送 · CRDT(Yjs/Automerge，触发=双端并发编辑冲突频发) · 后台常驻同步 · iOS 客户端 · memories/conversations 跨端同步
+- **UpMark 联动**（错题登记→概念掌握度→双向出题）：挂起中，见 docs/architecture/integration-upmark.md

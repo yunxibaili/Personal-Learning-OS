@@ -20,8 +20,10 @@
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[ ]` | — |
 | M5 | 复习闭环（队列/测验/时间线） | `[ ]` | — |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
-| M7 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
-| M8 | AI 生成可视化 | `[ ]` | — |
+| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[ ]` | — |
+| M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
+| M9 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
+| M10 | AI 生成可视化 | `[ ]` | — |
 
 ## M0 任务拆解（当前）
 
@@ -30,6 +32,12 @@
 - [ ] 联调：Vite proxy `/api`→8000；两条启动命令验证通过
 - [ ] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/settings 读写往返）；vitest 占位
 - [ ] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
+
+## 挂起区（有明确触发条件，未排期）
+
+| 计划 | 触发条件 | 文档 |
+|---|---|---|
+| UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/architecture/integration-upmark.md |
 
 ## 完成报告模板（复制使用）
 

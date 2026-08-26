@@ -40,10 +40,17 @@ Security considerations:
 vite · typescript · vitest · pytest · @vitejs/plugin-react · @types/*
 （仅构建期，不进入运行时 footprint）
 
-## 规划中依赖（Phase 5 前禁止安装）
+## 规划中依赖（触发条件达成前禁止安装）
 
-Monaco（代码编辑）· SymPy / Jupyter（数学）· Tree-sitter / LSP（代码分析）·
-Docker（执行沙箱）· sqlite-vec + 云端 embedding API（触发条件：概念数 >2000 或匹配质量不足）
+| 包 | 用途 | 触发条件 |
+|---|---|---|
+| react-native · expo · expo-sqlite 等 RN 系 | 移动客户端（ADR-006） | M8 启动 |
+| Monaco | 代码编辑 | Phase 5 IDE |
+| SymPy / Jupyter | 数学计算 | Phase 5 IDE |
+| Tree-sitter / LSP 系 | 代码分析 | Phase 5 IDE |
+| Docker | 执行沙箱 | Phase 5 IDE |
+| sqlite-vec + 云端 embedding API | 向量检索 | 概念数 >2000 或匹配质量不足 |
+| （UpMark 联动如需 HTTP 工具库） | 桥接客户端 | 解挂 integration-upmark.md 时评审；默认标准库 urllib 即可 |
 
 ## 审计记录
 

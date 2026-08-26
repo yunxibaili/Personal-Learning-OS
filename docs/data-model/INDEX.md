@@ -16,4 +16,4 @@
 |---|---|
 | blocks | 块级引用功能立项（backlog） |
 | embeddings | RAG 立项且概念数 >2000 或匹配质量不足（backlog） |
-| concept_demos | 可视化示例保存功能立项（M7 后评估） |
+| concept_demos | 可视化示例保存功能立项（M9 后评估） |

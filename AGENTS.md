@@ -82,6 +82,9 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
   标记的大纲段是派生视图，禁止手改（TECH_DESIGN §7，ADR-002）
 - 可视化一律走 Trace → 模板渲染管线（TECH_DESIGN §8），禁止直接生成动画数据或视频
 - 用户代码执行必须子进程隔离 + 超时限制，禁止服务进程内 exec
+- **多端可见性铁律**：凡需跨设备可见的状态必须以文件形式存在于 workspace/
+  （md / 旁车 json / eventlogs jsonl）；SQLite 在任何设备上都只是可重建的本地缓存；
+  db、settings、API key 永不参与同步（ADR-005）
 
 ### 3.1 数据所有权分离
 应用源码（server/ web/ docs/）与用户数据严格分离：
@@ -111,7 +114,7 @@ learning-os/            # 应用源码，Git 管理
 - Commit：小、清晰、可回滚、单一目的；conventional 风格
   （feat: / fix: / refactor: / docs: / chore:）；禁止巨大混合提交
 - Semver `MAJOR.MINOR.PATCH`；每个稳定里程碑 = Git tag + CHANGELOG 条目
-- 详细规则见 `docs/version-control/POLICY.md`
+- 详细规则见 `docs/version-control/git-policy.md`
 
 ### 4.1 外部 Git 仓库导入边界
 - 必须：识别 repository、保留原始 `.git`、不破坏历史、不改用户 Git 配置、展示 branch 与工作区状态
@@ -166,18 +169,22 @@ learning-os/            # 应用源码，Git 管理
 1. Knowledge Graph
 2. Learning Memory
 3. AI Tutor
-4. Visual Learning Engine
-5. Knowledge/MindMap Integration
-6. Code Learning Environment
-7. UI polish
-8. 非核心功能
+4. Multi-device Sync 与 Mobile（学习连续性依赖多端可见，ADR-005/006）
+5. Visual Learning Engine
+6. Knowledge/MindMap Integration
+7. Code Learning Environment
+8. UI polish
+9. 非核心功能
 
 ## 9. 技术栈冻结表
 
 **当前生效**：React · TypeScript · Vite · Zustand · TipTap · React Flow · KaTeX · marked ·
 Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 起)
 
-**规划中（Phase 5 前，禁止提前安装）**：Monaco · SymPy / Jupyter · Tree-sitter / LSP · Docker 沙箱
+**规划中（触发条件达成前禁止安装，清单见 REGISTRY）**：
+- M8 Mobile：React Native · Expo · expo-sqlite 及 RN 系全部包
+- Phase 5 IDE：Monaco · SymPy / Jupyter · Tree-sitter / LSP · Docker 沙箱
+- RAG：sqlite-vec + 云端 embedding API（概念数 >2000 或匹配质量不足时）
 
 无充分理由不得替换上述任何一项。
 
@@ -193,6 +200,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/security/network-boundary.md` | 网络边界 / 出站白名单 / 数据不出本机规则 |
 | `docs/version-control/git-policy.md` | 分支/提交/标签/发布策略 |
 | `docs/data-model/INDEX.md` | 数据模型变更索引 |
+| `docs/architecture/integration-upmark.md` | UpMark 联动计划（挂起中，未排期） |
 | `docs/tasks/TASKS.md` | 任务列表与完成报告（见 §11） |
 | `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
 | `README.md` | 入口说明 |
@@ -214,7 +222,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 |---|---|
 | 后端 | Python 3.12 + FastAPI + sqlite3（venv + pip + requirements.txt） |
 | 前端 | React + TypeScript + Vite + Zustand + 单一 global.css |
-| 端口 | FastAPI :8000，Vite :5173（proxy `/api` → 8000） |
+| 端口 | FastAPI 默认 :8000（绑 127.0.0.1），环境变量 `PORT` 可覆盖——与 UpMark 共存时用 `PORT=8100`；Vite :5173（proxy `/api` → 后端） |
 | 测试 | pytest（server/tests），vitest（web）——只测 core 逻辑，不为 UI 写测试 |
 | 任务跟踪 | docs/tasks/TASKS.md（完成必须回填测试报告） |
 | 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
