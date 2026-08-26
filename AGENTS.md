@@ -229,6 +229,11 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
 | `README.md` | 入口说明 |
 | `CHANGELOG.md` | 变更日志 |
+| `docs/ai/PROJECT_MEMORY.md` | AI 永久记忆（<200行，启动必读） |
+| `docs/ai/CURRENT_STATE.md` | AI 当前状态快照（每次 commit 后更新） |
+| `docs/ai/ACTIVE_TASK.md` | AI 工作记忆（当前子任务范围） |
+| `docs/ai/SESSION_PROTOCOL.md` | AI 启动协议与行为规则 |
+| `docs/ai/ADR_INDEX.md` | ADR 索引（按需展开，不全读） |
 
 同步义务：出现新依赖 / 新模块 / 新数据结构 / 新 API / 新存储机制 / 新版本控制规则 /
 新代码执行机制时，对应文档必须在同一批变更中更新——不允许代码变了文档没变。
@@ -309,3 +314,35 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 - **UTF-8 源码禁止 PowerShell 管道写入**——一律使用 Write 工具
 - **API 测试禁止 `Invoke-RestMethod`**——GBK 控制台会把中文 JSON 体乱码
 - 进程管理（kill/start）合并为单条脚本，避免多次 bash 调用的 PowerShell 启动开销
+
+## 15. AI Agent Context Loading Rules
+
+For AI-assisted development, the following context loading protocol is mandatory.
+Detailed rules in `docs/ai/SESSION_PROTOCOL.md`.
+
+### Required loading order
+
+1. `docs/ai/PROJECT_MEMORY.md` — permanent memory (<200 lines, never changes)
+2. `docs/ai/CURRENT_STATE.md` — current state (updated every commit)
+3. `docs/ai/ACTIVE_TASK.md` — active task (if exists)
+4. `docs/ai/ADR_INDEX.md` — ADR index (expand only relevant ADRs)
+
+### Do not
+
+- Scan entire `docs/` directory to "understand the project"
+- Re-read all 12 ADRs on every session
+- Reopen completed architectural decisions
+- Modify frozen modules without review (see CURRENT_STATE "Do Not Touch")
+- Start coding without reading CURRENT_STATE first
+- Take on an entire milestone in one session (must decompose into sub-tasks)
+
+### Context files location
+
+```
+docs/ai/
+├── PROJECT_MEMORY.md    # AI permanent memory
+├── CURRENT_STATE.md     # Current state snapshot
+├── ACTIVE_TASK.md       # Current active task
+├── SESSION_PROTOCOL.md  # AI behavior rules
+└── ADR_INDEX.md         # ADR index (expand on demand)
+```

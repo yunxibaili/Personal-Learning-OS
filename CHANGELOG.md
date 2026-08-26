@@ -5,6 +5,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **M0.5 AI Context Infrastructure**：AI 开发流程外部长期记忆层——
+  `docs/ai/PROJECT_MEMORY.md`（永久记忆 <200行）· `CURRENT_STATE.md`（实时状态快照）·
+  `ACTIVE_TASK.md`（工作记忆/子任务范围）· `SESSION_PROTOCOL.md`（AI 启动协议）·
+  `ADR_INDEX.md`（12 个 ADR 索引，按需展开）· AGENTS §15 AI Context Loading Rules
+
 ## [0.2.0] - 2026-08-26
 
 ### Added
