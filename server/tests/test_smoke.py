@@ -27,17 +27,17 @@ def test_migration_creates_all_tables_and_idempotent(client: TestClient) -> None
         for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
     }
     expected = {
-        "schema_migrations", "settings", "concepts", "edges", "concept_mastery",
-        "learning_events", "mistakes", "memories", "notes", "note_concepts",
-        "note_links", "conversations", "messages", "notes_fts",
+        "schema_migrations", "settings", "concepts", "links", "concept_mastery",
+        "learning_events", "mistakes", "memories", "notes",
+        "conversations", "messages", "notes_fts",
     }
     assert expected <= tables, f"缺表: {expected - tables}"
-    # 幂等：重复执行不再新增版本记录
+    # 幂等：重复执行不再新增版本记录（001 + 002 共两条）
     before = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
     newly = migrate()
     after = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
     conn.close()
-    assert newly == [] and before == after == 1
+    assert newly == [] and before == after == 2
 
 
 def test_workspace_layout_created(tmp_workspace: Path, client: TestClient) -> None:

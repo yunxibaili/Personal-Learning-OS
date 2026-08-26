@@ -86,6 +86,8 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
 - **多端可见性铁律**：凡需跨设备可见的状态必须以文件形式存在于 workspace/
   （md / 旁车 json / eventlogs jsonl）；SQLite 在任何设备上都只是可重建的本地缓存；
   db、settings、API key 永不参与同步（ADR-005）
+- **图谱分层铁律**：React Flow 仅渲染（graph-ui）；节点/边/关系与全部图计算归
+  Core（graph-core）；布局引擎独立模块——UI 组件内禁止图计算（ADR-008/separation.md）
 
 ### 3.1 数据所有权分离
 应用源码（server/ web/ docs/）与用户数据严格分离：

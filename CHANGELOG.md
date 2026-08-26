@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **ADR-008 知识图谱数据模型冻结**（M1.5）：Node=类型化 Entity（note/concept，预留
+  code_symbol 等）；三张旧关系表统一为多态 `links` 表（migration 002，发布前破坏性整理）；
+  `[[wiki链接]]` 三级解析规则与附件路径政策；图谱分层铁律入宪法；
+  M2 拆分为 M2-A~E 五个子里程碑
 - **M1 知识库核心**：notes CRUD（vault/.md 为真相 + sha256 增量索引 + frontmatter tags）·
   附件上传/回读（20MB 白名单）· FTS5 检索端点 · Core 层 knowledge.py 首次入驻 ·
   shared/types 契约目录 + pytest 形状锁定 · TipTap(v3)+KaTeX 数学渲染编辑器 · pytest 18 绿 ·

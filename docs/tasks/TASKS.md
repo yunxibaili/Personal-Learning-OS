@@ -15,7 +15,11 @@
 |---|---|---|---|
 | M0 | 双端脚手架 + migration runner + 必读文档体系就位 | `[x]` 完成 | [T-M0](#t-m0-m0-脚手架完成2026-08-26) |
 | M1 | 知识库核心（CRUD/TipTap/LaTeX/附件） | `[x]` 完成 | [T-M1](#t-m1-m1-知识库核心完成2026-08-26) |
-| M2 | 双链·反链·FTS5·React Flow 图谱 | `[ ]` | — |
+| M2-A | Markdown 链接解析器（[[标题]] 三级解析/自动建桩/附件路径守卫，ADR-008） | `[ ]` | — |
+| M2-B | Link 索引与反链 API（统一 links 表/级联清理） | `[ ]` | — |
+| M2-C | 搜索 UI（FTS5 结果跳转） | `[ ]` | — |
+| M2-D | Graph Read Model（GET /api/v1/graph 递归 CTE） | `[ ]` | — |
+| M2-E | React Flow 基础图谱（仅渲染，无动画无 d3-force） | `[ ]` | — |
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
@@ -175,6 +179,24 @@
 
 **8. 下一阶段建议**
 M2 双链·反链·图谱：`[[标题]]` 解析进 note_links、反链查询、GraphView(React Flow 安装触发)。
+
+### T-M1R M1 Final Review + 数据模型冻结（2026-08-26）
+- **做了什么**：M1 收口复核通过（TipTap/MD真相/图片闭环/分层/依赖登记全项达标）；
+  新增 ADR-008 冻结图谱数据模型——**Node=类型化 Entity**（v1: note/concept，
+  预留 code_symbol 等）、三张旧关系表统一为多态 `links` 表（migration 002 已应用）、
+  `[[wiki链接]]` 三级解析规则（未命中自动建 concept 桩 origin=manual）、附件路径政策冻结；
+  宪法新增「图谱分层铁律」；M2 拆分为 A–E 五个子里程碑；@xyflow/react 批准为 M2-E 渲染件
+  （仅渲染不含计算），d3-force 维持 M3b 触发
+- **改动文件**：ADR-008(新) · migrations/002(新) · TECH_DESIGN §4.1/§4.2/§6.3/§7.4/§8.1/§10 ·
+  AGENTS 红线 · test_smoke · TASKS · CHANGELOG
+- **测试了什么**：
+
+  | 检查 | 预期 | 实际 |
+  |---|---|---|
+  | migration 002 应用于真实 workspace | links 建立且三旧表移除 | ✅ init_db applied |
+  | pytest 全量 | 18 passed（含新表集断言+幂等=2） | ✅ |
+
+- **结果与遗留**：等待用户指令「开始 M2」后按 §12 输出八项清单
 
 ## 完成报告模板（复制使用）
 

@@ -157,19 +157,22 @@ CREATE TABLE concepts (
   updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- 关系边
-CREATE TABLE edges (
-  id         INTEGER PRIMARY KEY,
-  source_id  INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
-  target_id  INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
-  relation   TEXT NOT NULL,                   -- requires|related|contains|contrasts_with
-  origin     TEXT NOT NULL DEFAULT 'manual',  -- manual|ai_suggested|accepted
-  weight     REAL NOT NULL DEFAULT 1.0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(source_id, target_id, relation)
+-- 统一关系表（ADR-008）：任意类型实体间的有向关系
+-- entity_type ∈ {note, concept}，预留 code_symbol|formula|person|resource
+CREATE TABLE links (
+  id          INTEGER PRIMARY KEY,
+  source_type TEXT NOT NULL,
+  source_id   INTEGER NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id   INTEGER NOT NULL,
+  relation    TEXT NOT NULL,      -- wikilink|mentions|requires|related|contains|contrasts_with|derived_from|implements
+  origin      TEXT NOT NULL DEFAULT 'manual',  -- manual|markdown|ai_suggested|accepted
+  weight      REAL NOT NULL DEFAULT 1.0,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(source_type, source_id, target_type, target_id, relation)
 );
-CREATE INDEX idx_edges_source ON edges(source_id);
-CREATE INDEX idx_edges_target ON edges(target_id);
+CREATE INDEX idx_links_source ON links(source_type, source_id);
+CREATE INDEX idx_links_target ON links(target_type, target_id);
 
 -- 学习状态：每概念一行，首次触达时惰性创建（缓存，可由 events 重放重建）
 CREATE TABLE concept_mastery (
@@ -236,20 +239,7 @@ CREATE TABLE notes (
   updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- 笔记 ↔ 概念
-CREATE TABLE note_concepts (
-  note_id    INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-  concept_id INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
-  origin     TEXT NOT NULL DEFAULT 'link',   -- link([[..]])|manual|ai
-  PRIMARY KEY (note_id, concept_id)
-);
-
--- 双链边（笔记级）：[[目标标题]]
-CREATE TABLE note_links (
-  source_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-  target_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-  PRIMARY KEY (source_id, target_id)
-);
+-- （笔记↔概念、笔记↔笔记 关系列已并入上方统一 links 表 —— ADR-008）
 
 -- 对话
 CREATE TABLE conversations (
@@ -297,6 +287,9 @@ learning-os/                 # 应用源码，Git 管理
 - 标题 = 文件名去 `.md`；`[[标题]]` 按 title 全库唯一解析（重名时报错提示改名）
 - YAML front-matter 支持 `tags:`，索引进 notes.tags_json
 - 附件统一放 `workspace/attachments/`，笔记内相对路径引用
+- **附件路径策略（ADR-008 冻结）**：媒体只能经上传接口进入 attachments/；
+  Markdown 只允许相对 URL `/api/v1/attachments/<name>`；
+  禁止绝对盘符路径、`file://`、外部临时 URL 作为长期引用——写入时由 Core 校验拒绝
 - 学习状态跨端：写入 learning_events 表的同一事务内追加一行 JSON 到
   `metadata/eventlogs/<yyyy-mm>.jsonl`（含 device_id 与全局唯一 event id）；
   同步后各端按序回放重建 concept_mastery，回放按 event id 幂等去重
@@ -398,7 +391,7 @@ quiz 得分 s∈[0,1] 映射 quality：`q = clamp(round(1 + s×4), 0, 5)`
 
 处理规则：
 - learning_events/mistakes/memories 直接落库（memories 去重靠 content 相似前缀匹配，简单字符串比较即可）
-- note_links 直接写 note_concepts(origin='ai')
+- note_links 写入统一表：links(note→concept, relation='mentions', origin='ai')
 - concept_suggestions 进「待确认」队列，GraphView 弹 Accept/Ignore；Accept 时 origin='accepted'
 - extractor 失败静默跳过，不影响主对话
 
@@ -451,9 +444,9 @@ schema v1：
 ### 7.4 图谱同步规则
 
 保存导图（PUT /notes/{id}/mindmap）时：
-1. 重写大纲段 + 重索引（FTS/note_links/note_concepts 随索引管线自然更新）
-2. 大纲中 `[[链接]]` 正常建立笔记↔概念关联
-3. 节点「提升为概念」操作 → 建 concepts + edges(relation='contains', origin='manual')
+1. 重写大纲段并重索引（FTS 与 links 随索引管线自然更新）
+2. 大纲中 `[[链接]]` 按 ADR-008 解析规则建立 note→note/concept 关系
+3. 节点「提升为概念」→ 建 concepts + links(relation='contains', origin='manual')
 
 ### 7.5 AI 生成管线（M4）
 
@@ -481,7 +474,7 @@ schema v1：
 
 | 模式 | 内容 | 数据源 |
 |---|---|---|
-| Galaxy 全局 | 全概念宇宙总览 | concepts/edges + mastery |
+| Galaxy 全局 | 全概念宇宙总览 | concepts/links + mastery |
 | Explorer 技能树 | 双击概念沿 requires 逐层展开学习路径 | 递归 CTE（§2.2，已有） |
 | Memory Map 记忆地图 | 快遗忘节点自动变暗，复习后重新点亮 | effective（§5.2）+ next_review_at |
 
@@ -489,7 +482,7 @@ schema v1：
 
 | 维度 | 编码 | 来源 |
 |---|---|---|
-| 大小 | 连接度推导（度数 + 复习优先级），**不加存储列** | edges 聚合查询 |
+| 大小 | 连接度推导（度数 + 复习优先级），**不加存储列** | links 聚合查询 |
 | 亮度 | 掌握度有效值 effective ∈ [0,1] | concept_mastery |
 | 颜色 | 领域 domain | concepts.domain |
 | 呼吸节奏 | 学习活跃度（近 7 天事件频率） | learning_events |
@@ -580,7 +573,11 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 |---|---|---|
 | M0 | 脚手架 | `pip install -r requirements.txt && npm i` 后两条命令分别起前后端；页面显示框架布局；migration 跑通；FastAPI 绑定 127.0.0.1 且支持 `PORT` 环境变量；workspace 目录结构符合 §4.2（含 metadata/ 空骨架）；本设计文档+AGENTS.md 就位 ✅ |
 | M1 | 知识库核心 | 新建/编辑/删除笔记落盘 vault/；TipTap 编辑 `$LaTeX$` 即时渲染；图片/PDF 附件插入；重启后内容一致 |
-| M2 | 双链·反链·搜索·图谱 | `[[标题]]` 自动补全并可点击跳转；反链面板列出引用者；FTS5 搜索毫秒级返回；React Flow 全局图+双击节点局部图；Note↔Note、Note↔Concept 边可见 |
+| M2-A | Markdown 链接解析器 | `[[标题]]` 三级解析（concept→note→自动建桩 origin=manual）；附件绝对路径/file:// 写入拒绝；解析单测覆盖 |
+| M2-B | Link 索引与反链 API | 保存笔记时增量重建 links；GET 反链列表含来源摘要；删除实体级联清理 links 无孤儿 |
+| M2-C | 搜索 UI | 笔记视图内搜索框：FTS5 结果点击即跳转打开对应笔记 |
+| M2-D | Graph Read Model | GET /api/v1/graph?root=&depth= 返回 {nodes,edges}（递归 CTE，多态 links）；契约测试锁定 |
+| M2-E | React Flow 基础图谱 | 安装 @xyflow/react；节点/边渲染、点击跳转、双击局部展开；默认布局——无动画无 d3-force（M3b 边界） |
 | M2b | Mind Map 编辑器 | 笔记⇄导图双模式切换实时同步；Tab/Enter/拖拽改父（环检测生效）；折叠持久化；旁车 json 落盘；FTS 能命中导图文本；[[链接]] 经大纲段进入图谱 |
 | M3 | Learning Graph | 概念 CRUD；四维掌握度随事件变化（pytest 覆盖权重/衰减/SM-2 数学）；Dashboard 显示雷达图与状态徽章；FORGOTTEN 自动进复习队列 |
 | M3b | Knowledge Universe 视觉层 | 三模式切换（Galaxy/Explorer/Memory Map）；四维视觉编码生效（大小=连接度推导/亮度=effective/颜色=domain/呼吸=活跃度）；FORGOTTEN 变暗且复习后点亮；requires 技能树逐层展开；2 层动态过滤；d3-force 布局（ADR-007） |
