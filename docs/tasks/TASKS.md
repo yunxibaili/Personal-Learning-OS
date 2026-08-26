@@ -39,6 +39,26 @@
 |---|---|---|
 | UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/architecture/integration-upmark.md |
 
+## 完成报告
+
+### T-DOC-001 多端架构修订 + UpMark 联动挂起（2026-08-26）
+- **做了什么**：产品定位升级为 Local-first 多端（Tauri 桌面 + RN Android + LAN Sync）；
+  新增 ADR-005/006 与 integration-upmark.md；TECH_DESIGN §1/§2/§4.2/§5.4/§9/§10 更新；
+  里程碑重排 M7=同步、M8=移动、M9/M10=可视化；AGENTS 冻结表/红线/优先级同步；
+  REGISTRY 规划依赖补 RN 系；TASKS 重排并建挂起区
+- **改动文件**：docs/architecture/(ADR-005·006·integration-upmark) · TECH_DESIGN · AGENTS ·
+  REGISTRY · TASKS · CHANGELOG · data-model/INDEX
+- **测试了什么**：
+
+  | 检查 | 预期 | 实际 |
+  |---|---|---|
+  | 全库 `POLICY.md` 旧引用 | 仅 CHANGELOG 历史行 | 发现 1 处未改名残留 → 已修 |
+  | TECH_DESIGN 中旧 M7(Visual) 引用 | 全部改指 M9 | 发现 2 处（§5.1 表、§8 标题）→ 已修 |
+  | data-model INDEX concept_demos 触发里程碑 | M9 | 已修 |
+  | git push origin main | 远程与本地一致 | ✅ 85fde9b..f6d519d |
+
+- **结果与遗留**：文档体系与已批准决策一致；M0 尚未开工（下一任务）
+
 ## 完成报告模板（复制使用）
 
 ```markdown
