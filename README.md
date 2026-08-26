@@ -12,7 +12,7 @@ Local-first 的 AI 个人学习操作系统：Markdown 知识库 × 知识图谱
 ## 启动（开发模式）
 
 ```bash
-# 后端 :8000
+# 后端 :8000（绑 127.0.0.1；可用 $env:PORT 覆盖，如与 UpMark 共存设 8100）
 cd server
 python -m venv .venv
 .venv\Scripts\activate        # Windows

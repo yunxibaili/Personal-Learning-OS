@@ -12,7 +12,7 @@
 
 | 任务 | 内容 | 状态 | 完成报告 |
 |---|---|---|---|
-| M0 | 双端脚手架 + migration runner + 必读文档体系就位 | `[~]` 进行中 | — |
+| M0 | 双端脚手架 + migration runner + 必读文档体系就位 | `[x]` 完成 | [T-M0](#t-m0-m0-脚手架完成2026-08-26) |
 | M1 | 知识库核心（CRUD/TipTap/LaTeX/附件） | `[ ]` | — |
 | M2 | 双链·反链·FTS5·React Flow 图谱 | `[ ]` | — |
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
@@ -28,11 +28,11 @@
 
 ## M0 任务拆解（当前）
 
-- [ ] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/v1/settings
-- [ ] web/：Vite React TS + Zustand store 骨架 + global.css + 六视图占位路由切换 + api client
-- [ ] 联调：Vite proxy `/api/v1`→8000；两条启动命令验证通过
-- [ ] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/v1/settings 读写往返）；vitest 占位
-- [ ] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
+- [x] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/v1/settings
+- [x] web/：Vite React TS + Zustand store 骨架 + global.css + 六视图占位路由切换 + api client
+- [x] 联调：Vite proxy `/api/v1`→8000；两条启动命令验证通过
+- [x] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/v1/settings 读写往返）；vitest 占位
+- [x] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
 
 ## 挂起区（有明确触发条件，未排期）
 
@@ -76,6 +76,52 @@
   | AGENTS 文档地图 ↔ 实际文件 | 一一存在 | ✅ 14 项全在（git ls-files 核对） |
 
 - **结果与遗留**：文档基线可视为完整；M0 编码未开工
+
+### T-M0 M0 脚手架完成（2026-08-26）
+
+**1. 文件变化列表**（26 新增 + 3 更新）
+- Backend：`requirements.txt` `requirements-dev.txt` `app/{__init__,main,db}.py` `app/core/__init__.py` `app/routers/{__init__,settings}.py` `migrations/001_init.sql` `tests/{conftest,test_smoke}.py`
+- Frontend：`package.json` `vite.config.ts` `tsconfig.json` `index.html` `src/{main.tsx,App.tsx,global.css}` `src/lib/api.ts` `src/stores/{ui.ts,ui.test.ts}` `src/views/placeholders.tsx`
+- 文档：`README.md`(PORT 说明) · 本文件 · `CHANGELOG.md`
+
+**2. 依赖清单**
+- Python 运行时：fastapi、uvicorn（仅 2 个）；开发：pytest、httpx
+- Web 运行时：react、react-dom、zustand（仅 3 个）；开发：vite、typescript、vitest、@vitejs/plugin-react、@types/*
+- TipTap/KaTeX/xyflow/d3-force/marked **均未安装**（按 REGISTRY 触发时机，后续里程碑引入）
+
+**3. 启动方式验证**
+- `uvicorn app.main:app --reload --port 8000` ✅（默认绑 127.0.0.1）
+- `$env:PORT='8111'` + `python -m app.main` → 监听 8111 ✅（PORT 覆盖实测）
+- `npm run dev` → 5173 ✅（host 显式 127.0.0.1，修复 localhost→::1 不一致问题）
+
+**4. Migration 结果**
+- `001_init` 应用成功：12 表 + notes_fts + 索引全部创建
+- 幂等复跑：`schema_migrations` 计数不变，返回空增量 ✅
+- workspace 自动创建：`db/ attachments/ metadata/(eventlogs/) vault/` ✅
+
+**5. API 测试结果**
+
+| 请求 | 结果 |
+|---|---|
+| GET /api/v1/health | `{status:"ok",db:true}` |
+| PUT /api/v1/settings | `{ok:true}` |
+| GET /api/v1/settings | api_key 返回 `******`，响应全文无明文密钥 ✅ |
+| PUT 非字符串值 | 400 `{error:{code:"invalid_body"}}` |
+| GET 未知路由 | 404 `{error:{code:"http_404"}}` |
+
+**6. pytest 结果**
+- `python -m pytest -q` → **6 passed**（health/migration幂等/workspace布局/settings往返+脱敏/非法值/404形态）
+- vitest → **2 passed**（ui store 切换）
+- `npm run build` → tsc --noEmit 通过 + vite 构建成功（gzip 47KB）
+
+**7. 已知问题**
+- starlette 提示 TestClient 的 httpx 用法未来弃用（建议 httpx2）——当前无影响，升级时跟进
+- npm allow-scripts 对 esbuild postinstall 有审批提示——构建已实测可用；若异常执行 `npm approve-scripts`
+- 六视图占位合并为单文件 `views/placeholders.tsx`（偏离 8 项清单的 6 文件拆分）：占位期更简，各里程碑原地实现后再自然拆分
+- FastAPI 返回注解不能写 `dict | JSONResponse`（会尝试建响应模型报错）——已在 settings router 规避
+
+**8. 下一阶段建议**
+进入 **M1 知识库核心**：notes CRUD API + vault md 读写 + FTS 索引管线 + TipTap/KaTeX/math-extension 安装（届时在 REGISTRY 打钩确认）。开工前照例输出 §12 八项清单。
 
 ## 完成报告模板（复制使用）
 

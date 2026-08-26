@@ -6,6 +6,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M0 双端脚手架**：FastAPI（app 包 + migrations runner + settings/health API + 统一错误契约
+  `{error:{code,message}}` + lifespan 启动迁移）· Vite React TS（Zustand + 六视图占位 +
+  api client）· pytest 6 绿 / vitest 2 绿 / build 通过 · workspace 目录自动创建
 - 必读文档体系：docs/architecture/principles.md · docs/dependencies/dependency-policy.md ·
   docs/security/network-boundary.md · docs/version-control/git-policy.md（自 POLICY.md 更名）
 - 任务列表与完成报告制度 docs/tasks/TASKS.md（含里程碑总览、M0 拆解、报告模板）
