@@ -359,6 +359,64 @@ def backlinks_of_note(conn, note_id: int) -> list[dict]:
     return [{"note_id": r["note_id"], "title": r["title"]} for r in rows]
 
 
+# ---------- Knowledge Radar / Omniscience Mode（M3.5-A，ADR-012）----------
+
+def suggest_for_context(
+    conn, query: str, note_id: int | None = None, limit: int = 5
+) -> dict:
+    """上下文感知知识建议：FTS匹配 + concept LIKE + 图谱邻居 + memory占位。
+
+    M3.5-A 阶段 memory 全部返回 null（等 M3 concept_mastery 表就绪后接入）。
+    """
+    if not query or not query.strip():
+        return {"matches": [], "related": [], "memory": {"mastery": None, "review_due": None, "last_mistake": None}}
+
+    q = query.strip()
+
+    # 1. FTS 笔记匹配
+    matches: list[dict] = []
+    fts_rows = search_notes(conn, q, limit=limit)
+    for r in fts_rows:
+        matches.append({
+            "type": "note", "id": r["note_id"],
+            "title": r["title"], "snippet": None, "score": 0.9,
+        })
+
+    # 2. Concept 标题 LIKE 匹配（补 FTS 未覆盖的概念）
+    concept_rows = conn.execute(
+        "SELECT id, title, domain, status FROM concepts "
+        "WHERE LOWER(title) LIKE LOWER(?) LIMIT ?",
+        (f"%{q}%", limit),
+    ).fetchall()
+    existing_ids = {m["id"] for m in matches}
+    for r in concept_rows:
+        if r["id"] not in existing_ids:
+            matches.append({
+                "type": "concept", "id": r["id"],
+                "title": r["title"], "snippet": None, "score": 0.8,
+                "domain": r["domain"], "status": r["status"],
+            })
+
+    # 3. 图谱邻居：以当前笔记为根 depth=1，取邻居中与 query 相关的
+    related: list[dict] = []
+    if note_id is not None:
+        graph = local_graph(conn, "note", note_id, depth=1)
+        for node in graph["nodes"]:
+            # ref_id 是纯数字 ID，跳过自身
+            if node["type"] == "note" and node["ref_id"] == note_id:
+                continue
+            # 简单相关度：标题包含 query 或 query 包含标题
+            t = node["title"].lower()
+            ql = q.lower()
+            if ql in t or t in ql:
+                related.append({"title": node["title"], "relation": "neighbor"})
+
+    # 4. Memory 占位（M3.5-B 接入真实数据）
+    memory = {"mastery": None, "review_due": None, "last_mistake": None}
+
+    return {"matches": matches[:limit], "related": related[:limit], "memory": memory}
+
+
 
 
 # ---------- 便捷读取 ----------
