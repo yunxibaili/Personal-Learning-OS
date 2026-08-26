@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- 必读文档体系：docs/architecture/principles.md · docs/dependencies/dependency-policy.md ·
+  docs/security/network-boundary.md · docs/version-control/git-policy.md（自 POLICY.md 更名）
+- 任务列表与完成报告制度 docs/tasks/TASKS.md（含里程碑总览、M0 拆解、报告模板）
+- 本地归档区约定 `_local/`（旧代码/旧文档/临时脚本仅存本机，gitignore）
 - 工程宪法 AGENTS.md（能力复用优先级链、依赖纪律、架构红线、数据所有权分离、
   版本控制规则、架构检查十问、[ARCHITECTURE WARNING] 协议）
 - 技术设计基线 docs/TECH_DESIGN.md（架构 / SQLite DDL / 掌握度引擎 /
