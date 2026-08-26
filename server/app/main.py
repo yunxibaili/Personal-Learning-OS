@@ -17,6 +17,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .db import APP_ROOT, init_db
+from .routers.attachments import router as attachments_router
+from .routers.notes import router as notes_router
+from .routers.search import router as search_router
 from .routers.settings import router as settings_router
 
 APP_VERSION = "0.1.0-dev"
@@ -34,6 +37,9 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Personal Learning OS", version=APP_VERSION,
                   lifespan=lifespan)
     app.include_router(settings_router)
+    app.include_router(notes_router)
+    app.include_router(attachments_router)
+    app.include_router(search_router)
 
     @app.exception_handler(RequestValidationError)
     def on_validation_error(_req, exc: RequestValidationError) -> JSONResponse:
