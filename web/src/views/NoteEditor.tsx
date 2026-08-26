@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
+import { useUi } from "../stores/ui";
 import {
   ApiError,
   apiDelete,
@@ -15,7 +16,9 @@ import type {
   NoteListResponse,
   NoteSummary,
   OkResponse,
+  SearchResponse,
 } from "@shared/types/note";
+import type { BacklinkItem } from "@shared/types/graph";
 import { TiptapEditor } from "../components/editor/TiptapEditor";
 
 /** M1 知识库核心：列表 + TipTap 编辑（Markdown 进出）+ 防抖自动保存 + 附件上传。 */
@@ -25,8 +28,12 @@ export function NoteEditorView() {
   const [detail, setDetail] = useState<NoteDetail | null>(null);
   const [error, setError] = useState<string>("");
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
+  const [backlinks, setBacklinks] = useState<BacklinkItem[]>([]);
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<{ note_id: number; title: string }[] | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusNoteId = useUi((s) => s.focusNoteId);
 
   const refreshList = useCallback(async () => {
     const data = await apiGet<NoteListResponse>("/notes");
@@ -41,9 +48,42 @@ export function NoteEditorView() {
   const openNote = useCallback(async (id: number) => {
     setActiveId(id);
     setSaveState("idle");
-    const data = await apiGet<NoteDetailResponse>(`/notes/${id}`);
-    setDetail(data.note);
+    setError("");
+    try {
+      const data = await apiGet<NoteDetailResponse>(`/notes/${id}`);
+      setDetail(data.note);
+      const bl = await apiGet<{ backlinks: BacklinkItem[] }>(
+        `/notes/${id}/backlinks`,
+      );
+      setBacklinks(bl.backlinks);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
+    }
   }, []);
+
+  // 图谱视图点击笔记节点 → 跨视图打开
+  useEffect(() => {
+    if (focusNoteId != null) {
+      void openNote(focusNoteId);
+      useUi.getState().clearFocus();
+    }
+  }, [focusNoteId, openNote]);
+
+  const runSearch = useCallback(async () => {
+    const query = q.trim();
+    if (!query) {
+      setResults(null);
+      return;
+    }
+    try {
+      const d = await apiGet<SearchResponse>(
+        `/search?q=${encodeURIComponent(query)}`,
+      );
+      setResults(d.results);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
+    }
+  }, [q]);
 
   const createNote = useCallback(async () => {
     const title = window.prompt("新笔记标题：");
@@ -150,6 +190,14 @@ export function NoteEditorView() {
                 {saveState === "saved" ? "已保存" : saveState === "dirty" ? "保存中…" : ""}
               </span>
               <input
+                className="searchbox"
+                value={q}
+                placeholder="全文搜索（回车）"
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void runSearch()}
+              />
+              <button onClick={() => void runSearch()}>搜索</button>
+              <input
                 ref={imageInput}
                 type="file"
                 accept="image/*,application/pdf"
@@ -162,12 +210,34 @@ export function NoteEditorView() {
               />
               <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
             </div>
+            {results !== null && (
+              <ul className="search-results">
+                {results.length === 0 && <li className="muted">无结果</li>}
+                {results.map((s) => (
+                  <li key={s.note_id}>
+                    <button onClick={() => { void openNote(s.note_id); setResults(null); }}>
+                      {s.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             <TiptapEditor
               key={detail.id}
               initialMarkdown={detail.content_md}
               onChange={scheduleSave}
               onReady={onEditorReady}
             />
+            {backlinks.length > 0 && (
+              <div className="backlinks">
+                反链（{backlinks.length}）：
+                {backlinks.map((b) => (
+                  <button key={b.note_id} onClick={() => void openNote(b.note_id)}>
+                    {b.title}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         ) : (
           <p className="empty-hint">← 选择或新建一篇笔记</p>

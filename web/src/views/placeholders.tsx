@@ -11,16 +11,6 @@ export function Placeholder(props: { title: string; desc: string; milestone: str
   );
 }
 
-export function GraphView(): ReactNode {
-  return (
-    <Placeholder
-      title="知识图谱"
-      desc="React Flow 全局/局部图 · 双链与概念边可视化"
-      milestone="M2 / M3b Knowledge Universe"
-    />
-  );
-}
-
 export function MindMapView(): ReactNode {
   return (
     <Placeholder
