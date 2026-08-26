@@ -23,7 +23,7 @@
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
-| M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[ ]` | — |
+| M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[x]` 完成 | [T-M3.5A](#t-m35a-m35-a-knowledge-radar-mvp-完成2026-08-26) |
 | M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[ ]` | — |
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[ ]` | — |
 | M5 | 复习闭环（队列/测验/时间线） | `[ ]` | — |
@@ -292,6 +292,33 @@ M2 双链·反链·图谱：`[[标题]]` 解析进 note_links、反链查询、G
 
 **8. 下一阶段建议**
 M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（掌握度/SM-2）
+
+### T-M3.5A M3.5-A Knowledge Radar MVP 完成（2026-08-26）
+
+**1. 文件变化列表**（5 新增 + 5 文档更新）
+- Backend Core：`knowledge.py:suggest_for_context()`（FTS匹配 + concept LIKE + graph邻居 + memory占位）
+- Backend Router：`routers/suggest.py`(新) · `main.py`(挂载)
+- Types：`shared/types/suggest.ts`(新)
+- Frontend：`components/KnowledgeRadar.tsx`(新) · `views/NoteEditor.tsx`(Ctrl+Shift+K + 段落提取) · `global.css`(radar样式)
+- Docs：`ADR-012-omniscience-mode.md`(新) · TECH_DESIGN §9/§10 · TASKS · data-model INDEX · CHANGELOG
+
+**2. 依赖清单**：零新依赖（FTS5 + recursive CTE 已有能力）
+
+**3. API 设计**
+
+| 方法&路径 | 说明 |
+|---|---|
+| GET /api/v1/knowledge/suggest?q=&note_id=&limit= | 上下文匹配+图谱邻居+memory占位 |
+
+**4. pytest 结果**：**26 passed**（M2 19 + M3.5-A 7）；vitest 2 passed；build 通过
+
+**5. 已知问题**
+- query 提取算法较简单（段落/选文），未来可加 Context Extractor 拆词（ADR-013 候选）
+- suggest API 无缓存，大规模笔记库需评估（ADR-014 候选）
+- Radar 面板限制 matches<=5, related<=5（宁少勿错原则）
+
+**6. 下一阶段建议**
+回到主线 M3 Learning Graph（掌握度/SM-2/Dashboard）
 
 ## 完成报告模板（复制使用）
 
