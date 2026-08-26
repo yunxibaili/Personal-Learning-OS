@@ -90,6 +90,10 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
   Core（graph-core）；布局引擎独立模块——UI 组件内禁止图计算（ADR-008/separation.md）
 - **用户数据永不锁死**：vault 永远是开放 Markdown；系统必须始终保留一键全量导出能力
   （MD+附件+JSON 元数据，backlog T-EXPORT）；禁止引入阻碍导出/迁移的私有格式或云端绑定
+- **AI 调用边界**：Router 禁止直连 LLM；一切提示词组装必须经 core/ai Context Builder，
+  未来 RAG 只是给 Builder 增加数据源而非新管线（ADR-010）
+- **Entity vs Document**：Markdown 是内容载体，Entity 是知识对象；
+  Tutor 与检索面向实体+学习记忆，而非文件关键词搜索（ADR-009）
 
 ### 3.1 数据所有权分离
 应用源码（server/ web/ docs/）与用户数据严格分离：

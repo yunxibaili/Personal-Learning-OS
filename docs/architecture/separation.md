@@ -42,6 +42,8 @@ Step5 双侧测试 → TASKS 回填报告
 ### AI 隔离
 LLM 请求只允许出现在 `server/core/ai/*`（llm.py/tutor.py/extractor）。UI 组件零直连；
 链路恒为 `用户输入 → /api/v1/chat/stream → tutor.py → LLM → SSE 返回`。
+**Router 禁止 import llm**——一切提示词组装经 Context Builder（ADR-010），
+未来 RAG 仅作为 Builder 的数据源扩展。
 
 ### Knowledge Universe 三段式
 | 段 | 位置 | 职责 |

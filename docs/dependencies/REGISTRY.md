@@ -31,10 +31,10 @@ Security considerations:
 | zustand | 同上 | 全局状态 | MIT | React context 高频更新性能不足；已否决 redux/mobx 等 | 活跃 |
 | katex | 同上 | LaTeX 渲染 | MIT | 平台无数学排版能力；MathJax 更慢已否决 | 活跃 |
 | marked | 同上 | Chat 消息 md→html | MIT | 手写 Markdown parser 属禁令清单 | 活跃 |
-| @xyflow/react | 同上 | 图谱画布 + 思维导图编辑器 | MIT | 图布局/拖拽/缩放自研=大轮子；Cytoscape API 陈旧、D3 禁令 | 活跃 |
+| @xyflow/react | 同上 | 图谱画布 + 思维导图编辑器（**仅渲染，不含图计算/布局**，ADR-008） | MIT | 图布局/拖拽/缩放自研=大轮子；Cytoscape API 陈旧、D3 渲染模块禁令 | 活跃 |
 | @tiptap/react · @tiptap/pm · @tiptap/starter-kit | 同上 | 笔记编辑器内核 | MIT | textarea 无法支撑双链交互/代码块按钮；裸 ProseMirror 太底层 | 活跃 |
 | @aarkue/tiptap-math-extension | 同上 | `$...$` 行内/块级 LaTeX | MIT | TipTap 官方 math 扩展为付费 Pro | 社区维护 |
-| d3-force | 同上 | 力导向布局物理计算（Knowledge Universe，§8.1） | ISC | JS 无内置物理模拟；React Flow 无布局器；手写版调参成本高（六连问全文见 ADR-007） | 活跃 |
+| d3-force | 同上 | 力导向布局物理计算（Knowledge Universe，§8.1） | ISC | JS 无内置物理模拟；React Flow 无布局器；手写版调参成本高（六连问全文见 ADR-007） | 活跃（批准态，M3b 安装） |
 | tiptap-markdown | **0.9.x · TipTap v3 线**（2026-08-26 实装） | TipTap JSON ↔ Markdown 双向转换（仅编辑器适配层） | MIT | PM 序列化自研=重复造轮子；TipTap v3 官方 MD 扩展与 v2 生态兼容性未证实。ECR 已获批准（2026-08-26），Status: Approved for M1 Knowledge Editor | 社区维护 |
 | python-multipart | 锁定 requirements.txt | multipart/form-data 解析（附件上传 UploadFile 必需件） | Apache-2.0 | FastAPI 文件上传的官方配套；无替代即无法实现已批 M1 计划第 4 条 | 活跃 |
 | @tiptap/extension-image | v3 线（M1，ECR 获批 2026-08-26） | 图片节点：`![alt](src)` markdown 往返与内嵌渲染 | MIT | StarterKit 无图片节点；无 schema 节点时 md 图片语法会在编辑往返中丢失 | 活跃 |

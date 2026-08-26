@@ -3,6 +3,8 @@
 > **Open Learning OS** is an open-source, local-first AI learning environment that helps people collect knowledge, understand concepts, practice skills, and build long-term memory.
 >
 > 一个开源、本地优先的 AI 学习操作系统：帮助用户建立知识库、理解概念、练习技能，并形成长期记忆。
+>
+> *Your knowledge is not a pile of notes. It is a universe that grows with you.*
 
 核心价值不是"记录信息"，而是**帮助用户学会信息**：
 Markdown 知识库 × 类型化知识图谱 × 学习记忆（四维掌握度 / SM-2 复习 / 错误本）× 记忆感知 AI Tutor。

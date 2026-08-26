@@ -489,10 +489,19 @@ schema v1：
 
 ## §8 可视化系统
 
-### 8.1 Knowledge Universe 视觉层（M3b 实施）
+### 8.1 Knowledge Universe——学习反馈的可视化奖励层（M3b 实施）
 
-定位：知识图谱不是静态关系图，而是会生长、衰减、点亮的学习宇宙。
-数据全部来自既有表与推导——**零新表**；唯一 schema 变更是 §4.1 的 `concepts.origin` 列。
+定位：**不是生产工具，是学习反馈的奖励层**。用户打开软件就能看到自己的宇宙在生长：
+新星出现（新概念）、星球点亮（复习成功）、光色暗淡（遗忘预警）。
+数据全部来自既有表与推导——**零新表**；数据库驱动宇宙，宇宙永不反向影响 schema。
+
+```
+Knowledge Universe（视觉奖励层，本节）
+      ↑
+Learning Graph（concepts + links，ADR-008）
+      ↑
+Markdown Vault（事实源）
+```
 
 #### 三模式
 
@@ -508,23 +517,36 @@ schema v1：
 |---|---|---|
 | 大小 | 连接度推导（度数 + 复习优先级），**不加存储列** | links 聚合查询 |
 | 亮度 | 掌握度有效值 effective ∈ [0,1] | concept_mastery |
-| 颜色 | 领域 domain | concepts.domain |
+| 颜色 | **掌握三色**：绿=掌握(PRACTICED+)、黄=学习中(UNDERSTOOD~PRACTICED)、红=薄弱(FORGOTTEN/低分) | state + effective |
 | 呼吸节奏 | 学习活跃度（近 7 天事件频率） | learning_events |
+
+> 领域(domain)不再用颜色区分，改由力导向聚簇自然分组表达。
 
 #### 布局与过滤
 
-- 力导向：`d3-force` 单模块（唯一 D3 例外，ADR-007；仅物理计算，禁止任何 d3 渲染模块）
+- 力导向：`d3-force` 单模块（唯一 D3 例外，ADR-007；**仅负责物理计算，不存任何数据**，
+  M3b 时安装）；领域聚簇以 domain 同类吸引权重实现
 - **动态过滤铁律**：默认只渲染当前焦点概念的 2 层邻居，禁止无过滤全量渲染
+- 位置缓存：`metadata/universe-layout.json`——设备本地、不同步、可随时重建；
+  知识本身永不依赖该文件
+- 模块约定（M3b 实装时建立目录）：`web/src/features/universe/{UniverseView,
+  NodeRenderer,LayoutEngine,AnimationEngine,themes}`
 
-#### 动效
+#### 动效治理
 
-验收项：新节点接入连线动画 · 掌握度变化亮度过渡 · FORGOTTEN 变暗/复习重新点亮 · 技能树逐层展开。
-stretch（不进验收）：AI 生成星座动画 · 学习扩散波纹。
-AI Explain 概念链路径点亮 → 挂 M4 验收（上下文管线已产出概念链，前端高亮即可）。
-v2 3D 星系（Three.js）⏭ backlog（触发：2D 实测表达不足且用户明确要求）；Debug Mode（代码知识图）⏭ Phase 5。
+每个动画必须回答：**它帮助了哪一步学习？**
+好动效 = 显示薄弱 · 显示成长 · 引导复习；禁止炫光/粒子/纯装饰。
 
-### 8.2 Visual Learning Engine——执行轨迹动画（M9 实施）
+验收项：新节点接入连线动画（成长可见）· 掌握度变化亮度过渡 ·
+FORGOTTEN 变暗/复习重新点亮 · 技能树逐层展开。
+stretch：学习扩散波纹（需先论证学习收益）。
+AI Explain 概念链路径点亮 → 挂 M4 验收。
+Level 3 探索模式（星云/星域叙事）⏭ backlog；WebGL/Three.js ⏭ M9 后评估且**永不进入核心依赖**；
+Debug Mode（代码知识图）⏭ Phase 5。
 
+### 8.2 Learning Trace Engine（算法可视化引擎，M9 实施）
+
+教学工具而非生产 IDE——参考 Python Tutor / VisuAlgo 的定位。
 代码执行 → **Trace 记录** → **模板渲染动画**。绝不让 LLM 直接生成动画数据/视频（LLM 只生成示例代码，走同一条 trace 管线）。
 
 ### 8.3 采集器（server/core/tracer.py，纯标准库）
@@ -631,6 +653,9 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 - **UpMark 联动**（错题登记→概念掌握度→双向出题）：挂起中，见 docs/architecture/integration-upmark.md
 
 ### Future Roadmap（云端与开源生态——明确延后，只预留接口，禁止提前实现）
+
+> **六个月禁令（2026-08-26 起）**：用户系统 · 云端服务 · 插件运行时 · 3D 知识宇宙——
+> 即便被催促也先冻结（PRODUCT_PRINCIPLES §5：追求学习效果而非功能数量）。
 
 | 项 | 预留方式 | 解锁触发 |
 |---|---|---|

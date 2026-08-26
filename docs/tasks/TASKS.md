@@ -217,6 +217,26 @@ M2 双链·反链·图谱：`[[标题]]` 解析进 note_links、反链查询、G
 - **结果与遗留**：等待指令「开始 M2」（届时输出 M2-A 八项清单）；
   许可证选择建议在首次公开发布前定（MIT 或 Apache-2.0）
 
+### T-DOC-005 架构评审落地：边界冻结 + 产品原则 + 许可证（2026-08-26）
+- **做了什么**：按负责人评审意见新增 ADR-009（Entity/Document 边界）、ADR-010（AI Context
+  Architecture：Router 禁直连 LLM）、ADR-011（中文搜索 unicode61 起步、jieba 延后）、
+  PRODUCT_PRINCIPLES.md 五条产品原则；LICENSE 定为 Apache-2.0 并入库；
+  Knowledge Universe 重定位为「学习反馈可视化奖励层」（掌握三色编码/features-universe 模块/
+  universe-layout 设备缓存/动效治理）；Trace 引擎更名 Learning Trace Engine；
+  M2-B 更名 Entity Resolver、M2-C/E 收窄；宪法补 AI 调用边界与 Entity 边界两条红线；
+  六个月禁令显式化
+- **改动文件**：ADR-009/010/011(新) · PRODUCT_PRINCIPLES.md(新) · LICENSE(新) ·
+  TECH_DESIGN §8/§10 · AGENTS · separation · REGISTRY · README · PROJECT_BRIEF · CHANGELOG
+- **测试了什么**：
+
+  | 检查 | 预期 | 实际 |
+  |---|---|---|
+  | schema 影响 | ADR-009/010 零表变更（links 已满足） | ✅ |
+  | 新依赖 | 零 | ✅ |
+  | 待定项清理 | 许可证销号 | ✅ PROJECT_BRIEF §11 |
+
+- **结果与遗留**：进入 M2（A→E 顺序实施）；图片 ECR 已批件已装
+
 ## 完成报告模板（复制使用）
 
 ```markdown
