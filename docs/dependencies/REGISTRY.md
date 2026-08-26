@@ -34,6 +34,7 @@ Security considerations:
 | @xyflow/react | 同上 | 图谱画布 + 思维导图编辑器 | MIT | 图布局/拖拽/缩放自研=大轮子；Cytoscape API 陈旧、D3 禁令 | 活跃 |
 | @tiptap/react · @tiptap/pm · @tiptap/starter-kit | 同上 | 笔记编辑器内核 | MIT | textarea 无法支撑双链交互/代码块按钮；裸 ProseMirror 太底层 | 活跃 |
 | @aarkue/tiptap-math-extension | 同上 | `$...$` 行内/块级 LaTeX | MIT | TipTap 官方 math 扩展为付费 Pro | 社区维护 |
+| d3-force | 同上 | 力导向布局物理计算（Knowledge Universe，§8.1） | ISC | JS 无内置物理模拟；React Flow 无布局器；手写版调参成本高（六连问全文见 ADR-007） | 活跃 |
 
 ## 开发依赖
 

@@ -32,3 +32,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   pytest↔vitest 同夹具一致性测试为合并门禁；AI 走桌面(LAN)或直连云的降级阶梯
 - docs/architecture/integration-upmark.md：UpMark 联动计划（错题登记→掌握度→双向出题，
   仅经其 REST 契约桥接）——**挂起中，未排期**
+- ADR-007：d3-force 单模块作为 D3 禁令唯一例外（Knowledge Universe 力导向布局）
+- docs/architecture/separation.md 分层架构规范（四层职责/接口先行五步/共享类型契约/
+  AI 与同步模块隔离）；AGENTS §12 写码前输出协议（8 项清单）
+
+### Changed
+- API 全面版本化：`/api` → `/api/v1`（M0 起生效）
+- TECH_DESIGN §8 重构为「可视化系统」：§8.1 Knowledge Universe 视觉层（新里程碑 M3b：
+  Galaxy/Explorer/Memory Map 三模式+四维视觉编码）· §8.2 执行轨迹动画（M9-M10）
+- DDL：concepts 表补 `origin` 列（manual|ai_suggested）
+- 依赖 +1：d3-force（运行时合计 13）；Framer Motion 进否决表

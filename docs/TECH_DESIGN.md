@@ -64,6 +64,9 @@ server/ ▼
      └─ syncengine.py  manifest 对比、差量清单、冲突检测（M7，ADR-005）
 ```
 
+> 分层映射（强制）：web/=Frontend · main.py+routers/=Backend · core/=Core Engine · workspace/+SQLite=Data Layer。
+> 规范见 `docs/architecture/separation.md`；API 自 M0 起一律 `/api/v1/*`。
+
 ### 2.3 关键原则
 
 - **Folder 是视图，Graph 才是数据模型**：workspace/vault/ 下任意文件夹组织；概念 `特征值` 可同时关联多个领域，无需复制文件
@@ -121,6 +124,7 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 | Manim | 重依赖链(Cairo/Pango/FFmpeg) + 离线视频渲染，违背"交互式可视化"目标。数学动画改为参数化 SVG + 播放头 |
 | Monaco / Jupyter / Docker 沙箱 | Phase 5（IDE 阶段）才引入，当前阶段不做代码 IDE |
 | Elasticsearch / Meilisearch | FTS5 内置于 SQLite，零运维 |
+| Framer Motion | 图谱动效（呼吸/亮度过渡）用 CSS transition + rAF 即可覆盖；引入动画库属依赖膨胀（ADR-007 关联裁决） |
 
 ---
 
@@ -142,6 +146,7 @@ CREATE TABLE concepts (
   aliases_json TEXT NOT NULL DEFAULT '[]',
   summary      TEXT NOT NULL DEFAULT '',
   domain       TEXT NOT NULL DEFAULT '',      -- 自由文本标签：数学/编程/...
+  origin       TEXT NOT NULL DEFAULT 'manual', -- manual|ai_suggested（AI 建点淡色过滤，§8.1/ADR-002）
   created_at   TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -459,20 +464,54 @@ schema v1：
 
 ---
 
-## §8 Visual Learning Engine 预设计（M9 实施）
+## §8 可视化系统
 
-### 7.1 定位
+### 8.1 Knowledge Universe 视觉层（M3b 实施）
+
+定位：知识图谱不是静态关系图，而是会生长、衰减、点亮的学习宇宙。
+数据全部来自既有表与推导——**零新表**；唯一 schema 变更是 §4.1 的 `concepts.origin` 列。
+
+#### 三模式
+
+| 模式 | 内容 | 数据源 |
+|---|---|---|
+| Galaxy 全局 | 全概念宇宙总览 | concepts/edges + mastery |
+| Explorer 技能树 | 双击概念沿 requires 逐层展开学习路径 | 递归 CTE（§2.2，已有） |
+| Memory Map 记忆地图 | 快遗忘节点自动变暗，复习后重新点亮 | effective（§5.2）+ next_review_at |
+
+#### 视觉编码（四维）
+
+| 维度 | 编码 | 来源 |
+|---|---|---|
+| 大小 | 连接度推导（度数 + 复习优先级），**不加存储列** | edges 聚合查询 |
+| 亮度 | 掌握度有效值 effective ∈ [0,1] | concept_mastery |
+| 颜色 | 领域 domain | concepts.domain |
+| 呼吸节奏 | 学习活跃度（近 7 天事件频率） | learning_events |
+
+#### 布局与过滤
+
+- 力导向：`d3-force` 单模块（唯一 D3 例外，ADR-007；仅物理计算，禁止任何 d3 渲染模块）
+- **动态过滤铁律**：默认只渲染当前焦点概念的 2 层邻居，禁止无过滤全量渲染
+
+#### 动效
+
+验收项：新节点接入连线动画 · 掌握度变化亮度过渡 · FORGOTTEN 变暗/复习重新点亮 · 技能树逐层展开。
+stretch（不进验收）：AI 生成星座动画 · 学习扩散波纹。
+AI Explain 概念链路径点亮 → 挂 M4 验收（上下文管线已产出概念链，前端高亮即可）。
+v2 3D 星系（Three.js）⏭ backlog（触发：2D 实测表达不足且用户明确要求）；Debug Mode（代码知识图）⏭ Phase 5。
+
+### 8.2 Visual Learning Engine——执行轨迹动画（M9 实施）
 
 代码执行 → **Trace 记录** → **模板渲染动画**。绝不让 LLM 直接生成动画数据/视频（LLM 只生成示例代码，走同一条 trace 管线）。
 
-### 7.2 采集器（server/core/tracer.py，纯标准库）
+### 8.3 采集器（server/core/tracer.py，纯标准库）
 
 - 机制：子进程内 `sys.settrace()`，监听 `call/line/return` 事件 + 每步局部变量快照
 - 堆对象模型：list/dict/set/自定义对象分配 heap_id，快照中以 `$ref` 去重（Python Tutor 同思路）
 - 限制：单文件脚本、禁 IO/import 白名单外模块、总步数上限 10000、超时 10s（子进程 kill）
 - 信任级说明：本地个人应用运行用户自己写的代码，等同用户手动跑脚本；CPU/内存/网络硬隔离沙箱留待 Phase 5 Docker 方案
 
-### 7.3 TraceEvent v1 契约（前后端唯一接口，版本化）
+### 8.4 TraceEvent v1 契约（前后端唯一接口，版本化）
 
 ```json
 {"v":1,"steps":[
@@ -482,7 +521,7 @@ schema v1：
    "stdout":"..."}]}
 ```
 
-### 7.4 渲染模板（纯前端插件，新模板不动管线）
+### 8.5 渲染模板（纯前端插件，新模板不动管线）
 
 | 模板 | 场景 | 实现 |
 |---|---|---|
@@ -497,7 +536,9 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 
 ---
 
-## §9 API 设计（REST，前缀 /api）
+## §9 API 设计（REST，前缀 /api/v1——版本化，破坏性变更升 /v2）
+
+> 响应形状的唯一契约定义于 `shared/types/*.ts`，由 pytest 契约测试锁定（separation.md §五）。
 
 | 方法&路径 | 说明 |
 |---|---|
@@ -536,7 +577,8 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | M2 | 双链·反链·搜索·图谱 | `[[标题]]` 自动补全并可点击跳转；反链面板列出引用者；FTS5 搜索毫秒级返回；React Flow 全局图+双击节点局部图；Note↔Note、Note↔Concept 边可见 |
 | M2b | Mind Map 编辑器 | 笔记⇄导图双模式切换实时同步；Tab/Enter/拖拽改父（环检测生效）；折叠持久化；旁车 json 落盘；FTS 能命中导图文本；[[链接]] 经大纲段进入图谱 |
 | M3 | Learning Graph | 概念 CRUD；四维掌握度随事件变化（pytest 覆盖权重/衰减/SM-2 数学）；Dashboard 显示雷达图与状态徽章；FORGOTTEN 自动进复习队列 |
-| M4 | AI Tutor | 设置页填任意 OpenAI-compatible 端点即通；流式回答渲染 Markdown+KaTeX；问"什么是特征值"时上下文透视可见注入的掌握度/错误记录；回合后 mastery 数值自动变化；auto-link 建议弹 Accept/Ignore；Concept 页「生成思维导图」一键产出旁车 json+大纲并全量 ai_suggested 入图 |
+| M3b | Knowledge Universe 视觉层 | 三模式切换（Galaxy/Explorer/Memory Map）；四维视觉编码生效（大小=连接度推导/亮度=effective/颜色=domain/呼吸=活跃度）；FORGOTTEN 变暗且复习后点亮；requires 技能树逐层展开；2 层动态过滤；d3-force 布局（ADR-007） |
+| M4 | AI Tutor | 设置页填任意 OpenAI-compatible 端点即通；流式回答渲染 Markdown+KaTeX；问"什么是特征值"时上下文透视可见注入的掌握度/错误记录；回合后 mastery 数值自动变化；auto-link 建议弹 Accept/Ignore；Concept 页「生成思维导图」一键产出旁车 json+大纲并全量 ai_suggested 入图；AI Explain 时概念链在 Galaxy 上路径点亮 |
 | M5 | 复习闭环 | 今日复习队列可答题（自评+quiz 两种）；答题驱动 SM-2 重排；Dashboard 学习时间线可见事件流 |
 | M6 | Tauri 桌面版 | 安装 Rust 工具链；PyInstaller 打包后端；`tauri dev/build` 出 exe；双击启动=完整应用；数据目录迁移至 userData |
 | M7 | LAN Sync v1 | 第二设备经配对码完成配对；双向同步 vault+attachments+eventlogs 三类白名单；新增/变更/删除三态正确；冲突保留双份并出现在解决列表；db/settings/密钥验证永不出现在传输内容中 |

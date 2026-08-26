@@ -17,6 +17,7 @@
 | M2 | 双链·反链·FTS5·React Flow 图谱 | `[ ]` | — |
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
+| M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[ ]` | — |
 | M5 | 复习闭环（队列/测验/时间线） | `[ ]` | — |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
@@ -27,10 +28,10 @@
 
 ## M0 任务拆解（当前）
 
-- [ ] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/settings
+- [ ] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/v1/settings
 - [ ] web/：Vite React TS + Zustand store 骨架 + global.css + 六视图占位路由切换 + api client
 - [ ] 联调：Vite proxy `/api`→8000；两条启动命令验证通过
-- [ ] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/settings 读写往返）；vitest 占位
+- [ ] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/v1/settings 读写往返）；vitest 占位
 - [ ] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
 
 ## 挂起区（有明确触发条件，未排期）
