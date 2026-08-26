@@ -1,6 +1,6 @@
 # 依赖注册表（Dependency Registry）
 
-> 政策见 `AGENTS.md` §2 与 `docs/architecture/ADR-004`。
+> 政策流程详见 `docs/dependencies/dependency-policy.md` · `AGENTS.md` §2 · ADR-004。
 > **任何新增第三方依赖必须先通过六连问审查，再按下方模板登记于本文件，答不全不准合入。**
 > 已否决备选清单：`docs/TECH_DESIGN.md` §3.2（禁止回潮）。
 

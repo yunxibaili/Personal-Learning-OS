@@ -3,6 +3,10 @@
 > 本文件是**强制工程约束**，不是建议。任何后续功能设计、代码生成、架构调整、依赖引入、数据结构设计、文件操作、版本控制设计都必须遵守。
 > 若需求与本文冲突：① 不得自行绕过；② 必须明确指出冲突；③ 说明现有规则为何无法满足；④ 给出最小改动方案；⑤ 经确认后才能修改架构原则。
 > 准备实施下述行为时必须先发出 `[ARCHITECTURE WARNING]` 并等待确认（见 §7）。
+>
+> **任何会话开始写代码之前，必须先通读以下四份文件**：
+> ① `docs/architecture/principles.md`　② `docs/dependencies/dependency-policy.md`
+> ③ `docs/security/network-boundary.md`　④ `docs/version-control/git-policy.md`
 
 ## 0. 核心工程原则
 
@@ -95,6 +99,10 @@ learning-os/            # 应用源码，Git 管理
 - 用户知识库 / 用户代码 / AI 生成内容 / 应用源码四者明确区分
 - "代码上传"只能理解为 Import / Attach / Open / Sync，绝不复制进应用源码
 - 应用默认不修改用户原始代码
+- **本地归档区 `_local/`**（仓库根，整体 .gitignore）：旧代码快照、被替换的历史文档版本、
+  临时实验脚本、个人调试脚本——仅存本机，永不提交。
+  注意：正式回归测试（pytest/vitest 用例）不属于此列，必须随代码入库（可复现开发原则，
+  见 `docs/security/network-boundary.md`「本地归档区」节）
 
 ## 4. 版本控制（第一天启用）
 
@@ -177,17 +185,28 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 
 | 文档 | 职责 |
 |---|---|
-| `AGENTS.md`（本文件） | 工程宪法 |
+| `AGENTS.md`（本文件） | 工程宪法（操作摘要与强制流程） |
+| `docs/architecture/principles.md` | 十大核心原则权威来源 |
+| `docs/architecture/`（ADR-\*） | 重大决策记录（禁止只在聊天记录中决定架构） |
+| `docs/dependencies/dependency-policy.md` | 依赖引入流程与红线 |
+| `docs/dependencies/REGISTRY.md` | 依赖注册表 + Review 模板 + 审计记录 |
+| `docs/security/network-boundary.md` | 网络边界 / 出站白名单 / 数据不出本机规则 |
+| `docs/version-control/git-policy.md` | 分支/提交/标签/发布策略 |
+| `docs/data-model/INDEX.md` | 数据模型变更索引 |
+| `docs/tasks/TASKS.md` | 任务列表与完成报告（见 §11） |
 | `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
 | `README.md` | 入口说明 |
-| `docs/architecture/` | ADR 重大决策记录（禁止只在聊天记录中决定架构） |
-| `docs/dependencies/REGISTRY.md` | 依赖注册表 + Review 模板 |
-| `docs/version-control/POLICY.md` | 分支/提交/标签/发布策略 |
-| `docs/data-model/INDEX.md` | 数据模型变更索引 |
+| `CHANGELOG.md` | 变更日志 |
 
 同步义务：出现新依赖 / 新模块 / 新数据结构 / 新 API / 新存储机制 / 新版本控制规则 /
 新代码执行机制时，对应文档必须在同一批变更中更新——不允许代码变了文档没变。
 新想法一律写入 TECH_DESIGN §10 backlog；里程碑验收标准见 §10。
+
+## 11. 任务与报告制度（强制）
+
+- 全部开发任务登记于 `docs/tasks/TASKS.md`：开始前写计划，完成后回填报告
+- 报告必须包含：做了什么 · 改动文件 · **测试了什么（实际执行的测试命令+预期/实际结果表）** · 遗留问题
+- 未回填报告的任务视为未完成；里程碑收尾三件事：依赖审计 → CHANGELOG → tag
 
 ## 快速参考
 
@@ -197,4 +216,6 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | 前端 | React + TypeScript + Vite + Zustand + 单一 global.css |
 | 端口 | FastAPI :8000，Vite :5173（proxy `/api` → 8000） |
 | 测试 | pytest（server/tests），vitest（web）——只测 core 逻辑，不为 UI 写测试 |
+| 任务跟踪 | docs/tasks/TASKS.md（完成必须回填测试报告） |
+| 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
 | 用户数据 | 一律在 `workspace/`（默认路径，设置可改），永不入库 |

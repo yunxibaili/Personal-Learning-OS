@@ -1,7 +1,7 @@
 # Personal Learning OS — 技术设计文档
 
 > 本文档是项目唯一技术设计来源。所有依赖决定附「被否掉的备选及原因」，防止未来开发会话把已否决的方案加回来。配套工程宪法见仓库根 `AGENTS.md`。
-> 依赖登记与审查：`docs/dependencies/REGISTRY.md` · 重大架构决策：`docs/architecture/`（ADR） · 版本控制：`docs/version-control/POLICY.md`
+> 依赖登记与审查：`docs/dependencies/dependency-policy.md` + `REGISTRY.md` · 重大架构决策与原则：`docs/architecture/`（ADR + principles） · 安全边界：`docs/security/network-boundary.md` · 版本控制：`docs/version-control/git-policy.md`
 
 ---
 
