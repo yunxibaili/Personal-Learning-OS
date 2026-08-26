@@ -16,5 +16,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   AI Tutor 管线 / Mind Map 系统 / Visual Engine 预设计 / API / 里程碑 M0–M8）
 - ADR-001 存储分层 · ADR-002 思维导图存储 · ADR-003 LLM 接入 · ADR-004 依赖管理
 - docs/dependencies/REGISTRY.md 依赖注册表
-- docs/version-control/POLICY.md 版本控制策略
+- docs/version-control/git-policy.md 版本控制策略
 - docs/data-model/INDEX.md 数据模型变更索引
+
+### Changed
+- 产品定位升级为 Local-first 多端：桌面(Tauri) + 移动(RN, Android 先行) + LAN 同步；
+  浏览器降级为开发视图，App-first 数据规约自第一天生效
+- 里程碑重排：M7 LAN Sync v1 · M8 Mobile MVP · M9 Visual Engine · M10 AI 可视化
+- FastAPI 端口支持 `PORT` 环境变量覆盖（默认 8000，与 UpMark 共存时 8100）
+
+### Added (Architecture Records)
+- ADR-005 局域网同步模型：文件为同步唯一真相（md+旁车json+附件+eventlogs jsonl）、
+  manifest/sha256 三态对比、冲突保留双份、配对 token 认证、SQLite/settings 永不同步
+- ADR-006 移动端技术栈：React Native(Expo)+混合内核——SM-2/掌握度数学移植 TS(~200 行)，
+  pytest↔vitest 同夹具一致性测试为合并门禁；AI 走桌面(LAN)或直连云的降级阶梯
+- docs/architecture/integration-upmark.md：UpMark 联动计划（错题登记→掌握度→双向出题，
+  仅经其 REST 契约桥接）——**挂起中，未排期**
