@@ -20,6 +20,7 @@ import type {
 } from "@shared/types/note";
 import type { BacklinkItem } from "@shared/types/graph";
 import { TiptapEditor } from "../components/editor/TiptapEditor";
+import { KnowledgeRadar } from "../components/KnowledgeRadar";
 
 /** M1 知识库核心：列表 + TipTap 编辑（Markdown 进出）+ 防抖自动保存 + 附件上传。 */
 export function NoteEditorView() {
@@ -31,6 +32,8 @@ export function NoteEditorView() {
   const [backlinks, setBacklinks] = useState<BacklinkItem[]>([]);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<{ note_id: number; title: string }[] | null>(null);
+  const [showRadar, setShowRadar] = useState(false);
+  const [radarQuery, setRadarQuery] = useState("");
   const editorRef = useRef<Editor | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusNoteId = useUi((s) => s.focusNoteId);
@@ -68,6 +71,45 @@ export function NoteEditorView() {
       useUi.getState().clearFocus();
     }
   }, [focusNoteId, openNote]);
+
+  // Ctrl+Shift+K 切换 Knowledge Radar
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "K") {
+        e.preventDefault();
+        setShowRadar((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // 提取当前段落/选文作为 radar 查询词
+  const extractRadarQuery = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    const selected = editor.state.doc.textBetween(from, to, " ").trim();
+    if (selected) {
+      setRadarQuery(selected);
+      return;
+    }
+    // 取光标所在段落
+    const $from = editor.state.selection.$from;
+    const start = $from.start();
+    const end = $from.end();
+    const text = editor.state.doc.textBetween(start, end, " ").trim();
+    setRadarQuery(text.slice(0, 100));
+  }, []);
+
+  // 编辑器内容变化时提取查询词（仅 radar 开启时）
+  const onRadarContentChange = useCallback(() => {
+    if (showRadar) extractRadarQuery();
+  }, [showRadar, extractRadarQuery]);
+
+  useEffect(() => {
+    if (showRadar) extractRadarQuery();
+  }, [showRadar, extractRadarQuery]);
 
   const runSearch = useCallback(async () => {
     const query = q.trim();
@@ -209,6 +251,12 @@ export function NoteEditorView() {
                 }}
               />
               <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
+              <button
+                className={showRadar ? "radar-active" : ""}
+                onClick={() => { setShowRadar((v) => !v); }}
+              >
+                {showRadar ? "⚡" : "○"} 知识雷达
+              </button>
             </div>
             {results !== null && (
               <ul className="search-results">
@@ -225,9 +273,16 @@ export function NoteEditorView() {
             <TiptapEditor
               key={detail.id}
               initialMarkdown={detail.content_md}
-              onChange={scheduleSave}
+              onChange={(md) => { scheduleSave(md); onRadarContentChange(); }}
               onReady={onEditorReady}
             />
+            {showRadar && (
+              <KnowledgeRadar
+                query={radarQuery}
+                noteId={activeId}
+                onOpenNote={(id) => void openNote(id)}
+              />
+            )}
             {backlinks.length > 0 && (
               <div className="backlinks">
                 反链（{backlinks.length}）：
