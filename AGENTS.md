@@ -88,6 +88,8 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
   db、settings、API key 永不参与同步（ADR-005）
 - **图谱分层铁律**：React Flow 仅渲染（graph-ui）；节点/边/关系与全部图计算归
   Core（graph-core）；布局引擎独立模块——UI 组件内禁止图计算（ADR-008/separation.md）
+- **用户数据永不锁死**：vault 永远是开放 Markdown；系统必须始终保留一键全量导出能力
+  （MD+附件+JSON 元数据，backlog T-EXPORT）；禁止引入阻碍导出/迁移的私有格式或云端绑定
 
 ### 3.1 数据所有权分离
 应用源码（server/ web/ docs/）与用户数据严格分离：
@@ -218,6 +220,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/architecture/integration-upmark.md` | UpMark 联动计划（挂起中，未排期） |
 | `docs/architecture/separation.md` | 分层架构规范（四层职责/接口先行/契约测试） |
 | `docs/environment.md` | 环境治理规则与版本基线（sandbox/_local/收尾四件事） |
+| `CONTRIBUTING.md` | 开源贡献指南 |
 | `docs/tasks/TASKS.md` | 任务列表与完成报告（见 §11） |
 | `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
 | `README.md` | 入口说明 |
@@ -260,6 +263,12 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 ```
 
 禁止先写页面再临时拼后端。
+
+### 设计三问（随八项清单一并作答）
+
+1. 这是用户真正需要的吗？
+2. 是现在必须做的吗？
+3. 三个月后新人能看懂吗？
 
 ## 快速参考
 

@@ -7,7 +7,30 @@
 
 ## §1 项目定位
 
-**一句话**：Local-first 的 AI 个人学习操作系统——以 Markdown 为内容，以 Knowledge Graph 为结构，以 Learning Memory 为核心，以 AI Tutor 为智能层。
+> **Open Learning OS** is an open-source, local-first AI learning environment that helps people
+> collect knowledge, understand concepts, practice skills, and build long-term memory.
+>
+> 一个开源、本地优先、AI 驱动的学习型知识操作系统：帮助用户收集知识、理解概念、
+> 练习技能，并形成长期记忆。
+
+**核心价值不是记录信息，而是帮助用户学会信息。**
+不设"击败 Obsidian/Notion"目标，不做商业 SaaS——避免无限堆功能。
+
+**用户画像**：
+| 类别 | 谁 | 诉求 |
+|---|---|---|
+| P1 第一用户 | 项目所有者 | 高等数学/编程学习、备考、长期知识库 |
+| P2 学习者 | 大学生·自学者·转行程序员·考证人群 | 易安装、数据开放、不被锁定 |
+| P3 贡献者 | 开源社区 | 文档完善、架构可读、扩展点清晰 |
+
+**三层数据架构（不许混）**：
+
+```
+L1 User Content     workspace/vault/*.md            用户写的内容（Markdown 真相）
+L2 Knowledge Graph  concepts + links                知识本身及其关系（类型化实体）
+L3 Learning Memory  concept_mastery + events +      我和知识的关系（掌握度/错误/
+                    mistakes + memories              遗忘/偏好——产品灵魂）
+```
 
 **产品形态**：多端 Local-first——Tauri 桌面应用（Windows 先行）+ React Native 移动端（Android 先行），
 设备间经局域网文件同步（§2.4 与 ADR-005/006）。浏览器只是开发期前端视图，交付物是桌面与手机 App。
@@ -16,6 +39,7 @@
 - 普通笔记软件（Obsidian/Notion 替代品）
 - AI 聊天工具
 - 在线 IDE
+- 商业 SaaS / 云端绑定服务
 
 差异化壁垒（按优先级）：
 1. **Learning Graph**：知识图谱 × 用户学习状态（掌握度/错误/遗忘），AI 因此知道"我学过什么、哪里薄弱"
@@ -605,3 +629,13 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 - XMind(.xmind) / markmap(.mm) 文件导入
 - 同步增强：WebSocket 实时推送 · CRDT(Yjs/Automerge，触发=双端并发编辑冲突频发) · 后台常驻同步 · iOS 客户端 · memories/conversations 跨端同步
 - **UpMark 联动**（错题登记→概念掌握度→双向出题）：挂起中，见 docs/architecture/integration-upmark.md
+
+### Future Roadmap（云端与开源生态——明确延后，只预留接口，禁止提前实现）
+
+| 项 | 预留方式 | 解锁触发 |
+|---|---|---|
+| Cloud Service（用户系统·云同步·云向量·云AI） | provider/settings/WORKSPACE_DIR 抽象即接口 | 有真实多用户需求 |
+| 插件体系 `plugins/{math,programming,language}` | 仅目录与加载点设计约定 | 开源社区阶段 |
+| i18n 国际化 | 文案集中化管理 | 首个外部贡献者/英文需求 |
+| Docker 打包 | 构建脚本位预留 | 首次对外公开发布前 |
+| **T-EXPORT 全量数据导出**（vault+attachments+metadata+settings.json → zip） | —— | **首次对外公开发布前必须**（数据不锁死红线，AGENTS §3） |

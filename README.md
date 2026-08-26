@@ -1,8 +1,17 @@
-# Personal Learning OS
+# Personal Learning OS · Open Learning OS
 
-Local-first 的 AI 个人学习操作系统：Markdown 知识库 × 知识图谱 × 学习记忆（掌握度/错误/遗忘）× 记忆感知 AI Tutor。
+> **Open Learning OS** is an open-source, local-first AI learning environment that helps people collect knowledge, understand concepts, practice skills, and build long-term memory.
+>
+> 一个开源、本地优先的 AI 学习操作系统：帮助用户建立知识库、理解概念、练习技能，并形成长期记忆。
 
-不是笔记软件，不是聊天工具——是一个知道"你学过什么、哪里薄弱、下一步学什么"的学习系统。
+核心价值不是"记录信息"，而是**帮助用户学会信息**：
+Markdown 知识库 × 类型化知识图谱 × 学习记忆（四维掌握度 / SM-2 复习 / 错误本）× 记忆感知 AI Tutor。
+
+**不做的事**：对标或击败 Obsidian/Notion · 商业 SaaS · 云端绑定 · 用户锁死。
+你的数据永远是开放的 Markdown + SQLite，随时可整库带走。
+
+**为谁而做**：备考与自学者（高等数学/编程/考证）· 长期知识库构建者 · 开源贡献者。
+架构对三者承诺：文档完善 · 一键运行 · 数据开放 · 可扩展（插件体系已预留设计）。
 
 ## 环境要求
 

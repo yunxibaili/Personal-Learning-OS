@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **项目重定位：Open Learning OS（开源 AI 学习型知识操作系统）**：双语北极星定位/
+  三类用户画像/不做清单；三层数据架构（Content→Graph→Memory）；CONTRIBUTING.md；
+  根目录 PROJECT_BRIEF.md 决策资料包；宪法新增「用户数据永不锁死」红线与设计三问；
+  Future Roadmap 延后清单（云端/插件/i18n/Docker/T-EXPORT 导出承诺）
 - **ADR-008 知识图谱数据模型冻结**（M1.5）：Node=类型化 Entity（note/concept，预留
   code_symbol 等）；三张旧关系表统一为多态 `links` 表（migration 002，发布前破坏性整理）；
   `[[wiki链接]]` 三级解析规则与附件路径政策；图谱分层铁律入宪法；
