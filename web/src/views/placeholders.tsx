@@ -11,16 +11,6 @@ export function Placeholder(props: { title: string; desc: string; milestone: str
   );
 }
 
-export function NoteEditorView(): ReactNode {
-  return (
-    <Placeholder
-      title="笔记"
-      desc="TipTap 编辑器 · $LaTeX$ 渲染 · 图片/PDF 附件 · vault 双链"
-      milestone="M1-M2"
-    />
-  );
-}
-
 export function GraphView(): ReactNode {
   return (
     <Placeholder

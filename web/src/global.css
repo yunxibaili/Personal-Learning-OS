@@ -73,3 +73,92 @@ body {
   color: var(--accent);
   font-size: 12px;
 }
+
+/* ---- M1 笔记编辑器 ---- */
+.notes-layout {
+  display: flex;
+  height: 100%;
+  gap: 12px;
+}
+
+.note-list {
+  width: 240px;
+  border-right: 1px solid var(--border);
+  padding-right: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.note-list button {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.note-list button.primary { border-color: var(--accent); }
+
+.note-list ul { list-style: none; margin: 4px 0 0; padding: 0; }
+.note-list li {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-list li:hover { color: var(--text); background: var(--bg-panel); }
+.note-list li.active { color: var(--text); background: var(--bg-panel); }
+
+.editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+.editor-toolbar button {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.save-state { color: var(--ok); font-size: 12px; margin-right: auto; }
+.error-banner {
+  border: 1px solid #b3564d;
+  background: rgba(179, 86, 77, 0.15);
+  color: #e08c85;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.empty-hint { color: var(--text-dim); }
+
+/* TipTap 编辑区 */
+.tiptap .ProseMirror {
+  outline: none;
+  min-height: calc(100vh - 160px);
+  line-height: 1.7;
+}
+.tiptap .ProseMirror h2 { border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.tiptap pre {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  overflow-x: auto;
+}
+.tiptap code { font-family: Consolas, monospace; }
+.katex { color: inherit; }

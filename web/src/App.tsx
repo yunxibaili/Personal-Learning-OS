@@ -1,9 +1,9 @@
 import { useUi, type ViewKey } from "./stores/ui";
+import { NoteEditorView } from "./views/NoteEditor";
 import {
   GraphView,
   MemoryDashboardView,
   MindMapView,
-  NoteEditorView,
   ReviewQueueView,
   TutorPanelView,
 } from "./views/placeholders";

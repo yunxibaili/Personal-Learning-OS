@@ -14,14 +14,16 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  // FormData 由浏览器自带 boundary；仅 JSON 请求显式声明 Content-Type
+  if (init?.body != null && typeof init.body === "string") {
+    headers.set("Content-Type", "application/json");
+  }
+
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, {
-      headers: { "Content-Type": "application/json" },
-      ...init,
-    });
+    res = await fetch(`${BASE}${path}`, { ...init, headers });
   } catch {
-    // 网络层失败（后端未启动/断网）
     throw new ApiError("network_error", "无法连接本地服务", 0);
   }
 
@@ -36,4 +38,20 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   return body as T;
+}
+
+export const apiGet = <T,>(path: string) => api<T>(path);
+
+export const apiPost = <T,>(path: string, data?: unknown) =>
+  api<T>(path, { method: "POST", body: JSON.stringify(data ?? {}) });
+
+export const apiPatch = <T,>(path: string, data: unknown) =>
+  api<T>(path, { method: "PATCH", body: JSON.stringify(data) });
+
+export const apiDelete = <T,>(path: string) => api<T>(path, { method: "DELETE" });
+
+export function apiUpload<T>(path: string, file: File): Promise<T> {
+  const fd = new FormData();
+  fd.append("file", file);
+  return api<T>(path, { method: "POST", body: fd });
 }
