@@ -14,7 +14,7 @@
 | 任务 | 内容 | 状态 | 完成报告 |
 |---|---|---|---|
 | M0 | 双端脚手架 + migration runner + 必读文档体系就位 | `[x]` 完成 | [T-M0](#t-m0-m0-脚手架完成2026-08-26) |
-| M1 | 知识库核心（CRUD/TipTap/LaTeX/附件） | `[ ]` | — |
+| M1 | 知识库核心（CRUD/TipTap/LaTeX/附件） | `[x]` 完成 | [T-M1](#t-m1-m1-知识库核心完成2026-08-26) |
 | M2 | 双链·反链·FTS5·React Flow 图谱 | `[ ]` | — |
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
@@ -138,6 +138,42 @@
 
 - **结果与遗留**：M0 的 pip/npm 安装均在已批准的八项清单内，符合新规精神；
   自此任何清单外安装必须先走 ECR
+
+### T-M1 M1 知识库核心完成（2026-08-26）
+
+**1. 文件变化列表**（14 新增/实装 + 6 文档更新）
+- Backend：`app/core/knowledge.py`(Core 首驻) · `routers/{notes,attachments,search}.py` · `tests/{test_notes,test_attachments}.py` · `main.py` 挂载
+- Frontend：`views/NoteEditor.tsx`(实装) · `components/editor/TiptapEditor.tsx` · `lib/api.ts`(类型化+upload) · App/占位表/css
+- 契约：`shared/types/note.ts` + tsconfig/vite `@shared` 别名
+- 依赖：+6 npm（tiptap v3 线×3、tiptap-markdown、math-ext、katex）· +1 pip（python-multipart）
+
+**2. 依赖清单**：REGISTRY 运行时表新增 tiptap-markdown(0.9.x)、python-multipart；TipTap 家族升级 v3 线（TECH_DESIGN §3.1 注记）
+
+**3. 启动方式验证**：同 M0 双命令 + dev 联调实测
+
+**4. Migration 结果**：无新 migration（复用 001）
+
+**5. API 测试结果**
+
+| 请求 | 结果 |
+|---|---|
+| POST /notes → GET detail → PATCH(内容+tags) → PATCH 改名 → DELETE | 全通过；文件与索引同步增删改 |
+| POST 重名 | 409 duplicate_title |
+| GET /search?q= | FTS5 命中正文词；缺 q 返 400 missing_q |
+| POST /attachments (png/pdf/exe) | png/pdf 通过并可回读字节一致；exe 400 bad_type |
+
+**6. pytest 结果**：**18 passed**（smoke 6 + notes 8 + attachments 4）；vitest 2 passed；build 通过（bundle 946KB，见已知问题）
+**端到端**：经 5173 代理建「Taylor Expansion」→ FTS 搜到 → vault .md UTF-8 正确落盘 ✅（测试数据已清理）
+
+**7. 已知问题**
+- **图片内嵌渲染暂缓**：需 `@tiptap/extension-image`（TipTap 官方件，不在已批清单）→ ECR 待批；当前 PDF 以链接插入、图片仅上传返回 URL
+- TipTap 从拟定的 v2 升为 **v3 线**：两个已批准依赖的现行 peer 契约均要求 v3，钉死 v2 需引入停更旧版——已在 REGISTRY/TECH_DESIGN 显式记录
+- bundle 946KB（KaTeX 字体为主）：后续用动态 import 分包优化
+- FTS5 默认 tokenizer 对中文分词有限（ADR-001 已知项），搜索 UI 在 M2 时评估 trigram/tokenize 方案
+- PowerShell 管道写 UTF-8 源码会乱码——一律使用 Write 工具（流程教训）
+
+**8. 下一阶段建议**
+M2 双链·反链·图谱：`[[标题]]` 解析进 note_links、反链查询、GraphView(React Flow 安装触发)。
 
 ## 完成报告模板（复制使用）
 

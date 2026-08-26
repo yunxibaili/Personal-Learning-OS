@@ -103,8 +103,13 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 | Web | @xyflow/react | 知识图谱视图 |
 | Web | @tiptap/react / @tiptap/pm / @tiptap/starter-kit | 富文本编辑器内核 |
 | Web | @aarkue/tiptap-math-extension | `$...$` 行内/块级 LaTeX（KaTeX 驱动，社区免费） |
+| Web | tiptap-markdown | TipTap JSON ↔ Markdown 双向转换；**禁作存储格式**，真相仍是 vault .md |
+| Python | python-multipart | 附件上传的 form-data 解析（FastAPI UploadFile 必需件） |
 
 开发依赖：vite、typescript、vitest、pytest、@types/*、@vitejs/plugin-react。
+
+> **TipTap 家族实装为 v3 线**（@tiptap/* 3.x）：由已批准依赖 tiptap-markdown 0.9 与
+> aarkue 数学扩展 1.4 的 peer 契约决定（2026-08-26）；v2 线已停止演进，钉旧版违背维护性要求。
 
 > 本表仅为摘要。完整登记（License/维护状态/Dependency Review 模板）见 `docs/dependencies/REGISTRY.md`；
 > 新增任何依赖前必须通过六连问审查（AGENTS.md §2）。
