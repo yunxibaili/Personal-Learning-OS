@@ -1,7 +1,6 @@
 """pytest fixtures：隔离的临时 workspace + TestClient。"""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest

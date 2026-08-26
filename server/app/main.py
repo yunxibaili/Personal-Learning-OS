@@ -18,6 +18,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .db import APP_ROOT, init_db
 from .routers.attachments import router as attachments_router
+from .routers.graph import router as graph_router
+from .routers.links import router as links_router
 from .routers.notes import router as notes_router
 from .routers.search import router as search_router
 from .routers.settings import router as settings_router
@@ -38,8 +40,10 @@ def create_app() -> FastAPI:
                   lifespan=lifespan)
     app.include_router(settings_router)
     app.include_router(notes_router)
+    app.include_router(links_router)
     app.include_router(attachments_router)
     app.include_router(search_router)
+    app.include_router(graph_router)
 
     @app.exception_handler(RequestValidationError)
     def on_validation_error(_req, exc: RequestValidationError) -> JSONResponse:

@@ -91,6 +91,12 @@ def create_note(body: NoteCreate) -> dict:
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
                             tags=[], body=body_text, mtime=mtime)
+        if K.has_forbidden_media_path(body.content_md):
+            conn.rollback()
+            return _err(400, "bad_attachment_path",
+                        "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
+        K.promote_stub_to_note(conn, note_id, title)
+        link_stats = K.rebuild_note_links(conn, note_id, body_text)
         conn.commit()
     except OSError as exc:
         conn.rollback()
@@ -152,12 +158,18 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
         )
         mtime = time.time()
         if changed_file:
+            if K.has_forbidden_media_path(new_body):
+                conn.rollback()
+                return _err(400, "bad_attachment_path",
+                            "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
             target.write_text(K.compose_file(new_tags, new_body), encoding="utf-8")
             if new_rel != old_path:
                 os.unlink(K.resolve_vault_file(old_path))
 
         K.upsert_note_index(conn, note_id=note_id, path=new_rel, title=new_title,
                             tags=new_tags, body=new_body, mtime=mtime)
+        if changed_file:
+            K.rebuild_note_links(conn, note_id, new_body)
         conn.commit()
     except OSError as exc:
         conn.rollback()
@@ -188,6 +200,7 @@ def delete_note(note_id: int) -> dict:
         if p.exists():
             p.unlink()
         K.drop_note_index(conn, note_id)
+        K.cascade_drop_entity(conn, "note", note_id)
         conn.commit()
     finally:
         conn.close()
