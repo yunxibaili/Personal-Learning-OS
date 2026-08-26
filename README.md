@@ -40,8 +40,17 @@ npm run dev
 
 ## 当前进度
 
-📋 任务看板与完成报告：[docs/tasks/TASKS.md](docs/tasks/TASKS.md) —— 当前焦点：**M0 脚手架**
+📋 任务看板与完成报告：[docs/tasks/TASKS.md](docs/tasks/TASKS.md) —— 当前焦点：**M2 双链·反链·图谱已完成 / M3.5-A 知识雷达 MVP 已完成**
 每个里程碑的验收标准见 [docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10。
+
+| 里程碑 | 状态 | 内容 |
+|---|---|---|
+| M0 脚手架 | ✅ | FastAPI + React + migration runner + workspace |
+| M1 知识库核心 | ✅ | notes CRUD + TipTap + KaTeX + 附件 + FTS5 |
+| M2 双链·图谱 | ✅ | [[wikilink]] 解析 + 反链 API + 图谱读模型 + React Flow |
+| M3.5-A 知识雷达 | ✅ | 全知领域 Phase A：上下文匹配 + 图谱邻居 + Radar 面板 |
+| M3 Learning Graph | 🔜 | 掌握度 / SM-2 / Dashboard |
+| M3.5-B 全知领域 | 🔜 | +掌握度 +复习建议 +错误历史（前置 M3） |
 
 ## 目录
 
