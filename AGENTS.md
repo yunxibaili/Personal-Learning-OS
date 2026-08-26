@@ -286,3 +286,26 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 | 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
 | 实验沙盒 | `sandbox/` 一次性实验用完即删；版本基线与环境变量见 docs/environment.md |
 | 用户数据 | 一律在 `workspace/`（默认路径，设置可改），永不入库 |
+| 一键测试 | `.\scripts\test.ps1`（全量）/ `-Smoke`（M2 烟测）/ `-Watch`（监听） |
+
+## 13. 测试基础设施规范（M2+ 强制）
+
+**三层测试体系**（M2 起每个功能必须覆盖）：
+
+| 层级 | 位置 | 工具 | 速度 | 何时运行 |
+|---|---|---|---|---|
+| Unit | `tests/unit/` | 纯函数调用 | <1s | 每次改 core |
+| API | `tests/api/` | FastAPI TestClient | ~2s | 每次改 router/core |
+| Smoke | `tests/api/test_*_smoke.py` | TestClient 全流程 | ~2s | 里程碑验收 |
+
+- **禁止手工启动 uvicorn 跑测试**——TestClient 一条命令出结果
+- **禁止 PowerShell `Invoke-RestMethod` 发送 UTF-8 中文 JSON 请求**（GBK 乱码）——统一用 pytest TestClient 或 Python httpx
+- 每个新功能必须拥有不依赖人工启动服务的自动化测试路径
+- 测试用例使用临时 workspace（`tmp_workspace` fixture），绝不触碰真实用户数据
+- SQLite 连接在断言时打开、用完即关——避免 TestClient 与 fixture 并发锁冲突
+
+## 14. Windows 开发环境红线
+
+- **UTF-8 源码禁止 PowerShell 管道写入**——一律使用 Write 工具
+- **API 测试禁止 `Invoke-RestMethod`**——GBK 控制台会把中文 JSON 体乱码
+- 进程管理（kill/start）合并为单条脚本，避免多次 bash 调用的 PowerShell 启动开销

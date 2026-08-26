@@ -176,7 +176,8 @@ CREATE TABLE concepts (
   aliases_json TEXT NOT NULL DEFAULT '[]',
   summary      TEXT NOT NULL DEFAULT '',
   domain       TEXT NOT NULL DEFAULT '',      -- 自由文本标签：数学/编程/...
-  origin       TEXT NOT NULL DEFAULT 'manual', -- manual|ai_suggested（AI 建点淡色过滤，§8.1/ADR-002）
+  origin       TEXT NOT NULL DEFAULT 'manual', -- manual|markdown|ai_suggested（来源）
+  status       TEXT NOT NULL DEFAULT 'active', -- stub生命周期: unconfirmed|confirmed|active|archived（migration 003）
   created_at   TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );

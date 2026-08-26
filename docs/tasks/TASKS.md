@@ -15,11 +15,11 @@
 |---|---|---|---|
 | M0 | 双端脚手架 + migration runner + 必读文档体系就位 | `[x]` 完成 | [T-M0](#t-m0-m0-脚手架完成2026-08-26) |
 | M1 | 知识库核心（CRUD/TipTap/LaTeX/附件） | `[x]` 完成 | [T-M1](#t-m1-m1-知识库核心完成2026-08-26) |
-| M2-A | Markdown 链接解析器（[[标题]] 三级解析/自动建桩/附件路径守卫，ADR-008） | `[ ]` | — |
-| M2-B | Link 索引与反链 API（统一 links 表/级联清理） | `[ ]` | — |
-| M2-C | 搜索 UI（FTS5 结果跳转） | `[ ]` | — |
-| M2-D | Graph Read Model（GET /api/v1/graph 递归 CTE） | `[ ]` | — |
-| M2-E | React Flow 基础图谱（仅渲染，无动画无 d3-force） | `[ ]` | — |
+| M2-A | Markdown 链接解析器（[[标题]] 三级解析/自动建桩/附件路径守卫，ADR-008） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
+| M2-B | Link 索引与反链 API（统一 links 表/级联清理） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
+| M2-C | 搜索 UI（FTS5 结果跳转） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
+| M2-D | Graph Read Model（GET /api/v1/graph 递归 CTE） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
+| M2-E | React Flow 基础图谱（仅渲染，无动画无 d3-force） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
@@ -236,6 +236,47 @@ M2 双链·反链·图谱：`[[标题]]` 解析进 note_links、反链查询、G
   | 待定项清理 | 许可证销号 | ✅ PROJECT_BRIEF §11 |
 
 - **结果与遗留**：进入 M2（A→E 顺序实施）；图片 ECR 已批件已装
+
+### T-M2 M2 双链·反链·图谱完成（2026-08-26）
+
+**1. 文件变化列表**（10 新增/实装 + 7 文档更新）
+- Backend Core：`knowledge.py` 扩展（extract_wikilinks/resolve_title/ensure_entity_by_title/promote_stub_to_note/rebuild_note_links/cascade_drop_entity/local_graph/backlinks_of_note/search LIKE fallback）
+- Backend Routers：`links.py`(新) · `graph.py`(新) · `notes.py`(hook+guard) · `main.py`(挂载)
+- Migration：`003_concept_status.sql`（concepts.status 列，stub 生命周期）
+- Frontend：`shared/types/graph.ts`(新) · `views/GraphView.tsx`(实装) · `views/NoteEditor.tsx`(反链面板+搜索框+跨视图聚焦) · `stores/ui.ts`(focusNoteId) · `global.css`(graph/搜索/反链样式) · `App.tsx`(import swap)
+- 测试：`tests/api/test_m2_smoke.py`(新，10 步全流程) · `tests/api/__init__.py` · `tests/unit/__init__.py`
+- 脚本：`scripts/test.ps1`(新，一键测试入口)
+- 文档：AGENTS §13/§14 · TECH_DESIGN §4.1 DDL · data-model INDEX · TASKS
+
+**2. 依赖清单**：@xyflow/react@12.11.5（M2-E 渲染件，仅渲染无计算）
+
+**3. 启动方式验证**：同 M1 双命令 + dev 联调
+
+**4. Migration 结果**：003_concept_status 应用成功（concepts 补 status 列，unconfirmed/confirmed/active/archived）
+
+**5. API 测试结果**
+
+| 请求 | 结果 |
+|---|---|
+| POST /notes（含 [[链接]]） | 201，自动建 concept 桩，links 表写入 |
+| POST 同名笔记 | 桩升级为笔记链接（promote_stub_to_note） |
+| GET /notes/{id}/backlinks | 正确返回所有 note→note 反链 |
+| GET /graph?root_type=note&root_id=N&depth=2 | 递归 CTE 返回 nodes/edges，learning 占位 |
+| GET /graph?root_type=alien | 400 bad_params |
+| GET /search?q= | FTS5 + LIKE fallback 大小写无关 |
+| POST 附件路径 C:\... | 400 bad_attachment_path |
+| DELETE /notes/{id} | 级联清理 links，无孤立记录 |
+| rebuild 两次 | 幂等（先删后写 + 唯一约束） |
+
+**6. pytest 结果**：**19 passed**（smoke 6 + notes 8 + attachments 4 + m2_smoke 1）；vitest 2 passed；build 通过
+
+**7. 已知问题**
+- FTS5 默认 tokenizer 对中文分词有限（ADR-011 已知项，unicode61 起步）
+- GraphView 布局为简单网格（M3b 接入 d3-force 后升级）
+- SQLite 并发锁：测试 fixture 需内联 open/close，不能跨 API 调用持有连接
+
+**8. 下一阶段建议**
+M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（掌握度/SM-2）
 
 ## 完成报告模板（复制使用）
 

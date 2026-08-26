@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M2 双链·反链·图谱**：[[wikilink]] 解析 + concept 桩自动创建/升级 + 统一 links 表索引
+  + 反链 API（GET /notes/{id}/backlinks）+ 级联删除 + 图谱读模型（递归 CTE，depth 1~3）
+  + React Flow 基础图谱（@xyflow/react 12，只读/单击跳转/双击局部展开/领域过滤）
+  + NoteEditor 反链面板 + 全文搜索框（FTS5+LIKE fallback）+ 跨视图聚焦
+  + 桩生命周期（migration 003：concepts.status unconfirmed→active）
+  + 附件路径守卫（禁止盘符/file://）+ rebuild 幂等
+- **测试基础设施**：tests/api/ 三层体系（unit/api/smoke）· scripts/test.ps1 一键入口 ·
+  AGENTS §13 测试规范 + §14 Windows 红线（禁止 Invoke-RestMethod UTF-8）
 - **架构评审落地**：ADR-009 Entity/Document 边界 · ADR-010 AI Context Architecture
   （Router 禁直连 LLM，RAG 仅作 Builder 数据源）· ADR-011 中文搜索延后
   （unicode61 起步，拒现阶段 jieba）· PRODUCT_PRINCIPLES.md 五条产品原则 ·

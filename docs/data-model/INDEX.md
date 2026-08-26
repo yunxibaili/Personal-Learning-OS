@@ -9,6 +9,7 @@
 |---|---|---|
 | 2026-08-26 | 初版 11 表 + notes_fts：settings/concepts/edges/concept_mastery/learning_events/mistakes/memories/notes/note_concepts/note_links/conversations/messages | TECH_DESIGN §4 |
 | 2026-08-26 | 决策：Mind Map 采用旁车 json，**零新表**（结构与布局由 `*.mindmap.json` 承载） | ADR-002 |
+| 2026-08-26 | migration 002：统一 links 表，DROP 三旧关系表；migration 003：concepts 补 `status` 列（stub→confirmed→active→archived 生命周期，origin 仅记来源） | ADR-008/009 · M2 |
 
 ## 延后建表（禁止提前创建）
 
