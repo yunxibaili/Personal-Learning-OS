@@ -4,7 +4,8 @@
 > 1. 任何开发任务开始前在此登记「计划」；完成后必须回填「完成报告」——
 >    含做了什么、改动文件、**测试了什么（逐条列出实际执行的测试命令与预期/实际结果）**、遗留问题。
 > 2. 未回填报告的任务视为未完成，不得开始依赖它的下一项任务。
-> 3. 里程碑收尾三件事：依赖审计（REGISTRY 审计表）· CHANGELOG 条目 · Git tag。
+> 3. 里程碑收尾**四件事**：依赖审计（REGISTRY 审计表）· 环境删除测试 + 删除优先检查
+>    （docs/environment.md §五）· CHANGELOG 条目 · Git tag。
 >
 > 状态：`[ ]` 待办 · `[~]` 进行中 · `[x]` 完成（附报告锚点）
 
@@ -122,6 +123,21 @@
 
 **8. 下一阶段建议**
 进入 **M1 知识库核心**：notes CRUD API + vault md 读写 + FTS 索引管线 + TipTap/KaTeX/math-extension 安装（届时在 REGISTRY 打钩确认）。开工前照例输出 §12 八项清单。
+
+### T-DOC-003 环境治理规则入库（2026-08-26）
+- **做了什么**：新增 docs/environment.md（版本基线/目录归属法/sandbox 规则/收尾四件事/
+  [ENVIRONMENT CHANGE REQUEST] 协议/环境变量表）；.gitignore 补 sandbox/ 与 server/.cache/；
+  AGENTS §7.1 ECR 协议、§11 收尾扩为四件事；network-boundary 同步两区边界说明
+- **改动文件**：docs/environment.md(新) · .gitignore · AGENTS · network-boundary · 本文件 · CHANGELOG
+- **测试了什么**：
+
+  | 检查 | 预期 | 实际 |
+  |---|---|---|
+  | git status 干净、无未归属目录 | 无 temp/backup 类目录 | ✅ |
+  | .gitignore 新条目生效 | sandbox//server/.cache 不再可跟踪 | ✅（git check-ignore 通过语义核对） |
+
+- **结果与遗留**：M0 的 pip/npm 安装均在已批准的八项清单内，符合新规精神；
+  自此任何清单外安装必须先走 ECR
 
 ## 完成报告模板（复制使用）
 

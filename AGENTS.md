@@ -164,6 +164,18 @@ learning-os/            # 应用源码，Git 管理
 如果强行实现的长期成本：
 ```
 
+### 7.1 [ENVIRONMENT CHANGE REQUEST] 协议（环境类）
+
+AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件 · 引入开发工具 · 保留无用代码。
+认为需要时先输出并等待确认：
+
+```
+[ENVIRONMENT CHANGE REQUEST]
+新增内容 / 目的 / 替代方案 / 删除风险 / 长期维护成本
+```
+
+完整治理规则见 `docs/environment.md`。
+
 ## 8. 核心创新优先级
 
 时间有限时按此排序，不为 UI 动画/配置系统/复杂插件系统牺牲核心：
@@ -203,6 +215,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/data-model/INDEX.md` | 数据模型变更索引 |
 | `docs/architecture/integration-upmark.md` | UpMark 联动计划（挂起中，未排期） |
 | `docs/architecture/separation.md` | 分层架构规范（四层职责/接口先行/契约测试） |
+| `docs/environment.md` | 环境治理规则与版本基线（sandbox/_local/收尾四件事） |
 | `docs/tasks/TASKS.md` | 任务列表与完成报告（见 §11） |
 | `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
 | `README.md` | 入口说明 |
@@ -217,7 +230,8 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 - **每次会话开始任何工作前，必须先读 `docs/tasks/TASKS.md` 对齐当前状态；收工前立即同步状态并回填报告**
 - 全部开发任务登记于 `docs/tasks/TASKS.md`：开始前写计划，完成后回填报告
 - 报告必须包含：做了什么 · 改动文件 · **测试了什么（实际执行的测试命令+预期/实际结果表）** · 遗留问题
-- 未回填报告的任务视为未完成；里程碑收尾三件事：依赖审计 → CHANGELOG → tag
+- 未回填报告的任务视为未完成；里程碑收尾**四件事**：依赖审计(REGISTRY) →
+  **环境删除测试 + 删除优先检查**（docs/environment.md §五）→ CHANGELOG → tag
 
 ## 12. 分层架构纪律（前后端分离，强制）
 
@@ -255,4 +269,5 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 | 测试 | pytest（server/tests），vitest（web）——只测 core 逻辑，不为 UI 写测试 |
 | 任务跟踪 | docs/tasks/TASKS.md（完成必须回填测试报告） |
 | 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
+| 实验沙盒 | `sandbox/` 一次性实验用完即删；版本基线与环境变量见 docs/environment.md |
 | 用户数据 | 一律在 `workspace/`（默认路径，设置可改），永不入库 |

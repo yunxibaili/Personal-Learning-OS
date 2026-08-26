@@ -38,6 +38,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - ADR-007：d3-force 单模块作为 D3 禁令唯一例外（Knowledge Universe 力导向布局）
 - docs/architecture/separation.md 分层架构规范（四层职责/接口先行五步/共享类型契约/
   AI 与同步模块隔离）；AGENTS §12 写码前输出协议（8 项清单）
+- docs/environment.md 环境治理：版本基线/目录归属六分类/sandbox 即弃实验区/
+  里程碑收尾四件事（+环境删除测试+删除优先检查）/ [ENVIRONMENT CHANGE REQUEST] 协议
 
 ### Changed
 - API 全面版本化：`/api` → `/api/v1`（M0 起生效）
