@@ -1,0 +1,27 @@
+# 用户私有数据——永不入库
+workspace/
+
+# 密钥与环境
+.env
+.env.*
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# 构建与测试产物
+coverage/
+*.log
+
+# 打包产物（M6 起）
+src-tauri/target/
+
+# OS
+.DS_Store
+Thumbs.db
