@@ -23,6 +23,8 @@
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
+| M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[ ]` | — |
+| M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[ ]` | — |
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[ ]` | — |
 | M5 | 复习闭环（队列/测验/时间线） | `[ ]` | — |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
@@ -38,6 +40,19 @@
 - [x] 联调：Vite proxy `/api/v1`→8000；两条启动命令验证通过
 - [x] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/v1/settings 读写往返）；vitest 占位
 - [x] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
+
+## M3.5-A 任务拆解（Knowledge Radar MVP）
+
+- [ ] ADR-012 落盘（Context-Aware Knowledge Assistance Architecture）
+- [ ] Core: `suggest_for_context()` 函数（FTS匹配 + concept LIKE + graph邻居 + memory占位）
+- [ ] Router: `GET /api/v1/knowledge/suggest` 路由 + 参数校验
+- [ ] Types: `shared/types/suggest.ts` 契约类型
+- [ ] Frontend: `KnowledgeRadar.tsx` 组件（debounce + 三区域渲染 + 点击跳转）
+- [ ] Frontend: NoteEditor 集成（showRadar状态 + Ctrl+Shift+K + 段落提取）
+- [ ] Frontend: CSS 样式
+- [ ] Tests: `test_suggest.py`（空库/匹配/邻居/参数校验）
+- [ ] Docs: TECH_DESIGN §9/§10 + TASKS + CHANGELOG + REGISTRY + data-model INDEX
+- [ ] 验收：pytest全绿 + vitest通过 + build成功
 
 ## 挂起区（有明确触发条件，未排期）
 

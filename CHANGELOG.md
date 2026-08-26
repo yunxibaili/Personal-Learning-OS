@@ -14,6 +14,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   + 附件路径守卫（禁止盘符/file://）+ rebuild 幂等
 - **测试基础设施**：tests/api/ 三层体系（unit/api/smoke）· scripts/test.ps1 一键入口 ·
   AGENTS §13 测试规范 + §14 Windows 红线（禁止 Invoke-RestMethod UTF-8）
+- **M3.5-A Knowledge Radar MVP（全知领域 Phase A）**：GET /knowledge/suggest 上下文匹配端点 ·
+  KnowledgeRadar.tsx 组件（debounce 500ms，Ctrl+Shift+K 唤起）· ADR-012 编辑器上下文感知架构
 - **架构评审落地**：ADR-009 Entity/Document 边界 · ADR-010 AI Context Architecture
   （Router 禁直连 LLM，RAG 仅作 Builder 数据源）· ADR-011 中文搜索延后
   （unicode61 起步，拒现阶段 jieba）· PRODUCT_PRINCIPLES.md 五条产品原则 ·
