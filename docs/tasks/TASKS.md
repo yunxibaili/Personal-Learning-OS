@@ -21,7 +21,7 @@
 | M2-D | Graph Read Model（GET /api/v1/graph 递归 CTE） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2-E | React Flow 基础图谱（仅渲染，无动画无 d3-force） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
-| M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[ ]` | — |
+| M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[x]` 完成 | [T-M3](#t-m3-m3-learning-graph-完成2026-08-26) |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
 | M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[x]` 完成 | [T-M3.5A](#t-m35a-m35-a-knowledge-radar-mvp-完成2026-08-26) |
 | M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[ ]` | — |
@@ -319,6 +319,32 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
 
 **6. 下一阶段建议**
 回到主线 M3 Learning Graph（掌握度/SM-2/Dashboard）
+
+
+### T-M3 M3 Learning Graph 完成（2026-08-26）
+
+- **做了什么**：M3 全部交付——四维掌握度引擎、SM-2 独立调度器、6 个 API 端点、Dashboard 仪表盘、migration 004
+- **改动文件**：
+  - `server/app/core/mastery.py`（145行）——compute_effective, update_mastery, get_or_create_mastery, get_all_mastery, get_weak_concepts
+  - `server/app/core/review_scheduler.py`（55行）——sm2_schedule（quality/ease/interval/review_count → next_review），独立模块可替换为 FSRS/Leitner
+  - `server/app/routers/mastery.py`（176行）——GET /mastery, GET /mastery/{id}, POST /events, GET /review/today, POST /review/{id}/answer, GET /mastery/weak/list
+  - `server/migrations/004_learning.sql`——concept_mastery(dimensions JSON), learning_events(source), review_queue(last_result)
+  - `server/tests/api/test_mastery.py`——8 个 API + 3 个 unit 测试
+  - `shared/types/mastery.ts`——MasteryRecord, MasteryDimensions, MasteryEvent, ReviewAnswer
+  - `web/src/views/DashboardView.tsx`——今日复习 + 掌握度进度条
+  - `web/src/App.tsx`——swap DashboardView import from placeholders to real
+  - `web/src/global.css`——dashboard 样式
+  - `server/app/main.py`——mount mastery_router
+  - `server/tests/test_smoke.py`——migration count 3→4
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest -q` | 36 passed | 36 passed ✓ |
+  | `npm run build` | build pass | build pass ✓ |
+  | `git push` | pushed | 2d5f5d2 ✓ |
+- **结果与遗留**：
+  - M3 完成，文档同步（TECH_DESIGN §4/§9/§10, CHANGELOG, data-model INDEX）待后续补充
+  - 004_learning.sql 使用 DROP+CREATE 重建旧表（因 001_init.sql 有旧 schema 残留），不影响生产数据（M3 首次部署）
 
 ## 完成报告模板（复制使用）
 

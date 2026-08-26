@@ -8,12 +8,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.0] - 2026-08-26
 
 ### Added
+- **M3 Learning Graph**：四维掌握度引擎（knowledge/practice/recall/transfer, 权重 0.35/0.30/0.20/0.15）·
+  SM-2 独立复习调度器（可替换为 FSRS/Leitner）· 6 API 端点（mastery CRUD + review/today + weak-list）·
+  Dashboard 仪表盘（今日复习 + 掌握度进度条）· migration 004（concept_mastery/learning_events/review_queue）
 - **M3.5-A Knowledge Radar MVP（全知领域 Phase A）**：GET /knowledge/suggest 上下文匹配端点 ·
   KnowledgeRadar.tsx 组件（debounce 500ms，Ctrl+Shift+K 唤起）· ADR-012 编辑器上下文感知架构
   （Scope Boundary + Evolution Path + Rejected Alternatives）· 零新依赖零新表
 
 ### Changed
-- **项目里程碑**：M0 ✅ → M1 ✅ → M2 ✅ → M3.5-A ✅（主线 M3 Learning Graph 待开工）
+- **项目里程碑**：M0 ✅ → M1 ✅ → M2 ✅ → M3 ✅ → M3.5-A ✅
 
 ### Added
 - **M2 双链·反链·图谱**：[[wikilink]] 解析 + concept 桩自动创建/升级 + 统一 links 表索引
