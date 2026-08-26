@@ -166,7 +166,8 @@
 **端到端**：经 5173 代理建「Taylor Expansion」→ FTS 搜到 → vault .md UTF-8 正确落盘 ✅（测试数据已清理）
 
 **7. 已知问题**
-- **图片内嵌渲染暂缓**：需 `@tiptap/extension-image`（TipTap 官方件，不在已批清单）→ ECR 待批；当前 PDF 以链接插入、图片仅上传返回 URL
+- **图片内嵌渲染**：~~暂缓~~ **已解决（同日）**——[ENVIRONMENT CHANGE REQUEST] 获批，
+  `@tiptap/extension-image@3.30.5` 接入；插图按钮启用，md 往返为 `![alt](url)`
 - TipTap 从拟定的 v2 升为 **v3 线**：两个已批准依赖的现行 peer 契约均要求 v3，钉死 v2 需引入停更旧版——已在 REGISTRY/TECH_DESIGN 显式记录
 - bundle 946KB（KaTeX 字体为主）：后续用动态 import 分包优化
 - FTS5 默认 tokenizer 对中文分词有限（ADR-001 已知项），搜索 UI 在 M2 时评估 trigram/tokenize 方案

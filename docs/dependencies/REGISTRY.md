@@ -37,6 +37,7 @@ Security considerations:
 | d3-force | 同上 | 力导向布局物理计算（Knowledge Universe，§8.1） | ISC | JS 无内置物理模拟；React Flow 无布局器；手写版调参成本高（六连问全文见 ADR-007） | 活跃 |
 | tiptap-markdown | **0.9.x · TipTap v3 线**（2026-08-26 实装） | TipTap JSON ↔ Markdown 双向转换（仅编辑器适配层） | MIT | PM 序列化自研=重复造轮子；TipTap v3 官方 MD 扩展与 v2 生态兼容性未证实。ECR 已获批准（2026-08-26），Status: Approved for M1 Knowledge Editor | 社区维护 |
 | python-multipart | 锁定 requirements.txt | multipart/form-data 解析（附件上传 UploadFile 必需件） | Apache-2.0 | FastAPI 文件上传的官方配套；无替代即无法实现已批 M1 计划第 4 条 | 活跃 |
+| @tiptap/extension-image | v3 线（M1，ECR 获批 2026-08-26） | 图片节点：`![alt](src)` markdown 往返与内嵌渲染 | MIT | StarterKit 无图片节点；无 schema 节点时 md 图片语法会在编辑往返中丢失 | 活跃 |
 
 > tiptap-markdown 边界（批准附带）：**禁止作为任何存储格式**——数据真相永远是 `vault/` 的 .md 文件；
 > 数据库只保存 metadata/index/relations/learning state，不保存 TipTap JSON（除非未来 ADR 单独批准）。

@@ -104,6 +104,7 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 | Web | @tiptap/react / @tiptap/pm / @tiptap/starter-kit | 富文本编辑器内核 |
 | Web | @aarkue/tiptap-math-extension | `$...$` 行内/块级 LaTeX（KaTeX 驱动，社区免费） |
 | Web | tiptap-markdown | TipTap JSON ↔ Markdown 双向转换；**禁作存储格式**，真相仍是 vault .md |
+| Web | @tiptap/extension-image | 图片节点内嵌渲染（markdown `![](src)` 往返） |
 | Python | python-multipart | 附件上传的 form-data 解析（FastAPI UploadFile 必需件） |
 
 开发依赖：vite、typescript、vitest、pytest、@types/*、@vitejs/plugin-react。

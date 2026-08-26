@@ -1,6 +1,7 @@
 import "katex/dist/katex.min.css";
 
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import Image from "@tiptap/extension-image";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 import { MathExtension } from "@aarkue/tiptap-math-extension";
@@ -22,6 +23,7 @@ export function TiptapEditor({ initialMarkdown, onChange, onReady }: Props) {
       StarterKit.configure({
         heading: { levels: [2, 3] },
       }),
+      Image.configure({ inline: false, allowBase64: false }),
       Markdown.configure({ html: false, linkify: true }),
       MathExtension,
     ],

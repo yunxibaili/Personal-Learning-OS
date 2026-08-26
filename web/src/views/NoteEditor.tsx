@@ -92,21 +92,22 @@ export function NoteEditorView() {
   const uploadAttachment = useCallback(
     async (file: File) => {
       try {
-        // 图片节点需 @tiptap/extension-image（ECR 待批）；PDF 以链接形式插入
-        if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-          setError("仅支持图片与 PDF");
-          return;
-        }
         const res = await apiUpload<{ url: string; name: string }>(
           "/attachments",
           file,
         );
         const ed = editorRef.current;
         if (!ed) return;
-        if (file.type === "application/pdf") {
+        if (file.type.startsWith("image/")) {
+          // 官方 extension-image 节点：markdown 往返为 ![alt](src)
+          ed.chain()
+            .focus()
+            .setImage({ src: res.url, alt: file.name })
+            .run();
+        } else if (file.type === "application/pdf") {
           ed.chain().focus().insertContent(`[${res.name}](${res.url})`).run();
         } else {
-          setError("图片内嵌渲染将在 @tiptap/extension-image 审批后启用；附件已上传: " + res.url);
+          setError("仅支持图片与 PDF");
         }
       } catch (e) {
         setError(e instanceof ApiError ? `${e.code}: ${e.message}` : String(e));
