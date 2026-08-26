@@ -164,6 +164,12 @@ LLM 只在 M4+ 阶段作为可选增强，不作为默认行为。
 
 ## 附录：交互设计
 
+### 冻结状态（M3.5-A 评审批准后）
+
+- Radar 结果上限冻结：`MAX_SUGGEST_MATCHES = 5` · `MAX_RELATED_CONCEPTS = 5`
+- 不再扩展 Radar 功能，作为 M3 的消费者
+- ADR-013（Context Extractor）/ ADR-014（suggest cache）为候选，见触发条件
+
 ### 快捷键
 
 | 平台 | 默认值 | 可配置 |

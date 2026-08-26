@@ -1,8 +1,8 @@
 import { useUi, type ViewKey } from "./stores/ui";
+import { DashboardView } from "./views/DashboardView";
 import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
 import {
-  MemoryDashboardView,
   MindMapView,
   ReviewQueueView,
   TutorPanelView,
@@ -31,7 +31,7 @@ function ActiveView() {
     case "review":
       return <ReviewQueueView />;
     case "dashboard":
-      return <MemoryDashboardView />;
+      return <DashboardView />;
   }
 }
 

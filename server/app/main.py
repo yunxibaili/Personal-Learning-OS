@@ -20,6 +20,7 @@ from .db import APP_ROOT, init_db
 from .routers.attachments import router as attachments_router
 from .routers.graph import router as graph_router
 from .routers.links import router as links_router
+from .routers.mastery import router as mastery_router
 from .routers.notes import router as notes_router
 from .routers.search import router as search_router
 from .routers.settings import router as settings_router
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(attachments_router)
     app.include_router(search_router)
     app.include_router(suggest_router)
+    app.include_router(mastery_router)
     app.include_router(graph_router)
 
     @app.exception_handler(RequestValidationError)

@@ -37,7 +37,7 @@ def test_migration_creates_all_tables_and_idempotent(client: TestClient) -> None
     newly = migrate()
     after = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
     conn.close()
-    assert newly == [] and before == after == 3
+    assert newly == [] and before == after == 4
 
 
 def test_workspace_layout_created(tmp_workspace: Path, client: TestClient) -> None:

@@ -151,6 +151,10 @@ def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
 _WIKILINK_RE = re.compile(r"\[\[([^\[\]]+?)\]\]")
 _FORBIDDEN_MEDIA_RE = re.compile(r"!\[[^\]]*\]\(\s*(?:file://|[A-Za-z]:[\\/])")
 
+# Knowledge Radar 冻结常量（ADR-012，M3.5-A 评审批准）
+MAX_SUGGEST_MATCHES = 5
+MAX_RELATED_CONCEPTS = 5
+
 
 def extract_wikilinks(body: str) -> list[str]:
     """抽取正文中的 [[标题]]，保序去重。"""
@@ -414,7 +418,7 @@ def suggest_for_context(
     # 4. Memory 占位（M3.5-B 接入真实数据）
     memory = {"mastery": None, "review_due": None, "last_mistake": None}
 
-    return {"matches": matches[:limit], "related": related[:limit], "memory": memory}
+    return {"matches": matches[:MAX_SUGGEST_MATCHES], "related": related[:MAX_RELATED_CONCEPTS], "memory": memory}
 
 
 
@@ -443,4 +447,5 @@ __all__ = [
     "extract_wikilinks", "has_forbidden_media_path", "resolve_title",
     "ensure_entity_by_title", "promote_stub_to_note", "rebuild_note_links",
     "cascade_drop_entity", "local_graph", "backlinks_of_note",
+    "suggest_for_context", "MAX_SUGGEST_MATCHES", "MAX_RELATED_CONCEPTS",
 ]
