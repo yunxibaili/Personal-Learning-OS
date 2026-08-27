@@ -1,0 +1,103 @@
+# Architecture Visualization — Declarative System Map
+# ADR-017: Diagram is a map, not a mirror.
+# Updated: 2026-08-27 (M4.5)
+
+layers:
+  frontend:
+    label: Frontend
+    tech: React + TypeScript + Vite + Zustand
+    modules:
+      - NoteEditor
+      - GraphView
+      - TutorPanel
+      - Dashboard
+      - KnowledgeRadar
+
+  backend:
+    label: Backend (Routers)
+    tech: Python 3.12 + FastAPI
+    modules:
+      - notes_router
+      - tutor_router
+      - mastery_router
+      - review_router
+      - search_router
+
+  core:
+    label: Core (Pure Logic)
+    tech: Standard library only
+    modules:
+      - knowledge
+      - mastery
+      - review_scheduler
+      - tutor_context
+      - ai/tutor
+      - ai/service
+      - ai/providers
+
+  data:
+    label: Data (Workspace)
+    tech: Files + SQLite
+    modules:
+      - vault/*.md
+      - SQLite (cache)
+      - events.jsonl
+      - attachments/
+
+frozen_contracts:
+  - id: ADR-001
+    name: Markdown Truth
+    rule: vault/*.md = source of truth
+  - id: ADR-008
+    name: Entity Model
+    rule: concepts + links, polymorphic endpoints
+  - id: ADR-013
+    name: UI Design System
+    rule: white-orange theme, no decorative UI
+  - id: ADR-014
+    name: AI Boundary
+    rule: LLM reads context, generates text only
+  - id: learning-model
+    name: Learning State Contract
+    rule: events = truth, mastery = derived, queue = projection
+  - id: prompt-contract
+    name: Prompt Contract
+    rule: build_prompt() is pure function
+
+truth_hierarchy:
+  - level: 1
+    name: learning_events
+    rule: append-only, immutable fact
+  - level: 2
+    name: concept_mastery
+    rule: derived state, replayable
+  - level: 3
+    name: review_queue
+    rule: scheduling projection, rebuildable
+
+edges:
+  - from: frontend
+    to: backend
+    protocol: HTTP /api/v1
+    label: API calls
+
+  - from: backend
+    to: core
+    protocol: function call
+    label: business logic
+
+  - from: core
+    to: data
+    protocol: sqlite3 stdlib / file I/O
+    label: read/write
+
+  - from: core
+    to: core
+    module: ai/tutor → ai/service → provider
+    label: AI pipeline (no DB access)
+
+core_innovations:
+  - Knowledge Graph
+  - Learning Memory
+  - AI Tutor
+  - Visual Learning Engine

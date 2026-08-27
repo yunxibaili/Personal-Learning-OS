@@ -7,14 +7,15 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → **M4-D ✅** → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → **M4.5 ✅** → M3b → M2b
 
 ## Last Completed
 
-M4-D Tutor Panel 已完成。
+M4-D Tutor Panel + M4.5 Architecture Visualization 已完成。
 TutorPanel.tsx（context panel + 3 modes + mock response）。
-ADR-016 Tutor UI Design 已冻结。
-npm run build 通过。
+ADR-016 Tutor UI Design + ADR-017 Architecture Visualization 已冻结。
+5 张架构 HTML 图（system-overview / learning-loop / tutor-flow / knowledge-flow / test-pipeline）。
+system-map.yaml 声明式架构定义。
 
 ## 已完成
 
@@ -36,6 +37,8 @@ npm run build 通过。
 | Smoke | Tutor 全链路验证（tutor/test endpoint + 5 tests） | ✅ |
 | ADR-016 | Tutor UI Design（knowledge tool, not chatbot） | ✅ |
 | M4-D | Tutor Panel（context panel + modes + build pass） | ✅ |
+| ADR-017 | Architecture Visualization（5 diagrams + yaml） | ✅ |
+| M4.5 | Architecture Visualization Milestone | ✅ |
 
 ## Do Not Touch
 

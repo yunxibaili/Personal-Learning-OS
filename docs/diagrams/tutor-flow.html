@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutor Runtime — Open Learning OS</title>
+<style>
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #666; --border: #e5e5e5; --brand: #ff8a00; --err: #ef4444; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .diagram { max-width: 800px; margin: 0 auto; }
+  .sequence { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; align-items: center; gap: 12px; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .step-box { border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; flex: 1; }
+  .step-name { font-size: 13px; font-weight: 600; }
+  .step-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .step-box.ai { border-color: var(--brand); background: rgba(255,138,0,0.03); }
+  .step-box.ai .step-name { color: var(--brand); }
+  .connector { display: flex; align-items: center; padding-left: 11px; }
+  .conn-line { width: 2px; height: 16px; background: var(--border); }
+  .forbidden { margin-top: 24px; border: 2px solid var(--err); border-radius: 8px; padding: 16px 20px; background: rgba(239,68,68,0.02); }
+  .forbidden-title { font-size: 13px; font-weight: 600; color: var(--err); margin-bottom: 8px; }
+  .forbidden-list { list-style: none; }
+  .forbidden-list li { font-size: 12px; color: var(--muted); padding: 3px 0; }
+  .forbidden-list li::before { content: "✗ "; color: var(--err); font-weight: 600; }
+  .allowed { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+  .allowed-title { font-size: 13px; font-weight: 600; color: var(--ok); margin-bottom: 8px; }
+  .allowed-list { list-style: none; }
+  .allowed-list li { font-size: 12px; color: var(--muted); padding: 3px 0; }
+  .allowed-list li::before { content: "✓ "; color: var(--ok); font-weight: 600; }
+  .note { margin-top: 16px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<div class="diagram">
+  <h1>Tutor Runtime</h1>
+  <p class="subtitle">Sequence — Context → Prompt → Provider → Response · M4.5</p>
+
+  <div class="sequence">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-box">
+        <div class="step-name">User</div>
+        <div class="step-desc">selects concept + asks question</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-box">
+        <div class="step-name">TutorPanel</div>
+        <div class="step-desc">captures concept_id + query + mode</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-box">
+        <div class="step-name">Router</div>
+        <div class="step-desc">POST /api/v1/tutor/test — parameter validation</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-box ai">
+        <div class="step-name">Context Builder</div>
+        <div class="step-desc">build_tutor_context() — concept + mastery + mistakes + related + review</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-box ai">
+        <div class="step-name">Prompt Builder</div>
+        <div class="step-desc">build_prompt() — pure function, no I/O, dual security filter</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-box ai">
+        <div class="step-name">Provider</div>
+        <div class="step-desc">LLMProvider.complete() — 30s timeout, 3 retries</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-box ai">
+        <div class="step-name">LLM</div>
+        <div class="step-desc">external API — OpenAI-compatible HTTP</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-box">
+        <div class="step-name">Response</div>
+        <div class="step-desc">structured text + action suggestions</div>
+      </div>
+    </div>
+    <div class="connector"><div class="conn-line"></div></div>
+
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-box">
+        <div class="step-name">User</div>
+        <div class="step-desc">reads explanation / hint / review prompt</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="forbidden">
+    <div class="forbidden-title">LLM is forbidden from:</div>
+    <ul class="forbidden-list">
+      <li>Writing to SQLite database</li>
+      <li>Modifying concept_mastery</li>
+      <li>Creating or deleting concepts</li>
+      <li>Calling review_scheduler</li>
+      <li>Accessing vault file contents</li>
+      <li>Reading API keys or settings</li>
+    </ul>
+  </div>
+
+  <div class="allowed">
+    <div class="allowed-title">State changes go through:</div>
+    <ul class="allowed-list">
+      <li>learning_event (append-only) → mastery calculation → state update</li>
+      <li>User action in Dashboard → POST /review/{id}/answer</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <strong>ADR-014 frozen boundary:</strong> LLM reads context, generates text. All writes go through event system.
+  </div>
+</div>
+</body>
+</html>

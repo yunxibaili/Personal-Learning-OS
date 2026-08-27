@@ -35,6 +35,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   连接 /tutor/test endpoint · npm run build 通过
 
 ### Added
+- **M4.5 Architecture Visualization**：ADR-017 Architecture Visualization ·
+  5 张架构 HTML 图（system-overview · learning-loop · tutor-flow · knowledge-flow · test-pipeline）·
+  system-map.yaml 声明式架构定义 · Archify agent skill 安装 ·
+  Diagram is a map, not a mirror 原则冻结
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 

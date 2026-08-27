@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Overview — Open Learning OS</title>
+<style>
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #666; --border: #e5e5e5; --brand: #ff8a00; --ok: #22c55e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .diagram { max-width: 800px; margin: 0 auto; }
+  .layer { border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; position: relative; }
+  .layer-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
+  .layer-tech { font-size: 11px; color: var(--muted); margin-bottom: 8px; font-style: italic; }
+  .modules { display: flex; flex-wrap: wrap; gap: 6px; }
+  .module { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-size: 12px; }
+  .module.highlight { border-color: var(--brand); color: var(--brand); }
+  .arrow { text-align: center; color: var(--muted); font-size: 12px; padding: 4px 0; }
+  .arrow span { display: inline-block; border-left: 2px solid var(--border); height: 16px; margin: 0 auto; }
+  .contracts { border: 2px dashed var(--brand); border-radius: 8px; padding: 14px 20px; margin-bottom: 16px; background: rgba(255,138,0,0.03); }
+  .contracts .layer-label { color: var(--brand); }
+  .contract-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .contract-tag { background: rgba(255,138,0,0.08); border: 1px solid rgba(255,138,0,0.2); border-radius: 4px; padding: 3px 8px; font-size: 11px; color: var(--text); }
+  .truth-note { margin-top: 16px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--muted); }
+  .truth-note strong { color: var(--text); }
+  .legend { margin-top: 24px; font-size: 11px; color: var(--muted); display: flex; gap: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--border); }
+  .legend-dot.brand { border-color: var(--brand); background: rgba(255,138,0,0.1); }
+  .legend-dot.dash { border-style: dashed; border-color: var(--brand); }
+</style>
+</head>
+<body>
+<div class="diagram">
+  <h1>System Overview</h1>
+  <p class="subtitle">Open Learning OS — Four-Layer Architecture · M4.5</p>
+
+  <div class="contracts">
+    <div class="layer-label">Frozen Contracts (read-only constraints)</div>
+    <div class="contract-list">
+      <span class="contract-tag">ADR-001 Markdown Truth</span>
+      <span class="contract-tag">ADR-008 Entity Model</span>
+      <span class="contract-tag">ADR-013 UI System</span>
+      <span class="contract-tag">ADR-014 AI Boundary</span>
+      <span class="contract-tag">Learning Model</span>
+      <span class="contract-tag">Prompt Contract</span>
+    </div>
+  </div>
+
+  <div class="layer">
+    <div class="layer-label">Frontend</div>
+    <div class="layer-tech">React 18 · TypeScript · Vite · Zustand · TipTap · React Flow</div>
+    <div class="modules">
+      <span class="module">NoteEditor</span>
+      <span class="module">GraphView</span>
+      <span class="module">TutorPanel</span>
+      <span class="module">Dashboard</span>
+      <span class="module">KnowledgeRadar</span>
+    </div>
+  </div>
+
+  <div class="arrow">↓ HTTP /api/v1</div>
+
+  <div class="layer">
+    <div class="layer-label">Backend (Routers)</div>
+    <div class="layer-tech">Python 3.12 · FastAPI</div>
+    <div class="modules">
+      <span class="module">notes</span>
+      <span class="module">tutor</span>
+      <span class="module">mastery</span>
+      <span class="module">review</span>
+      <span class="module">search</span>
+    </div>
+  </div>
+
+  <div class="arrow">↓ function call</div>
+
+  <div class="layer">
+    <div class="layer-label">Core (Pure Logic)</div>
+    <div class="layer-tech">Standard library only · no FastAPI import</div>
+    <div class="modules">
+      <span class="module">knowledge</span>
+      <span class="module">mastery</span>
+      <span class="module">review_scheduler</span>
+      <span class="module highlight">tutor_context</span>
+      <span class="module highlight">ai/tutor</span>
+      <span class="module highlight">ai/service</span>
+      <span class="module highlight">ai/providers</span>
+    </div>
+  </div>
+
+  <div class="arrow">↓ sqlite3 stdlib / file I/O</div>
+
+  <div class="layer">
+    <div class="layer-label">Data (Workspace)</div>
+    <div class="layer-tech">Files + SQLite</div>
+    <div class="modules">
+      <span class="module">vault/*.md (Truth)</span>
+      <span class="module">SQLite (Cache)</span>
+      <span class="module">events.jsonl</span>
+      <span class="module">attachments/</span>
+    </div>
+  </div>
+
+  <div class="truth-note">
+    <strong>Truth Hierarchy:</strong> learning_events (immutable) → concept_mastery (derived, replayable) → review_queue (projection, rebuildable)
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot"></div> Standard module</div>
+    <div class="legend-item"><div class="legend-dot brand"></div> AI Tutor module</div>
+    <div class="legend-item"><div class="legend-dot dash"></div> Frozen contract</div>
+  </div>
+</div>
+</body>
+</html>

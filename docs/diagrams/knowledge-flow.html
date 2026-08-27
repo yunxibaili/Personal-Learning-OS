@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Flow — Open Learning OS</title>
+<style>
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #666; --border: #e5e5e5; --brand: #ff8a00; --ok: #22c55e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .diagram { max-width: 700px; margin: 0 auto; }
+  .flow { display: flex; flex-direction: column; align-items: center; }
+  .node { border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 260px; }
+  .node-label { font-size: 14px; font-weight: 600; }
+  .node-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .node.source { border-color: var(--ok); background: rgba(34,197,94,0.03); }
+  .node.source .node-label { color: var(--ok); }
+  .node.future { border-color: var(--brand); border-style: dashed; }
+  .node.future .node-label { color: var(--brand); }
+  .arrow-down { display: flex; flex-direction: column; align-items: center; padding: 6px 0; }
+  .arrow-line { width: 2px; height: 20px; background: var(--border); }
+  .arrow-head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--border); }
+  .arrow-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .branch { display: flex; gap: 32px; align-items: flex-start; width: 100%; justify-content: center; margin: 0; }
+  .branch-col { display: flex; flex-direction: column; align-items: center; }
+  .branch-tag { font-size: 10px; color: var(--muted); padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; }
+  .merge-note { margin-top: 20px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--muted); text-align: center; max-width: 400px; }
+  .legend { margin-top: 24px; font-size: 11px; color: var(--muted); display: flex; gap: 20px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-box { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
+  .legend-box.source { border-color: var(--ok); background: rgba(34,197,94,0.05); }
+  .legend-box.future { border-color: var(--brand); border-style: dashed; background: rgba(255,138,0,0.05); }
+</style>
+</head>
+<body>
+<div class="diagram">
+  <h1>Knowledge Flow</h1>
+  <p class="subtitle">Data Flow — Markdown → Parser → Graph → Universe · M4.5</p>
+
+  <div class="flow">
+    <div class="node source">
+      <div class="node-label">Markdown Files</div>
+      <div class="node-desc">workspace/vault/*.md — source of truth</div>
+    </div>
+
+    <div class="branch">
+      <div class="branch-col">
+        <div class="branch-tag">content path</div>
+        <div class="arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+        <div class="node">
+          <div class="node-label">Parser</div>
+          <div class="node-desc">wikilink extraction · frontmatter · entity creation</div>
+        </div>
+        <div class="arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+        <div class="node">
+          <div class="node-label">Concepts + Links</div>
+          <div class="node-desc">first-class entities · polymorphic endpoints</div>
+        </div>
+        <div class="arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+        <div class="node">
+          <div class="node-label">Graph CTE</div>
+          <div class="node-desc">recursive SQL · local_graph · backlinks</div>
+        </div>
+      </div>
+
+      <div class="branch-col">
+        <div class="branch-tag">search path</div>
+        <div class="arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+        <div class="node">
+          <div class="node-label">FTS5 Index</div>
+          <div class="node-desc">full-text search · unicode61 tokenizer</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down" style="margin-top:16px;">
+      <div class="arrow-line"></div>
+      <div class="arrow-head"></div>
+      <div class="arrow-label">merge: graph + mastery</div>
+    </div>
+
+    <div class="node">
+      <div class="node-label">Mastery Overlay</div>
+      <div class="node-desc">weighted edges · effective score · dimension colors</div>
+    </div>
+
+    <div class="arrow-down">
+      <div class="arrow-line"></div>
+      <div class="arrow-head"></div>
+    </div>
+
+    <div class="node">
+      <div class="node-label">KnowledgeRadar</div>
+      <div class="node-desc">context-aware suggestions · M3.5-A</div>
+    </div>
+
+    <div class="arrow-down">
+      <div class="arrow-line"></div>
+      <div class="arrow-head"></div>
+    </div>
+
+    <div class="node future">
+      <div class="node-label">Knowledge Universe</div>
+      <div class="node-desc">M3b — navigable knowledge space · d3-force layout</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-box source"></div> Existing (M1-M3.5)</div>
+    <div class="legend-item"><div class="legend-box future"></div> Planned (M3b)</div>
+  </div>
+
+  <div class="merge-note">
+    <strong>Graph is not the only entry:</strong> FTS5 provides direct content search.
+    Knowledge Universe overlays mastery on the graph — it does not replace it.
+  </div>
+</div>
+</body>
+</html>
