@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：48e9b16 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：af389f9 · Branch：main · Clean：yes
 
 ---
 
@@ -68,6 +68,7 @@ npm run build      → pass
 
 ## 本次会话改动
 
+- M4-A Tutor Context API 完成（core/tutor_context.py + routers/tutor.py + 5 tests）
 - ADR-014 AI Tutor Architecture 冻结（读写边界 · Context Builder · M4 四阶段拆分）
 - docs/data-model/tutor-context.md 上下文可见性契约
 - docs/testing/ 全量测试体系建立（TEST_PLAN + TEST_MATRIX + GATE-0 + REGRESSION + DATA_RECOVERY + RELEASE）
