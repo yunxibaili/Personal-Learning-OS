@@ -67,6 +67,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   domain filter · zoom/pan/controls · ADR-013 合规样式 · npm run build 通过
 
 ### Added
+- **M3b-003 Interaction + State Detail**：ConceptNode hover tooltip（mastery 四维 + status）·
+  KnowledgeUniverse detail panel（click → 右侧 mastery 面板）·
+  four dimensions display · Open Note action · ADR-013 合规
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 

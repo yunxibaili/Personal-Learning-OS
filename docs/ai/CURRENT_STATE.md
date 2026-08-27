@@ -11,9 +11,9 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
-M3b-001 Universe Projection + M3b-002 Universe Layout 已完成。
+M3b-001 Universe Projection + M3b-002 Universe Layout + M3b-003 Interaction + State Detail 已完成。
 ADR-018 Knowledge Universe Design 已冻结。
-GET /api/v1/universe → React Flow 渲染 · mastery → radius + color · domain filter。
+GET /api/v1/universe → React Flow 渲染 · mastery → radius + color · domain filter · hover tooltip · click detail panel。
 npm run build 通过。
 
 ## 已完成
@@ -42,6 +42,7 @@ npm run build 通过。
 | ADR-018 | Knowledge Universe Design | ✅ |
 | M3b-001 | Universe Projection（GET /universe） | ✅ |
 | M3b-002 | Universe Layout（React Flow + mastery encoding） | ✅ |
+| M3b-003 | Interaction + State Detail（tooltip + detail panel + click） | ✅ |
 
 ## Do Not Touch
 
