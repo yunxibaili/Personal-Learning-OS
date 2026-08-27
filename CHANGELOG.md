@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **ADR-014 AI Tutor Architecture**：AI Tutor 架构冻结 · 读写边界铁律 ·
+  Context Builder 唯一组装点 · Provider 策略（复用 ADR-003）·
+  M4 四阶段拆分（Context API → Prompt → LLM → UI）·
+  docs/data-model/tutor-context.md 上下文可见性契约
+
+### Added
 - **ADR-013 Frontend Design System**：Minimal Scientific Workspace 设计宪法 ·
   白橙主题冻结 · 三栏布局设计冻结 · 图标/组件/动画约束 ·
   AGENTS §16 AI 前端生成规则 · docs/design/UI_REFERENCE.md 视觉参考边界

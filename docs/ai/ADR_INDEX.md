@@ -19,6 +19,7 @@
 | ADR-011 | 中文搜索（unicode61 起步） | 搜索相关 | Accepted |
 | ADR-012 | Omniscience Mode（上下文感知） | M3.5-A/B | Accepted |
 | ADR-013 | Frontend Design System（设计宪法） | M3b+ 前端 | Accepted |
+| ADR-014 | AI Tutor Architecture（AI Tutor 架构） | M4 AI Tutor | Accepted |
 
 ## 快速查阅指南
 
@@ -32,3 +33,4 @@
 - M8+ 移动 → 读 ADR-006
 - M3b 可视化 → 读 ADR-007
 - M2b 思维导图 → 读 ADR-002
+- M4 AI Tutor → 读 ADR-003 + ADR-010 + ADR-014

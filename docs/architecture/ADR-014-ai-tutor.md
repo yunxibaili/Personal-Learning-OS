@@ -1,0 +1,180 @@
+# ADR-014: AI Tutor Architecture
+
+**状态**：已批准（2026-08-27）
+**决策者**：项目负责人
+**关联**：ADR-003（LLM 接入）· ADR-009（Entity vs Document）· ADR-010（AI Context Architecture）· ADR-012（Omniscience Mode）· M4
+
+---
+
+## 1. Problem
+
+M4 引入 LLM，是项目从确定性系统进入概率性系统的关键节点。
+
+核心风险：
+- AI 变成套 API 的聊天机器人，破坏产品定位
+- LLM 直接修改数据库，绕过 event 系统
+- Prompt 组装散落各处，不可审计
+- 上下文黑盒，无法透视 AI 看到了什么
+
+需要一份架构级约束，冻结 AI Tutor 的边界。
+
+## 2. Decision
+
+### 2.1 定位
+
+```
+Tutor is a context-aware learning assistant, not a general chatbot.
+```
+
+AI Tutor 是理解用户学习状态的教学助手，不是万能聊天机器人。
+
+### 2.2 架构边界
+
+```
+         User
+          |
+          v
+      AI Tutor
+          |
+    -----------------
+    |               |
+Context Builder    LLM
+    |
+    |
+Knowledge Layer
+    |
+    +-- Notes (Markdown)
+    +-- Concepts
+    +-- Mastery (四维掌握度)
+    +-- Mistakes (错误记录)
+    +-- Review Queue
+    +-- Learning Events
+```
+
+### 2.3 读写边界（铁律）
+
+**LLM 永远不能：**
+- 写数据库
+- 修改 mastery
+- 创建 concept
+- 改 review_queue
+- 直接调用 SQLite
+
+**LLM 只能：**
+- 读取 Context（由 Context Builder 提供）
+- 生成 Response（文本）
+- 提出 Action Suggestion（建议，不执行）
+
+**所有写入必须经过 event 系统：**
+```
+用户行为 → learning_event → mastery calculation → state update
+```
+
+### 2.4 数据流
+
+```
+用户提问
+  ↓
+Router (/api/v1/tutor/ask)
+  ↓
+Context Builder (core/ai/context.py)
+  ├─ 查询 concept + mastery
+  ├─ 查询 mistakes
+  ├─ 查询 review status
+  ├─ 查询 related concepts (graph)
+  ├─ 查询 recent events
+  └─ 组装 context snapshot
+  ↓
+Prompt Assembly (core/ai/tutor.py)
+  ├─ System prompt (教学规则)
+  ├─ Context snapshot
+  └─ User question
+  ↓
+LLM Provider (core/ai/llm.py)
+  ├─ OpenAI-compatible HTTP
+  ├─ SSE streaming
+  └─ 重试 + 超时
+  ↓
+Response
+  ├─ 直接返回给用户
+  └─ context_json 落库（审计）
+```
+
+### 2.5 Context 可见性
+
+AI 看到什么（白名单）：
+- concept: title, definition
+- mastery: 四维分数 + effective
+- mistakes: 最近 N 条
+- review: next_review, last_result
+- related: 图谱邻居（1-hop）
+- recent_events: 最近 5 条
+
+AI 看不到什么（黑名单）：
+- vault 全文（除非用户明确引用）
+- 所有历史聊天记录
+- 隐私数据
+- .env / API key
+- 其他用户数据
+
+### 2.6 Provider 策略
+
+复用 ADR-003：
+- 唯一协议：`POST {base_url}/v1/chat/completions`，SSE 流式
+- 配置存 settings 表（base_url/api_key/model）
+- Python 标准库 `urllib.request` 手写 SSE
+- 不绑定模型，用户可切换
+
+### 2.7 M4 子阶段
+
+| 阶段 | 内容 | 依赖 |
+|---|---|---|
+| M4-A | Tutor Context API | 无 LLM，纯数据层 |
+| M4-B | Prompt Assembly Layer | M4-A |
+| M4-C | LLM Provider | M4-B |
+| M4-D | Tutor UI | M4-C |
+
+### 2.8 Forbidden（M4 阶段）
+
+- RAG / Vector DB / Embedding
+- Agent 框架 / Function Calling
+- 自动修改知识库
+- 自动生成学习计划
+- 多 AI 角色
+- LangChain / LlamaIndex
+
+理由：先验证核心价值——AI 是否因为知道用户状态而更有帮助。
+
+## 3. Consequences
+
+### 代码结构
+
+```
+server/app/core/ai/
+├── __init__.py
+├── context.py      ← Context Builder（唯一组装点）
+├── tutor.py        ← Prompt Assembly + 教学规则
+└── llm.py          ← OpenAI-compatible HTTP + SSE
+```
+
+### 对现有模块的影响
+
+- `mastery.py` — 只读，不改
+- `knowledge.py` — 只读，不改
+- `review_scheduler.py` — 只读，不改
+- 新增 `routers/tutor.py` — 调用 `core/ai/tutor.py`
+
+### 测试要求
+
+- M4-A：pytest 测试 context API（纯数据，无 LLM 调用）
+- M4-B：pytest 测试 prompt assembly（mock context）
+- M4-C：集成测试（mock LLM response）
+- M4-D：build 验证
+
+### 对 AI 开发的约束
+
+AGENTS §16 已有前端规则。本 ADR 补充后端 AI 规则：
+- Router 禁止 import llm.py
+- Context Builder 是唯一提示词组装点
+- 每次 AI 调用产出 context_json 快照
+- 敏感过滤在 Builder 内集中执行
