@@ -25,6 +25,7 @@ from .routers.notes import router as notes_router
 from .routers.search import router as search_router
 from .routers.settings import router as settings_router
 from .routers.suggest import router as suggest_router
+from .routers.tutor import router as tutor_router
 
 APP_VERSION = "0.1.0-dev"
 WEB_DIST = APP_ROOT / "web" / "dist"
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     app.include_router(suggest_router)
     app.include_router(mastery_router)
     app.include_router(graph_router)
+    app.include_router(tutor_router)
 
     @app.exception_handler(RequestValidationError)
     def on_validation_error(_req, exc: RequestValidationError) -> JSONResponse:
