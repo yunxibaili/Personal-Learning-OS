@@ -11,10 +11,10 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
-M4-E Tutor Evaluation + M3b-001 Universe Projection 已完成。
+M3b-001 Universe Projection + M3b-002 Universe Layout 已完成。
 ADR-018 Knowledge Universe Design 已冻结。
-Runtime Architecture Map 已生成（10 section · 4 story flows · 23 endpoints）。
-pytest 132 passed。
+GET /api/v1/universe → React Flow 渲染 · mastery → radius + color · domain filter。
+npm run build 通过。
 
 ## 已完成
 
@@ -41,6 +41,7 @@ pytest 132 passed。
 | M4-E | Tutor Evaluation（评估体系 + 禁止测试） | ✅ |
 | ADR-018 | Knowledge Universe Design | ✅ |
 | M3b-001 | Universe Projection（GET /universe） | ✅ |
+| M3b-002 | Universe Layout（React Flow + mastery encoding） | ✅ |
 
 ## Do Not Touch
 

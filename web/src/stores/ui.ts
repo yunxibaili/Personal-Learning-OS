@@ -4,6 +4,7 @@ import { create } from "zustand";
 export type ViewKey =
   | "notes"
   | "graph"
+  | "universe"
   | "mindmap"
   | "tutor"
   | "review"

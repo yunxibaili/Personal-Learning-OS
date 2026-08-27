@@ -3,6 +3,7 @@ import { DashboardView } from "./views/DashboardView";
 import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
 import { TutorPanel } from "./components/tutor/TutorPanel";
+import { KnowledgeUniverse } from "./components/universe/KnowledgeUniverse";
 import {
   MindMapView,
   ReviewQueueView,
@@ -11,6 +12,7 @@ import {
 const TABS: Array<{ key: ViewKey; label: string }> = [
   { key: "notes", label: "笔记" },
   { key: "graph", label: "图谱" },
+  { key: "universe", label: "Universe" },
   { key: "mindmap", label: "导图" },
   { key: "tutor", label: "AI Tutor" },
   { key: "review", label: "复习" },
@@ -24,6 +26,8 @@ function ActiveView() {
       return <NoteEditorView />;
     case "graph":
       return <GraphView />;
+    case "universe":
+      return <KnowledgeUniverse />;
     case "mindmap":
       return <MindMapView />;
     case "tutor":

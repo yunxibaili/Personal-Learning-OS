@@ -472,3 +472,106 @@ body {
   font-size: 11px;
   margin-left: auto;
 }
+
+/* ---- M3b Knowledge Universe ---- */
+.universe-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.universe-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.universe-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.universe-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.universe-filter {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.universe-refresh {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.universe-legend {
+  display: flex;
+  gap: 14px;
+  padding-bottom: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.universe-graph {
+  flex: 1;
+  min-height: calc(100vh - 180px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+.universe-loading {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.universe-error {
+  border: 1px solid #b3564d;
+  background: rgba(179, 86, 77, 0.15);
+  color: #e08c85;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.universe-node {
+  user-select: none;
+}
+
+.universe-node:hover {
+  filter: brightness(1.1);
+}

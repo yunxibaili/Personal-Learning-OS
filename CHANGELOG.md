@@ -62,6 +62,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   23 API endpoints 全列表 · Frozen Boundary 标注 · Data Truth Flow · Core Module Map
 
 ### Added
+- **M3b-002 Universe Layout**：KnowledgeUniverse.tsx · ConceptNode.tsx ·
+  React Flow 渲染 · mastery → radius(16-32px) + color(灰/橙/深) ·
+  domain filter · zoom/pan/controls · ADR-013 合规样式 · npm run build 通过
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 
