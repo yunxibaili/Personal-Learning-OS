@@ -23,6 +23,7 @@
 | ADR-015 | Multilingual Knowledge Support（多语言知识支持） | 全局 | Accepted |
 | ADR-016 | Tutor UI Design（Tutor 界面设计） | M4-D Tutor UI | Accepted |
 | ADR-017 | Architecture Visualization（架构可视化） | M4.5 全局 | Accepted |
+| ADR-018 | Knowledge Universe Design（知识宇宙设计） | M3b 前端 | Accepted |
 
 ## 快速查阅指南
 
@@ -40,3 +41,4 @@
 - 多语言支持 → 读 ADR-015
 - Tutor UI → 读 ADR-016
 - 架构图 → 读 ADR-017
+- M3b Knowledge Universe → 读 ADR-018

@@ -41,6 +41,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Diagram is a map, not a mirror 原则冻结
 
 ### Added
+- **M4-E Tutor Evaluation**：Tutor 评价体系 · TUTOR_EVAL_PLAN（5 维度 × 通过标准）·
+  TUTOR_CASES（20 案例：4 模式 × 5 场景）· TUTOR_METRICS（结构/安全/语言/学习/反模式）·
+  15 个禁止行为自动化测试（test_tutor_prohibition.py）· pytest 126 passed
+
+### Added
+- **ADR-018 Knowledge Universe Design**：知识宇宙设计宪法冻结 ·
+  节点 = Concept（非 Note）· 颜色 = mastery.effective · 边 = links 表 ·
+  禁止游戏化/XP/徽章 · d3-force 布局 + React Flow 渲染
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 

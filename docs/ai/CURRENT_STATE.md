@@ -7,15 +7,15 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → **M4.5 ✅** → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → **M4-E ✅** → M3b → M2b
 
 ## Last Completed
 
-M4-D Tutor Panel + M4.5 Architecture Visualization 已完成。
-TutorPanel.tsx（context panel + 3 modes + mock response）。
-ADR-016 Tutor UI Design + ADR-017 Architecture Visualization 已冻结。
-5 张架构 HTML 图（system-overview / learning-loop / tutor-flow / knowledge-flow / test-pipeline）。
-system-map.yaml 声明式架构定义。
+M4.5 Architecture Visualization + M4-E Tutor Evaluation 已完成。
+ADR-017 Architecture Visualization + ADR-018 Knowledge Universe Design 已冻结。
+5 张架构 HTML 图 + system-map.yaml。
+Tutor 评估体系（EVAL_PLAN / 20 CASES / METRICS）。
+15 个禁止行为自动化测试（pytest 126 passed）。
 
 ## 已完成
 
@@ -39,6 +39,8 @@ system-map.yaml 声明式架构定义。
 | M4-D | Tutor Panel（context panel + modes + build pass） | ✅ |
 | ADR-017 | Architecture Visualization（5 diagrams + yaml） | ✅ |
 | M4.5 | Architecture Visualization Milestone | ✅ |
+| M4-E | Tutor Evaluation（评估体系 + 禁止测试） | ✅ |
+| ADR-018 | Knowledge Universe Design | ✅ |
 
 ## Do Not Touch
 
