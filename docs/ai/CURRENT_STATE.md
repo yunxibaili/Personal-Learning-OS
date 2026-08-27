@@ -1,19 +1,20 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：5e45b91 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：96e56bf · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → **M2b-003 ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → **ADR-020 ✅**
 
 ## Last Completed
 
-M2b-003 Export/Import + ADR-021 MindMap Exchange Format v1 已完成。
-MindMap 导入导出格式冻结（version 1.0）。
-pytest 167 passed · npm run build 通过。
+ADR-020 Sync Truth Model 已完成。
+三层事实模型：Truth Source → Derived State → Local Cache。
+同步只发生在 Layer 1。Layer 2/3 各设备本地重建。
+SQLite 永不同步。Events append-only。MindMap last-write-wins v1。
 
 ## 已完成
 
