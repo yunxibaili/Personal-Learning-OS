@@ -1,20 +1,19 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：0f5436b · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：cb7f0d5 · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → **P2 Atomic Write ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → **M7-001 Sync Engine Core ✅**
 
 ## Last Completed
 
-P2 create_note atomic write 已完成。
-atomic_write_file（write → fsync → rename）实现原子写入。
-create_note / patch_note 已改用原子写入。
-M7 同步前置条件满足。pytest 167 passed。
+M7-001 Sync Engine Core 已完成。
+manifest.py（FileEntry + Manifest）+ scanner.py（扫描 Truth Source）+ diff.py（SyncPlan）。
+纯 Core，无网络。17 个单元测试。pytest 184 passed。
 
 ## 已完成
 

@@ -17,6 +17,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   M7 同步前置条件满足
 
 ### Added
+- **M7-001 Sync Engine Core**：纯 Core，无网络 ·
+  manifest.py（FileEntry + Manifest 数据结构）·
+  scanner.py（扫描 workspace Truth Source：vault/eventlogs/mind_maps）·
+  diff.py（对比两个 Manifest → SyncPlan：upload/download/conflict/skip）·
+  17 个单元测试 · 总计 184 tests passed
+
+### Added
 - **M2b-002 Concept Binding**：MindMap 节点绑定 Concept（引用，不改 mastery/event）·
   bind_concept / unbind_concept / search_concepts 三个核心函数 ·
   PATCH /nodes/{nid}/bind + DELETE /nodes/{nid}/bind + GET /concepts/search 三个 API ·
