@@ -31,7 +31,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { apiGet } from "../../lib/api";
+import { apiGet, searchConcepts, bindConcept, unbindConcept, type ConceptResult } from "../../lib/api";
 import { MapNode, type MapNodeData } from "./MapNode";
 
 /** API 响应 */
@@ -75,6 +75,10 @@ export function MindMapCanvas() {
   const [error, setError] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newNodeLabel, setNewNodeLabel] = useState("");
+  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
+  const [conceptQuery, setConceptQuery] = useState("");
+  const [conceptResults, setConceptResults] = useState<ConceptResult[]>([]);
+  const [searchingConcept, setSearchingConcept] = useState(false);
 
   /** 加载 Map 列表 */
   const loadMaps = useCallback(async () => {
@@ -222,6 +226,45 @@ export function MindMapCanvas() {
     [activeMapId, loadMap],
   );
 
+  /** 搜索 Concept（绑定用） */
+  const handleSearchConcept = useCallback(async (q: string) => {
+    setConceptQuery(q);
+    if (!q.trim()) { setConceptResults([]); return; }
+    setSearchingConcept(true);
+    try {
+      const results = await searchConcepts(q);
+      setConceptResults(results);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSearchingConcept(false);
+    }
+  }, []);
+
+  /** 绑定 Concept 到选中节点 */
+  const handleBindConcept = useCallback(async (conceptId: number) => {
+    if (!activeMapId || !selectedNodeId) return;
+    try {
+      await bindConcept(activeMapId, selectedNodeId, conceptId);
+      await loadMap(activeMapId);
+      setConceptResults([]);
+      setConceptQuery("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [activeMapId, selectedNodeId, loadMap]);
+
+  /** 解绑 Concept */
+  const handleUnbindConcept = useCallback(async () => {
+    if (!activeMapId || !selectedNodeId) return;
+    try {
+      await unbindConcept(activeMapId, selectedNodeId);
+      await loadMap(activeMapId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [activeMapId, selectedNodeId, loadMap]);
+
   /** 转换为 React Flow 格式 */
   const { rfNodes, rfEdges } = useMemo(() => {
     if (!mapDetail) return { rfNodes: [], rfEdges: [] };
@@ -307,6 +350,17 @@ export function MindMapCanvas() {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onNodeClick={(_, node) => {
+                  const nid = Number(node.id);
+                  setSelectedNodeId(nid === selectedNodeId ? null : nid);
+                  setConceptQuery("");
+                  setConceptResults([]);
+                }}
+                onPaneClick={() => {
+                  setSelectedNodeId(null);
+                  setConceptQuery("");
+                  setConceptResults([]);
+                }}
                 fitView
                 fitViewOptions={{ padding: 0.3 }}
                 minZoom={0.2}
@@ -317,6 +371,60 @@ export function MindMapCanvas() {
                 <Controls position="bottom-right" />
               </ReactFlow>
             </div>
+
+            {/* Concept Binding Panel (ADR-019: 只读引用，不改 mastery/event） */}
+            {selectedNodeId && (
+              <div className="mindmap-binding-panel">
+                <div className="binding-panel-title">Concept Binding</div>
+                <div className="binding-panel-desc">
+                  Bind this node to an existing Concept (reference only)
+                </div>
+                <div className="binding-search">
+                  <input
+                    type="text"
+                    placeholder="Search concepts..."
+                    value={conceptQuery}
+                    onChange={(e) => void handleSearchConcept(e.target.value)}
+                    className="mindmap-input"
+                  />
+                </div>
+                {conceptResults.length > 0 && (
+                  <div className="binding-results">
+                    {conceptResults.map((c) => (
+                      <button
+                        key={c.id}
+                        className="binding-result-item"
+                        onClick={() => void handleBindConcept(c.id)}
+                      >
+                        <span className="binding-concept-title">{c.title}</span>
+                        {c.domain && <span className="binding-concept-domain">{c.domain}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedNodeId && (() => {
+                  const node = mapDetail?.nodes.find((n) => n.id === selectedNodeId);
+                  if (node?.concept_id) {
+                    const concept = conceptResults.find((c) => c.id === node.concept_id);
+                    return (
+                      <div className="binding-current">
+                        <span className="binding-current-label">Bound to:</span>
+                        <span className="binding-current-name">
+                          {concept?.title ?? `Concept #${node.concept_id}`}
+                        </span>
+                        <button
+                          className="mindmap-btn-unbind"
+                          onClick={() => void handleUnbindConcept()}
+                        >
+                          Unbind
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
           </>
         ) : (
           <div className="mindmap-empty">Select or create a map</div>

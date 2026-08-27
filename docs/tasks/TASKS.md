@@ -480,3 +480,21 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 ```
 
 下一步：M2b-002 Concept Binding
+
+### M2b-002 Concept Binding 完成（2026-08-27）
+
+- **做了什么**：MindMap 节点绑定 Concept（引用，不改 mastery/event）+ ADR-019 Boundary Audit
+- **改动文件**：
+  - `server/app/core/mindmap.py`——bind_concept / unbind_concept / search_concepts
+  - `server/app/routers/mindmap.py`——POST /bind + DELETE /bind + GET /concepts/search
+  - `server/tests/api/test_mindmap.py`——TestConceptBinding (5) + TestMindMapBoundaryAudit (6)
+  - `web/src/lib/api.ts`——searchConcepts / bindConcept / unbindConcept
+  - `web/src/components/mindmap/MindMapCanvas.tsx`——Concept Binding Panel（选中节点 → 搜索 → 绑定/解绑）
+  - `web/src/global.css`——binding-panel / binding-results / binding-current 样式
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest tests/api/test_mindmap.py` | 29 passed | 29 passed ✓ |
+  | `pytest -q` | 161 passed | 161 passed ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：M2b-002 完成，ADR-019 五条铁律全部验证通过，下一步 M2b-003 Export/Import

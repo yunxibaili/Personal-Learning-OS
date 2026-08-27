@@ -1120,3 +1120,115 @@ body {
   margin-top: 4px;
   font-style: italic;
 }
+
+/* ---- M2b-002 Concept Binding Panel ---- */
+.mindmap-binding-panel {
+  width: 220px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-secondary);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.binding-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.binding-panel-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.binding-search {
+  margin-bottom: 8px;
+}
+
+.binding-search .mindmap-input {
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.binding-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.binding-result-item {
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.binding-result-item:hover {
+  background: var(--bg-alt);
+  color: var(--text-primary);
+}
+
+.binding-concept-title {
+  font-weight: 500;
+}
+
+.binding-concept-domain {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.binding-current {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.binding-current-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.binding-current-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.mindmap-btn-unbind {
+  border: 1px solid #b3564d;
+  background: rgba(179, 86, 77, 0.1);
+  color: #e08c85;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  align-self: flex-start;
+}
+
+.mindmap-btn-unbind:hover {
+  background: rgba(179, 86, 77, 0.2);
+}

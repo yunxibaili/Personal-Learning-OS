@@ -12,6 +12,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   M7 前增加 ADR-020 Sync Conflict Resolution 需求
 
 ### Added
+- **M2b-002 Concept Binding**：MindMap 节点绑定 Concept（引用，不改 mastery/event）·
+  bind_concept / unbind_concept / search_concepts 三个核心函数 ·
+  PATCH /nodes/{nid}/bind + DELETE /nodes/{nid}/bind + GET /concepts/search 三个 API ·
+  前端 Concept Binding Panel（选中节点 → 搜索 → 绑定/解绑）·
+  ADR-019 Boundary Audit 6 tests（五条铁律完整验证）·
+  总计 161 tests passed
+
+### Added
 - **M4-B Prompt Assembly**：build_prompt() 纯函数 Prompt 编排层 ·
   TutorContext TypedDict（NotRequired 支持不完整上下文）· TutorMode Literal 类型 ·
   四模式 system prompt（explain/hint/review/debug fallback）·

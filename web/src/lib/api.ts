@@ -55,3 +55,20 @@ export function apiUpload<T>(path: string, file: File): Promise<T> {
   fd.append("file", file);
   return api<T>(path, { method: "POST", body: fd });
 }
+
+/** MindMap concept binding (M2b-002) */
+export interface ConceptResult {
+  id: number;
+  title: string;
+  domain: string;
+  status: string;
+}
+
+export const searchConcepts = (q: string) =>
+  apiGet<ConceptResult[]>(`/mindmaps/concepts/search?q=${encodeURIComponent(q)}`);
+
+export const bindConcept = (mapId: number, nodeId: number, conceptId: number) =>
+  apiPost(`/mindmaps/${mapId}/nodes/${nodeId}/bind`, { concept_id: conceptId });
+
+export const unbindConcept = (mapId: number, nodeId: number) =>
+  apiDelete(`/mindmaps/${mapId}/nodes/${nodeId}/bind`);

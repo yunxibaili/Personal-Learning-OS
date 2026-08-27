@@ -152,6 +152,80 @@ def delete_node(node_id: int, conn=None) -> bool:
             conn.close()
 
 
+# ── Concept Binding（ADR-019：引用，不是复制）────────────────────
+
+def bind_concept(node_id: int, concept_id: int, conn=None) -> dict[str, Any] | None:
+    """将 MindMap 节点绑定到 Concept（只写 concept_id，不改任何其他表）。
+
+    ADR-019 铁律：
+      - 不创建 learning_event
+      - 不修改 concept_mastery
+      - 不修改 review_queue
+      - 不修改 links 表
+    """
+    close = conn is None
+    conn = conn or connect()
+    try:
+        # 验证 concept 存在
+        concept = conn.execute(
+            "SELECT id, title FROM concepts WHERE id=?", (concept_id,)
+        ).fetchone()
+        if concept is None:
+            return None
+        # 验证 node 存在
+        node = conn.execute(
+            "SELECT id FROM mind_map_nodes WHERE id=?", (node_id,)
+        ).fetchone()
+        if node is None:
+            return None
+        # 绑定（只改 mind_map_nodes.concept_id）
+        conn.execute(
+            "UPDATE mind_map_nodes SET concept_id=? WHERE id=?",
+            (concept_id, node_id),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM mind_map_nodes WHERE id=?", (node_id,)
+        ).fetchone()
+        return dict(row)
+    finally:
+        if close:
+            conn.close()
+
+
+def unbind_concept(node_id: int, conn=None) -> bool:
+    """解除 MindMap 节点的 Concept 绑定（concept_id → NULL）。"""
+    close = conn is None
+    conn = conn or connect()
+    try:
+        cur = conn.execute(
+            "UPDATE mind_map_nodes SET concept_id=NULL WHERE id=?",
+            (node_id,),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        if close:
+            conn.close()
+
+
+def search_concepts(query: str, limit: int = 20, conn=None) -> list[dict[str, Any]]:
+    """搜索 Concepts（用于 MindMap 绑定选择）。"""
+    close = conn is None
+    conn = conn or connect()
+    try:
+        rows = conn.execute(
+            "SELECT id, title, domain, status FROM concepts "
+            "WHERE title LIKE ? OR domain LIKE ? "
+            "ORDER BY title LIMIT ?",
+            (f"%{query}%", f"%{query}%", limit),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        if close:
+            conn.close()
+
+
 # ── Edge CRUD ────────────────────────────────────────────────────
 
 def add_edge(

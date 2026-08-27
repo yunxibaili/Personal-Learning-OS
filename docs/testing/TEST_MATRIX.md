@@ -33,8 +33,8 @@
 | Tutor Router | `server/app/routers/tutor.py` | Tutor API | `test_tutor_smoke.py` |
 | Universe Projection | `server/app/core/universe.py` | 图投影 | `test_universe.py` |
 | Universe Router | `server/app/routers/universe.py` | Universe API | `test_universe.py` |
-| MindMap Core | `server/app/core/mindmap.py` | Map CRUD | `test_mindmap.py` |
-| MindMap Router | `server/app/routers/mindmap.py` | MindMap API | `test_mindmap.py` |
+| MindMap Core | `server/app/core/mindmap.py` | Map CRUD + Concept Binding | `test_mindmap.py` |
+| MindMap Router | `server/app/routers/mindmap.py` | MindMap API + Binding | `test_mindmap.py` |
 
 ## 前端模块
 
