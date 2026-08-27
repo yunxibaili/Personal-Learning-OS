@@ -24,6 +24,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Multilingual Boundary · Edge Cases · 6/6 PASS · M4-C 施工红线冻结
 
 ### Added
+- **M4-C LLM Provider**：ProviderProtocol 统一接口 · MockProvider 测试用 ·
+  TutorService 业务层（Context→Prompt→Provider→Response）·
+  Provider 错误类型（Timeout/Error/Unavailable）· 14 个单元测试
+
+### Added
 - **M4-Preflight Hardening (H1-H6)**：FTS5 输入清洗（双引号包裹）·
   create_note 校验前移 · learning_events.detail 列（quality only）·
   SM-2 时间参数化（UTC）· 9 新测试 · Dashboard 去 emoji

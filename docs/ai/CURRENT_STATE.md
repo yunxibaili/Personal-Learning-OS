@@ -1,26 +1,19 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：pending · Branch：main · Clean：no
+> 上次更新：2026-08-27 · Last commit：7eb4ebd · Branch：main · Clean：no
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → **Gate 1 ✅** → M4-C → M4-D → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → **M4-C ✅** → M4-D → M3b → M2b
 
 ## Last Completed
 
-Gate 1 AI Boundary Audit 已完成。6/6 项 PASS。
-M4-C LLM Provider 已解锁。
-
-pytest 92 passed。
-
-## Gate 1 — AI Boundary Audit
-
-状态: ✅ PASS (6/6)
-日期: 2026-08-27
-详情: docs/testing/GATE-1-ai-boundary.md
+M4-C LLM Provider 已完成。
+ProviderProtocol + MockProvider + TutorService + 14 tests。
+pytest 106 passed。
 
 ## 已完成
 
@@ -38,6 +31,7 @@ pytest 92 passed。
 | M4-B | Prompt Assembly（build_prompt + 16 tests） | ✅ |
 | ADR-015 | Multilingual Knowledge Support | ✅ |
 | Gate 1 | AI Boundary Audit（6/6 PASS） | ✅ |
+| M4-C | LLM Provider（Protocol + Mock + Service + 14 tests） | ✅ |
 
 ## Do Not Touch
 
@@ -48,6 +42,7 @@ pytest 92 passed。
 - `review_scheduler.py` — SM-2 独立模块，替换需开 ADR
 - `tutor_context.py` — M4-A 已完成，不改逻辑
 - `ai/tutor.py` — M4-B 已完成，只改 constants.py 调参
+- `ai/providers/` — M4-C 已完成，新 Provider 走 providers/ 目录
 
 ## Frozen Domains
 
@@ -63,6 +58,7 @@ pytest 92 passed。
 | Prompt Contract | Frozen | M4-B, prompt-contract.md |
 | Multilingual | Frozen | ADR-015 |
 | AI Boundary | Frozen | Gate 1 |
+| LLM Provider | Frozen | M4-C, ProviderProtocol |
 
 ## Known Risks
 
@@ -76,7 +72,7 @@ pytest 92 passed。
 ## 测试命令
 
 ```
-pytest -q          → 92 passed
+pytest -q          → 106 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -84,6 +80,9 @@ npx vite build     → pass
 
 ## 本次会话改动
 
-- test_ai_boundary.py：25 个 AI 边界测试
-- Gate 1 AI Boundary Audit 报告：6/6 PASS
-- M4-C 施工红线冻结
+- providers/base.py：LLMProvider Protocol
+- providers/mock.py：MockProvider（测试用）
+- errors.py：ProviderTimeout / ProviderError / ProviderUnavailable
+- service.py：TutorService（Context→Prompt→Provider→Response）
+- test_llm_provider.py：14 个测试
+- pytest 106 passed（was 92）
