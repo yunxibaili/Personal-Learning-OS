@@ -79,6 +79,42 @@
   ② workspace/db 存在早年探针残留 TestConcept / MasteryTest（含 mastery 行），
   属测试脏数据，待用户确认后清除。
 
+## P8 任务链规划（2026-08-27 用户裁定：先内容结构，后视觉语言）
+
+```
+P8-001A Concept Foundation      概念数据模型补全（含 /concepts CRUD 缺口）
+        ↓
+P8-001B Universe V2 Layout      分层布局 · Domain 聚类 · 节点语义
+        ↓
+P8-001C Universe Interaction    Focus / Weak / 路径高亮等交互
+        ↓
+P8-003 Home Experience          Dashboard 升级为 Learning OS Home
+        ↓
+P8-FE-001 Visual Language Polish ← 纯前端阶段（MiMo 克制感参考）
+```
+
+### 排序铁律（用户原话归纳）
+
+1. 让 Universe 有东西看 → 2. 让节点关系有意义 → 3. 让首页像产品 →
+4. 最后统一视觉语言。顺序反过来就是"漂亮的空壳"。
+
+### P8-FE-001 Visual Language Polish（范围冻结，到点开工）
+
+Allowed：CSS · 组件结构调整 · 动画/间距/字体层级 · 颜色系统 · 空状态 · 页面转场
+Forbidden：改数据库 / Core / API / 同步逻辑
+
+颜色方向参考 MiMo 的克制感（非复制）：
+
+| 元素 | 方向 |
+|---|---|
+| 背景 | `#FAFAF7` 纸张感（弃纯白）· 主文字 `#1C1C1C` · 辅助文字 `#8A8A8A` |
+| Concept 状态色 | 低饱和四色：正常=淡灰蓝 · 薄弱=淡琥珀 · 新概念=淡绿 · 重点=淡紫灰 |
+| Universe | "知识地图"而非"星空宇宙"：浅背景+微阴影+轻边框+hover 提升；禁发光/粒子/旋转/3D |
+
+⚠️ 执行前置条件：ADR-013 冻结了白橙主题与背景变量——配色切换需在开工时
+以最小 ADR 附录形式过审（只改 CSS 变量值与允许色列表，不动布局纪律）。
+触发提醒点：**P8-001B 完成后由用户宣布进入纯前端阶段**。
+
 ## 路线决议（2026-08-27 用户裁定）：M8 Mobile 延后
 
 新路线（取代 TECH_DESIGN §10 的 M8 直进顺序）：
