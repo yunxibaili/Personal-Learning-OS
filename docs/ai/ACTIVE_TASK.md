@@ -1,28 +1,22 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
+> 上次更新：2026-08-27 · M3b-003 完成后清空
 
 ---
 
 ## Task ID
 
-M3b-002 Universe Layout Engine
+（无活跃任务）
 
 ## Goal
 
-前端 d3-force + React Flow 布局。
-Backend 已完成（GET /universe），下一步是前端渲染。
+（等待下一批任务指派）
 
 ## Boundary
 
-- Graph API / mastery.py 不修改
-- 新增 universe projection layer（已完成 M3b-001）
-- d3-force 只做布局计算（ADR-007）
-- React Flow 做渲染（ADR-013）
+（按当前里程碑范围）
 
 ## Forbidden
 
-- Knowledge Radar — M3.5-A 已冻结
-- Tutor — M4 已冻结
-- Learning Event schema — frozen
-- 3D / 粒子 / 星空 / 游戏化
+（按 CURRENT_STATE.md Frozen Domains）

@@ -53,18 +53,25 @@ cd web && npm run test
 
 ```
 server/tests/
-├── conftest.py               # fixtures（tmp_workspace + client）
-├── test_smoke.py             # M0 基础健康
-├── test_notes.py             # M1 notes CRUD + FTS
-├── test_attachments.py       # M1 附件
-├── test_recovery.py          # 数据恢复（Gate 0 新增）
+├── conftest.py                   # fixtures（tmp_workspace + client）
+├── test_smoke.py                 # M0 基础健康
+├── test_notes.py                 # M1 notes CRUD + FTS
+├── test_attachments.py           # M1 附件
+├── test_recovery.py              # 数据恢复（Gate 0 新增）
+├── test_universe.py              # M3b Universe Projection
+├── unit/
+│   └── test_tutor_prohibition.py # M4-E Tutor 禁止测试（15 项）
 ├── api/
-│   ├── test_m2_smoke.py      # M2 全链路 E2E
-│   ├── test_mastery.py       # M3 Learning Graph
-│   └── test_suggest.py       # M3.5-A Knowledge Radar
+│   ├── test_m2_smoke.py          # M2 全链路 E2E
+│   ├── test_mastery.py           # M3 Learning Graph
+│   ├── test_suggest.py           # M3.5-A Knowledge Radar
+│   ├── test_tutor_context.py     # M4-A Context Builder
+│   ├── test_tutor_prompt.py      # M4-B Prompt Assembly
+│   ├── test_llm_provider.py      # M4-C LLM Provider
+│   └── test_tutor_smoke.py       # M4-C Tutor 全链路
 
 web/src/
-├── stores/ui.test.ts         # Zustand store
+├── stores/ui.test.ts             # Zustand store
 ```
 
 ## 5. 新增测试规则

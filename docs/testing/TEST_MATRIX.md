@@ -27,6 +27,12 @@
 | Settings API | `server/app/routers/settings.py` | 配置读写 | `test_smoke.py` |
 | DB/Migration | `server/app/db.py` + `migrations/` | 表结构 | `test_smoke.py`（全部 migration） |
 | AI Context | `server/app/core/ai/`（M4+） | LLM 管线 | `test_mastery.py` + AI boundary 测试 |
+| Tutor Context | `server/app/core/tutor_context.py` | Context Builder | `test_tutor_context.py` |
+| Tutor Prompt | `server/app/core/ai/tutor.py` | Prompt 组装 | `test_tutor_prompt.py` |
+| Tutor Service | `server/app/core/ai/service.py` | LLM 调用 | `test_llm_provider.py` + `test_tutor_smoke.py` |
+| Tutor Router | `server/app/routers/tutor.py` | Tutor API | `test_tutor_smoke.py` |
+| Universe Projection | `server/app/core/universe.py` | 图投影 | `test_universe.py` |
+| Universe Router | `server/app/routers/universe.py` | Universe API | `test_universe.py` |
 
 ## 前端模块
 
@@ -38,6 +44,8 @@
 | Graph View | `web/src/views/GraphView.tsx` | 图谱 | `npm run build` |
 | Dashboard | `web/src/views/DashboardView.tsx` | 仪表盘 | `npm run build` |
 | Note Editor | `web/src/views/NoteEditor.tsx` | 笔记 | `npm run build` |
+| Tutor Panel | `web/src/components/tutor/TutorPanel.tsx` | Tutor UI | `npm run build` |
+| Knowledge Universe | `web/src/components/universe/` | Universe 渲染 | `npm run build` |
 | App Layout | `web/src/App.tsx` | 布局 | `npm run build` + `npm run test` |
 
 ## 共享类型

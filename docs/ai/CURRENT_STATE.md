@@ -1,13 +1,13 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：6e93ef4 · Branch：main · Clean：no
+> 上次更新：2026-08-27 · Last commit：5336832 · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → **M3b-001 ✅** → M3b-002 → M3b-003 → M3b-004
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → **M3b-004**
 
 ## Last Completed
 
@@ -84,7 +84,7 @@ npm run build 通过。
 ## 测试命令
 
 ```
-pytest -q          → 111 passed
+pytest -q          → 132 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -92,10 +92,9 @@ npx vite build     → pass
 
 ## 本次会话改动
 
-- providers/base.py：LLMProvider Protocol
-- providers/mock.py：MockProvider（测试用）
-- errors.py：ProviderTimeout / ProviderError / ProviderUnavailable
-- service.py：TutorService（Context→Prompt→Provider→Response）
-- test_llm_provider.py：14 个测试
-- test_tutor_smoke.py：5 个全链路测试
-- pytest 111 passed（was 106）
+- ConceptNode.tsx：hover tooltip（mastery 四维 + status）
+- KnowledgeUniverse.tsx：onNodeClick + detail panel（右侧 260px）
+- global.css：tooltip + detail panel + universe-body 样式
+- ViewKey 增加 "universe"
+- App.tsx：Universe tab 集成
+- npm run build 通过

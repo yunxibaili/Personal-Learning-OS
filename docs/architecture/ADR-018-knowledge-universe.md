@@ -106,10 +106,8 @@ Universe 是纯前端可视化层，不新增后端 API，不修改 Core 逻辑�
 ```
 web/src/
 ├── components/universe/
-│   ├── KnowledgeUniverse.tsx   ← 主容器
-│   ├── ConceptNode.tsx         ← 节点渲染
-│   ├── UniverseTooltip.tsx     ← 悬浮卡片
-│   └── UniverseControls.tsx    ← 缩放/筛选
+│   ├── KnowledgeUniverse.tsx   ← 主容器（React Flow + domain filter + detail panel）
+│   └── ConceptNode.tsx         ← 节点渲染（mastery → radius + color + hover tooltip）
 ```
 
 ### 对现有模块的影响

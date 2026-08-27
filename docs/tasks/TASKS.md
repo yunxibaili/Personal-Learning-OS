@@ -382,3 +382,48 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
 - **结果与遗留**：
   - M5 完成，Learning Loop 闭合（events → mastery → review_queue → 用户复习 → 新 events）
   - 下一阶段：M4 AI Tutor
+
+### M3b-001 Universe Projection 完成（2026-08-27）
+
+- **做了什么**：GET /api/v1/universe 端点，返回 concepts + links + mastery → {nodes, edges}
+- **改动文件**：
+  - `server/app/core/universe.py`（新增）——graph projection（concepts + links + mastery → nodes/edges）
+  - `server/app/routers/universe.py`（新增）——GET /api/v1/universe
+  - `server/app/main.py`——注册 universe_router
+  - `server/tests/test_universe.py`（新增）——6 个测试
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest -q` | 132 passed | 132 passed ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：Universe API 完成，下一步前端渲染
+
+### M3b-002 Universe Layout 完成（2026-08-27）
+
+- **做了什么**：React Flow 渲染 Universe 图，mastery → radius(16-32px) + color(灰/橙/深)，domain filter
+- **改动文件**：
+  - `web/src/components/universe/KnowledgeUniverse.tsx`（新增）——React Flow 容器 + domain filter
+  - `web/src/components/universe/ConceptNode.tsx`（新增）——节点渲染（mastery → radius + color）
+  - `web/src/stores/ui.ts`——ViewKey 增加 "universe"
+  - `web/src/App.tsx`——Universe tab 集成
+  - `web/src/global.css`——universe 样式
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `npx tsc --noEmit` | no error | no error ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：Universe 前端骨架完成，下一步交互层
+
+### M3b-003 Interaction + State Detail 完成（2026-08-27）
+
+- **做了什么**：ConceptNode hover tooltip（mastery 四维）+ KnowledgeUniverse detail panel（click → 右侧 mastery 面板）+ Open Note action
+- **改动文件**：
+  - `web/src/components/universe/ConceptNode.tsx`——hover tooltip（mastery effective + 4 dimensions + status）
+  - `web/src/components/universe/KnowledgeUniverse.tsx`——onNodeClick + detail panel（右侧 260px）
+  - `web/src/global.css`——tooltip + detail panel + universe-body 样式
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `npx tsc --noEmit` | no error | no error ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：Universe 交互层完成，下一步 M3b-004 Advanced Layout（domain clustering）
