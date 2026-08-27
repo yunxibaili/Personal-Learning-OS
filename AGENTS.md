@@ -346,3 +346,54 @@ docs/ai/
 ├── SESSION_PROTOCOL.md  # AI behavior rules
 └── ADR_INDEX.md         # ADR index (expand on demand)
 ```
+
+## 16. Frontend Generation Rules
+
+AI 生成 UI 必须遵守 ADR-013 Frontend Design System。
+详细规范见 `docs/architecture/ADR-013-frontend-design-system.md`。
+视觉参考见 `docs/design/UI_REFERENCE.md`。
+
+### Design Philosophy
+
+```
+Minimal · Clean · Professional · Scientific
+```
+
+目标：像一个长期使用 10 年的知识工具。
+不是：SaaS Dashboard / AI Demo / 营销网站。
+
+### Layout Rules
+
+禁止：
+- 随意新增页面
+- 随意新增侧边栏
+- 随意新增浮窗
+
+新增布局必须经过 ADR。
+
+### Component Rules
+
+组件必须服务功能。禁止装饰性组件。
+
+禁止：DecorativeCard / FancyPanel / GlowEffect / HeroSection / FeatureCard
+允许：ReviewList / NotePanel / GraphView / SuggestionList
+
+### CSS Rules
+
+禁止：gradient / backdrop-filter / glassmorphism / neon color / excessive shadow
+允许：border / subtle background / 150-250ms transition
+
+### Icon Rules
+
+禁止引入图标库。禁止 emoji 图标。禁止装饰性 SVG。
+优先：文字 / 快捷键 / tooltip
+
+### Orange Usage
+
+橙色只能用于：当前选中 / 重要节点 / 学习反馈 / AI 提示 / 操作反馈
+禁止：大面积橙色背景 / 卡片背景 / 渐变 / 装饰线
+
+### Reference Products
+
+允许参考：Obsidian / VS Code / Linear / Typora
+禁止模仿：AI 营销网站 / Dashboard 模板 / 游戏 UI

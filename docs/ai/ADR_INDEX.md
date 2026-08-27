@@ -18,6 +18,7 @@
 | ADR-010 | AI Context Architecture（单一管线） | M4+ AI Tutor | Accepted |
 | ADR-011 | 中文搜索（unicode61 起步） | 搜索相关 | Accepted |
 | ADR-012 | Omniscience Mode（上下文感知） | M3.5-A/B | Accepted |
+| ADR-013 | Frontend Design System（设计宪法） | M3b+ 前端 | Accepted |
 
 ## 快速查阅指南
 

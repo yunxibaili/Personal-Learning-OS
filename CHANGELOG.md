@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **ADR-013 Frontend Design System**：Minimal Scientific Workspace 设计宪法 ·
+  白橙主题冻结 · 三栏布局设计冻结 · 图标/组件/动画约束 ·
+  AGENTS §16 AI 前端生成规则 · docs/design/UI_REFERENCE.md 视觉参考边界
+
+### Added
 - **M5 Review Loop**：ensure_concept_learning_state() 概念触达自动初始化 ·
   review_today 优先级排序（wrong→low mastery→early due）· 错答提升优先级 ·
   GET /review/history 学习时间线端点 · Dashboard 时间线视图 ·

@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：c47d86f · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：8d27afa · Branch：main · Clean：yes
 
 ---
 
@@ -56,6 +56,10 @@ npm run build      → pass
 
 ## 本次会话改动
 
+- ADR-013 Frontend Design System 冻结（Minimal Scientific Workspace · 白橙主题 · 三栏布局设计冻结）
+- AGENTS §16 Frontend Generation Rules（AI 前端生成约束）
+- docs/design/UI_REFERENCE.md 视觉参考边界
+- global.css 主题迁移：暗色→白橙（仅变量替换，布局不变）
 - M0.5 AI Context Infrastructure 完成（docs/ai/ 5 文件 + AGENTS §15 + CHANGELOG）
 - learning-model.md 冻结（含 event_uuid 幂等设计 + source 枚举扩展 + 时间计算规则）
 - M5-001：ensure_concept_learning_state() 概念首次触达自动初始化 mastery + review_queue
