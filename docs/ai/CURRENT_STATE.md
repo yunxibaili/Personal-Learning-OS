@@ -59,6 +59,7 @@ npm run build      → pass
 - ADR-013 Frontend Design System 冻结（Minimal Scientific Workspace · 白橙主题 · 三栏布局设计冻结）
 - AGENTS §16 Frontend Generation Rules（AI 前端生成约束）
 - docs/design/UI_REFERENCE.md 视觉参考边界
+- docs/design/LEARNING_LOOP.md 学习循环设计
 - global.css 主题迁移：暗色→白橙（仅变量替换，布局不变）
 - M0.5 AI Context Infrastructure 完成（docs/ai/ 5 文件 + AGENTS §15 + CHANGELOG）
 - learning-model.md 冻结（含 event_uuid 幂等设计 + source 枚举扩展 + 时间计算规则）
