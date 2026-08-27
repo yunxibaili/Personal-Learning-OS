@@ -11,6 +11,7 @@
 | 2026-08-26 | 决策：Mind Map 采用旁车 json，**零新表**（结构与布局由 `*.mindmap.json` 承载） | ADR-002 |
 | 2026-08-26 | migration 002：统一 links 表，DROP 三旧关系表；migration 003：concepts 补 `status` 列（stub→confirmed→active→archived 生命周期，origin 仅记来源） | ADR-008/009 · M2 |
 | 2026-08-26 | ADR-012 编辑器上下文感知架构（Omniscience Mode · Knowledge Radar）；零新表零新依赖 | ADR-012 · M3.5-A |
+| 2026-08-27 | learning-model.md 冻结：学习状态数据模型契约（event_uuid 幂等 + source 枚举扩展 + 时间计算规则 + SM-2 可替换声明） | M5 评审 |
 
 ## 延后建表（禁止提前创建）
 

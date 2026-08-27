@@ -7,8 +7,8 @@
 
 ## 当前里程碑
 
-M3 Learning Graph ✅ · M3.5-A Knowledge Radar ✅ 已完成。
-下一阶段候选：M2b（Mind Map）· M3b（Universe）· M4（AI Tutor）· M5（复习闭环）
+M5 Review Loop — 进行中（learning-model.md 已冻结，M5-001 待开工）。
+路线：M5 → M4 → M3b → M2b
 
 ## 已完成
 
@@ -27,6 +27,16 @@ M3 Learning Graph ✅ · M3.5-A Knowledge Radar ✅ 已完成。
 - `001_init.sql` — 历史兼容，新表走新 migration
 - `shared/types/*.ts` — API 契约，改需同步 pytest 契约测试
 - `review_scheduler.py` — SM-2 独立模块，替换需开 ADR
+
+## Frozen Domains
+
+| 领域 | 状态 | 关联 |
+|---|---|---|
+| Markdown 模型 | Frozen | ADR-001 |
+| Graph API | Frozen | M2-D |
+| Knowledge Radar | Frozen | M3.5-A, ADR-012 |
+| Mastery 引擎 | Frozen | M3, learning-model.md |
+| SM-2 调度 | 可替换但需 ADR | review_scheduler.py |
 
 ## Known Risks
 
@@ -47,3 +57,4 @@ npm run build      → pass
 ## 本次会话改动
 
 - M0.5 AI Context Infrastructure 完成（docs/ai/ 5 文件 + AGENTS §15 + CHANGELOG）
+- learning-model.md 冻结（含 event_uuid 幂等设计 + source 枚举扩展 + 时间计算规则）

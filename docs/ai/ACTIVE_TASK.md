@@ -7,28 +7,27 @@
 
 ## 当前任务
 
-（无活跃任务。选择下一阶段后填写。）
+**Milestone**: M5 Review Loop
+**Task**: M5-001 Concept Learning State Initialization
 
-<!-- 模板如下，开始新任务时取消注释并填写：
-
-## 当前任务
-
-**Milestone**: M3 Learning Graph
-**Task**: M3-001 mastery schema
+**Goal**: 概念首次触达时自动初始化完整学习状态（mastery + review_queue）
 
 **Allowed**:
-- server/app/core/mastery.py
-- server/migrations/004_learning.sql
+- `server/app/core/mastery.py` — 新增 `ensure_concept_learning_state()`
+- `server/app/routers/notes.py` — stub 创建后调用初始化
+- `server/tests/api/test_mastery.py` — 补充初始化测试
 
 **Forbidden**:
 - Knowledge Radar (M3.5-A, frozen)
 - Graph API (M2-D, stable)
-- Frontend redesign
-- shared/types/ 契约类型（改需同步 pytest）
+- Frontend / DashboardView
+- review_scheduler.py (SM-2 独立模块)
+- shared/types/*.ts (契约改需同步)
 
 **Acceptance**:
+- 创建含 [[新概念]] 的笔记后，concept_mastery + review_queue 各有一行
 - pytest -q → all pass
-- migration tested with fresh workspace
 - CURRENT_STATE.md updated after commit
 
--->
+**Reference**:
+- `docs/data-model/learning-model.md` §6 — Concept Learning State Initialization
