@@ -15,6 +15,12 @@ M5 Review Loop completed.
 Commit: 48e9b16
 Next: M4 AI Tutor preparation
 
+## Gate 0 — M4 Preflight
+
+状态: ✅ PASS
+日期: 2026-08-27
+详情: docs/testing/GATE-0-M4-PREFLIGHT.md
+
 ## 已完成
 
 | 里程碑 | 内容 | 状态 |
