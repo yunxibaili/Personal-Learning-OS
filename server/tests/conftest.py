@@ -21,3 +21,16 @@ def client(tmp_workspace: Path) -> TestClient:
 
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture()
+def core_conn(tmp_workspace: Path):
+    """core 层直连用：隔离 workspace + 已跑 migration 的连接（用完即关）。"""
+    import sqlite3
+
+    from app.db import connect, init_db
+
+    init_db()
+    conn = connect()
+    yield conn
+    conn.close()

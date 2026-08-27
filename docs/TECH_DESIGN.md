@@ -596,7 +596,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | GET /search?q= | FTS5 全文搜索（notes） |
 | GET /knowledge/suggest?q=&note_id=&limit= | 知识雷达：上下文匹配+图谱邻居+学习状态占位（M3.5-A，ADR-012） |
 | POST /index/rebuild | 全量重建索引（启动自动跑一次） |
-| GET/POST /concepts · PATCH/DELETE /concepts/{id} | 概念 CRUD |
+| GET/POST /concepts · PATCH /concepts/{id} | 概念 CRUD（已实现 P8-001A，DELETE 暂缓） |
 | GET/POST /concepts/{id}/edges · DELETE /edges/{id} | 边管理 |
 | GET /graph?scope=global\|local&root={id}&depth=n | 图谱数据（递归 CTE） |
 | GET /suggestions/edges · POST /suggestions/edges/{id}/accept\|ignore | AI 概念建议队列 |

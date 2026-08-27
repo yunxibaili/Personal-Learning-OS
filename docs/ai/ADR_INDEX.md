@@ -28,6 +28,7 @@
 | ADR-020 | Sync Truth Model（同步冲突事实模型） | M7 LAN Sync | Accepted |
 | ADR-021 | MindMap Exchange Format v1（思维导图交换格式） | M2b-003 Export/Import | Accepted |
 | ADR-022 | Product Mode Boundary（产品模式边界冻结） | 全局 UX 方向 | Accepted |
+| ADR-023 | Visualization Boundary（可视化边界冻结） | P8 前端可视化 | Accepted |
 
 ## 快速查阅指南
 
@@ -50,3 +51,4 @@
 - M2b Export/Import → 读 ADR-021
 - M7 同步冲突 → 读 ADR-005 + ADR-020
 - 产品模式 / UX 方向 → 读 ADR-022
+- P8 可视化边界（Universe/Graph/MindMap） → 读 ADR-023

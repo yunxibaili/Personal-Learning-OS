@@ -82,9 +82,9 @@
 ## P8 任务链规划（2026-08-27 用户裁定：先内容结构，后视觉语言）
 
 ```
-P8-001A Concept Foundation      概念数据模型补全（含 /concepts CRUD 缺口）
+P8-001A Concept Foundation      ✅ 已完成（origin 唯一来源 + /concepts CRUD，2026-08-27）
         ↓
-P8-001B Universe V2 Layout      分层布局 · Domain 聚类 · 节点语义
+P8-001B Universe V2 Layout      分层布局 · Domain 聚类 · 节点语义（下一步）
         ↓
 P8-001C Universe Interaction    Focus / Weak / 路径高亮等交互
         ↓

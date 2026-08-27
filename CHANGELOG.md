@@ -5,6 +5,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **P8-001A Concept Foundation**：`/api/v1/concepts` CRUD（GET 列表/详情 · POST 创建@201 ·
+  PATCH metadata）· `server/app/core/concepts.py` 纯 Core 业务层 ·
+  Concept 来源唯一事实字段 `origin`（manual/markdown/ai_suggested），
+  source_type 方案废弃（BLOCK 裁决，零 migration 变更）·
+  seed_demo.py 35 个纯概念（ML/Optimization/Deep Learning/NLP/CV 五域）·
+  ADR-023 Visualization Boundary 冻结 · 测试 425 通过（新增 test_concepts.py 29 项）
+
 ### Audit
 - **M7-006.5 Sync Release Audit**：M7 转入稳定发布基线 ·
   Phase 1 九模块 AST 边界终审（PASS，三处例外合规定性）→ docs/sync/SYNC_BOUNDARY_REPORT.md ·

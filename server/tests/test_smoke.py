@@ -34,7 +34,8 @@ def test_migration_creates_all_tables_and_idempotent(client: TestClient) -> None
         "review_queue",
     }
     assert expected <= tables, f"缺表: {expected - tables}"
-    # 幂等：重复执行不再新增版本记录（001~0006 共六条）
+    # 幂等：重复执行不再新增版本记录（001~0006 共六条；P8-001A 不新增 migration，
+    # origin 是既有列，source_type 方案已废弃）
     before = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
     newly = migrate()
     after = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
