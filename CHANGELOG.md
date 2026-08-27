@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-001B Knowledge Universe V2**：Universe 从静态图升级为可探索知识星球 ·
+  `lib/universe/layout.ts` 布局纯函数（domain 聚类 + d3-force 确定性输出，separation 分层铁律）·
+  PlanetNode 中央聚合星球（concept 数→半径 / mastery→光晕 / 活跃→呼吸 / domain→轨道，不入库）·
+  ConceptNode hover 抬升 + weak 状态环 · Floating Inspector 替换右侧大抽屉 ·
+  Planet/节点拖动 + viewport 持久化（localStorage，视图非真相源）·
+  安装 d3-force 3.0.0（ADR-007 批准）· layout.test.ts 14 项 ·
+  vitest 16 · pytest 426 · vite build PASS
 - **P8-001A Concept Foundation**：`/api/v1/concepts` CRUD（GET 列表/详情 · POST 创建@201 ·
   PATCH metadata）· `server/app/core/concepts.py` 纯 Core 业务层 ·
   Concept 来源唯一事实字段 `origin`（manual/markdown/ai_suggested），

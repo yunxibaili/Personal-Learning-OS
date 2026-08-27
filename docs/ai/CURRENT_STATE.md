@@ -7,15 +7,16 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → **P8-001A Concept Foundation ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → **P8-001B Knowledge Universe V2 ✅**
 
 ## Last Completed
 
-P8-001A Concept Foundation 完成（commit 3ef5060）。
-新增 `/api/v1/concepts` CRUD（GET/POST/PATCH）· `core/concepts.py` 纯 Core 业务层 ·
-Concept 来源唯一事实字段 `origin`（source_type 方案废弃，BLOCK 裁决）·
-seed_demo.py 35 个纯概念（五域）· ADR-023 冻结。
-pytest 425 passed（含新增 test_concepts.py 29 项）· vitest 2 passed · vite build PASS。
+P8-001B Knowledge Universe V2（Spatial Experience）完成。
+布局引擎 `lib/universe/layout.ts` 纯函数（domain 聚类 + d3-force 确定性）·
+PlanetNode 中央聚合星球（半径/光晕/呼吸/轨道，不入库）· ConceptNode hover 抬升 + weak 环 ·
+Floating Inspector 替换右侧大抽屉 · Planet/节点拖动 + viewport 持久化（localStorage）·
+d3-force 3.0.0 安装（ADR-007）。
+vitest 16 passed（layout 14 + ui 2）· pytest 426 passed · vite build PASS。
 
 ## 已完成
 
@@ -63,11 +64,12 @@ pytest 425 passed（含新增 test_concepts.py 29 项）· vitest 2 passed · vi
 | M7-006.5 | Sync Release Audit（稳定发布基线 PASS） | ✅ |
 | M7-Preview-001 | Local Demo Preparation（seed_demo.py 已就位，等用户体验） | `[~]` |
 | P8-001A | Concept Foundation（/api/v1/concepts + origin 唯一来源 + ADR-023） | ✅ |
+| P8-001B | Knowledge Universe V2（Planet + force 聚类 + Inspector + drag 持久化） | ✅ |
 
 ## Next Up
 
-- **P8-001B Universe V2 Layout**：d3-force + domain 聚类 · auto-fit · Legend 升级
-- **P8-001C Universe Interaction**：hover tooltip 增强 · 侧栏详情 · search/jump
+- **P8-001C Universe Interaction**（等待裁定）：Search / Command Palette · Review 状态环
+  （需后端 /universe 提供 review 数据）· 其它交互增强
 - **P8-004 Demo Cleanup**：workspace/db 残留测试脏数据（TestConcept/MasteryTest）清除
 - **P8-002 Graph V2**：复用 P8-001 组件，dagre 层级布局选项
 - **P8-003 Unified Home**：HomeView 统一入口（Universe/Review/Tutor/MindMap/Graph）
@@ -122,11 +124,30 @@ pytest 425 passed（含新增 test_concepts.py 29 项）· vitest 2 passed · vi
 ## 测试命令
 
 ```
-pytest -q          → 425 passed
-npx vitest run     → 2 passed
+pytest -q          → 426 passed
+npx vitest run     → 16 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
+
+## 本次会话改动（P8-001B Knowledge Universe V2）
+
+- `web/src/lib/universe/layout.ts`：布局引擎纯函数（separation.md 图谱分层铁律）。
+  domainGrouping（径向域中心）· forceLayout（d3-force：forceX/Y 域吸引 + 斥力 + 边弹簧 +
+  collide，确定性 jitter，固定迭代）· centralPlanet（统计）· settleOnDrag（拖动重排）·
+  computeUniverseLayout 一站式入口
+- `web/src/lib/universe/layout.test.ts`：14 项（分组确定性 / force 输出确定性 / 聚类
+  生效：同域距离<跨域 / fixed 锁定 / planet 统计 / 空输入）
+- `web/src/components/universe/PlanetNode.tsx`：中央聚合星球。concept 数→半径 ·
+  mastery 均→光晕 · 活跃→呼吸动画（8-12s）· domain 数→轨道环；非概念实体不入库
+- `web/src/components/universe/ConceptNode.tsx`：hover 抬升（translateY -6px + scale 1.04 +
+  shadow，150ms）+ weak 状态虚线外圈（mastery<0.3 推导）
+- `web/src/components/universe/KnowledgeUniverse.tsx`：接入 computeUniverseLayout；
+  ReactFlowProvider 包裹；Floating Inspector（替换 .universe-detail，保留能力）；
+  Planet/节点拖动 → fixed map + viewport → localStorage；Focus 周边渐隐（opacity 0.15）
+- `web/src/global.css`：planet / inspector / node hover elevation / weak ring 样式
+- 依赖：`d3-force` 3.0.0 + `@types/d3-force`（ADR-007 批准，REGISTRY 已更新）
+- 验证：tsc PASS · vitest 16 · vite build PASS · pytest 426
 
 ## 本次会话改动（P8-001A Concept Foundation）
 

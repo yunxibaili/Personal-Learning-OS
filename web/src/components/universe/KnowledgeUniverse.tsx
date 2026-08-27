@@ -1,16 +1,17 @@
 /**
- * KnowledgeUniverse（M3b-004）：Navigation Layer。
+ * KnowledgeUniverse（M3b-004 → P8-001B）：Knowledge Planet 主容器。
  *
- * ADR-018 冻结：
- *   - 节点 = Concept（非 Note）
- *   - 边 = links 表（concept ↔ concept）
- *   - 布局 = React Flow
- *   - 禁止：3D / 粒子 / 星空 / 游戏化
+ * ADR-018/023 冻结：
+ *   - 节点 = Concept（非 Note）· 边 = links（concept↔concept）
+ *   - 布局 = d3-force 物理（ADR-007）+ React Flow 渲染
+ *   - 禁止：3D / 粒子 / 星空 / 游戏化 / 光污染
  *
- * M3b-004 新增：
- *   - Domain Filter：顶部 tab 选择
- *   - Weak Area View：低掌握度概念筛选
- *   - Focus Mode：邻居展开 + depth 控制
+ * P8-001B（Spatial Experience）：
+ *   - computeUniverseLayout 纯函数（lib/universe/layout.ts）→ force 聚类
+ *   - PlanetNode 中央聚合星球（前端合成，不入库）
+ *   - ConceptNode hover 抬升 + weak 状态环
+ *   - Floating Inspector 替换右侧大抽屉（保留能力，供 P8-003 复用）
+ *   - Planet / viewport 拖动 → localStorage（视图状态，非数据库）
  */
 import "@xyflow/react/dist/style.css";
 
@@ -18,15 +19,20 @@ import {
   Background,
   Controls,
   ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
   type Edge,
   type Node,
   type NodeTypes,
+  type OnNodeDrag,
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { apiGet } from "../../lib/api";
+import { computeUniverseLayout } from "../../lib/universe/layout";
 import { useUi } from "../../stores/ui";
 import { ConceptNode, type ConceptNodeData } from "./ConceptNode";
+import { PlanetNode, type PlanetNodeData } from "./PlanetNode";
 
 /** Universe API 响应 */
 interface UniverseNode {
@@ -59,7 +65,10 @@ interface UniverseResponse {
 type ViewMode = "all" | "weak" | "focus";
 
 /** React Flow 节点类型注册 */
-const nodeTypes: NodeTypes = { concept: ConceptNode };
+const nodeTypes: NodeTypes = { concept: ConceptNode, planet: PlanetNode };
+
+const LS_VIEWPORT_KEY = "plos.universe.viewport";
+const LS_FIXED_KEY = "plos.universe.fixed";
 
 /** mastery 百分比 */
 function pct(v: number): string {
@@ -69,7 +78,7 @@ function pct(v: number): string {
 /** mastery 状态 */
 function masteryLabel(effective: number): string {
   if (effective <= 0) return "Unlearned";
-  if (effective < 0.3) return "Beginner";
+  if (effective < 0.3) return "Weak";
   if (effective < 0.7) return "Learning";
   return "Mastered";
 }
@@ -119,7 +128,38 @@ function getNeighbors(
   return visited;
 }
 
+/** 读 localStorage 中的 fixed 坐标（Map<id,{x,y}>） */
+function loadFixed(): Map<number, { x: number; y: number }> {
+  try {
+    const raw = localStorage.getItem(LS_FIXED_KEY);
+    if (!raw) return new Map();
+    const obj = JSON.parse(raw) as Record<string, { x: number; y: number }>;
+    return new Map(Object.entries(obj).map(([k, v]) => [Number(k), v]));
+  } catch {
+    return new Map();
+  }
+}
+
+/** 保存 fixed 坐标到 localStorage */
+function saveFixed(fixed: Map<number, { x: number; y: number }>): void {
+  try {
+    const obj: Record<string, { x: number; y: number }> = {};
+    for (const [k, v] of fixed) obj[String(k)] = v;
+    localStorage.setItem(LS_FIXED_KEY, JSON.stringify(obj));
+  } catch {
+    /* localStorage 不可用时静默降级为不持久化 */
+  }
+}
+
 export function KnowledgeUniverse() {
+  return (
+    <ReactFlowProvider>
+      <UniverseCanvas />
+    </ReactFlowProvider>
+  );
+}
+
+function UniverseCanvas() {
   const [resp, setResp] = useState<UniverseResponse | null>(null);
   const [error, setError] = useState("");
   const [domainFilter, setDomainFilter] = useState<string>("");
@@ -127,6 +167,8 @@ export function KnowledgeUniverse() {
   const [weakThreshold, setWeakThreshold] = useState<number>(0.3);
   const [focusDepth, setFocusDepth] = useState<number>(1);
   const [selected, setSelected] = useState<UniverseNode | null>(null);
+  const [fixed, setFixed] = useState<Map<number, { x: number; y: number }>>(() => loadFixed());
+  const { setViewport } = useReactFlow();
   const openNote = useUi((s) => s.openNote);
 
   const load = useCallback(async () => {
@@ -141,6 +183,20 @@ export function KnowledgeUniverse() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** 布局计算（纯函数；依赖数据 + fixed） */
+  const layout = useMemo(() => {
+    if (!resp) return null;
+    return computeUniverseLayout(
+      resp.nodes.map((n) => ({
+        id: n.id,
+        domain: n.domain,
+        mastery: n.mastery?.effective ?? null,
+      })),
+      resp.edges.map((e) => ({ source: e.source, target: e.target })),
+      { fixed },
+    );
+  }, [resp, fixed]);
 
   /** 提取所有 domain 选项 */
   const domains = useMemo(() => {
@@ -163,9 +219,16 @@ export function KnowledgeUniverse() {
 
   /** 过滤 + 转换为 React Flow 格式 */
   const { rfNodes, rfEdges, weakCount } = useMemo(() => {
-    if (!resp) return { rfNodes: [], rfEdges: [], weakCount: 0 };
+    if (!resp || !layout) return { rfNodes: [], rfEdges: [], weakCount: 0 };
 
     let filtered = resp.nodes;
+
+    // Focus Mode：不删除节点，仅计算焦点集合（渲染时非焦点降透明度）
+    const focusIds = new Set<number>();
+    if (viewMode === "focus" && selected) {
+      focusIds.add(selected.id);
+      for (const id of focusNeighborIds) focusIds.add(id);
+    }
 
     // Domain filter
     if (domainFilter) {
@@ -177,7 +240,7 @@ export function KnowledgeUniverse() {
     if (viewMode === "weak") {
       filtered = filtered.filter((n) => {
         const eff = n.mastery?.effective ?? 0;
-        if (eff < weakThreshold) {
+        if (eff > 0 && eff < weakThreshold) {
           weak++;
           return true;
         }
@@ -185,29 +248,41 @@ export function KnowledgeUniverse() {
       });
     }
 
-    // Focus Mode filter
-    if (viewMode === "focus" && selected) {
-      const focusIds = new Set<number>([selected.id]);
-      for (const id of focusNeighborIds) focusIds.add(id);
-      filtered = filtered.filter((n) => focusIds.has(n.id));
-    }
-
     const ids = new Set(filtered.map((n) => n.id));
 
-    const nodes: Node[] = filtered.map((n, i) => ({
-      id: String(n.id),
-      type: "concept" as const,
-      position: {
-        x: (i % 5) * 160 + Math.random() * 40,
-        y: Math.floor(i / 5) * 140 + Math.random() * 40,
-      },
+    const nodes: Node[] = filtered.map((n) => {
+      const pos = layout.positions.get(n.id) ?? { x: 0, y: 0 };
+      const dimmed = viewMode === "focus" && !focusIds.has(n.id);
+      return {
+        id: String(n.id),
+        type: "concept" as const,
+        position: pos,
+        data: {
+          id: n.id,
+          label: n.label,
+          domain: n.domain,
+          mastery: n.mastery,
+        } satisfies ConceptNodeData,
+        style: dimmed ? { opacity: 0.15, pointerEvents: "none" as const } : undefined,
+      };
+    });
+
+    // 中央 Planet 节点（聚合视觉，非概念实体；focus 时降透明度）
+    const planetNode: Node = {
+      id: "planet",
+      type: "planet",
+      position: { x: -layout.planet.conceptCount * 0.2, y: -layout.planet.conceptCount * 0.2 },
       data: {
-        id: n.id,
-        label: n.label,
-        domain: n.domain,
-        mastery: n.mastery,
-      } satisfies ConceptNodeData,
-    }));
+        conceptCount: layout.planet.conceptCount,
+        domainCount: layout.planet.domainCount,
+        masteryAvg: layout.planet.masteryAvg,
+        hasMastery: layout.planet.hasMastery,
+      } satisfies PlanetNodeData,
+      draggable: true,
+      zIndex: 10,
+      style: viewMode === "focus" ? { opacity: 0.15, pointerEvents: "none" as const } : undefined,
+    };
+    nodes.unshift(planetNode);
 
     const edges: Edge[] = resp.edges
       .filter((e) => ids.has(e.source) && ids.has(e.target))
@@ -222,11 +297,47 @@ export function KnowledgeUniverse() {
       }));
 
     return { rfNodes: nodes, rfEdges: edges, weakCount: weak };
-  }, [resp, domainFilter, viewMode, weakThreshold, focusNeighborIds, selected]);
+  }, [resp, layout, domainFilter, viewMode, weakThreshold, focusNeighborIds, selected]);
 
-  /** 节点点击 → 选中 */
+  /** 首屏 fitView 后恢复 viewport（localStorage） */
+  useEffect(() => {
+    if (!resp) return;
+    try {
+      const raw = localStorage.getItem(LS_VIEWPORT_KEY);
+      if (raw) setViewport(JSON.parse(raw));
+    } catch {
+      /* 无持久化 viewport 时用 fitView 默认 */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!resp]);
+
+  /** 节点拖动结束 → 记录 fixed 坐标 + 保存 */
+  const handleNodeDragStop = useCallback<OnNodeDrag>(
+    (_, node) => {
+      if (node.id === "planet") return; // Planet 拖动只动 viewport，不锁坐标
+      setFixed((prev) => {
+        const next = new Map(prev);
+        next.set(Number(node.id), { x: node.position.x, y: node.position.y });
+        saveFixed(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  /** Planet 拖动 → 视图状态经 viewport 持久化（不锁坐标，不碰数据） */
+  const handleViewportChange = useCallback((vp: { x: number; y: number; zoom: number }) => {
+    try {
+      localStorage.setItem(LS_VIEWPORT_KEY, JSON.stringify(vp));
+    } catch {
+      /* 降级 */
+    }
+  }, []);
+
+  /** 节点点击 → 选中（Focus） */
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      if (node.id === "planet") return;
       if (!resp) return;
       const id = Number(node.id);
       const found = resp.nodes.find((n) => n.id === id);
@@ -244,7 +355,7 @@ export function KnowledgeUniverse() {
     return <div className="universe-error">{error}</div>;
   }
 
-  if (!resp) {
+  if (!resp || !layout) {
     return <div className="universe-loading">Loading...</div>;
   }
 
@@ -254,7 +365,7 @@ export function KnowledgeUniverse() {
       <div className="universe-toolbar">
         <span className="universe-title">
           Knowledge Universe
-          <span className="universe-count">{rfNodes.length} concepts</span>
+          <span className="universe-count">{layout.planet.conceptCount} concepts · {layout.planet.domainCount} domains</span>
         </span>
 
         {/* View Mode Tabs */}
@@ -353,7 +464,10 @@ export function KnowledgeUniverse() {
           <span className="legend-dot" style={{ background: "#1a1a1a" }} /> Mastered
         </span>
         <span className="legend-item">
-          <span className="legend-dot" style={{ background: "#fff", border: "1px solid #ccc" }} /> Size = mastery
+          <span className="legend-dot" style={{ background: "#fff", border: "1px dashed #e67300" }} /> Weak
+        </span>
+        <span className="legend-item">
+          <span className="legend-dot" style={{ background: "none", border: "1px solid #ccc" }} /> Drag planet / pan to explore
         </span>
       </div>
 
@@ -366,83 +480,62 @@ export function KnowledgeUniverse() {
             nodeTypes={nodeTypes}
             onNodeClick={handleNodeClick}
             onPaneClick={handlePaneClick}
+            onNodeDragStop={handleNodeDragStop}
+            onViewportChange={handleViewportChange}
             fitView
-            fitViewOptions={{ padding: 0.2 }}
+            fitViewOptions={{ padding: 0.3 }}
             minZoom={0.2}
             maxZoom={3}
+            nodesDraggable
             proOptions={{ hideAttribution: true }}
           >
             <Background gap={20} size={1} color="#f0f0f0" />
-            <Controls position="bottom-right" />
+            <Controls position="bottom-right" showInteractive={false} />
           </ReactFlow>
         </div>
 
-        {/* Detail Panel */}
+        {/* Floating Inspector（替代右侧大抽屉，P8-003 可复用） */}
         {selected && (
-          <div className="universe-detail">
-            <div className="detail-header">
-              <span className="detail-title">{selected.label}</span>
-              <button className="detail-close" onClick={() => setSelected(null)}>x</button>
+          <div className="universe-inspector">
+            <div className="inspector-header">
+              <span className="inspector-title">{selected.label}</span>
+              <button className="inspector-close" onClick={() => setSelected(null)}>×</button>
             </div>
 
             {selected.domain && (
-              <div className="detail-domain">{selected.domain}</div>
+              <div className="inspector-domain">{selected.domain}</div>
             )}
 
-            <div className="detail-status" style={{ color: masteryColor(selected.mastery?.effective ?? 0) }}>
+            <div className="inspector-status" style={{ color: masteryColor(selected.mastery?.effective ?? 0) }}>
               {masteryLabel(selected.mastery?.effective ?? 0)}
             </div>
 
-            {/* Effective Bar */}
-            <div className="detail-section">
-              <div className="detail-label">Effective</div>
-              <div className="detail-bar-wrap">
-                <div
-                  className="detail-bar"
-                  style={{
-                    width: pct(selected.mastery?.effective ?? 0),
-                    background: masteryColor(selected.mastery?.effective ?? 0),
-                  }}
-                />
-              </div>
-              <div className="detail-pct">{pct(selected.mastery?.effective ?? 0)}</div>
+            {/* Effective */}
+            <div className="inspector-row">
+              <span>Mastery</span>
+              <span>{pct(selected.mastery?.effective ?? 0)}</span>
             </div>
 
-            {/* Four Dimensions */}
-            <div className="detail-section">
-              <div className="detail-label">Dimensions</div>
-              <div className="detail-dims">
-                <div className="detail-dim">
-                  <span>Knowledge</span>
-                  <span>{pct(selected.mastery?.knowledge ?? 0)}</span>
-                </div>
-                <div className="detail-dim">
-                  <span>Practice</span>
-                  <span>{pct(selected.mastery?.practice ?? 0)}</span>
-                </div>
-                <div className="detail-dim">
-                  <span>Recall</span>
-                  <span>{pct(selected.mastery?.recall ?? 0)}</span>
-                </div>
-                <div className="detail-dim">
-                  <span>Transfer</span>
-                  <span>{pct(selected.mastery?.transfer ?? 0)}</span>
-                </div>
-              </div>
+            {/* Dimensions */}
+            <div className="inspector-dims">
+              <div className="inspector-dim"><span>Knowledge</span><span>{pct(selected.mastery?.knowledge ?? 0)}</span></div>
+              <div className="inspector-dim"><span>Practice</span><span>{pct(selected.mastery?.practice ?? 0)}</span></div>
+              <div className="inspector-dim"><span>Recall</span><span>{pct(selected.mastery?.recall ?? 0)}</span></div>
+              <div className="inspector-dim"><span>Transfer</span><span>{pct(selected.mastery?.transfer ?? 0)}</span></div>
             </div>
 
             {/* Neighbors (Focus Mode) */}
             {viewMode === "focus" && focusNeighborIds.size > 0 && (
-              <div className="detail-section">
-                <div className="detail-label">Neighbors ({focusNeighborIds.size})</div>
-                <div className="detail-neighbors">
+              <div className="inspector-section">
+                <div className="inspector-label">Related ({focusNeighborIds.size})</div>
+                <div className="inspector-neighbors">
                   {Array.from(focusNeighborIds).map((nid) => {
                     const n = resp.nodes.find((x) => x.id === nid);
                     if (!n) return null;
                     return (
                       <div
                         key={nid}
-                        className="detail-neighbor"
+                        className="inspector-neighbor"
                         onClick={() => setSelected(n)}
                       >
                         <span
@@ -457,12 +550,9 @@ export function KnowledgeUniverse() {
               </div>
             )}
 
-            {/* Actions */}
-            <div className="detail-actions">
-              <button className="detail-btn" onClick={() => openNote(selected.id)}>
-                Open Note
-              </button>
-            </div>
+            <button className="inspector-btn" onClick={() => openNote(selected.id)}>
+              Open Notes
+            </button>
           </div>
         )}
       </div>

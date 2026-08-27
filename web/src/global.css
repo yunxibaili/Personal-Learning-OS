@@ -1267,3 +1267,125 @@ body {
   white-space: pre-wrap; word-break: break-all; margin: 4px 0 0;
 }
 .sync-actions { display: flex; gap: 8px; margin-top: 6px; }
+
+/* ── P8-001B Knowledge Planet（Spatial Experience，ADR-013 克制）────── */
+
+/* Concept node hover 抬升（替换原 brightness 滤镜） */
+.universe-node {
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+  will-change: transform;
+}
+.universe-node.hovered {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  filter: brightness(1.05);
+}
+
+/* weak 状态外圈（虚线，基于 mastery 推导） */
+.node-weak-ring {
+  position: absolute;
+  border: 2px dashed #e67300;
+  border-radius: 50%;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ── Central Planet ── */
+.planet {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  border-radius: 50%;
+}
+.planet:active { cursor: grabbing; }
+
+.planet-glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 138, 0, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.planet-orbits { position: absolute; inset: 0; pointer-events: none; }
+.planet-orbit {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(120, 120, 120, 0.35);
+  border-radius: 50%;
+}
+
+.planet-core {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a3f52 0%, #23262e 65%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.planet-label { font-size: 13px; font-weight: 600; color: #f0f0f0; letter-spacing: 0.02em; }
+.planet-sub { font-size: 10px; color: #a8aab5; }
+
+/* 微弱呼吸动画（8-12s，scale 1.00↔1.02） */
+@keyframes planet-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+.planet-breath { animation: planet-breath 10s ease-in-out infinite; }
+
+/* ── Floating Inspector（替代右侧大抽屉）──────────── */
+.universe-inspector {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 260px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 12px 14px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inspector-header { display: flex; align-items: center; justify-content: space-between; }
+.inspector-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.inspector-close {
+  border: none; background: transparent; color: var(--text-tertiary);
+  font-size: 16px; cursor: pointer; line-height: 1;
+}
+.inspector-domain { font-size: 11px; color: var(--text-tertiary); }
+.inspector-status { font-size: 12px; font-weight: 600; }
+.inspector-row {
+  display: flex; justify-content: space-between; font-size: 12px;
+  color: var(--text-primary);
+}
+.inspector-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.inspector-dim {
+  display: flex; justify-content: space-between; font-size: 11px;
+  color: var(--text-secondary);
+}
+.inspector-section { border-top: 1px solid var(--border); padding-top: 8px; }
+.inspector-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 6px; }
+.inspector-neighbors { display: flex; flex-direction: column; gap: 4px; }
+.inspector-neighbor {
+  display: flex; align-items: center; gap: 6px; font-size: 12px;
+  color: var(--text-primary); cursor: pointer; padding: 2px 4px; border-radius: 4px;
+}
+.inspector-neighbor:hover { background: var(--bg-alt, #f6f6f6); }
+.neighbor-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.inspector-btn {
+  border: 1px solid var(--border); background: var(--bg-secondary);
+  color: var(--text-primary); padding: 6px 10px; border-radius: 6px;
+  cursor: pointer; font-size: 12px; text-align: center;
+}
+.inspector-btn:hover { filter: brightness(1.05); }

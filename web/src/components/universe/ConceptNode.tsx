@@ -1,12 +1,17 @@
 /**
- * ConceptNode（M3b-003）：Universe 节点渲染 + hover tooltip。
+ * ConceptNode（M3b-003 → P8-001B）：Universe 概念节点 + hover 抬升 + weak 状态环。
  *
  * ADR-018 冻结：
- *   - 节点 = Concept
+ *   - 节点 = Concept（非 Note）
  *   - 颜色 = mastery.effective（灰 → 橙 → 深）
  *   - 半径 = mastery.effective
- *   - tooltip = mastery 详情（hover 显示）
+ *   - hover tooltip = mastery 详情
  *   - 禁止：游戏化 / XP / 徽章
+ *
+ * P8-001B 新增（ADR-013 克制微交互）：
+ *   - hover 抬升：translateY(-6px) + scale(1.04) + shadow 扩大，150ms
+ *   - weak 状态环：mastery.effective < 0.3 → 外圈虚线环（基于现有 mastery 推导，
+ *     不新增后端字段；review 状态环待 P8-001C 后端提供 review 数据后接入）
  */
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useState } from "react";
@@ -51,25 +56,31 @@ function pct(v: number): string {
 /** mastery 状态文字 */
 function masteryLabel(effective: number): string {
   if (effective <= 0) return "Unlearned";
-  if (effective < 0.3) return "Beginner";
+  if (effective < 0.3) return "Weak";
   if (effective < 0.7) return "Learning";
   return "Mastered";
 }
 
-export function ConceptNode({ data, selected }: NodeProps) {
+/** weak 判定（与 Universe Weak mode 阈值一致） */
+function isWeak(effective: number): boolean {
+  return effective > 0 && effective < 0.3;
+}
+
+export function ConceptNode({ data }: NodeProps) {
   const d = data as unknown as ConceptNodeData;
   const effective = d.mastery?.effective ?? 0;
   const r = masteryRadius(effective);
   const bg = masteryColor(effective);
   const border = masteryBorder(effective);
   const textColor = effective >= 0.7 ? "#ffffff" : "#1a1a1a";
+  const weak = isWeak(effective);
   const [hovered, setHovered] = useState(false);
 
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ visibility: "hidden" }} />
       <div
-        className="universe-node"
+        className={`universe-node${weak ? " weak" : ""}${hovered ? " hovered" : ""}`}
         style={{
           width: r * 2,
           height: r * 2,
@@ -80,13 +91,14 @@ export function ConceptNode({ data, selected }: NodeProps) {
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          transition: "background 150ms, border-color 150ms",
-          boxShadow: selected ? "0 0 0 3px rgba(255,138,0,0.3)" : "none",
           position: "relative",
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
+        {/* weak 状态环（外圈虚线，基于 mastery 推导） */}
+        {weak && <span className="node-weak-ring" style={{ width: r * 2 + 10, height: r * 2 + 10 }} />}
+
         <span
           className="universe-node-label"
           style={{
