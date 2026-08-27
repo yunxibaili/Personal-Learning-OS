@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M5 Review Loop**：ensure_concept_learning_state() 概念触达自动初始化 ·
+  review_today 优先级排序（wrong→low mastery→early due）· 错答提升优先级 ·
+  GET /review/history 学习时间线端点 · Dashboard 时间线视图 ·
+  004_learning.sql ON DELETE CASCADE 修复 · learning-model.md 数据模型契约冻结
+
+### Added
 - **M0.5 AI Context Infrastructure**：AI 开发流程外部长期记忆层——
   `docs/ai/PROJECT_MEMORY.md`（永久记忆 <200行）· `CURRENT_STATE.md`（实时状态快照）·
   `ACTIVE_TASK.md`（工作记忆/子任务范围）· `SESSION_PROTOCOL.md`（AI 启动协议）·

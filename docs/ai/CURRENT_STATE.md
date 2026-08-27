@@ -1,14 +1,13 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：a382e27 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：c47d86f · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 Review Loop — 进行中（learning-model.md 已冻结，M5-001 待开工）。
-路线：M5 → M4 → M3b → M2b
+M5 Review Loop ✅ 已完成。路线：M5 ✅ → M4 → M3b → M2b
 
 ## 已完成
 
@@ -19,6 +18,7 @@ M5 Review Loop — 进行中（learning-model.md 已冻结，M5-001 待开工）
 | M2-A~E | 双链·反链·图谱（links/CTE/React Flow） | ✅ |
 | M3 | Learning Graph（掌握度/SM-2/Dashboard） | ✅ |
 | M3.5-A | Knowledge Radar MVP（上下文匹配+Radar面板） | ✅ |
+| M5 | Review Loop（复习队列/优先级/时间线/learning-model） | ✅ |
 
 ## Do Not Touch
 
@@ -58,3 +58,7 @@ npm run build      → pass
 
 - M0.5 AI Context Infrastructure 完成（docs/ai/ 5 文件 + AGENTS §15 + CHANGELOG）
 - learning-model.md 冻结（含 event_uuid 幂等设计 + source 枚举扩展 + 时间计算规则）
+- M5-001：ensure_concept_learning_state() 概念首次触达自动初始化 mastery + review_queue
+- M5-002：review_today 优先级排序（wrong→low mastery→early due）+ review/history 端点
+- M5-003：Dashboard 复习视图（M3 已实现，本轮确认）
+- M5-004：Dashboard 学习时间线（最近 15 条事件）

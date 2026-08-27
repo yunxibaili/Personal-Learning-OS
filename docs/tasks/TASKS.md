@@ -26,7 +26,7 @@
 | M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[x]` 完成 | [T-M3.5A](#t-m35a-m35-a-knowledge-radar-mvp-完成2026-08-26) |
 | M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[ ]` | — |
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[ ]` | — |
-| M5 | 复习闭环（队列/测验/时间线） | `[ ]` | — |
+| M5 | 复习闭环（队列/测验/时间线） | `[x]` 完成 | [T-M5](#t-m5-m5-复习闭环完成2026-08-27) |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
 | M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[ ]` | — |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
@@ -358,3 +358,27 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
   | | | |
 - 结果与遗留：
 ```
+
+### T-M5 M5 复习闭环 完成（2026-08-27）
+
+- **做了什么**：M5 全部交付——概念学习状态自动初始化、复习 API 优先级完善、学习时间线、数据模型冻结
+- **改动文件**：
+  - `docs/data-model/learning-model.md`（新增）——学习状态数据模型契约（truth hierarchy + event_uuid + source 枚举 + 时间计算规则 + SM-2 可替换声明）
+  - `server/app/core/mastery.py`——新增 ensure_concept_learning_state()
+  - `server/app/core/knowledge.py`——ensure_entity_by_title() 调用初始化
+  - `server/app/routers/mastery.py`——review_today 优先级排序 + 错答提升 + review/history 端点
+  - `server/migrations/004_learning.sql`——ON DELETE CASCADE 修复
+  - `web/src/views/DashboardView.tsx`——学习时间线视图
+  - `web/src/global.css`——timeline 样式
+  - `docs/ai/CURRENT_STATE.md`——M5 路线确认 + Frozen Domains
+  - `docs/ai/ACTIVE_TASK.md`——M5 子任务范围
+  - `docs/data-model/INDEX.md`——learning-model 条目
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest -q` | 38 passed | 38 passed ✓ |
+  | `npm run build` | build pass | build pass ✓ |
+  | `git push` | pushed | c47d86f ✓ |
+- **结果与遗留**：
+  - M5 完成，Learning Loop 闭合（events → mastery → review_queue → 用户复习 → 新 events）
+  - 下一阶段：M4 AI Tutor
