@@ -45,9 +45,13 @@
 - [x] ADR-022 Product Mode Boundary
 - [x] M7-002 LAN Discovery（UDP 广播发现/PING 心跳，27 tests）
 - [x] M7-003 Sync Transport（messages/transfer/transport，31 tests · 总计 327 passed）
-- [ ] **M7-004 Vault Apply**：SyncPlan 落盘 vault/eventlogs/mind_maps（下一个任务）
+- [ ] **M7-004 Sync Apply Layer + Boundary Audit**（当前任务，规则见 docs/ai/ACTIVE_TASK.md）：
+  core/sync/apply.py · 唯一写入口 · 双重校验 · eventlog append-merge（event_id 去重，禁 LWW）·
+  mindmap LWW + conflict copy · pytest 327→370+
+- [ ] M7-004.5 Sync Security Audit（Apply 落盘后全量安全复审）
 - [ ] M7-005 Conflict UI（冲突双份展示与解决）
-- [ ] routers/sync HTTP 层（manifest exchange + pairing，随 M7-004 建立）
+- [ ] M7-006 End-to-end LAN Demo
+- [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）
 
 ## M0 任务拆解
 
