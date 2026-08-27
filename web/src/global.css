@@ -1000,6 +1000,27 @@ body {
   gap: 4px;
 }
 
+.mindmap-import-export {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.mindmap-btn-sm {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.mindmap-btn-sm:hover {
+  background: var(--bg-alt);
+  color: var(--text-primary);
+}
+
 .mindmap-canvas-area {
   flex: 1;
   display: flex;

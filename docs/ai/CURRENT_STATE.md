@@ -1,20 +1,19 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：24f22ce · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：5e45b91 · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → **M2b-002 ✅** → M2b-003
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → **M2b-003 ✅**
 
 ## Last Completed
 
-M2b-002 Concept Binding 已完成。
-MindMap 节点绑定 Concept（引用，不改 mastery/event）。
-ADR-019 Boundary Audit 6 tests 通过。
-pytest 161 passed · npm run build 通过。
+M2b-003 Export/Import + ADR-021 MindMap Exchange Format v1 已完成。
+MindMap 导入导出格式冻结（version 1.0）。
+pytest 167 passed · npm run build 通过。
 
 ## 已完成
 

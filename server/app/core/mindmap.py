@@ -267,6 +267,130 @@ def delete_edge(edge_id: int, conn=None) -> bool:
             conn.close()
 
 
+# ── Export / Import（ADR-021 MindMap Exchange Format v1）────────
+
+def export_map(map_id: int, conn=None) -> dict[str, Any] | None:
+    """导出 MindMap 为 ADR-021 Exchange Format v1。"""
+    close = conn is None
+    conn = conn or connect()
+    try:
+        m = conn.execute(
+            "SELECT id, title, created_at, updated_at FROM mind_maps WHERE id=?",
+            (map_id,),
+        ).fetchone()
+        if m is None:
+            return None
+        nodes = _get_nodes(conn, map_id)
+        edges = _get_edges(conn, map_id)
+        return {
+            "version": "1.0",
+            "type": "mindmap",
+            "map": {
+                "title": m["title"],
+                "nodes": [
+                    {
+                        "id": n["id"],
+                        "label": n["label"],
+                        "note": n["note"],
+                        "concept_id": n["concept_id"],
+                        "position": {"x": n["position_x"], "y": n["position_y"]},
+                    }
+                    for n in nodes
+                ],
+                "edges": [
+                    {
+                        "source": e["source"],
+                        "target": e["target"],
+                        "relation": e["relation"],
+                    }
+                    for e in edges
+                ],
+            },
+        }
+    finally:
+        if close:
+            conn.close()
+
+
+def import_map(data: dict[str, Any], conn=None) -> dict[str, Any] | None:
+    """导入 ADR-021 Exchange Format v1 → 新建 MindMap。
+
+    规则（ADR-021）：
+      - ID 重新分配
+      - concept_id 验证存在，不存在则置 NULL
+      - 不创建 concept
+      - 不产生 learning_event / mastery 变化
+    """
+    if data.get("type") != "mindmap":
+        return None
+    map_data = data.get("map")
+    if not map_data or not map_data.get("title"):
+        return None
+
+    close = conn is None
+    conn = conn or connect()
+    try:
+        # 创建 Map
+        cur = conn.execute(
+            "INSERT INTO mind_maps (title) VALUES (?)",
+            (map_data["title"],),
+        )
+        new_map_id = cur.lastrowid
+
+        # ID 重映射
+        old_to_new: dict[int, int] = {}
+        for n in map_data.get("nodes", []):
+            # 验证 concept_id
+            concept_id = n.get("concept_id")
+            if concept_id is not None:
+                exists = conn.execute(
+                    "SELECT id FROM concepts WHERE id=?", (concept_id,)
+                ).fetchone()
+                if exists is None:
+                    concept_id = None
+
+            pos = n.get("position", {"x": 0, "y": 0})
+            node_cur = conn.execute(
+                "INSERT INTO mind_map_nodes "
+                "(map_id, concept_id, label, note, position_x, position_y) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    new_map_id,
+                    concept_id,
+                    n.get("label", "Untitled"),
+                    n.get("note") or "",
+                    pos.get("x", 0),
+                    pos.get("y", 0),
+                ),
+            )
+            old_to_new[n["id"]] = node_cur.lastrowid
+
+        # 导入 edges（重映射 source/target）
+        for e in map_data.get("edges", []):
+            src = old_to_new.get(e["source"])
+            tgt = old_to_new.get(e["target"])
+            if src and tgt:
+                conn.execute(
+                    "INSERT INTO mind_map_edges (map_id, source, target, relation) "
+                    "VALUES (?, ?, ?, ?)",
+                    (new_map_id, src, tgt, e.get("relation", "related")),
+                )
+
+        conn.commit()
+        return {
+            "id": new_map_id,
+            "title": map_data["title"],
+            "node_count": len(old_to_new),
+            "edge_count": len([
+                e for e in map_data.get("edges", [])
+                if old_to_new.get(e["source"]) and old_to_new.get(e["target"])
+            ]),
+        }
+    finally:
+        if close:
+            conn.close()
+
+
 # ── Internal ─────────────────────────────────────────────────────
 
 def _get_nodes(conn, map_id: int) -> list[dict[str, Any]]:

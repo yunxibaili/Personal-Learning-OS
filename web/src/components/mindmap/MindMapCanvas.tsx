@@ -265,6 +265,52 @@ export function MindMapCanvas() {
     }
   }, [activeMapId, selectedNodeId, loadMap]);
 
+  /** 导出 Map（下载 .map.json） */
+  const handleExport = useCallback(async () => {
+    if (!activeMapId) return;
+    try {
+      const resp = await fetch(`/api/v1/mindmaps/${activeMapId}/export`);
+      if (!resp.ok) throw new Error("export failed");
+      const data = await resp.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `map-${activeMapId}.map.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [activeMapId]);
+
+  /** 导入 Map（上传 .map.json） */
+  const handleImport = useCallback(async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".map.json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const resp = await fetch("/api/v1/mindmaps/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!resp.ok) throw new Error("import failed");
+        const result = await resp.json();
+        await loadMaps();
+        await loadMap(result.id);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    };
+    input.click();
+  }, [loadMaps, loadMap]);
+
   /** 转换为 React Flow 格式 */
   const { rfNodes, rfEdges } = useMemo(() => {
     if (!mapDetail) return { rfNodes: [], rfEdges: [] };
@@ -321,6 +367,16 @@ export function MindMapCanvas() {
           <button className="mindmap-btn" onClick={() => void handleCreateMap()}>
             Create
           </button>
+        </div>
+        <div className="mindmap-import-export">
+          <button className="mindmap-btn-sm" onClick={() => void handleImport()}>
+            Import
+          </button>
+          {activeMapId && (
+            <button className="mindmap-btn-sm" onClick={() => void handleExport()}>
+              Export
+            </button>
+          )}
         </div>
       </div>
 

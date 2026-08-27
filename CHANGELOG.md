@@ -20,6 +20,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   总计 161 tests passed
 
 ### Added
+- **ADR-021 MindMap Exchange Format v1**：导入导出格式冻结 ·
+  version + type + map (title + nodes + edges) ·
+  concept_id 引用验证 · ID 重映射 · 不创建 concept ·
+  GET /mindmaps/{id}/export + POST /mindmaps/import ·
+  前端 Import/Export 按钮 · 总计 167 tests passed
+
+### Added
 - **M4-B Prompt Assembly**：build_prompt() 纯函数 Prompt 编排层 ·
   TutorContext TypedDict（NotRequired 支持不完整上下文）· TutorMode Literal 类型 ·
   四模式 system prompt（explain/hint/review/debug fallback）·

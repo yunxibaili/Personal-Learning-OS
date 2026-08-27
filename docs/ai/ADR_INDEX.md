@@ -25,6 +25,7 @@
 | ADR-017 | Architecture Visualization（架构可视化） | M4.5 全局 | Accepted |
 | ADR-018 | Knowledge Universe Design（知识宇宙设计） | M3b 前端 | Accepted |
 | ADR-019 | MindMap Boundary（思维导图边界冻结） | M2b MindMap | Accepted |
+| ADR-021 | MindMap Exchange Format v1（思维导图交换格式） | M2b-003 Export/Import | Accepted |
 
 ## 快速查阅指南
 
@@ -44,3 +45,4 @@
 - 架构图 → 读 ADR-017
 - M3b Knowledge Universe → 读 ADR-018
 - M2b MindMap → 读 ADR-002 + ADR-019
+- M2b Export/Import → 读 ADR-021

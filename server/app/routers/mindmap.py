@@ -1,8 +1,12 @@
-"""MindMap API（M2b-001/002）：用户思考空间 CRUD + Concept Binding。
+"""MindMap API（M2b-001/002/003）：用户思考空间 CRUD + Concept Binding + Export/Import。
 
 ADR-019 冻结：
   - 不改变 mastery / learning_events
   - concept binding 是引用（concept_id nullable）
+
+ADR-021 冻结：
+  - Export/Import 使用 MindMap Exchange Format v1（.map.json）
+  - 导入不创建 concept，不产生 mastery/event
 
 Endpoints:
   GET    /api/v1/mindmaps           — 列出所有 Map
@@ -17,11 +21,14 @@ Endpoints:
   POST   /api/v1/mindmaps/{id}/edges  — 添加边
   DELETE /api/v1/mindmaps/{id}/edges/{eid} — 删除边
   GET    /api/v1/mindmaps/concepts/search?q= — 搜索 Concepts
+  GET    /api/v1/mindmaps/{id}/export — 导出 Exchange Format v1
+  POST   /api/v1/mindmaps/import      — 导入 Exchange Format v1
 """
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 
 from ..core.mindmap import (
     add_edge,
@@ -31,7 +38,9 @@ from ..core.mindmap import (
     delete_edge,
     delete_map,
     delete_node,
+    export_map,
     get_map,
+    import_map,
     list_maps,
     search_concepts,
     unbind_concept,
@@ -191,3 +200,28 @@ def api_delete_edge(map_id: int, edge_id: int) -> dict:
     if not delete_edge(edge_id):
         raise HTTPException(404, "edge not found")
     return {"ok": True}
+
+
+# ── Export / Import（ADR-021 Exchange Format v1）────────────────
+
+@router.get("/{map_id}/export")
+def api_export_map(map_id: int):
+    """导出 MindMap 为 Exchange Format v1 JSON。"""
+    data = export_map(map_id)
+    if data is None:
+        raise HTTPException(404, "map not found")
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": f'attachment; filename="map-{map_id}.map.json"',
+        },
+    )
+
+
+@router.post("/import", status_code=201)
+def api_import_map(body: dict) -> dict:
+    """导入 Exchange Format v1 → 新建 MindMap。"""
+    result = import_map(body)
+    if result is None:
+        raise HTTPException(400, "invalid exchange format")
+    return result

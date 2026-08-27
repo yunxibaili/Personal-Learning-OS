@@ -391,3 +391,124 @@ class TestMindMapBoundaryAudit:
         after_mastery = self._count("concept_mastery")
         assert after_events == before_events
         assert after_mastery == before_mastery
+
+
+# ── Export / Import（M2b-003 ADR-021）──────────────────────────
+
+class TestExportImport:
+    def test_export_map(self, client):
+        """导出 Map 为 Exchange Format v1。"""
+        mid = client.post("/api/v1/mindmaps", json={"title": "Exp"}).json()["id"]
+        n1 = client.post(f"/api/v1/mindmaps/{mid}/nodes", json={
+            "label": "A", "position_x": 10, "position_y": 20,
+        }).json()["id"]
+        n2 = client.post(f"/api/v1/mindmaps/{mid}/nodes", json={"label": "B"}).json()["id"]
+        client.post(f"/api/v1/mindmaps/{mid}/edges", json={"source": n1, "target": n2})
+
+        r = client.get(f"/api/v1/mindmaps/{mid}/export")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["version"] == "1.0"
+        assert data["type"] == "mindmap"
+        assert data["map"]["title"] == "Exp"
+        assert len(data["map"]["nodes"]) == 2
+        assert len(data["map"]["edges"]) == 1
+        # 验证 position 格式
+        node_a = next(n for n in data["map"]["nodes"] if n["label"] == "A")
+        assert node_a["position"] == {"x": 10, "y": 20}
+
+    def test_export_not_found(self, client):
+        r = client.get("/api/v1/mindmaps/9999/export")
+        assert r.status_code == 404
+
+    def test_import_map(self, client):
+        """导入 Exchange Format v1 → 新建 Map。"""
+        payload = {
+            "version": "1.0",
+            "type": "mindmap",
+            "map": {
+                "title": "Imported Map",
+                "nodes": [
+                    {"id": 1, "label": "X", "position": {"x": 50, "y": 60}},
+                    {"id": 2, "label": "Y", "position": {"x": 100, "y": 200}},
+                ],
+                "edges": [
+                    {"source": 1, "target": 2, "relation": "causes"},
+                ],
+            },
+        }
+        r = client.post("/api/v1/mindmaps/import", json=payload)
+        assert r.status_code == 201
+        result = r.json()
+        assert result["title"] == "Imported Map"
+        assert result["node_count"] == 2
+        assert result["edge_count"] == 1
+
+        # 验证导入的 Map 可以正常访问
+        mid = result["id"]
+        detail = client.get(f"/api/v1/mindmaps/{mid}").json()
+        assert len(detail["nodes"]) == 2
+        assert len(detail["edges"]) == 1
+        # ID 被重映射（新 DB 中可能恰好相同，但 source/target 引用必须正确）
+        assert detail["edges"][0]["source"] != detail["edges"][0]["target"]
+
+    def test_import_invalid_type(self, client):
+        r = client.post("/api/v1/mindmaps/import", json={"type": "wrong"})
+        assert r.status_code == 400
+
+    def test_import_concept_id_reference(self, client):
+        """导入时 concept_id 验证：存在则保留，不存在则置 NULL。"""
+        from app.db import connect
+        conn = connect()
+        cur = conn.execute(
+            "INSERT INTO concepts (title, origin, status) VALUES (?, 'manual', 'active')",
+            ("ImportConcept",),
+        )
+        cid = cur.lastrowid
+        conn.commit()
+        conn.close()
+
+        payload = {
+            "version": "1.0",
+            "type": "mindmap",
+            "map": {
+                "title": "With Concept",
+                "nodes": [
+                    {"id": 1, "label": "Bound", "concept_id": cid, "position": {"x": 0, "y": 0}},
+                    {"id": 2, "label": "Missing", "concept_id": 9999, "position": {"x": 10, "y": 10}},
+                ],
+                "edges": [],
+            },
+        }
+        r = client.post("/api/v1/mindmaps/import", json=payload)
+        assert r.status_code == 201
+        mid = r.json()["id"]
+        detail = client.get(f"/api/v1/mindmaps/{mid}").json()
+        nodes = {n["label"]: n for n in detail["nodes"]}
+        assert nodes["Bound"]["concept_id"] == cid
+        assert nodes["Missing"]["concept_id"] is None
+
+    def test_import_no_mastery_side_effects(self, client):
+        """导入不产生 learning_event / mastery 变化。"""
+        from app.db import connect
+        conn = connect()
+        before_events = conn.execute("SELECT COUNT(*) c FROM learning_events").fetchone()["c"]
+        before_mastery = conn.execute("SELECT COUNT(*) c FROM concept_mastery").fetchone()["c"]
+        conn.close()
+
+        client.post("/api/v1/mindmaps/import", json={
+            "version": "1.0",
+            "type": "mindmap",
+            "map": {
+                "title": "No Side Effects",
+                "nodes": [{"id": 1, "label": "N", "position": {"x": 0, "y": 0}}],
+                "edges": [],
+            },
+        })
+
+        conn = connect()
+        after_events = conn.execute("SELECT COUNT(*) c FROM learning_events").fetchone()["c"]
+        after_mastery = conn.execute("SELECT COUNT(*) c FROM concept_mastery").fetchone()["c"]
+        conn.close()
+        assert after_events == before_events
+        assert after_mastery == before_mastery

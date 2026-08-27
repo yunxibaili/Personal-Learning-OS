@@ -498,3 +498,22 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
   | `pytest -q` | 161 passed | 161 passed ✓ |
   | `npx vite build` | build pass | build pass ✓ |
 - **结果与遗留**：M2b-002 完成，ADR-019 五条铁律全部验证通过，下一步 M2b-003 Export/Import
+
+### M2b-003 Export/Import 完成（2026-08-27）
+
+- **做了什么**：MindMap Exchange Format v1 冻结 + 导入导出 API + 前端 UI
+- **改动文件**：
+  - `docs/architecture/ADR-021-mindmap-exchange-format.md`——格式冻结（version/type/map）
+  - `server/app/core/mindmap.py`——export_map / import_map（ID 重映射 + concept_id 验证）
+  - `server/app/routers/mindmap.py`——GET /export + POST /import
+  - `server/tests/api/test_mindmap.py`——TestExportImport (6 tests)
+  - `web/src/components/mindmap/MindMapCanvas.tsx`——Import/Export 按钮 + 下载/上传逻辑
+  - `web/src/global.css`——mindmap-import-export 样式
+  - `docs/ai/ADR_INDEX.md`——ADR-021 索引
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest tests/api/test_mindmap.py` | 35 passed | 35 passed ✓ |
+  | `pytest -q` | 167 passed | 167 passed ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：M2b-003 完成，M2b MindMap 里程碑全部完成，下一步 ADR-020 Sync Conflict Resolution
