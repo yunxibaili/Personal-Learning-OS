@@ -72,6 +72,7 @@ npm run build 通过。
 | Tutor UI | Frozen | ADR-016 |
 | AI Boundary | Frozen | Gate 1 |
 | LLM Provider | Frozen | M4-C, ProviderProtocol |
+| MindMap Boundary | Frozen | ADR-019 |
 
 ## Known Risks
 
