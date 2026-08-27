@@ -65,6 +65,20 @@
   E2E Case 中 vault 冲突项当前为显式 no-op，见 test_e2e_demo.py）
 - [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）
 
+## M7-Preview-001 Local Demo Preparation（进行中）
+
+- [x] scripts/seed_demo.py（只增不改 · 幂等可重跑 · 白名单内刷新）
+- [x] 种子数据：5 篇 ML 笔记 + 纯概念桩（学习率/损失函数/注意力机制）+
+  掌握度层次分布 + 复习队列 3 条待复习 · 刻意不预置 MindMap/冲突 artifact
+  （留给用户亲手体验创建流程）
+- [ ] 用户实际启动体验（Dashboard/Knowledge/Universe/MindMap/Tutor 三入口），
+  记录产品问题
+- 发现缺口待裁定：
+  ① TECH_DESIGN §9 的 GET/POST /concepts CRUD 未实现——概念只能经 wikilink
+  stub 产生，与笔记同名的主题无法成为概念节点。建议纳入 M7-008 或 P8。
+  ② workspace/db 存在早年探针残留 TestConcept / MasteryTest（含 mastery 行），
+  属测试脏数据，待用户确认后清除。
+
 ## 路线决议（2026-08-27 用户裁定）：M8 Mobile 延后
 
 新路线（取代 TECH_DESIGN §10 的 M8 直进顺序）：

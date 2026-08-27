@@ -1,24 +1,33 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-27 · M7-006.5 Sync Release Audit 完成（PASS）
+> 上次更新：2026-08-27 · M7-Preview-001 就位 → **下一步是用户本人启动 PC 实测**
 
 ---
 
 ## Task ID
 
-（无活跃任务 — M7-006.5 已完成，等用户指定下一个任务）
+M7-Preview-001 Local Demo Preparation（脚本侧 ✅，体验侧待用户执行）
 
-## Status
+## 启动方式
 
-M7 Sync Release Audit ✅ PASS — M7 达到稳定发布基线
+```
+终端1: cd server && .venv\Scripts\python -m uvicorn app.main:app --reload   # :8000
+终端2: cd web && npm run dev                                                # :5173
+浏览器打开 http://localhost:5173
+```
 
-- 产出：docs/sync/SYNC_BOUNDARY_REPORT.md · docs/release/EXPORT_MANIFEST.md ·
-  docs/release/RELEASE_AUDIT_M7.md
-- pytest 397 passed · build/vitest PASS · 零功能变更
+## 用户体验清单（重点看产品感，不看代码）
 
-## 下一步队列
+1. Dashboard——是否像"学习 OS 首页"而非管理后台；SyncStatusPanel 应显示无冲突
+2. Knowledge——笔记编辑/双链/搜索；图谱里 ML 概念簇的形态
+3. Universe（重点）——mastery 颜色分布（注意力机制=微光、损失函数=暗、学习率=熄灭）
+4. MindMap——亲手新建一张图、拖节点、bind 到 [[注意力机制]]（刻意未预置）
+5. Tutor 三入口——笔记 Explain / Review 错答 Hint / Universe 弱项进入
 
-1. **M7-007 Vault Conflict Preservation**（下一个；动冻结面，开工前走 §12 八项清单）
-2. M7-008 Sync Polish → P8 PC Productization → Mobile API Prep → M8
-3. 挂起：Data Model Terminology Cleanup
+## 待用户裁定
+
+- workspace/db 残留 TestConcept/MasteryTest 测试脏数据是否清除
+- /concepts CRUD 缺口放入 M7-008 还是 P8
+- 体验后决定：先 M7-007 还是直接 P8 产品化
+

@@ -60,10 +60,12 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | M7-005 | Conflict UI（SyncStatusPanel + /sync/status,/resolve，方案 a） | ✅ |
 | M7-006 | E2E LAN Demo（真实两进程全链路 + Recovery） | ✅ |
 | M7-006.5 | Sync Release Audit（稳定发布基线 PASS） | ✅ |
+| M7-Preview-001 | Local Demo Preparation（seed_demo.py 已就位，等用户体验） | `[~]` |
 
 ## Next Up
 
-- **M7-007 Vault Conflict Preservation**（apply.py vault 分支双份机制，含 ADR-020 更新）
+- **用户实测 PC 端**（uvicorn + vite dev，体验清单见 TASKS §M7-Preview-001），
+  根据产品感受决定后续：M7-007 / P8 产品化
 - M7-008 Sync Polish → **P8 PC Productization** → Mobile API Preparation → M8
   （路线决议见 docs/tasks/TASKS.md §路线决议：M8 Mobile 延后，先 PC 完整化）
 - 发布基线文档：docs/release/RELEASE_AUDIT_M7.md · EXPORT_MANIFEST.md ·
