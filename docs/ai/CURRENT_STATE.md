@@ -1,19 +1,21 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：cb7f0d5 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：be4580a · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → **M7-001 Stabilization Audit ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → **M7-Nightly Audit ✅**
 
 ## Last Completed
 
-M7-001 Stabilization Audit 完成。
-修复：scanner.py glob 匹配 bug（替换自定义 _glob_match）、settings.py 边界违规（SQL 提取到 db.py）、test_smoke.py review_queue 遗漏。
-新增 25 个同步测试（42 total）。pytest 184 passed（+25 sync tests = 209）。
+M7-Nightly Full Audit Sprint 完成。
+6 Phase 审计：架构边界（3 Router 违规记录为 tech debt）· ADR 冻结检查（7/7 PASS）·
+代码质量（修复 10 问题，记录 8 tech debt）· 同步深度测试（28 tests）· 恢复测试（14 tests）·
+文档清理（sync docs + CHANGELOG + stability report）。
+pytest 251 passed · vite build PASS。
 
 ## 已完成
 
@@ -96,7 +98,7 @@ M7-001 Stabilization Audit 完成。
 ## 测试命令
 
 ```
-pytest -q          → 209 passed（含 42 sync tests）
+pytest -q          → 251 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -104,9 +106,22 @@ npx vite build     → pass
 
 ## 本次会话改动
 
-- scanner.py：替换自定义 _glob_match 为正确的 ** 递归匹配（修复嵌套目录匹配 bug）
+- scanner.py：替换 _glob_match 为正确的 ** 递归匹配（修复嵌套目录匹配 bug）
 - manifest.py：移除死代码 `import os`
-- settings.py：移除 `import sqlite3`，SQL 操作提取到 db.py（get_all_settings/put_settings）
-- db.py：新增 settings 数据访问函数（get_all_settings/put_settings）
-- test_sync.py：新增 25 个测试（TestPathMatches 8个 + TestManifest 4个 + TestScanner 4个 + TestDiff 9个），总计 42
+- settings.py：移除 `import sqlite3`，SQL 操作提取到 db.py
+- db.py：新增 settings 数据访问函数
+- attachments.py：移除 unused `import re`
+- mindmap.py：移除 unused `Field`
+- universe.py：移除 unused `JSONResponse`
+- mastery.py：移除 unused `timedelta`
+- test_tutor_prohibition.py：移除 unused `import os`
+- KnowledgeRadar.tsx：移除 3 个 emoji（ADR-013 合规）
+- global.css：添加 `--bg-alt` 变量定义
+- test_sync.py：42 个同步测试
+- test_sync_deep.py：28 个深度测试（中文/特殊字符/大文件/嵌套目录）
+- test_sync_recovery.py：14 个恢复测试（幂等性/原子性/确定性）
 - test_smoke.py：expected 集合添加 review_queue
+- docs/audit/：M7-001-STABILITY-AUDIT.md + CODE_QUALITY_REPORT.md
+- docs/sync/：sync-model.md + conflict-resolution.md + recovery-guide.md
+- docs/testing/M7-STABILITY-REPORT.md
+- CHANGELOG.md：新增 M7 stabilization 条目

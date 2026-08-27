@@ -1,7 +1,7 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-27 · M7-001 Stabilization 完成
+> 上次更新：2026-08-27 · M7-Nightly Audit 完成
 
 ---
 
@@ -11,7 +11,7 @@ M7-002 LAN Discovery（可以开始）
 
 ## Status
 
-M7-001 Sync Engine Core ✅ + Stabilization Audit ✅
+M7-Nightly Full Audit Sprint ✅
 
 前置条件已满足：
 - ADR-005 Multi-device Sync ✅
@@ -20,14 +20,17 @@ M7-001 Sync Engine Core ✅ + Stabilization Audit ✅
 - P2 create_note atomic write ✅
 - M7-001 Sync Engine Core ✅
 - M7-001 Stabilization Audit ✅
+- M7-Nightly Full Audit Sprint ✅
 
 ## 下一步
 
 1. ~~M7-001 Sync Engine Core~~ ✅
-2. M7-002 LAN Discovery（device pairing, HTTP manifest exchange）
-3. M7-003 Vault Sync
-4. M7-004 Event Sync
-5. M7-005 Conflict UI
+2. ~~M7 Stabilization~~ ✅
+3. ~~M7-Nightly Audit~~ ✅
+4. M7-002 LAN Discovery（device pairing, HTTP manifest exchange）
+5. M7-003 Vault Sync
+6. M7-004 Event Sync
+7. M7-005 Conflict UI
 
 ## 关键约束
 

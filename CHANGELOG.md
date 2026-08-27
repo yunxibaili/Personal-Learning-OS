@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **M7-001 Stabilization Audit**：scanner.py glob 匹配 bug 修复（嵌套目录文件现在正确匹配）·
+  settings.py 边界违规修复（SQL 提取到 db.py）·
+  移除 6 个 unused imports（attachments/mindmap/universe/mastery/test files）·
+  KnowledgeRadar.tsx emoji 违规修复（ADR-013）·
+  global.css 添加 `--bg-alt` 变量定义
 - **项目审查修正**：M0.5 重命名为 M4-A Tutor Context Infrastructure ·
   create_note 原子写入优先级提升为 P2（M7 前必须解决）·
   M2b-002 前增加 MindMap Boundary Audit 建议 ·
@@ -22,6 +27,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   scanner.py（扫描 workspace Truth Source：vault/eventlogs/mind_maps）·
   diff.py（对比两个 Manifest → SyncPlan：upload/download/conflict/skip）·
   17 个单元测试 · 总计 184 tests passed
+
+### Added
+- **M7-001 Stabilization Audit**：新增 42 个同步测试（test_sync.py）·
+  28 个深度测试（test_sync_deep.py：中文文件名/特殊字符/大文件/嵌套目录）·
+  14 个恢复测试（test_sync_recovery.py：幂等性/原子性/确定性/边界条件）·
+  docs/audit/M7-001-STABILITY-AUDIT.md · 总计 251 tests passed
 
 ### Added
 - **M2b-002 Concept Binding**：MindMap 节点绑定 Concept（引用，不改 mastery/event）·

@@ -14,7 +14,7 @@ effective = 0.35*knowledge + 0.30*practice + 0.20*recall + 0.15*transfer
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from ..db import connect
 

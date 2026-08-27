@@ -1,7 +1,6 @@
 """附件上传/读取：图片与 PDF，sha 前缀命名防碰撞。仅 Data/Core 层触达文件。"""
 from __future__ import annotations
 
-import re
 import uuid
 from pathlib import Path
 

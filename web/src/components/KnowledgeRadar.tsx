@@ -73,7 +73,7 @@ export function KnowledgeRadar({ query, noteId, onOpenNote }: Props) {
 
       {matches.length > 0 && (
         <div className="radar-section">
-          <div className="radar-section-title">📘 匹配</div>
+          <div className="radar-section-title">匹配</div>
           {matches.map((m) => (
             <button
               key={`${m.type}-${m.id}`}
@@ -91,7 +91,7 @@ export function KnowledgeRadar({ query, noteId, onOpenNote }: Props) {
 
       {related.length > 0 && (
         <div className="radar-section">
-          <div className="radar-section-title">🔗 相关概念</div>
+          <div className="radar-section-title">相关概念</div>
           {related.map((r) => (
             <span key={r.title} className="radar-related-tag">
               {r.title}
@@ -101,7 +101,7 @@ export function KnowledgeRadar({ query, noteId, onOpenNote }: Props) {
       )}
 
       <div className="radar-section">
-        <div className="radar-section-title">🧠 学习状态</div>
+        <div className="radar-section-title">学习状态</div>
         <span className="radar-memory-null muted">
           暂无数据（M3.5-B 接入）
         </span>

@@ -5,7 +5,6 @@ GET /api/v1/universe — 返回 { nodes, edges }
 from __future__ import annotations
 
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
 
 from ..core.universe import get_universe_projection
 from ..db import connect
