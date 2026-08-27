@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { apiGet, apiPost } from "../lib/api";
+import { SyncStatusPanel } from "../components/sync/SyncStatusPanel";
 import type {
   MasteryDetail,
   MasteryListResponse,
@@ -82,6 +83,8 @@ export function DashboardView() {
   return (
     <section className="dashboard-view">
       {error && <div className="error-banner">{error}</div>}
+
+      <SyncStatusPanel />
 
       <div className="dash-section">
         <h3>今日复习（{reviews.length}）</h3>

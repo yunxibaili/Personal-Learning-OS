@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：76caddb · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：9aeff78 · Branch：main · Clean：yes
 
 ---
 
@@ -57,11 +57,12 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | M7-003.5 | Documentation & Architecture Sync Audit（6067332） | ✅ |
 | M7-004 | Sync Apply Layer（core/sync/apply.py + 27 tests） | ✅ |
 | M7-004.5 | Sync Boundary & Recovery Audit（fail-closed 修复 + 19 tests） | ✅ |
+| M7-005 | Conflict UI（SyncStatusPanel + /sync/status,/resolve，方案 a） | ✅ |
 
 ## Next Up
 
-- **M7-005 Conflict UI**（冲突双份展示与解决）
-- M7-006 End-to-end LAN Demo
+- **M7-006 End-to-end LAN Demo**
+- M7-007 Vault Conflict Preservation（apply.py vault 分支双份机制，含 ADR-020 更新）
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
 - 前置阅读：docs/sync/sync-model.md §Apply 层/§边界与恢复 · sync-transport.md · ADR-020
 
@@ -113,13 +114,27 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 ## 测试命令
 
 ```
-pytest -q          → 373 passed
+pytest -q          → 390 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
-## 本次会话改动（M7-004.5 Sync Boundary & Recovery Audit）
+## 本次会话改动（M7-005 Conflict UI，方案 a）
+
+- core/sync/status.py 新建：find_conflicts（从 mind_maps/*.local.json artifacts
+  实时派生冲突列表 + 内联只读预览）/ resolve_conflict（keep_local/keep_remote，
+  删 sidecar 关闭冲突；严格路径校验拒穿越/非法形态）
+- routers/sync.py 新建（HTTP 层首次建立）：GET /sync/status 只读 +
+  POST /sync/resolve 唯一写动作；Router 只调 core 不触 workspace
+- Fix：find_conflicts 初版备份命名推导与 M7-004 Apply 实际产物不一致
+  （math.local.json 而非 math.mindmap.json.local.json），测试先行抓出并修正
+- Frontend：shared/types/sync.ts 契约 + components/sync/SyncStatusPanel.tsx
+  （Compare 展开 Keep Local/Keep Remote），DashboardView 顶部挂载；
+  无新 tab 无弹窗（ADR-013/022）；global.css 少量 .sync-* 样式
+- 测试 +17（17 status/status API）· pytest 373→390 · build/vitest PASS
+
+## 上一会话改动存档（M7-004.5 Sync Boundary & Recovery Audit）
 
 - 新增 tests/unit/test_sync_boundary_audit.py 19 个测试（五项 Audit 全覆盖）
 - **真实漏洞修复**：_apply_events 对写盘异常未 fail-closed——OSError 会穿透

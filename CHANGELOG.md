@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M7-005 Conflict UI**（方案 a：冲突源仅 mindmap artifacts）：core/sync/status.py
+  （find_conflicts 实时派生 + resolve_conflict keep_local/keep_remote）·
+  routers/sync.py HTTP 层首次建立（GET /sync/status 只读 + POST /sync/resolve
+  唯一写动作，Router 只调 core）· shared/types/sync.ts 契约 ·
+  components/sync/SyncStatusPanel.tsx 挂载 Dashboard（无新 tab 无弹窗，
+  ADR-013/022 合规）· TECH_DESIGN §9 API 表补两行 · 17 tests · pytest 373→390
+
+### Added
 - **M7-004.5 Sync Boundary & Recovery Audit**：Sync Core 异常情况审计 ·
   Audit 1 Transport 静态边界（AST 扫描锁定 transport.py 零落盘动作）·
   Audit 2 崩溃恢复（发现并修复 Apply 未 fail-closed 的真实漏洞：写路径异常/

@@ -607,6 +607,8 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | POST /chat/stream (SSE) | Tutor 流式对话 |
 | GET/PUT /settings | 配置读写（API key 写后永不再返回明文） |
 | GET /sync/pair (M7) | 生成一次性配对码/二维码 → 换取 LAN bearer token |
+| GET /sync/status (M7-005) | 只读同步状态：mindmap 冲突列表（自 *.local.json artifacts 派生） |
+| POST /sync/resolve (M7-005) | 用户裁决冲突 {path, resolution: keep_local\|keep_remote}；无自动解决 |
 | POST /sync/manifest (M7) | 交换双方文件指纹，返回三态差异清单（new/changed/conflict） |
 | POST /sync/fetch · /sync/push (M7) | 差量拉取/推送（vault+attachments+eventlogs 白名单范围） |
 | POST /trace/run (M9) | 运行并返回 TraceEvent[] |

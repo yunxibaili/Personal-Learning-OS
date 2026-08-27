@@ -52,8 +52,13 @@
 - [x] M7-004.5 Sync Boundary & Recovery Audit ✅（19 tests · 发现并修复 Apply 未
   fail-closed 漏洞 · pytest 354→373）完成报告：见 CURRENT_STATE 与
   docs/sync/sync-model.md §边界与恢复
-- [ ] M7-005 Conflict UI（冲突双份展示与解决）
+- [x] M7-005 Conflict UI ✅（SyncStatusPanel @ Dashboard · GET /sync/status +
+  POST /sync/resolve（方案 a：仅 mindmap 冲突源）· pytest 373→390）
+  完成报告：见 CURRENT_STATE 与 shared/types/sync.ts 契约
 - [ ] M7-006 End-to-end LAN Demo
+- [ ] **M7-007 Vault Conflict Preservation**（用户登记的待办）：apply.py vault 分支
+  增加 conflict copy · 更新 ADR-020 与 sync-model.md · 补恢复测试——
+  弥合「文档承诺 vault 双份保留 vs Apply 现为 LWW」的缺口（M7-003.5 发现）
 - [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）
 
 ## M0 任务拆解

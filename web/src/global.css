@@ -1254,3 +1254,16 @@ body {
 .mindmap-btn-unbind:hover {
   background: rgba(179, 86, 77, 0.2);
 }
+
+/* ── Sync Status Panel（M7-005，低打扰基础设施）──────────── */
+.sync-conflict { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.sync-conflict-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.sync-title { font-weight: 600; }
+.sync-compare { display: flex; gap: 12px; margin: 8px 0; }
+.sync-side { flex: 1; min-width: 0; }
+.sync-side pre {
+  font-size: 11px; background: var(--bg-alt, #f6f6f6); border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 8px; max-height: 180px; overflow: auto;
+  white-space: pre-wrap; word-break: break-all; margin: 4px 0 0;
+}
+.sync-actions { display: flex; gap: 8px; margin-top: 6px; }
