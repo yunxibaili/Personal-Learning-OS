@@ -440,3 +440,43 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
   | `npx tsc --noEmit` | no error | no error ✓ |
   | `npx vite build` | build pass | build pass ✓ |
 - **结果与遗留**：M3b Knowledge Universe 全部完成（M3b-001~004），下一步 M2b MindMap
+
+### M2b-001 MindMap Canvas 完成（2026-08-27）
+
+- **做了什么**：MindMap Canvas CRUD + React Flow + ADR-019 isolation
+- **改动文件**：
+  - `server/migrations/006_mindmap.sql`——mind_maps + mind_map_nodes + mind_map_edges 三表
+  - `server/app/core/mindmap.py`——CRUD（create/list/get/delete map, add/update/delete node, add/delete edge）
+  - `server/app/routers/mindmap.py`——9 endpoints
+  - `server/tests/api/test_mindmap.py`——18 tests（含 ADR-019 isolation test）
+  - `web/src/components/mindmap/MindMapCanvas.tsx`——React Flow + sidebar
+  - `web/src/components/mindmap/MapNode.tsx`——concept badge / temp node
+  - `web/src/App.tsx`——MindMap tab 集成
+  - `web/src/global.css`——mindmap 样式
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest -q` | 150 passed | 150 passed ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：M2b-001 完成，ADR-019 隔离验证通过，下一步 M2b-002 Concept Binding
+
+### 项目审查记录（2026-08-27）
+
+审查结论：
+
+> 架构方向没有偏离，核心约束没有被破坏。达到「核心架构完成，进入扩展期」阶段。
+
+关键发现：
+
+1. **M0.5 命名混乱**：已修正为 M4-A Tutor Context Infrastructure（含 docs/ai/ + context builder）
+2. **create_note 原子写入**：优先级从 Known Risk 提升为 P2（M7 Sync 前必须解决）
+3. **M2b-002 前置**：建议增加 MindMap Boundary Audit（检查 ADR-019 铁律）
+4. **M7 前置**：需要 ADR-020 Sync Conflict Resolution（Markdown/Event/SQLite 三套同步策略）
+
+四层空间边界已确立：
+
+```
+Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
+```
+
+下一步：M2b-002 Concept Binding

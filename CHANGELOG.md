@@ -5,6 +5,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **项目审查修正**：M0.5 重命名为 M4-A Tutor Context Infrastructure ·
+  create_note 原子写入优先级提升为 P2（M7 前必须解决）·
+  M2b-002 前增加 MindMap Boundary Audit 建议 ·
+  M7 前增加 ADR-020 Sync Conflict Resolution 需求
+
 ### Added
 - **M4-B Prompt Assembly**：build_prompt() 纯函数 Prompt 编排层 ·
   TutorContext TypedDict（NotRequired 支持不完整上下文）· TutorMode Literal 类型 ·

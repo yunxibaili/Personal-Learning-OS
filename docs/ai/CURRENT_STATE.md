@@ -26,7 +26,7 @@ pytest 150 passed · npm run build 通过。
 | M3 | Learning Graph（掌握度/SM-2/Dashboard） | ✅ |
 | M3.5-A | Knowledge Radar MVP（上下文匹配+Radar面板） | ✅ |
 | M5 | Review Loop（复习队列/优先级/时间线/learning-model） | ✅ |
-| M0.5 | AI Context Infrastructure（docs/ai/ + AGENTS §15） | ✅ |
+| M4-A | Tutor Context Infrastructure（docs/ai/ + AGENTS §15 + context builder） | ✅ |
 | M4-A | Tutor Context API（context builder + router + 5 tests） | ✅ |
 | Gate 0.5 | M4-Preflight Hardening（H1-H6） | ✅ |
 | M4-B | Prompt Assembly（build_prompt + 16 tests） | ✅ |
@@ -83,7 +83,13 @@ pytest 150 passed · npm run build 通过。
 - 本地 LLM 未实测（Ollama 路径理论通，未验证）
 - Trace 引擎推迟（M9+）
 - TipTap 数学扩展为社区维护（@aarkue），非官方
-- create_note 原子写入未保证（Known Risk，记录未修）
+- create_note 原子写入未保证（P2，M7 Sync 前必须解决）
+
+## 架构审查备忘
+
+- M2b-002 前建议做 MindMap Boundary Audit（检查 ADR-019 铁律）
+- M7 前需要 ADR-020 Sync Conflict Resolution（Markdown/Event/SQLite 三套同步策略）
+- 保持四层空间边界：Knowledge → Learning → Thinking → AI
 
 ## 测试命令
 
