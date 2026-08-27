@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M7-004.5 Sync Boundary & Recovery Audit**：Sync Core 异常情况审计 ·
+  Audit 1 Transport 静态边界（AST 扫描锁定 transport.py 零落盘动作）·
+  Audit 2 崩溃恢复（发现并修复 Apply 未 fail-closed 的真实漏洞：写路径异常/
+  非法 UTF-8 现统一吸收为 REJECTED；Case A 残留 tmp / Case B 合并中断重试恢复
+  均有测试）· Audit 3 恶意输入参数化补全 · Audit 4 重放一致性
+  （二次 apply 全 SKIPPED，eventlog "no new events" 语义归并 SKIP）·
+  Audit 5 文档同步 · 新增 19 测试 · pytest 354→373
+
+### Added
 - **M7-004 Sync Apply Layer**：远端数据进入 workspace 的唯一写入口（core/sync/apply.py）·
   四条冻结规则——唯一写入口 / 双重校验（字节级 SHA-256 重算 + 白名单复检 +
   路径穿越/盘符拒绝）/ eventlog append-merge 按 event_id 幂等去重 /

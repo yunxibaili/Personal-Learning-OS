@@ -100,3 +100,16 @@ Layer 3: Local Cache（永不同步层）
 
 Apply 不读墙钟、不生成时间戳、不做随机决策。同一输入集对相同初始状态
 apply 两次，workspace 字节级一致——这是 LAN 多设备与失败重试正确性的前提。
+
+## 边界与恢复（M7-004.5 审计冻结）
+
+- **静态边界**：transport.py 禁止任何文件系统落盘动作（AST 级扫描测试锁定）；
+  mutation 只属于 apply.py，写盘只经 transfer.write_file_atomic
+- **Fail-closed**：写路径任何异常（含 OSError、非法 UTF-8）都被吸收为
+  REJECTED 结果，不得穿透 Apply 闸门抛给调用方
+- **半写保护**：merge 计算与落盘分离——先在内存合成 merged_text，
+  再单次原子替换；写失败时本地 jsonl 保持原样，重试同一输入即可完整恢复
+- **崩溃残留**：`.sync_tmp_*` 临时文件残留不影响旧文件有效性，也不影响后续 apply
+- **坏行保留**：eventlog 中已存在的损坏行不会被 merge 丢弃或覆盖——
+  修复交给用户/recovery 流程，同步层永不静默改写历史
+- **备份不可变**：mindmap 冲突的 `.local.json` 备份一经写入永不被后续 apply 覆盖

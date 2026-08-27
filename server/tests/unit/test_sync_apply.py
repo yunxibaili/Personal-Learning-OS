@@ -111,7 +111,7 @@ class TestApplyEvents:
         (ws / path).write_text(_ev("a"), encoding="utf-8")
         before = (ws / path).read_text(encoding="utf-8")
         r = applyer.apply_file(ws, path, b"")
-        assert r.action is ApplyAction.MERGED and r.message == "no new events"
+        assert r.action is ApplyAction.SKIPPED and r.message == "no new events"
         assert (ws / path).read_text(encoding="utf-8") == before
 
     def test_local_never_truncated(self, ws, applyer):

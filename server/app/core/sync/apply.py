@@ -226,15 +226,26 @@ class SyncApply:
                 return ApplyItemResult(path, ApplyAction.REJECTED, False,
                                        "unreadable local eventlog")
 
-        remote_text = data.decode("utf-8", errors="strict")
+        try:
+            remote_text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            return ApplyItemResult(path, ApplyAction.REJECTED, False,
+                                   "invalid utf-8")
         merged_text, appended = _dedupe_eventlog(local_text, remote_text)
 
         if appended == 0:
-            return ApplyItemResult(path, ApplyAction.MERGED, True,
+            # 幂等重放：远端没有新事件时与 SKIP 同义，保证 apply(plan) 二次执行
+            # 的结果全部落在 SKIPPED（M7-004.5 Audit 4）
+            return ApplyItemResult(path, ApplyAction.SKIPPED, True,
                                    "no new events")
-        # 注意：写回的是「local ∪ remote」整体，而非追加远程原文——
-        # 保证已有损坏行修复后重放一致（确定性优先于增量写性能）。
-        if write_file_atomic(workspace, path, merged_text.encode("utf-8")) is None:
+        try:
+            # 注意：写回的是「local ∪ remote」整体，而非追加远程原文——
+            # 保证已有损坏行修复后重放一致（确定性优先于增量写性能）。
+            ok = write_file_atomic(workspace, path, merged_text.encode("utf-8")) is not None
+        except OSError:
+            # Fail-closed：写路径任何异常都不得穿透 Apply 闸门（M7-004.5 Audit 2B）
+            ok = False
+        if not ok:
             return ApplyItemResult(path, ApplyAction.REJECTED, False, "write failed")
         return ApplyItemResult(path, ApplyAction.MERGED, True,
                                f"appended {appended} events")

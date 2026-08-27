@@ -49,7 +49,9 @@
   core/sync/apply.py（唯一写入口 · 双重校验 · eventlog append-merge event_id 去重 ·
   mindmap LWW + conflict backup）· tests/unit/test_sync_apply.py 27 个 · pytest 327→354
   完成报告：见 CURRENT_STATE「本次会话改动」与 docs/sync/sync-model.md §Apply 层
-- [ ] M7-004.5 Sync Security Audit（Apply 落盘后全量安全复审）
+- [x] M7-004.5 Sync Boundary & Recovery Audit ✅（19 tests · 发现并修复 Apply 未
+  fail-closed 漏洞 · pytest 354→373）完成报告：见 CURRENT_STATE 与
+  docs/sync/sync-model.md §边界与恢复
 - [ ] M7-005 Conflict UI（冲突双份展示与解决）
 - [ ] M7-006 End-to-end LAN Demo
 - [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）

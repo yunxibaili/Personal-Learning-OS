@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：e3eac45 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：76caddb · Branch：main · Clean：yes
 
 ---
 
@@ -56,14 +56,14 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | M7-003 | Sync Transport（消息协议 + 原子传输，无 Apply/Conflict） | ✅ |
 | M7-003.5 | Documentation & Architecture Sync Audit（6067332） | ✅ |
 | M7-004 | Sync Apply Layer（core/sync/apply.py + 27 tests） | ✅ |
+| M7-004.5 | Sync Boundary & Recovery Audit（fail-closed 修复 + 19 tests） | ✅ |
 
 ## Next Up
 
-- **M7-004.5 Sync Security Audit**（Apply 落盘后全量安全复审）
-- M7-005 Conflict UI（冲突双份展示与解决）
+- **M7-005 Conflict UI**（冲突双份展示与解决）
 - M7-006 End-to-end LAN Demo
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
-- 前置阅读：docs/sync/sync-model.md §Apply 层 · sync-transport.md · ADR-020
+- 前置阅读：docs/sync/sync-model.md §Apply 层/§边界与恢复 · sync-transport.md · ADR-020
 
 ## Do Not Touch
 
@@ -113,13 +113,23 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 ## 测试命令
 
 ```
-pytest -q          → 354 passed
+pytest -q          → 373 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
-## 本次会话改动（M7-004 Sync Apply Layer）
+## 本次会话改动（M7-004.5 Sync Boundary & Recovery Audit）
+
+- 新增 tests/unit/test_sync_boundary_audit.py 19 个测试（五项 Audit 全覆盖）
+- **真实漏洞修复**：_apply_events 对写盘异常未 fail-closed——OSError 会穿透
+  Apply 闸门抛给调用方；现已统一吸收为 REJECTED，非法 UTF-8 同理
+- eventlog "no new events" 语义归并 SKIPPED（重放一致性：二次 apply 全 SKIP）
+- Transport 静态边界改为 AST 级扫描（子串扫描会误报 urlopen），锁定
+  transport.py 零文件系统动作；此扫描永久入库
+- 文档：sync-model.md 新增「边界与恢复」节；CHANGELOG/TASKS 同步
+
+## 上一会话改动存档（M7-004 Sync Apply Layer）
 
 - core/sync/apply.py 新建：SyncApply / ApplyAction / SyncApplyResult / validate_rel_path
   四条冻结规则落地——唯一写入口 · 双重校验（字节级 hash 重算，测试中实证了
