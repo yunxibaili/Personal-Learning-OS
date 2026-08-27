@@ -5,6 +5,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Audit
+- **M7-006.5 Sync Release Audit**：M7 转入稳定发布基线 ·
+  Phase 1 九模块 AST 边界终审（PASS，三处例外合规定性）→ docs/sync/SYNC_BOUNDARY_REPORT.md ·
+  Phase 2 Truth Model 审计（白名单=Layer 1 三类 · 禁比 derived state）·
+  Phase 3 Recovery 证据收集（断网/半写/tmp 残留/重复同步 + 附加探针）·
+  Phase 4 文档冻结 · Phase 5 T-EXPORT 预检 → docs/release/EXPORT_MANIFEST.md +
+  RELEASE_AUDIT_M7.md · 零功能变更零语义变更
+
 ### Added
 - **M7-006 E2E LAN Demo**：真实两进程经回环网络完成完整同步 ·
   Phase 1 SyncPair 双 workspace runner · Phase 2 四场景仿真（单向/双向/

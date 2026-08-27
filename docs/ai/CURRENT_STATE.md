@@ -59,15 +59,16 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | M7-004.5 | Sync Boundary & Recovery Audit（fail-closed 修复 + 19 tests） | ✅ |
 | M7-005 | Conflict UI（SyncStatusPanel + /sync/status,/resolve，方案 a） | ✅ |
 | M7-006 | E2E LAN Demo（真实两进程全链路 + Recovery） | ✅ |
+| M7-006.5 | Sync Release Audit（稳定发布基线 PASS） | ✅ |
 
 ## Next Up
 
-- **M7-006.5 Sync Release Audit**（M7 收尾第一步，范围待立项确认）
-- M7-007 Vault Conflict Preservation（apply.py vault 分支双份机制，含 ADR-020 更新）
+- **M7-007 Vault Conflict Preservation**（apply.py vault 分支双份机制，含 ADR-020 更新）
 - M7-008 Sync Polish → **P8 PC Productization** → Mobile API Preparation → M8
   （路线决议见 docs/tasks/TASKS.md §路线决议：M8 Mobile 延后，先 PC 完整化）
+- 发布基线文档：docs/release/RELEASE_AUDIT_M7.md · EXPORT_MANIFEST.md ·
+  docs/sync/SYNC_BOUNDARY_REPORT.md
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
-- 前置阅读：docs/sync/sync-model.md §Apply 层/§边界与恢复 · sync-transport.md · ADR-020
 
 ## Do Not Touch
 

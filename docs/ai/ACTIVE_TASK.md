@@ -1,36 +1,24 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-27 · 路线决议落盘：M8 延后，进入"M7 收尾 → P8 PC 产品化"路线
+> 上次更新：2026-08-27 · M7-006.5 Sync Release Audit 完成（PASS）
 
 ---
 
 ## Task ID
 
-（无活跃任务 — 等用户指定下一个任务）
+（无活跃任务 — M7-006.5 已完成，等用户指定下一个任务）
 
 ## Status
 
-路线已裁定（docs/tasks/TASKS.md §路线决议）：
+M7 Sync Release Audit ✅ PASS — M7 达到稳定发布基线
 
-```
-M7-006.5 Sync Release Audit   ← 下一个候选
-    ↓
-M7-007 Vault Conflict Preservation
-    ↓
-M7-008 Sync Polish
-    ↓
-P8 PC Productization（Mode 切换 / Dashboard Home / Tutor 三入口）
-    ↓
-Mobile API Preparation（只留边界不建端点族）
-    ↓
-M8 React Native
-```
+- 产出：docs/sync/SYNC_BOUNDARY_REPORT.md · docs/release/EXPORT_MANIFEST.md ·
+  docs/release/RELEASE_AUDIT_M7.md
+- pytest 397 passed · build/vitest PASS · 零功能变更
 
 ## 下一步队列
 
-1. **M7-006.5 Sync Release Audit**（建议范围：依赖审计 + 安全终审 +
-   一键环境重建验证 + 数据导出 T-EXPORT 预检——按 AGENTS 里程碑收尾四件事展开，
-   待用户确认范围后立项）
-2. M7-007 Vault Conflict Preservation
-3. M7-008 Sync Polish
+1. **M7-007 Vault Conflict Preservation**（下一个；动冻结面，开工前走 §12 八项清单）
+2. M7-008 Sync Polish → P8 PC Productization → Mobile API Prep → M8
+3. 挂起：Data Model Terminology Cleanup
