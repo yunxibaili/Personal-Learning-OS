@@ -4,13 +4,10 @@ api_key 类键读取时脱敏为 "******"；错误统一 {error:{code,message}}�
 """
 from __future__ import annotations
 
-import sqlite3
-
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from ..db import connect
+from ..db import get_all_settings, put_settings
 
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
@@ -30,29 +27,18 @@ class SettingsBody(BaseModel):
 
 @router.get("")
 def get_settings() -> dict:
-    conn = connect()
-    try:
-        rows = conn.execute("SELECT key, value FROM settings").fetchall()
-        return {"settings": {r["key"]: _mask(r["key"], r["value"]) for r in rows}}
-    finally:
-        conn.close()
+    raw = get_all_settings()
+    return {"settings": {k: _mask(k, v) for k, v in raw.items()}}
 
 
 @router.put("")
-def put_settings(body: SettingsBody) -> dict:
-    conn = connect()
+def put_settings_endpoint(body: SettingsBody) -> dict:
     try:
-        conn.executemany(
-            "INSERT INTO settings (key, value) VALUES (?, ?) "
-            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-            list(body.settings.items()),
-        )
-        conn.commit()
-    except sqlite3.Error as exc:  # 带上下文显式上报，不静默吞错
+        put_settings(body.settings)
+    except Exception as exc:
+        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=500,
             content={"error": {"code": "db_error", "message": str(exc)}},
         )
-    finally:
-        conn.close()
     return {"ok": True}

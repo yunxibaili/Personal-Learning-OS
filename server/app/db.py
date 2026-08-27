@@ -93,3 +93,32 @@ def init_db() -> list[str]:
     """初始化入口：建目录 + 跑 migration。"""
     ensure_workspace()
     return migrate()
+
+
+# ── Settings 数据访问（路由层禁止直连 SQLite）──────────────────
+
+def get_all_settings() -> dict[str, str]:
+    """读取全部 settings KV。"""
+    conn = connect()
+    try:
+        rows = conn.execute("SELECT key, value FROM settings").fetchall()
+        return {r["key"]: r["value"] for r in rows}
+    finally:
+        conn.close()
+
+
+def put_settings(settings: dict[str, str]) -> None:
+    """批量写入 settings KV（upsert）。"""
+    conn = connect()
+    try:
+        conn.executemany(
+            "INSERT INTO settings (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            list(settings.items()),
+        )
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

@@ -31,6 +31,7 @@ def test_migration_creates_all_tables_and_idempotent(client: TestClient) -> None
         "learning_events", "mistakes", "memories", "notes",
         "conversations", "messages", "notes_fts",
         "mind_maps", "mind_map_nodes", "mind_map_edges",
+        "review_queue",
     }
     assert expected <= tables, f"缺表: {expected - tables}"
     # 幂等：重复执行不再新增版本记录（001~0006 共六条）

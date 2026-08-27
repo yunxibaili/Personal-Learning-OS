@@ -22,47 +22,49 @@ def _is_blacklisted(rel_path: str) -> bool:
 
 
 def _matches_patterns(rel_path: str) -> bool:
-    """检查路径是否匹配同步白名单模式。"""
+    """检查路径是否匹配同步白名单模式。
+
+    支持 ** 通配符：匹配零个或多个目录层级。
+    """
     for pattern in SYNC_PATTERNS:
-        # 简单的 glob 匹配：** 匹配任意目录，* 匹配任意文件名
-        if _glob_match(rel_path, pattern):
+        if _path_matches(rel_path, pattern):
             return True
     return False
 
 
-def _glob_match(path: str, pattern: str) -> bool:
-    """简化 glob 匹配（支持 ** 和 *）。"""
-    # 将 pattern 拆分为段进行匹配
-    pat_parts = pattern.split("/")
-    path_parts = path.split("/")
+def _path_matches(path: str, pattern: str) -> bool:
+    """简化 glob 匹配，支持 ** 匹配任意目录层级。
 
-    pi = 0  # path index
-    for pp in pat_parts:
-        if pp == "**":
-            # ** 匹配零个或多个目录
-            if pi >= len(path_parts):
-                continue
-            # 尝试匹配剩余 pattern
-            remaining_pat = "/".join(pat_parts[pat_parts.index(pp) + 1:])
-            if not remaining_pat:
-                return True
-            for i in range(pi, len(path_parts)):
-                sub_path = "/".join(path_parts[i:])
-                if _glob_match(sub_path, remaining_pat):
+    将 pattern 拆分为含 ** 的完整段列表，然后递归匹配。
+    """
+    # 将 pattern 拆分为段，保留 ** 作为独立段
+    # "vault/**/*.md" → ["vault", "**", "*.md"]
+    pat_parts = pattern.split("/")
+    path_parts = path.split("/") if path else []
+
+    def _match(pi: int, si: int) -> bool:
+        if si == len(pat_parts):
+            return pi == len(path_parts)
+
+        sp = pat_parts[si]
+        if sp == "**":
+            # ** 匹配零个或多个路径段
+            for k in range(pi, len(path_parts) + 1):
+                if _match(k, si + 1):
                     return True
             return False
-        elif pp == "*":
+        elif sp == "*":
             if pi >= len(path_parts):
                 return False
-            pi += 1
+            return _match(pi + 1, si + 1)
         else:
             if pi >= len(path_parts):
                 return False
-            if not fnmatch.fnmatch(path_parts[pi], pp):
+            if not fnmatch.fnmatch(path_parts[pi], sp):
                 return False
-            pi += 1
+            return _match(pi + 1, si + 1)
 
-    return pi == len(path_parts)
+    return _match(0, 0)
 
 
 def scan_workspace(workspace: Path, device_id: str) -> Manifest:

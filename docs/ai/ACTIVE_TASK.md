@@ -1,28 +1,30 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-27 · P2 完成，准备 M7
+> 上次更新：2026-08-27 · M7-001 Stabilization 完成
 
 ---
 
 ## Task ID
 
-M7 LAN Sync（可以开始）
+M7-002 LAN Discovery（可以开始）
 
 ## Status
+
+M7-001 Sync Engine Core ✅ + Stabilization Audit ✅
 
 前置条件已满足：
 - ADR-005 Multi-device Sync ✅
 - ADR-020 Sync Truth Model ✅
 - ADR-021 MindMap Exchange Format v1 ✅
 - P2 create_note atomic write ✅
+- M7-001 Sync Engine Core ✅
+- M7-001 Stabilization Audit ✅
 
 ## 下一步
 
-按审查建议顺序：
-
-1. M7-001 Sync Engine Core
-2. M7-002 LAN Discovery
+1. ~~M7-001 Sync Engine Core~~ ✅
+2. M7-002 LAN Discovery（device pairing, HTTP manifest exchange）
 3. M7-003 Vault Sync
 4. M7-004 Event Sync
 5. M7-005 Conflict UI

@@ -7,13 +7,13 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → **M7-001 Sync Engine Core ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → **M7-001 Stabilization Audit ✅**
 
 ## Last Completed
 
-M7-001 Sync Engine Core 已完成。
-manifest.py（FileEntry + Manifest）+ scanner.py（扫描 Truth Source）+ diff.py（SyncPlan）。
-纯 Core，无网络。17 个单元测试。pytest 184 passed。
+M7-001 Stabilization Audit 完成。
+修复：scanner.py glob 匹配 bug（替换自定义 _glob_match）、settings.py 边界违规（SQL 提取到 db.py）、test_smoke.py review_queue 遗漏。
+新增 25 个同步测试（42 total）。pytest 184 passed（+25 sync tests = 209）。
 
 ## 已完成
 
@@ -25,26 +25,29 @@ manifest.py（FileEntry + Manifest）+ scanner.py（扫描 Truth Source）+ diff
 | M3 | Learning Graph（掌握度/SM-2/Dashboard） | ✅ |
 | M3.5-A | Knowledge Radar MVP（上下文匹配+Radar面板） | ✅ |
 | M5 | Review Loop（复习队列/优先级/时间线/learning-model） | ✅ |
-| M4-A | Tutor Context Infrastructure（docs/ai/ + AGENTS §15 + context builder） | ✅ |
-| M4-A | Tutor Context API（context builder + router + 5 tests） | ✅ |
+| M4-A | Tutor Context Infrastructure + API | ✅ |
 | Gate 0.5 | M4-Preflight Hardening（H1-H6） | ✅ |
 | M4-B | Prompt Assembly（build_prompt + 16 tests） | ✅ |
 | ADR-015 | Multilingual Knowledge Support | ✅ |
 | Gate 1 | AI Boundary Audit（6/6 PASS） | ✅ |
-| M4-C | LLM Provider（Protocol + Mock + Service + 14 tests） | ✅ |
-| Smoke | Tutor 全链路验证（tutor/test endpoint + 5 tests） | ✅ |
-| ADR-016 | Tutor UI Design（knowledge tool, not chatbot） | ✅ |
-| M4-D | Tutor Panel（context panel + modes + build pass） | ✅ |
-| ADR-017 | Architecture Visualization（5 diagrams + yaml） | ✅ |
+| M4-C | LLM Provider（Protocol + Mock + Service） | ✅ |
+| Smoke | Tutor 全链路验证 | ✅ |
+| ADR-016 | Tutor UI Design | ✅ |
+| M4-D | Tutor Panel（context panel + modes） | ✅ |
+| ADR-017 | Architecture Visualization | ✅ |
 | M4.5 | Architecture Visualization Milestone | ✅ |
 | M4-E | Tutor Evaluation（评估体系 + 禁止测试） | ✅ |
 | ADR-018 | Knowledge Universe Design | ✅ |
-| M3b-001 | Universe Projection（GET /universe） | ✅ |
-| M3b-002 | Universe Layout（React Flow + mastery encoding） | ✅ |
-| M3b-003 | Interaction + State Detail（tooltip + detail panel + click） | ✅ |
-| M3b-004 | Navigation Layer（domain tabs + weak area + focus mode） | ✅ |
+| M3b-001~004 | Universe（Projection + Layout + Interaction + Navigation） | ✅ |
 | ADR-019 | MindMap Boundary（Universe ≠ MindMap 冻结） | ✅ |
-| M2b-001 | MindMap Canvas（CRUD + React Flow + ADR-019 isolation） | ✅ |
+| M2b-001 | MindMap Canvas（CRUD + React Flow） | ✅ |
+| M2b-002 | Concept Binding（bind/unbind + search + 前端面板） | ✅ |
+| M2b-003 | Export/Import（.map.json + 前端按钮） | ✅ |
+| ADR-021 | MindMap Exchange Format v1 | ✅ |
+| ADR-020 | Sync Truth Model（三层真值模型冻结） | ✅ |
+| P2 | create_note atomic write（write→fsync→rename） | ✅ |
+| M7-001 | Sync Engine Core（manifest + scanner + diff） | ✅ |
+| Stabilization | M7-001 审计 + 修复（glob bug + settings boundary + tests） | ✅ |
 
 ## Do Not Touch
 
@@ -74,6 +77,8 @@ manifest.py（FileEntry + Manifest）+ scanner.py（扫描 Truth Source）+ diff
 | AI Boundary | Frozen | Gate 1 |
 | LLM Provider | Frozen | M4-C, ProviderProtocol |
 | MindMap Boundary | Frozen | ADR-019 |
+| MindMap Exchange Format | Frozen | ADR-021 |
+| Sync Truth Model | Frozen | ADR-020 |
 
 ## Known Risks
 
@@ -82,18 +87,16 @@ manifest.py（FileEntry + Manifest）+ scanner.py（扫描 Truth Source）+ diff
 - 本地 LLM 未实测（Ollama 路径理论通，未验证）
 - Trace 引擎推迟（M9+）
 - TipTap 数学扩展为社区维护（@aarkue），非官方
-- create_note 原子写入未保证（P2，M7 Sync 前必须解决）
 
 ## 架构审查备忘
 
-- M2b-002 前建议做 MindMap Boundary Audit（检查 ADR-019 铁律）
-- M7 前需要 ADR-020 Sync Conflict Resolution（Markdown/Event/SQLite 三套同步策略）
 - 保持四层空间边界：Knowledge → Learning → Thinking → AI
+- M7-002 起需要 HTTP manifest exchange + device pairing
 
 ## 测试命令
 
 ```
-pytest -q          → 150 passed
+pytest -q          → 209 passed（含 42 sync tests）
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -101,9 +104,9 @@ npx vite build     → pass
 
 ## 本次会话改动
 
-- ConceptNode.tsx：hover tooltip（mastery 四维 + status）
-- KnowledgeUniverse.tsx：onNodeClick + detail panel（右侧 260px）
-- global.css：tooltip + detail panel + universe-body 样式
-- ViewKey 增加 "universe"
-- App.tsx：Universe tab 集成
-- npm run build 通过
+- scanner.py：替换自定义 _glob_match 为正确的 ** 递归匹配（修复嵌套目录匹配 bug）
+- manifest.py：移除死代码 `import os`
+- settings.py：移除 `import sqlite3`，SQL 操作提取到 db.py（get_all_settings/put_settings）
+- db.py：新增 settings 数据访问函数（get_all_settings/put_settings）
+- test_sync.py：新增 25 个测试（TestPathMatches 8个 + TestManifest 4个 + TestScanner 4个 + TestDiff 9个），总计 42
+- test_smoke.py：expected 集合添加 review_queue
