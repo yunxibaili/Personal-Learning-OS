@@ -778,3 +778,164 @@ body {
 .universe-node:hover {
   filter: brightness(1.1);
 }
+
+/* ---- M3b-004 Navigation Layer ---- */
+.universe-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.universe-tab {
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  border-right: 1px solid var(--border);
+}
+
+.universe-tab:last-child {
+  border-right: none;
+}
+
+.universe-tab.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.universe-tab:hover:not(.active) {
+  background: var(--bg-alt);
+}
+
+.universe-domain-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.universe-domain-tab {
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  border-right: 1px solid var(--border);
+}
+
+.universe-domain-tab:last-child {
+  border-right: none;
+}
+
+.universe-domain-tab.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.universe-domain-tab:hover:not(.active) {
+  background: var(--bg-alt);
+}
+
+/* ---- Weak Area Control ---- */
+.universe-weak-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.weak-label {
+  font-size: 11px;
+}
+
+.weak-slider {
+  width: 120px;
+  accent-color: #ff8a00;
+}
+
+.weak-value {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 32px;
+}
+
+/* ---- Focus Mode Control ---- */
+.universe-focus-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.focus-label {
+  font-size: 11px;
+}
+
+.universe-depth-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.universe-depth-btn.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.universe-depth-btn:hover:not(.active) {
+  background: var(--bg-alt);
+}
+
+.focus-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ---- Neighbors List ---- */
+.detail-neighbors {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detail-neighbor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.detail-neighbor:hover {
+  background: var(--bg-alt);
+  color: var(--text-primary);
+}
+
+.neighbor-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

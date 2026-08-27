@@ -7,13 +7,13 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → **M3b-004**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → **M2b**
 
 ## Last Completed
 
-M3b-001 Universe Projection + M3b-002 Universe Layout + M3b-003 Interaction + State Detail 已完成。
+M3b-001 Universe Projection + M3b-002 Universe Layout + M3b-003 Interaction + M3b-004 Navigation Layer 已完成。
 ADR-018 Knowledge Universe Design 已冻结。
-GET /api/v1/universe → React Flow 渲染 · mastery → radius + color · domain filter · hover tooltip · click detail panel。
+GET /api/v1/universe → React Flow 渲染 · mastery → radius + color · domain tabs · weak area view · focus mode + depth。
 npm run build 通过。
 
 ## 已完成
@@ -43,6 +43,7 @@ npm run build 通过。
 | M3b-001 | Universe Projection（GET /universe） | ✅ |
 | M3b-002 | Universe Layout（React Flow + mastery encoding） | ✅ |
 | M3b-003 | Interaction + State Detail（tooltip + detail panel + click） | ✅ |
+| M3b-004 | Navigation Layer（domain tabs + weak area + focus mode） | ✅ |
 
 ## Do Not Touch
 

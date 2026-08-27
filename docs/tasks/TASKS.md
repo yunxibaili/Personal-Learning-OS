@@ -426,4 +426,17 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
   |---|---|---|
   | `npx tsc --noEmit` | no error | no error ✓ |
   | `npx vite build` | build pass | build pass ✓ |
-- **结果与遗留**：Universe 交互层完成，下一步 M3b-004 Advanced Layout（domain clustering）
+- **结果与遗留**：Universe 交互层完成，下一步 M3b-004 Navigation Layer（domain clustering）
+
+### M3b-004 Navigation Layer 完成（2026-08-27）
+
+- **做了什么**：Universe 导航层——domain filter 改为顶部 tab、weak area view（低掌握度概念筛选 + threshold slider）、focus mode（邻居展开 + depth 1/2/3 hop 控制 + neighbor list）
+- **改动文件**：
+  - `web/src/components/universe/KnowledgeUniverse.tsx`——view mode tabs (all/weak/focus)、domain tabs、weak threshold slider、focus depth control、neighbor list in detail panel
+  - `web/src/global.css`——tabs、weak control、focus control、depth buttons、neighbor list 样式
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `npx tsc --noEmit` | no error | no error ✓ |
+  | `npx vite build` | build pass | build pass ✓ |
+- **结果与遗留**：M3b Knowledge Universe 全部完成（M3b-001~004），下一步 M2b MindMap

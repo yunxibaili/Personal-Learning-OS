@@ -1,5 +1,5 @@
 /**
- * KnowledgeUniverse（M3b-003）：Concept Graph + Mastery Overlay + Detail Panel。
+ * KnowledgeUniverse（M3b-004）：Navigation Layer。
  *
  * ADR-018 冻结：
  *   - 节点 = Concept（非 Note）
@@ -7,10 +7,10 @@
  *   - 布局 = React Flow
  *   - 禁止：3D / 粒子 / 星空 / 游戏化
  *
- * M3b-003 新增：
- *   - hover tooltip（mastery 详情）
- *   - click → 右侧 detail panel
- *   - detail panel 含 mastery 四维 + last review + next review
+ * M3b-004 新增：
+ *   - Domain Filter：顶部 tab 选择
+ *   - Weak Area View：低掌握度概念筛选
+ *   - Focus Mode：邻居展开 + depth 控制
  */
 import "@xyflow/react/dist/style.css";
 
@@ -55,6 +55,9 @@ interface UniverseResponse {
   edges: UniverseEdge[];
 }
 
+/** 视图模式 */
+type ViewMode = "all" | "weak" | "focus";
+
 /** React Flow 节点类型注册 */
 const nodeTypes: NodeTypes = { concept: ConceptNode };
 
@@ -78,10 +81,51 @@ function masteryColor(effective: number): string {
   return "#1a1a1a";
 }
 
+/** 构建邻接表 */
+function buildAdjacency(edges: UniverseEdge[]): Map<number, Set<number>> {
+  const adj = new Map<number, Set<number>>();
+  for (const e of edges) {
+    if (!adj.has(e.source)) adj.set(e.source, new Set());
+    if (!adj.has(e.target)) adj.set(e.target, new Set());
+    adj.get(e.source)!.add(e.target);
+    adj.get(e.target)!.add(e.source);
+  }
+  return adj;
+}
+
+/** 获取 N-hop 邻居 ID 集合 */
+function getNeighbors(
+  startId: number,
+  adj: Map<number, Set<number>>,
+  depth: number,
+): Set<number> {
+  const visited = new Set<number>([startId]);
+  let frontier = new Set<number>([startId]);
+  for (let d = 0; d < depth; d++) {
+    const next = new Set<number>();
+    for (const id of frontier) {
+      const neighbors = adj.get(id);
+      if (!neighbors) continue;
+      for (const n of neighbors) {
+        if (!visited.has(n)) {
+          visited.add(n);
+          next.add(n);
+        }
+      }
+    }
+    frontier = next;
+  }
+  visited.delete(startId);
+  return visited;
+}
+
 export function KnowledgeUniverse() {
   const [resp, setResp] = useState<UniverseResponse | null>(null);
   const [error, setError] = useState("");
   const [domainFilter, setDomainFilter] = useState<string>("");
+  const [viewMode, setViewMode] = useState<ViewMode>("all");
+  const [weakThreshold, setWeakThreshold] = useState<number>(0.3);
+  const [focusDepth, setFocusDepth] = useState<number>(1);
   const [selected, setSelected] = useState<UniverseNode | null>(null);
   const openNote = useUi((s) => s.openNote);
 
@@ -105,13 +149,48 @@ export function KnowledgeUniverse() {
     return Array.from(set).sort();
   }, [resp]);
 
-  /** 过滤 + 转换为 React Flow 格式 */
-  const { rfNodes, rfEdges } = useMemo(() => {
-    if (!resp) return { rfNodes: [], rfEdges: [] };
+  /** 邻接表（缓存） */
+  const adj = useMemo(() => {
+    if (!resp) return new Map<number, Set<number>>();
+    return buildAdjacency(resp.edges);
+  }, [resp]);
 
-    const filtered = domainFilter
-      ? resp.nodes.filter((n) => n.domain === domainFilter)
-      : resp.nodes;
+  /** Focus Mode 邻居 ID 集合 */
+  const focusNeighborIds = useMemo(() => {
+    if (viewMode !== "focus" || !selected || !resp) return new Set<number>();
+    return getNeighbors(selected.id, adj, focusDepth);
+  }, [viewMode, selected, adj, focusDepth, resp]);
+
+  /** 过滤 + 转换为 React Flow 格式 */
+  const { rfNodes, rfEdges, weakCount } = useMemo(() => {
+    if (!resp) return { rfNodes: [], rfEdges: [], weakCount: 0 };
+
+    let filtered = resp.nodes;
+
+    // Domain filter
+    if (domainFilter) {
+      filtered = filtered.filter((n) => n.domain === domainFilter);
+    }
+
+    // Weak Area filter
+    let weak = 0;
+    if (viewMode === "weak") {
+      filtered = filtered.filter((n) => {
+        const eff = n.mastery?.effective ?? 0;
+        if (eff < weakThreshold) {
+          weak++;
+          return true;
+        }
+        return false;
+      });
+    }
+
+    // Focus Mode filter
+    if (viewMode === "focus" && selected) {
+      const focusIds = new Set<number>([selected.id]);
+      for (const id of focusNeighborIds) focusIds.add(id);
+      filtered = filtered.filter((n) => focusIds.has(n.id));
+    }
 
     const ids = new Set(filtered.map((n) => n.id));
 
@@ -142,8 +221,8 @@ export function KnowledgeUniverse() {
         labelBgStyle: { fill: "#fff", fillOpacity: 0.8 },
       }));
 
-    return { rfNodes: nodes, rfEdges: edges };
-  }, [resp, domainFilter]);
+    return { rfNodes: nodes, rfEdges: edges, weakCount: weak };
+  }, [resp, domainFilter, viewMode, weakThreshold, focusNeighborIds, selected]);
 
   /** 节点点击 → 选中 */
   const handleNodeClick = useCallback(
@@ -177,22 +256,90 @@ export function KnowledgeUniverse() {
           Knowledge Universe
           <span className="universe-count">{rfNodes.length} concepts</span>
         </span>
-        {domains.length > 0 && (
-          <select
-            className="universe-filter"
-            value={domainFilter}
-            onChange={(e) => setDomainFilter(e.target.value)}
+
+        {/* View Mode Tabs */}
+        <div className="universe-tabs">
+          <button
+            className={`universe-tab ${viewMode === "all" ? "active" : ""}`}
+            onClick={() => setViewMode("all")}
           >
-            <option value="">All domains</option>
+            All
+          </button>
+          <button
+            className={`universe-tab ${viewMode === "weak" ? "active" : ""}`}
+            onClick={() => setViewMode("weak")}
+          >
+            Weak{viewMode === "weak" ? ` (${weakCount})` : ""}
+          </button>
+          <button
+            className={`universe-tab ${viewMode === "focus" ? "active" : ""}`}
+            onClick={() => setViewMode("focus")}
+          >
+            Focus
+          </button>
+        </div>
+
+        {/* Domain Tabs */}
+        {domains.length > 0 && (
+          <div className="universe-domain-tabs">
+            <button
+              className={`universe-domain-tab ${domainFilter === "" ? "active" : ""}`}
+              onClick={() => setDomainFilter("")}
+            >
+              All
+            </button>
             {domains.map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <button
+                key={d}
+                className={`universe-domain-tab ${domainFilter === d ? "active" : ""}`}
+                onClick={() => setDomainFilter(d)}
+              >
+                {d}
+              </button>
             ))}
-          </select>
+          </div>
         )}
+
         <button className="universe-refresh" onClick={() => void load()}>
           Refresh
         </button>
       </div>
+
+      {/* Weak Threshold Slider */}
+      {viewMode === "weak" && (
+        <div className="universe-weak-control">
+          <span className="weak-label">Mastery &lt;</span>
+          <input
+            type="range"
+            min="0.1"
+            max="0.7"
+            step="0.05"
+            value={weakThreshold}
+            onChange={(e) => setWeakThreshold(Number(e.target.value))}
+            className="weak-slider"
+          />
+          <span className="weak-value">{pct(weakThreshold)}</span>
+        </div>
+      )}
+
+      {/* Focus Depth Control */}
+      {viewMode === "focus" && (
+        <div className="universe-focus-control">
+          <span className="focus-label">Depth:</span>
+          {[1, 2, 3].map((d) => (
+            <button
+              key={d}
+              className={`universe-depth-btn ${focusDepth === d ? "active" : ""}`}
+              onClick={() => setFocusDepth(d)}
+            >
+              {d} hop{d > 1 ? "s" : ""}
+            </button>
+          ))}
+          {!selected && (
+            <span className="focus-hint">Click a concept to focus</span>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="universe-legend">
@@ -283,6 +430,32 @@ export function KnowledgeUniverse() {
                 </div>
               </div>
             </div>
+
+            {/* Neighbors (Focus Mode) */}
+            {viewMode === "focus" && focusNeighborIds.size > 0 && (
+              <div className="detail-section">
+                <div className="detail-label">Neighbors ({focusNeighborIds.size})</div>
+                <div className="detail-neighbors">
+                  {Array.from(focusNeighborIds).map((nid) => {
+                    const n = resp.nodes.find((x) => x.id === nid);
+                    if (!n) return null;
+                    return (
+                      <div
+                        key={nid}
+                        className="detail-neighbor"
+                        onClick={() => setSelected(n)}
+                      >
+                        <span
+                          className="neighbor-dot"
+                          style={{ background: masteryColor(n.mastery?.effective ?? 0) }}
+                        />
+                        {n.label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="detail-actions">
