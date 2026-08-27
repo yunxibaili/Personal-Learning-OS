@@ -33,6 +33,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 
 ### Added
+- **ADR-016 Tutor UI Design**：Tutor 界面设计宪法冻结 ·
+  Knowledge Assistant Panel（非聊天机器人）· 禁止清单（avatar/bubble/typing/魔法按钮）·
+  三动作模式（Explain/Hint/Review）· 结构化输出格式
+
+### Added
 - **M4-Preflight Hardening (H1-H6)**：FTS5 输入清洗（双引号包裹）·
   create_note 校验前移 · learning_events.detail 列（quality only）·
   SM-2 时间参数化（UTC）· 9 新测试 · Dashboard 去 emoji

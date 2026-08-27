@@ -58,6 +58,7 @@ pytest 111 passed。
 | AI Tutor 边界 | Frozen | ADR-014 |
 | Prompt Contract | Frozen | M4-B, prompt-contract.md |
 | Multilingual | Frozen | ADR-015 |
+| Tutor UI | Frozen | ADR-016 |
 | AI Boundary | Frozen | Gate 1 |
 | LLM Provider | Frozen | M4-C, ProviderProtocol |
 
