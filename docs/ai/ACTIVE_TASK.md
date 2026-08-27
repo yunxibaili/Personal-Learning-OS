@@ -45,6 +45,30 @@ Docs:
 - CURRENT_STATE.md 里程碑更新
 - TECH_DESIGN §9 标记 Implemented
 
+## 🚨 BLOCK 裁决（用户已定，收尾提交前必须执行）— 方案 A
+
+**问题**：migration 007 新增 `source_type`（note/manual/generated，DEFAULT 'note'）
+与既有 `origin`（markdown/manual/ai_suggested）形成双轨分类；
+且 DEFAULT 回填把存量概念静默改标签。
+
+**裁决：唯一事实字段 = `origin`。**
+
+1. **删除 007_concept_source_type.sql 的 source_type 列**
+   （文件可改名 `007_concept_origin.sql` 但不得引入第二分类字段/枚举）
+2. **core 统一为 `Concept.origin`**；不新增任何派生来源持久化列
+3. **API 返回 `{origin: ...}` 即可**；如需前端兼容别名，可在响应里输出
+   `"source_type": <origin 值>`——仅 response alias，绝不入库
+4. **ADR-023 补充一句冻结文本**：
+   > Concept identity source is defined by origin. Visualization layers must
+   > consume origin only. No derived source classification field may become
+   > persistent state.
+5. 存量数据处理原则：已有 origin 直接使用；无法判断的标 unknown/NULL，
+   **禁止用默认值假装知道**
+6. 收尾顺序：修正 → pytest 全量绿 → 单 commit 提交
+
+**协作纪律**：P8-001A 由当前持有未提交文件的会话独家完成并提交。
+其他会话在此之前不得实现 P8-001A 相关代码。提交后进入 P8-001B。
+
 ## 下一步（P8-001A 完成后）
 
 P8-001B Universe Layout (d3-force + domain clustering)
