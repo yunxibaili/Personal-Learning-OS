@@ -234,6 +234,12 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/ai/ACTIVE_TASK.md` | AI 工作记忆（当前子任务范围） |
 | `docs/ai/SESSION_PROTOCOL.md` | AI 启动协议与行为规则 |
 | `docs/ai/ADR_INDEX.md` | ADR 索引（按需展开，不全读） |
+| `docs/testing/TEST_PLAN.md` | 全局测试策略 + Gate 制度 |
+| `docs/testing/TEST_MATRIX.md` | 模块→测试映射（改代码必查） |
+| `docs/testing/GATE-0-M4-PREFLIGHT.md` | M4 开工前检查清单 |
+| `docs/testing/REGRESSION_CHECKLIST.md` | 回归测试清单 |
+| `docs/testing/DATA_RECOVERY_TEST.md` | 数据恢复测试方案 |
+| `docs/testing/RELEASE_CHECKLIST.md` | 公开发布检查 |
 
 同步义务：出现新依赖 / 新模块 / 新数据结构 / 新 API / 新存储机制 / 新版本控制规则 /
 新代码执行机制时，对应文档必须在同一批变更中更新——不允许代码变了文档没变。

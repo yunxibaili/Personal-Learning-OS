@@ -62,6 +62,8 @@ npm run build      → pass
 
 ## 本次会话改动
 
+- docs/testing/ 全量测试体系建立（TEST_PLAN + TEST_MATRIX + GATE-0 + REGRESSION + DATA_RECOVERY + RELEASE）
+- AGENTS.md 文档地图追加 testing 条目
 - ADR-013 Frontend Design System 冻结（Minimal Scientific Workspace · 白橙主题 · 三栏布局设计冻结）
 - AGENTS §16 Frontend Generation Rules（AI 前端生成约束）
 - docs/design/UI_REFERENCE.md 视觉参考边界
