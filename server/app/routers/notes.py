@@ -79,6 +79,9 @@ def create_note(body: NoteCreate) -> dict:
         target = K.resolve_vault_file(rel_path)
         if target.exists():  # 文件在但索引缺失——视为冲突，提示而非覆盖
             return _err(409, "duplicate_title", f"vault 中已存在 {rel_path}")
+        if K.has_forbidden_media_path(body.content_md):
+            return _err(400, "bad_attachment_path",
+                        "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
 
         cur = conn.execute(
             "INSERT INTO notes (path, title, tags_json, content_hash) "
@@ -91,10 +94,6 @@ def create_note(body: NoteCreate) -> dict:
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
                             tags=[], body=body_text, mtime=mtime)
-        if K.has_forbidden_media_path(body.content_md):
-            conn.rollback()
-            return _err(400, "bad_attachment_path",
-                        "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
         K.promote_stub_to_note(conn, note_id, title)
         link_stats = K.rebuild_note_links(conn, note_id, body_text)
         conn.commit()

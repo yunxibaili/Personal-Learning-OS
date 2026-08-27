@@ -66,6 +66,7 @@ def update_mastery(
     dimension: str | None = None,
     weight: float = 1.0,
     source: str = "manual",
+    detail: str | None = None,
 ) -> dict:
     """学习事件 → 更新掌握度。
 
@@ -77,13 +78,15 @@ def update_mastery(
       review          → recall +0.10*weight
       code_run        → practice +0.08*weight
 
+    detail: 事件特定数据 JSON（如 review_answer 的 quality）。
+
     返回更新后的 mastery 行。
     """
     # 写入事件
     conn.execute(
-        "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (concept_id, event_type, dimension, weight, source),
+        "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source, detail) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (concept_id, event_type, dimension, weight, source, detail),
     )
 
     m = get_or_create_mastery(conn, concept_id)

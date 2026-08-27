@@ -119,7 +119,8 @@ def submit_answer(concept_id: int, body: AnswerSubmit) -> dict:
 
         # 更新掌握度（回答事件）
         event_type = "answer_correct" if body.quality >= 3 else "answer_wrong"
-        updated = M.update_mastery(conn, concept_id, event_type, source="review")
+        detail = json.dumps({"quality": body.quality})
+        updated = M.update_mastery(conn, concept_id, event_type, source="review", detail=detail)
 
         # 更新排期
         now = M._now_iso()

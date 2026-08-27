@@ -121,7 +121,19 @@ def drop_note_index(conn, note_id: int) -> None:
     conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
 
 
+def sanitize_fts_query(q: str) -> str:
+    """用户输入 → 安全 FTS5 查询：双引号包裹短语，阻止 FTS 操作符解释。"""
+    text = q.strip()
+    if not text:
+        return ""
+    escaped = text.replace('"', '""')
+    return f'"{escaped}"'
+
+
 def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
+    safe_q = sanitize_fts_query(q)
+    if not safe_q:
+        return []
     # FTS5 default tokenizer 大小写敏感；用 LOWER 做大小写无关匹配
     rows = conn.execute(
         """
@@ -131,7 +143,7 @@ def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
         ORDER BY rank
         LIMIT ?
         """,
-        (q, limit),
+        (safe_q, limit),
     ).fetchall()
     if rows:
         return [{"note_id": r["note_id"], "title": r["title"]} for r in rows]
@@ -141,7 +153,7 @@ def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
         "WHERE LOWER(title) LIKE LOWER(?) OR id IN "
         "(SELECT note_id FROM notes_fts WHERE notes_fts MATCH ?) "
         "ORDER BY id LIMIT ?",
-        (f"%{q}%", q, limit),
+        (f"%{q}%", safe_q, limit),
     ).fetchall()
     return [{"note_id": r["note_id"], "title": r["title"]} for r in rows]
 

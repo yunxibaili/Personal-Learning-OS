@@ -21,11 +21,15 @@ def sm2_schedule(
     ease_factor: float = 2.5,
     interval: int = 0,
     review_count: int = 0,
+    now: datetime | None = None,
 ) -> dict:
     """SM-2 排期：返回 {ease_factor, interval, next_review, review_count}。
 
     quality: 0-5（0=完全忘记，5=完美回答）
+    now: 可注入时间（测试用），默认 UTC now。
     """
+    if now is None:
+        now = datetime.now(timezone.utc)
     quality = max(0, min(5, quality))
 
     # ease_factor 更新
@@ -44,7 +48,7 @@ def sm2_schedule(
         new_interval = max(1, round(interval * new_ef))
 
     # next_review
-    next_dt = datetime.now(timezone.utc) + timedelta(days=new_interval)
+    next_dt = now + timedelta(days=new_interval)
     next_review = next_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     return {

@@ -54,16 +54,16 @@ export function DashboardView() {
   }, [load]);
 
   const barColor = (eff: number) =>
-    eff >= 0.7 ? "var(--ok)" : eff >= 0.4 ? "#e6a817" : "var(--err)";
+    eff >= 0.7 ? "var(--ok)" : eff >= 0.4 ? "var(--brand)" : "var(--err)";
 
   const eventLabel = (type: string) => {
     const labels: Record<string, string> = {
-      answer_correct: "✅ 答对",
-      answer_wrong: "❌ 答错",
-      explain: "📖 讲解",
-      review: "🔄 复习",
-      visualize: "👁 可视化",
-      code_run: "💻 代码",
+      answer_correct: "答对",
+      answer_wrong: "答错",
+      explain: "讲解",
+      review: "复习",
+      visualize: "可视化",
+      code_run: "代码",
     };
     return labels[type] || type;
   };
@@ -84,13 +84,13 @@ export function DashboardView() {
       {error && <div className="error-banner">{error}</div>}
 
       <div className="dash-section">
-        <h3>📋 今日复习（{reviews.length}）</h3>
+        <h3>今日复习（{reviews.length}）</h3>
         {reviews.length === 0 && <p className="muted">暂无待复习概念</p>}
         {reviews.map((r) => (
           <div key={r.concept_id} className="review-card">
             <span className="review-title">{r.title}</span>
             <span className="review-due">
-              {r.last_result === "wrong" ? "❌ 上次答错" : ""}
+              {r.last_result === "wrong" ? "上次答错" : ""}
             </span>
             <div className="review-actions">
               <button onClick={() => void submitAnswer(r.concept_id, 1)}>忘了</button>
@@ -102,7 +102,7 @@ export function DashboardView() {
       </div>
 
       <div className="dash-section">
-        <h3>📊 掌握度排行</h3>
+        <h3>掌握度排行</h3>
         {mastery.length === 0 && <p className="muted">暂无掌握度数据</p>}
         {mastery.map((m) => (
           <div key={m.concept_id} className="mastery-row">
@@ -122,7 +122,7 @@ export function DashboardView() {
       </div>
 
       <div className="dash-section">
-        <h3>🕐 学习时间线</h3>
+        <h3>学习时间线</h3>
         {history.length === 0 && <p className="muted">暂无学习记录</p>}
         <div className="timeline">
           {history.map((ev) => (

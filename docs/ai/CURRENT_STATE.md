@@ -1,25 +1,26 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：af389f9 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：pending · Branch：main · Clean：no
 
 ---
 
 ## 当前里程碑
 
-M5 Review Loop ✅ 已完成。路线：M5 ✅ → M4 → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → **Gate 1 ✅** → M4-C → M4-D → M3b → M2b
 
 ## Last Completed
 
-M5 Review Loop completed.
-Commit: 48e9b16
-Next: M4 AI Tutor preparation
+Gate 1 AI Boundary Audit 已完成。6/6 项 PASS。
+M4-C LLM Provider 已解锁。
 
-## Gate 0 — M4 Preflight
+pytest 92 passed。
 
-状态: ✅ PASS
+## Gate 1 — AI Boundary Audit
+
+状态: ✅ PASS (6/6)
 日期: 2026-08-27
-详情: docs/testing/GATE-0-M4-PREFLIGHT.md
+详情: docs/testing/GATE-1-ai-boundary.md
 
 ## 已完成
 
@@ -31,6 +32,12 @@ Next: M4 AI Tutor preparation
 | M3 | Learning Graph（掌握度/SM-2/Dashboard） | ✅ |
 | M3.5-A | Knowledge Radar MVP（上下文匹配+Radar面板） | ✅ |
 | M5 | Review Loop（复习队列/优先级/时间线/learning-model） | ✅ |
+| M0.5 | AI Context Infrastructure（docs/ai/ + AGENTS §15） | ✅ |
+| M4-A | Tutor Context API（context builder + router + 5 tests） | ✅ |
+| Gate 0.5 | M4-Preflight Hardening（H1-H6） | ✅ |
+| M4-B | Prompt Assembly（build_prompt + 16 tests） | ✅ |
+| ADR-015 | Multilingual Knowledge Support | ✅ |
+| Gate 1 | AI Boundary Audit（6/6 PASS） | ✅ |
 
 ## Do Not Touch
 
@@ -39,6 +46,8 @@ Next: M4 AI Tutor preparation
 - `001_init.sql` — 历史兼容，新表走新 migration
 - `shared/types/*.ts` — API 契约，改需同步 pytest 契约测试
 - `review_scheduler.py` — SM-2 独立模块，替换需开 ADR
+- `tutor_context.py` — M4-A 已完成，不改逻辑
+- `ai/tutor.py` — M4-B 已完成，只改 constants.py 调参
 
 ## Frozen Domains
 
@@ -49,6 +58,11 @@ Next: M4 AI Tutor preparation
 | Knowledge Radar | Frozen | M3.5-A, ADR-012 |
 | Mastery 引擎 | Frozen | M3, learning-model.md |
 | SM-2 调度 | 可替换但需 ADR | review_scheduler.py |
+| Frontend Design | Frozen | ADR-013 |
+| AI Tutor 边界 | Frozen | ADR-014 |
+| Prompt Contract | Frozen | M4-B, prompt-contract.md |
+| Multilingual | Frozen | ADR-015 |
+| AI Boundary | Frozen | Gate 1 |
 
 ## Known Risks
 
@@ -57,30 +71,19 @@ Next: M4 AI Tutor preparation
 - 本地 LLM 未实测（Ollama 路径理论通，未验证）
 - Trace 引擎推迟（M9+）
 - TipTap 数学扩展为社区维护（@aarkue），非官方
+- create_note 原子写入未保证（Known Risk，记录未修）
 
 ## 测试命令
 
 ```
-pytest -q          → 36 passed
-npm run build      → pass
+pytest -q          → 92 passed
+npx vitest run     → 2 passed
+npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
 ## 本次会话改动
 
-- M4-A Tutor Context API 完成（core/tutor_context.py + routers/tutor.py + 5 tests）
-- ADR-014 AI Tutor Architecture 冻结（读写边界 · Context Builder · M4 四阶段拆分）
-- docs/data-model/tutor-context.md 上下文可见性契约
-- docs/testing/ 全量测试体系建立（TEST_PLAN + TEST_MATRIX + GATE-0 + REGRESSION + DATA_RECOVERY + RELEASE）
-- AGENTS.md 文档地图追加 testing 条目
-- ADR-013 Frontend Design System 冻结（Minimal Scientific Workspace · 白橙主题 · 三栏布局设计冻结）
-- AGENTS §16 Frontend Generation Rules（AI 前端生成约束）
-- docs/design/UI_REFERENCE.md 视觉参考边界
-- docs/design/LEARNING_LOOP.md 学习循环设计
-- global.css 主题迁移：暗色→白橙（仅变量替换，布局不变）
-- M0.5 AI Context Infrastructure 完成（docs/ai/ 5 文件 + AGENTS §15 + CHANGELOG）
-- learning-model.md 冻结（含 event_uuid 幂等设计 + source 枚举扩展 + 时间计算规则）
-- M5-001：ensure_concept_learning_state() 概念首次触达自动初始化 mastery + review_queue
-- M5-002：review_today 优先级排序（wrong→low mastery→early due）+ review/history 端点
-- M5-003：Dashboard 复习视图（M3 已实现，本轮确认）
-- M5-004：Dashboard 学习时间线（最近 15 条事件）
+- test_ai_boundary.py：25 个 AI 边界测试
+- Gate 1 AI Boundary Audit 报告：6/6 PASS
+- M4-C 施工红线冻结

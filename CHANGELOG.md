@@ -6,6 +6,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M4-B Prompt Assembly**：build_prompt() 纯函数 Prompt 编排层 ·
+  TutorContext TypedDict（NotRequired 支持不完整上下文）· TutorMode Literal 类型 ·
+  四模式 system prompt（explain/hint/review/debug fallback）·
+  双重安全过滤（字段名黑名单 + 内容前缀替换）·
+  字符级 token 截断（constants.py 冻结常量）·
+  16 个纯函数单元测试 · prompt-contract.md 契约文档
+
+### Added
+- **ADR-015 Multilingual Knowledge Support**：多语言知识支持原则冻结 ·
+  Content language independent · Concept 层 language+aliases ·
+  Tutor 输出语言自适应 · Token 估算多语言扩展位 · language-contract.md
+
+### Added
+- **Gate 1 AI Boundary Audit**：M4-C 前置安全审计 · 25 个边界测试 ·
+  Context Isolation · Prompt Purity · LLM Write Boundary · Provider Isolation ·
+  Multilingual Boundary · Edge Cases · 6/6 PASS · M4-C 施工红线冻结
+
+### Added
+- **M4-Preflight Hardening (H1-H6)**：FTS5 输入清洗（双引号包裹）·
+  create_note 校验前移 · learning_events.detail 列（quality only）·
+  SM-2 时间参数化（UTC）· 9 新测试 · Dashboard 去 emoji
+
+### Added
 - **ADR-014 AI Tutor Architecture**：AI Tutor 架构冻结 · 读写边界铁律 ·
   Context Builder 唯一组装点 · Provider 策略（复用 ADR-003）·
   M4 四阶段拆分（Context API → Prompt → LLM → UI）·

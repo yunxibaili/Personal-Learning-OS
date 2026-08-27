@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 
 from ..db import connect
+from .tutor_types import TutorContext
 
 # 上下文条目限制（防止 token 爆炸）
 MAX_MISTAKES = 5
@@ -116,19 +117,19 @@ def _get_recent_events(conn, concept_id: int) -> list[dict]:
     ]
 
 
-def build_tutor_context(conn, concept_id: int) -> dict:
+def build_tutor_context(conn, concept_id: int) -> TutorContext:
     """组装 AI Tutor 上下文（ADR-014）。
 
-    返回纯 dict，不含 sensitive 数据。
+    返回 TutorContext，不含 sensitive 数据。
     concept 不存在时抛出 ConceptNotFoundError。
     """
     concept = _get_concept(conn, concept_id)
 
-    return {
-        "concept": concept,
-        "mastery": _get_mastery(conn, concept_id),
-        "mistakes": _get_mistakes(conn, concept_id),
-        "related": _get_related(conn, concept_id),
-        "review": _get_review(conn, concept_id),
-        "recent_events": _get_recent_events(conn, concept_id),
-    }
+    return TutorContext(
+        concept=concept,
+        mastery=_get_mastery(conn, concept_id),
+        mistakes=_get_mistakes(conn, concept_id),
+        related=_get_related(conn, concept_id),
+        review=_get_review(conn, concept_id),
+        recent_events=_get_recent_events(conn, concept_id),
+    )
