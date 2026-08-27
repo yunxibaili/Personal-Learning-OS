@@ -76,6 +76,32 @@ def compose_file(tags: list[str], body: str) -> str:
     return "---\ntags: " + ", ".join(tags) + "\n---\n\n" + body
 
 
+def atomic_write_file(path: Path, content: str) -> None:
+    """原子写入文件（write → fsync → rename），防止部分写入。
+
+    原理：
+      1. 写入 .tmp 临时文件
+      2. fsync 确保数据落盘
+      3. os.replace 原子替换目标文件（POSIX/Windows 均保证）
+
+    如果进程在步骤 1/2 崩溃，目标文件不受影响。
+    如果在步骤 3 崩溃，要么旧文件完整，要么新文件完整。
+    """
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        # 原子替换
+        os.replace(tmp, path)
+    except Exception:
+        # 清理临时文件
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
+        raise
+
+
 def body_hash(body: str) -> str:
     return hashlib.sha256(body.encode("utf-8")).hexdigest()
 

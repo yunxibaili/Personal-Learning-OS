@@ -89,7 +89,7 @@ def create_note(body: NoteCreate) -> dict:
             (rel_path, title),
         )
         note_id = cur.lastrowid
-        target.write_text(K.compose_file([], body.content_md), encoding="utf-8")
+        K.atomic_write_file(target, K.compose_file([], body.content_md))
         mtime = time.time()
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
@@ -161,7 +161,7 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
                 conn.rollback()
                 return _err(400, "bad_attachment_path",
                             "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
-            target.write_text(K.compose_file(new_tags, new_body), encoding="utf-8")
+            K.atomic_write_file(target, K.compose_file(new_tags, new_body))
             if new_rel != old_path:
                 os.unlink(K.resolve_vault_file(old_path))
 

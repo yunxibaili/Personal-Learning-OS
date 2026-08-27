@@ -11,6 +11,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   M2b-002 前增加 MindMap Boundary Audit 建议 ·
   M7 前增加 ADR-020 Sync Conflict Resolution 需求
 
+### Fixed
+- **P2 create_note atomic write**：atomic_write_file（write → fsync → rename）·
+  create_note / patch_note 改用原子写入 · 防止部分写入导致 vault/SQLite 不一致 ·
+  M7 同步前置条件满足
+
 ### Added
 - **M2b-002 Concept Binding**：MindMap 节点绑定 Concept（引用，不改 mastery/event）·
   bind_concept / unbind_concept / search_concepts 三个核心函数 ·
