@@ -2,10 +2,10 @@ import { useUi, type ViewKey } from "./stores/ui";
 import { DashboardView } from "./views/DashboardView";
 import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
+import { TutorPanel } from "./components/tutor/TutorPanel";
 import {
   MindMapView,
   ReviewQueueView,
-  TutorPanelView,
 } from "./views/placeholders";
 
 const TABS: Array<{ key: ViewKey; label: string }> = [
@@ -27,7 +27,7 @@ function ActiveView() {
     case "mindmap":
       return <MindMapView />;
     case "tutor":
-      return <TutorPanelView />;
+      return <TutorPanel />;
     case "review":
       return <ReviewQueueView />;
     case "dashboard":

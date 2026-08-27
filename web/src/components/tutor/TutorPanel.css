@@ -1,0 +1,210 @@
+/* TutorPanel（M4-D）—— ADR-013/016 合规样式 */
+
+.tutor-panel {
+  width: 320px;
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.tutor-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tutor-empty {
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* Sections */
+.tutor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tutor-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+}
+
+/* Concept */
+.tutor-concept-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Mastery */
+.mastery-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+}
+
+.mastery-label {
+  width: 72px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mastery-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mastery-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 150ms ease;
+}
+
+.mastery-pct {
+  width: 32px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Mistakes */
+.tutor-mistakes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tutor-mistakes li {
+  padding: 4px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tutor-mistakes li:last-child {
+  border-bottom: none;
+}
+
+/* Related */
+.tutor-related {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tutor-related li {
+  padding: 3px 0;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.tutor-relation {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+/* Modes */
+.tutor-modes {
+  display: flex;
+  gap: 6px;
+}
+
+.tutor-mode-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: color 150ms, background 150ms;
+}
+
+.tutor-mode-btn:hover {
+  color: var(--text-primary);
+}
+
+.tutor-mode-btn.active {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--bg-primary);
+}
+
+/* Input */
+.tutor-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tutor-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  outline: none;
+}
+
+.tutor-input:focus {
+  border-color: var(--brand);
+}
+
+.tutor-input:disabled {
+  opacity: 0.6;
+}
+
+.tutor-ask-btn {
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 150ms;
+}
+
+.tutor-ask-btn:hover {
+  background: var(--brand-hover);
+}
+
+.tutor-ask-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error */
+.tutor-error {
+  border: 1px solid #b3564d;
+  background: rgba(179, 86, 77, 0.15);
+  color: #e08c85;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Answer */
+.tutor-answer {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--text-primary);
+  font-size: 13px;
+}

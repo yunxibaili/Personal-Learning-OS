@@ -29,6 +29,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Provider 错误类型（Timeout/Error/Unavailable）· 14 个单元测试
 
 ### Added
+- **M4-D Tutor Panel**：Context-aware Tutor 面板 · TutorPanel.tsx ·
+  Concept Context + Mastery Bar + Mistakes + Related ·
+  三动作模式（Explain/Hint/Review）· Structured Answer 渲染 ·
+  连接 /tutor/test endpoint · npm run build 通过
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 

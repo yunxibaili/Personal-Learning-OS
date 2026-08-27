@@ -1,19 +1,20 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：7eb4ebd · Branch：main · Clean：no
+> 上次更新：2026-08-27 · Last commit：6e93ef4 · Branch：main · Clean：no
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → **Smoke ✅** → M4-D → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → **M4-D ✅** → M3b → M2b
 
 ## Last Completed
 
-M4-C LLM Provider + Smoke Test 已完成。
-ProviderProtocol + MockProvider + TutorService + tutor/test endpoint。
-pytest 111 passed。
+M4-D Tutor Panel 已完成。
+TutorPanel.tsx（context panel + 3 modes + mock response）。
+ADR-016 Tutor UI Design 已冻结。
+npm run build 通过。
 
 ## 已完成
 
@@ -33,6 +34,8 @@ pytest 111 passed。
 | Gate 1 | AI Boundary Audit（6/6 PASS） | ✅ |
 | M4-C | LLM Provider（Protocol + Mock + Service + 14 tests） | ✅ |
 | Smoke | Tutor 全链路验证（tutor/test endpoint + 5 tests） | ✅ |
+| ADR-016 | Tutor UI Design（knowledge tool, not chatbot） | ✅ |
+| M4-D | Tutor Panel（context panel + modes + build pass） | ✅ |
 
 ## Do Not Touch
 
