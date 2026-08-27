@@ -79,14 +79,20 @@ def create_event(body: EventCreate) -> dict:
 
 @router.get("/review/today")
 def review_today() -> dict:
+    """今日复习队列：优先级 = 掌握度低 + 到期早 + 错答历史。"""
     conn = connect()
     try:
         now = M._now_iso()
         rows = conn.execute(
-            "SELECT rq.*, c.title FROM review_queue rq "
+            "SELECT rq.*, c.title, cm.effective "
+            "FROM review_queue rq "
             "JOIN concepts c ON c.id = rq.concept_id "
+            "LEFT JOIN concept_mastery cm ON cm.concept_id = rq.concept_id "
             "WHERE rq.due_at <= ? AND rq.status = 'pending' "
-            "ORDER BY rq.priority DESC, rq.due_at ASC",
+            "ORDER BY "
+            "  CASE WHEN rq.last_result = 'wrong' THEN 0 ELSE 1 END, "
+            "  COALESCE(cm.effective, 0) ASC, "
+            "  rq.due_at ASC",
             (now,),
         ).fetchall()
         return {"reviews": [dict(r) for r in rows]}
@@ -127,13 +133,16 @@ def submit_answer(concept_id: int, body: AnswerSubmit) -> dict:
 
         # 更新 review_queue
         result = "correct" if body.quality >= 3 else "wrong"
+        # 错答时提升优先级（0.8），正答保持默认（0.5）
+        new_priority = 0.8 if result == "wrong" else 0.5
         conn.execute(
             "INSERT INTO review_queue (concept_id, due_at, priority, status, last_result) "
             "VALUES (?, ?, ?, 'pending', ?) "
             "ON CONFLICT(concept_id) DO UPDATE SET "
-            "due_at=excluded.due_at, status='pending', last_result=excluded.last_result, "
+            "due_at=excluded.due_at, priority=excluded.priority, "
+            "status='pending', last_result=excluded.last_result, "
             "updated_at=?",
-            (concept_id, schedule["next_review"], 0.5, result, now),
+            (concept_id, schedule["next_review"], new_priority, result, now),
         )
 
         conn.commit()
@@ -155,6 +164,25 @@ def weak_concepts() -> dict:
     try:
         rows = M.get_weak_concepts(conn, limit=10)
         return {"weak": [_format_mastery(r) for r in rows]}
+    finally:
+        conn.close()
+
+
+# ── 复习历史 ─────────────────────────────────────────────────────────
+
+@router.get("/review/history")
+def review_history(limit: int = 20) -> dict:
+    """最近复习事件（按时间倒序）。"""
+    conn = connect()
+    try:
+        rows = conn.execute(
+            "SELECT le.*, c.title FROM learning_events le "
+            "JOIN concepts c ON c.id = le.concept_id "
+            "WHERE le.event_type IN ('answer_correct', 'answer_wrong') "
+            "ORDER BY le.created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return {"history": [dict(r) for r in rows]}
     finally:
         conn.close()
 

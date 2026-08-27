@@ -7,8 +7,9 @@ from fastapi.testclient import TestClient
 
 from app.core.mastery import (
     compute_effective, update_mastery, get_mastery,
-    DEFAULT_DIMENSIONS, DIMENSION_WEIGHTS,
+    DEFAULT_DIMENSIONS, DIMENSION_WEIGHTS, _now_iso,
 )
+from app.core import mastery as M
 from app.core.review_scheduler import sm2_schedule
 
 
@@ -135,3 +136,39 @@ def test_weak_concepts(client: TestClient) -> None:
     # weak concepts have effective > 0 but low
     weak = r.json()["weak"]
     assert isinstance(weak, list)
+
+
+def test_review_history(client: TestClient) -> None:
+    cid = _create_concept(client, "HistoryTest")
+    client.post("/api/v1/events", json={
+        "concept_id": cid, "event_type": "explain"})
+    client.post(f"/api/v1/review/{cid}/answer", json={"quality": 4})
+    r = client.get("/api/v1/review/history")
+    assert r.status_code == 200
+    history = r.json()["history"]
+    assert len(history) >= 1
+    assert history[0]["concept_id"] == cid
+
+
+def test_review_priority_wrong_boost(client: TestClient) -> None:
+    """错答概念应排在正答概念前面。"""
+    c1 = _create_concept(client, "PriorityA")
+    c2 = _create_concept(client, "PriorityB")
+    # c1 答错
+    client.post(f"/api/v1/review/{c1}/answer", json={"quality": 1})
+    # c2 答对
+    client.post(f"/api/v1/review/{c2}/answer", json={"quality": 5})
+    # 查看队列（手动将 due_at 设为 now 以便出现在 today 列表）
+    from app.core.knowledge import connect as _connect
+    _conn = _connect()
+    _conn.execute("UPDATE review_queue SET due_at=? WHERE concept_id IN (?,?)",
+                  (M._now_iso(), c1, c2))
+    _conn.commit()
+    _conn.close()
+    r = client.get("/api/v1/review/today")
+    assert r.status_code == 200
+    reviews = r.json()["reviews"]
+    ids = [x["concept_id"] for x in reviews]
+    # c1 (wrong) 应排在 c2 (correct) 前面
+    if c1 in ids and c2 in ids:
+        assert ids.index(c1) < ids.index(c2)
