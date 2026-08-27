@@ -7,15 +7,14 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → **M4-E ✅** → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → **M3b-001 ✅** → M3b-002 → M3b-003 → M3b-004
 
 ## Last Completed
 
-M4.5 Architecture Visualization + M4-E Tutor Evaluation 已完成。
-ADR-017 Architecture Visualization + ADR-018 Knowledge Universe Design 已冻结。
-5 张架构 HTML 图 + system-map.yaml。
-Tutor 评估体系（EVAL_PLAN / 20 CASES / METRICS）。
-15 个禁止行为自动化测试（pytest 126 passed）。
+M4-E Tutor Evaluation + M3b-001 Universe Projection 已完成。
+ADR-018 Knowledge Universe Design 已冻结。
+GET /api/v1/universe 返回 { nodes, edges } 投影。
+pytest 132 passed。
 
 ## 已完成
 
@@ -41,6 +40,7 @@ Tutor 评估体系（EVAL_PLAN / 20 CASES / METRICS）。
 | M4.5 | Architecture Visualization Milestone | ✅ |
 | M4-E | Tutor Evaluation（评估体系 + 禁止测试） | ✅ |
 | ADR-018 | Knowledge Universe Design | ✅ |
+| M3b-001 | Universe Projection（GET /universe） | ✅ |
 
 ## Do Not Touch
 

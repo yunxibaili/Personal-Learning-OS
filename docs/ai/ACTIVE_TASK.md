@@ -6,36 +6,23 @@
 
 ## Task ID
 
-M4-D Tutor Panel
+M3b-002 Universe Layout Engine
 
 ## Goal
 
-新增 TutorPanel.tsx，实现 Context-aware Tutor 面板。
-三个动作：Explain / Hint / Review。
-连接 /api/v1/tutor/test（MockProvider）。
+前端 d3-force + React Flow 布局。
+Backend 已完成（GET /universe），下一步是前端渲染。
 
-## Allowed Changes
+## Boundary
 
-- `web/src/components/tutor/TutorPanel.tsx`
-- `web/src/components/tutor/TutorPanel.css`
-- `web/src/App.tsx` — 替换 placeholder
-- `web/src/global.css` — 追加 tutor 样式
-- `docs/ai/CURRENT_STATE.md`
-- `CHANGELOG.md`
+- Graph API / mastery.py 不修改
+- 新增 universe projection layer（已完成 M3b-001）
+- d3-force 只做布局计算（ADR-007）
+- React Flow 做渲染（ADR-013）
 
-## Forbidden Changes
+## Forbidden
 
-- ❌ Chat 气泡 / 消息列表
-- ❌ AI 头像 / 角色形象
-- ❌ 打字动画 / streaming cursor
-- ❌ 渐变 / 发光 / 玻璃效果
-- ❌ 新增 npm 依赖
-- ❌ 修改 NoteEditor 布局
-
-## Acceptance Criteria
-
-- npm run build 通过
-- TutorPanel 显示 concept context + mastery
-- 三个动作按钮可用
-- Mock response 正确渲染
-- 不违反 ADR-013 / ADR-016
+- Knowledge Radar — M3.5-A 已冻结
+- Tutor — M4 已冻结
+- Learning Event schema — frozen
+- 3D / 粒子 / 星空 / 游戏化

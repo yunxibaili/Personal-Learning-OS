@@ -51,6 +51,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   禁止游戏化/XP/徽章 · d3-force 布局 + React Flow 渲染
 
 ### Added
+- **M3b-001 Universe Projection**：core/universe.py 图数据投影层 ·
+  GET /api/v1/universe 返回 { nodes, edges } ·
+  nodes 包含 concept + mastery 五维数据 ·
+  edges 只保留 concept ↔ concept · 6 个测试 · pytest 132 passed
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 
