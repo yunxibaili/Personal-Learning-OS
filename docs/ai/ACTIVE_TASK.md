@@ -7,11 +7,11 @@
 
 ## Task ID
 
-M7-003 Vault Sync（可以开始）
+M7-004 Vault Sync Apply（可以开始）
 
 ## Status
 
-M7-002 LAN Discovery ✅
+M7-003 Sync Transport ✅
 
 前置条件已满足：
 - ADR-005 Multi-device Sync ✅
@@ -24,6 +24,7 @@ M7-002 LAN Discovery ✅
 - M7-Nightly Full Audit Sprint ✅
 - M7-001.5 Sync Simulation ✅
 - M7-002 LAN Discovery ✅
+- M7-003 Sync Transport ✅
 
 ## 下一步
 
@@ -31,8 +32,8 @@ M7-002 LAN Discovery ✅
 2. ~~M7 Stabilization~~ ✅
 3. ~~M7-Nightly Audit~~ ✅
 4. ~~M7-002 LAN Discovery~~ ✅
-5. M7-003 Vault Sync
-6. M7-004 Event Sync
+5. ~~M7-003 Sync Transport~~ ✅
+6. M7-004 Vault Sync Apply
 7. M7-005 Conflict UI
 
 ## 关键约束

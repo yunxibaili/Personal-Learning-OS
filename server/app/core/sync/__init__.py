@@ -1,4 +1,4 @@
-"""M7 Sync Engine — 纯 Core + Discovery。
+"""M7 Sync Engine — Core + Discovery + Transport。
 
 ADR-005/020 冻结：
   - 同步只发生在 Layer 1（Truth Source）
@@ -12,12 +12,17 @@ ADR-005/020 冻结：
   device: 设备身份管理（metadata/devices.json）
   protocol: Discovery 通信协议（DISCOVER/ACK/PING/PONG）
   discovery: 局域网设备发现（UDP broadcast）
+  messages: 同步传输消息类型（FILE_REQUEST/DATA/ACK/ERROR）
+  transfer: 低级文件传输操作（白名单/原子写入/哈希验证）
+  transport: 传输协调器（执行 SyncPlan）
 """
 from .manifest import FileEntry, Manifest, file_sha256
 from .scanner import scan_workspace
 from .diff import Action, SyncItem, SyncPlan, diff_manifests
 from .device import DeviceInfo, load_or_create_device
 from .protocol import DiscoverPacket, AckPacket, PingPacket, PongPacket
+from .messages import FileRequest, FileData, FileAck, SyncError
+from .transport import SyncTransport, SyncResult, TransferResult
 
 __all__ = [
     "FileEntry",
@@ -34,4 +39,11 @@ __all__ = [
     "AckPacket",
     "PingPacket",
     "PongPacket",
+    "FileRequest",
+    "FileData",
+    "FileAck",
+    "SyncError",
+    "SyncTransport",
+    "SyncResult",
+    "TransferResult",
 ]

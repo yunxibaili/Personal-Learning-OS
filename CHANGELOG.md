@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M7-003 Sync Transport**：同步传输层（Transport only，不包含 Apply/Conflict）·
+  messages.py（FileRequest/FileData/FileAck/SyncError 消息类型 + parse_message）·
+  transfer.py（is_syncable 白名单匹配 + write_file_atomic 原子写入 + validate_hash + encode/decode）·
+  transport.py（SyncTransport：execute_plan / serve_file / receive_incoming）·
+  31 个测试（Messages 6 + Transfer 12 + Transport 13）·
+  sync-transport.md 文档 · 总计 327 passed
 - **M7-002 LAN Discovery**：局域网设备发现能力（UDP broadcast）·
   device.py（DeviceInfo + metadata/devices.json 设备身份存储）·
   protocol.py（DISCOVER/ACK/PING/PONG JSON 协议 + parse_packet）·

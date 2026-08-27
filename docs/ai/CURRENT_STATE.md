@@ -1,20 +1,20 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：4dad099 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：679dc3a · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → **M7-002 LAN Discovery ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → **M7-003 Sync Transport ✅**
 
 ## Last Completed
 
-M7-002 LAN Discovery 完成。
-三个新模块：device.py（DeviceInfo + device store）· protocol.py（DISCOVER/ACK/PING/PONG 协议）·
-discovery.py（UDP broadcast 发现 + listener + ping）。
-27 个新测试 · 总计 296 passed · vite build PASS。
+M7-003 Sync Transport 完成。
+三个新模块：messages.py（4种传输消息类型）· transfer.py（白名单路径匹配 + 原子写入 + 哈希验证）·
+transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_incoming）。
+31 个新测试 · 总计 327 passed · vite build PASS。
 
 ## 已完成
 
