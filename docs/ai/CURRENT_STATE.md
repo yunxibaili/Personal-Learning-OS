@@ -62,7 +62,10 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 
 ## Next Up
 
-- **M7-007 Vault Conflict Preservation**（apply.py vault 分支双份机制，含 ADR-020 更新）
+- **M7-006.5 Sync Release Audit**（M7 收尾第一步，范围待立项确认）
+- M7-007 Vault Conflict Preservation（apply.py vault 分支双份机制，含 ADR-020 更新）
+- M7-008 Sync Polish → **P8 PC Productization** → Mobile API Preparation → M8
+  （路线决议见 docs/tasks/TASKS.md §路线决议：M8 Mobile 延后，先 PC 完整化）
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
 - 前置阅读：docs/sync/sync-model.md §Apply 层/§边界与恢复 · sync-transport.md · ADR-020
 

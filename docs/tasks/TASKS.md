@@ -64,6 +64,35 @@
   E2E Case 中 vault 冲突项当前为显式 no-op，见 test_e2e_demo.py）
 - [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）
 
+## 路线决议（2026-08-27 用户裁定）：M8 Mobile 延后
+
+新路线（取代 TECH_DESIGN §10 的 M8 直进顺序）：
+
+```
+M7 收尾（006.5 Release Audit → 007 Vault Conflict → 008 Sync Polish）
+    ↓
+P8 PC Productization（PC 端完整学习工作台）
+    ↓
+Mobile API Preparation（只留 API 边界，不做客户端）
+    ↓
+M8 React Native
+```
+
+理由：价值密度仍在 PC 端；避免"PC 功能复制 UI/维护两套体验"。
+Mobile 触发条件未变（ADR-006），但前置改为 P8 完成 + Mobile API 层就绪。
+
+P8 PC Productization 候选范围（届时按 §12 八项清单逐项立项）：
+1. Knowledge Mode / Learning Mode 落地（ADR-022 从设计到实现；禁 XP/streak/等级）
+2. Dashboard 升级为 Learning OS Home（Today / Review / Weak Areas / Recent / Universe 预览）
+3. Tutor 三入口闭环（Note→Explain · Review 错答→Hint · Universe 弱项→Tutor）
+
+Mobile API Preparation 原则（提前冻结，防跑偏）：
+- **不新建 /api/v1/mobile|app 独立端点族**——现有 /api/v1（notes/mastery/review/
+  universe/graph）本就是 shared/types 契约层，App 直接复用即可；
+  仅在确有聚合需求时补一个 GET /api/v1/home（recent_notes+weak_concepts+
+  review_count 聚合读），符合 YAGNI 与单一契约原则（AGENTS §2.3）
+- App 永不直接触文件：Mobile → API → Sync Core → Truth Source（ADR-005/020 已保证）
+
 ## M0 任务拆解
 
 - [x] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/v1/settings
