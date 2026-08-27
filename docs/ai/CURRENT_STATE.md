@@ -7,13 +7,13 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → **M4-C ✅** → M4-D → M3b → M2b
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → **Smoke ✅** → M4-D → M3b → M2b
 
 ## Last Completed
 
-M4-C LLM Provider 已完成。
-ProviderProtocol + MockProvider + TutorService + 14 tests。
-pytest 106 passed。
+M4-C LLM Provider + Smoke Test 已完成。
+ProviderProtocol + MockProvider + TutorService + tutor/test endpoint。
+pytest 111 passed。
 
 ## 已完成
 
@@ -32,6 +32,7 @@ pytest 106 passed。
 | ADR-015 | Multilingual Knowledge Support | ✅ |
 | Gate 1 | AI Boundary Audit（6/6 PASS） | ✅ |
 | M4-C | LLM Provider（Protocol + Mock + Service + 14 tests） | ✅ |
+| Smoke | Tutor 全链路验证（tutor/test endpoint + 5 tests） | ✅ |
 
 ## Do Not Touch
 
@@ -72,7 +73,7 @@ pytest 106 passed。
 ## 测试命令
 
 ```
-pytest -q          → 106 passed
+pytest -q          → 111 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -85,4 +86,5 @@ npx vite build     → pass
 - errors.py：ProviderTimeout / ProviderError / ProviderUnavailable
 - service.py：TutorService（Context→Prompt→Provider→Response）
 - test_llm_provider.py：14 个测试
-- pytest 106 passed（was 92）
+- test_tutor_smoke.py：5 个全链路测试
+- pytest 111 passed（was 106）

@@ -29,6 +29,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Provider 错误类型（Timeout/Error/Unavailable）· 14 个单元测试
 
 ### Added
+- **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
+  Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
+
+### Added
 - **M4-Preflight Hardening (H1-H6)**：FTS5 输入清洗（双引号包裹）·
   create_note 校验前移 · learning_events.detail 列（quality only）·
   SM-2 时间参数化（UTC）· 9 新测试 · Dashboard 去 emoji
