@@ -57,6 +57,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   edges 只保留 concept ↔ concept · 6 个测试 · pytest 132 passed
 
 ### Added
+- **M4.6 Runtime Architecture Map**：runtime-map.html ·
+  10 section 完整运行时地图 · 4 条 Story Flow（Create Knowledge · Learning Loop · AI Tutor · Universe）·
+  23 API endpoints 全列表 · Frozen Boundary 标注 · Data Truth Flow · Core Module Map
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 

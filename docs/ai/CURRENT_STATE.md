@@ -13,7 +13,7 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 M4-E Tutor Evaluation + M3b-001 Universe Projection 已完成。
 ADR-018 Knowledge Universe Design 已冻结。
-GET /api/v1/universe 返回 { nodes, edges } 投影。
+Runtime Architecture Map 已生成（10 section · 4 story flows · 23 endpoints）。
 pytest 132 passed。
 
 ## 已完成

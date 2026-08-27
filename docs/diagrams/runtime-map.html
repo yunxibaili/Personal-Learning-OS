@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Runtime Architecture Map — Open Learning OS</title>
+<style>
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #666; --border: #e5e5e5; --brand: #ff8a00; --ok: #22c55e; --err: #ef4444; --blue: #3b82f6; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 32px; line-height: 1.5; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .layer { border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 8px; }
+  .layer-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
+  .layer-tech { font-size: 11px; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+  .modules { display: flex; flex-wrap: wrap; gap: 5px; }
+  .mod { border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 11px; }
+  .mod.core { border-color: var(--brand); color: var(--brand); }
+  .mod.frozen { border-style: dashed; border-color: var(--ok); color: var(--ok); }
+  .arrow-down { text-align: center; color: var(--muted); font-size: 11px; padding: 3px 0; }
+  .arrow-label { font-size: 10px; color: var(--muted); }
+  .flow { border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 10px; }
+  .flow-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .flow-steps { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; align-items: center; gap: 10px; }
+  .step-num { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); flex-shrink: 0; }
+  .step-box { border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-size: 12px; }
+  .step-box.file { background: rgba(34,197,94,0.04); border-color: var(--ok); }
+  .step-box.ai { background: rgba(255,138,0,0.04); border-color: var(--brand); }
+  .step-box.forbidden { background: rgba(239,68,68,0.04); border-color: var(--err); }
+  .conn { padding-left: 9px; }
+  .conn-line { width: 2px; height: 12px; background: var(--border); }
+  .forbidden-box { border: 1px solid var(--err); border-radius: 6px; padding: 10px 14px; margin-top: 10px; background: rgba(239,68,68,0.02); font-size: 12px; color: var(--muted); }
+  .forbidden-box strong { color: var(--err); }
+  .endpoint-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .endpoint-table th { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+  .endpoint-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  .endpoint-table .method { font-weight: 600; color: var(--brand); width: 50px; }
+  .endpoint-table .path { font-family: Consolas, monospace; }
+  .truth-box { border: 2px dashed var(--ok); border-radius: 8px; padding: 12px 16px; background: rgba(34,197,94,0.02); margin-top: 12px; }
+  .truth-title { font-size: 13px; font-weight: 600; color: var(--ok); margin-bottom: 6px; }
+  .truth-list { list-style: none; font-size: 12px; color: var(--muted); }
+  .truth-list li { padding: 2px 0; }
+  .truth-list li::before { content: "→ "; color: var(--ok); }
+  .legend { margin-top: 20px; font-size: 11px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-box { width: 12px; height: 12px; border-radius: 3px; border: 1px solid; }
+  .legend-box.core { border-color: var(--brand); }
+  .legend-box.frozen { border-color: var(--ok); border-style: dashed; }
+  .legend-box.forbidden { border-color: var(--err); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+  .data-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; padding: 4px 0; }
+  .data-node { border: 1px solid var(--border); border-radius: 3px; padding: 2px 6px; }
+  .data-arrow { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>Runtime Architecture Map</h1>
+<p class="subtitle">Open Learning OS — Real code paths, not mockups · M4.6</p>
+
+<!-- ===== SECTION 1: Architecture ===== -->
+<div class="section">
+  <div class="section-title">1 · Architecture Overview</div>
+
+  <div class="layer">
+    <div class="layer-label">Layer 1 · Frontend (web/)</div>
+    <div class="layer-tech">React 18 · TypeScript · Vite · Zustand · TipTap · React Flow</div>
+    <div class="modules">
+      <span class="mod">NoteEditorView</span>
+      <span class="mod">GraphView</span>
+      <span class="mod">TutorPanel</span>
+      <span class="mod">DashboardView</span>
+      <span class="mod">KnowledgeRadar</span>
+      <span class="mod">stores/ui.ts</span>
+      <span class="mod">lib/api.ts</span>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓ HTTP /api/v1 (sole gateway: lib/api.ts)</div>
+
+  <div class="layer">
+    <div class="layer-label">Layer 2 · Backend — Routers (server/app/routers/)</div>
+    <div class="layer-tech">Python 3.12 · FastAPI · 23 endpoints · 10 routers</div>
+    <div class="modules">
+      <span class="mod">notes (5)</span>
+      <span class="mod">graph (1)</span>
+      <span class="mod">mastery (7)</span>
+      <span class="mod">search (1)</span>
+      <span class="mod">tutor (2)</span>
+      <span class="mod">universe (1)</span>
+      <span class="mod">suggest (1)</span>
+      <span class="mod">settings (2)</span>
+      <span class="mod">attachments (2)</span>
+      <span class="mod">links (1)</span>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓ function call (no direct DB from router)</div>
+
+  <div class="layer">
+    <div class="layer-label">Layer 3 · Core — Pure Logic (server/app/core/)</div>
+    <div class="layer-tech">Standard library only · no FastAPI import · pure functions</div>
+    <div class="modules">
+      <span class="mod core">knowledge.py</span>
+      <span class="mod core">mastery.py</span>
+      <span class="mod core">review_scheduler.py</span>
+      <span class="mod core">tutor_context.py</span>
+      <span class="mod core">universe.py</span>
+      <span class="mod core">ai/tutor.py</span>
+      <span class="mod core">ai/service.py</span>
+      <span class="mod core">ai/providers/</span>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓ sqlite3 stdlib / file I/O</div>
+
+  <div class="layer">
+    <div class="layer-label">Layer 4 · Data (workspace/)</div>
+    <div class="layer-tech">Files + SQLite · all rebuildable from vault + events</div>
+    <div class="modules">
+      <span class="mod frozen">vault/*.md (Truth)</span>
+      <span class="mod frozen">SQLite cache</span>
+      <span class="mod frozen">events.jsonl</span>
+      <span class="mod">attachments/</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-box core"></div> Core module</div>
+    <div class="legend-item"><div class="legend-box frozen"></div> Frozen data source</div>
+  </div>
+</div>
+
+<!-- ===== SECTION 2: Frozen Contracts ===== -->
+<div class="section">
+  <div class="section-title">2 · Frozen Contracts (read-only constraints)</div>
+  <div class="grid-2">
+    <div class="truth-box">
+      <div class="truth-title">ADR-001 · Markdown Truth</div>
+      <ul class="truth-list">
+        <li>vault/*.md = source of truth for content</li>
+        <li>SQLite = rebuildable cache/index</li>
+        <li>startup: full-scan + content_hash verification</li>
+      </ul>
+    </div>
+    <div class="truth-box">
+      <div class="truth-title">ADR-008 · Entity Model</div>
+      <ul class="truth-list">
+        <li>concepts = first-class citizens</li>
+        <li>links = unified polymorphic edges</li>
+        <li>concept ≠ note (entity ≠ document)</li>
+      </ul>
+    </div>
+    <div class="truth-box">
+      <div class="truth-title">ADR-014 · AI Boundary</div>
+      <ul class="truth-list">
+        <li>LLM reads context → generates text</li>
+        <li>LLM NEVER writes DB / mastery / events</li>
+        <li>All state changes → learning_event</li>
+      </ul>
+    </div>
+    <div class="truth-box">
+      <div class="truth-title">Learning Model · Truth Hierarchy</div>
+      <ul class="truth-list">
+        <li>learning_events = immutable fact (append-only)</li>
+        <li>concept_mastery = derived state (replayable)</li>
+        <li>review_queue = projection (rebuildable)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION 3: API Endpoints ===== -->
+<div class="section">
+  <div class="section-title">3 · All API Endpoints (23 total)</div>
+  <table class="endpoint-table">
+    <tr><th class="method">Method</th><th class="path">Path</th><th>Router</th><th>Description</th></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/notes</td><td>notes</td><td>List all notes</td></tr>
+    <tr><td class="method">POST</td><td class="path">/api/v1/notes</td><td>notes</td><td>Create note</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/notes/{id}</td><td>notes</td><td>Get note detail</td></tr>
+    <tr><td class="method">PATCH</td><td class="path">/api/v1/notes/{id}</td><td>notes</td><td>Update note</td></tr>
+    <tr><td class="method">DELETE</td><td class="path">/api/v1/notes/{id}</td><td>notes</td><td>Delete note</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/notes/{id}/backlinks</td><td>links</td><td>Get backlinks</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/graph</td><td>graph</td><td>Graph projection (depth 1-3)</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/mastery</td><td>mastery</td><td>All mastery records</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/mastery/{id}</td><td>mastery</td><td>Mastery detail</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/mastery/weak/list</td><td>mastery</td><td>Top 10 weakest concepts</td></tr>
+    <tr><td class="method">POST</td><td class="path">/api/v1/events</td><td>mastery</td><td>Create learning event</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/review/today</td><td>mastery</td><td>Today's review queue</td></tr>
+    <tr><td class="method">POST</td><td class="path">/api/v1/review/{id}/answer</td><td>mastery</td><td>Submit review answer</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/review/history</td><td>mastery</td><td>Review history</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/search</td><td>search</td><td>FTS5 full-text search</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/tutor/context/{id}</td><td>tutor</td><td>Tutor context builder</td></tr>
+    <tr><td class="method">POST</td><td class="path">/api/v1/tutor/test</td><td>tutor</td><td>Smoke test (MockProvider)</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/universe</td><td>universe</td><td>Universe projection</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/knowledge/suggest</td><td>suggest</td><td>Context-aware suggestions</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/settings</td><td>settings</td><td>Get settings</td></tr>
+    <tr><td class="method">PUT</td><td class="path">/api/v1/settings</td><td>settings</td><td>Update settings</td></tr>
+    <tr><td class="method">POST</td><td class="path">/api/v1/attachments</td><td>attachments</td><td>Upload attachment</td></tr>
+    <tr><td class="method">GET</td><td class="path">/api/v1/attachments/{name}</td><td>attachments</td><td>Download attachment</td></tr>
+  </table>
+</div>
+
+<!-- ===== SECTION 4: Story 1 — Create Knowledge ===== -->
+<div class="section">
+  <div class="section-title">4 · Story 1: Create Knowledge</div>
+  <div class="flow">
+    <div class="flow-steps">
+      <div class="step"><div class="step-num">1</div><div class="step-box">User types in NoteEditor</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-box">TipTap → Markdown (onChange)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-box">debounce 800ms → PATCH /api/v1/notes/{id}</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-box">notes router → validate → write vault/*.md</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-box file">knowledge.upsert_note_index → SQLite + FTS5</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-box file">knowledge.rebuild_note_links → parse [[wikilinks]] → links table</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-box">KnowledgeRadar auto-suggests related concepts</div></div>
+    </div>
+  </div>
+  <div class="data-flow">
+    <span class="data-node">User</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">TipTap</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">PATCH /notes</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">vault/*.md</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">SQLite index</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">FTS5</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">links table</span>
+  </div>
+</div>
+
+<!-- ===== SECTION 5: Story 2 — Learning Loop ===== -->
+<div class="section">
+  <div class="section-title">5 · Story 2: Learning Loop</div>
+  <div class="flow">
+    <div class="flow-steps">
+      <div class="step"><div class="step-num">1</div><div class="step-box">User answers in DashboardView</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-box">POST /api/v1/review/{id}/answer (quality 0-5)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-box file">mastery.update_mastery → event_type → dimension delta</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-box file">INSERT INTO learning_events (append-only)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-box file">UPDATE concept_mastery (effective recalc)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-box file">review_scheduler.sm2_schedule → next_review</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-box file">UPDATE review_queue (projection)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">8</div><div class="step-box">Dashboard refreshes mastery ranking</div></div>
+    </div>
+  </div>
+  <div class="data-flow">
+    <span class="data-node">User Answer</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">learning_event</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">mastery update</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">SM-2 schedule</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">review_queue</span>
+  </div>
+  <div class="forbidden-box">
+    <strong>Key invariant:</strong> learning_events is append-only. concept_mastery and review_queue are derived — both can be rebuilt from events alone.
+  </div>
+</div>
+
+<!-- ===== SECTION 6: Story 3 — AI Tutor ===== -->
+<div class="section">
+  <div class="section-title">6 · Story 3: AI Tutor</div>
+  <div class="flow">
+    <div class="flow-steps">
+      <div class="step"><div class="step-num">1</div><div class="step-box">User selects concept + asks in TutorPanel</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-box">POST /api/v1/tutor/test</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-box ai">tutor_context.build_tutor_context(conn, concept_id)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-box ai">ai/tutor.build_prompt(context, query, mode) — pure function</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-box ai">ai/service.TutorService.ask → provider.complete(prompt)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-box ai">LLMProvider.complete(prompt) → str</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-box">Response rendered as structured text in TutorPanel</div></div>
+    </div>
+  </div>
+  <div class="forbidden-box">
+    <strong>LLM Trust Boundary (ADR-014):</strong><br>
+    ✗ LLM → SQLite &nbsp;&nbsp; ✗ LLM → concept_mastery &nbsp;&nbsp; ✗ LLM → learning_events &nbsp;&nbsp; ✗ LLM → review_queue<br>
+    ✓ LLM → text response &nbsp;&nbsp; ✓ LLM → action suggestion (not executed)
+  </div>
+</div>
+
+<!-- ===== SECTION 7: Story 4 — Knowledge Universe ===== -->
+<div class="section">
+  <div class="section-title">7 · Story 4: Knowledge Universe</div>
+  <div class="flow">
+    <div class="flow-steps">
+      <div class="step"><div class="step-num">1</div><div class="step-box">User opens Universe tab (M3b)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-box">GET /api/v1/universe</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-box ai">universe.get_universe_projection(conn)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-box file">SELECT concepts (nodes) + links (edges) + mastery (colors)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-box">{ nodes: [...], edges: [...] }</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-box">d3-force layout (frontend, ADR-007)</div></div>
+      <div class="conn"><div class="conn-line"></div></div>
+      <div class="step"><div class="step-num">7</div><div class="step-box">React Flow renders nodes + edges</div></div>
+    </div>
+  </div>
+  <div class="data-flow">
+    <span class="data-node">concepts</span>
+    <span class="data-arrow">+</span>
+    <span class="data-node">links</span>
+    <span class="data-arrow">+</span>
+    <span class="data-node">mastery</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">universe.py</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">GET /universe</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">d3-force</span>
+    <span class="data-arrow">→</span>
+    <span class="data-node">React Flow</span>
+  </div>
+</div>
+
+<!-- ===== SECTION 8: Core Module Map ===== -->
+<div class="section">
+  <div class="section-title">8 · Core Module Map</div>
+  <div class="grid-2">
+    <div class="layer">
+      <div class="layer-label">knowledge.py</div>
+      <div class="modules">
+        <span class="mod">sanitize_title</span>
+        <span class="mod">parse_frontmatter</span>
+        <span class="mod">upsert_note_index</span>
+        <span class="mod">search_notes</span>
+        <span class="mod">extract_wikilinks</span>
+        <span class="mod">rebuild_note_links</span>
+        <span class="mod">local_graph</span>
+        <span class="mod">backlinks_of_note</span>
+        <span class="mod">suggest_for_context</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-label">mastery.py</div>
+      <div class="modules">
+        <span class="mod">compute_effective</span>
+        <span class="mod">get_or_create_mastery</span>
+        <span class="mod">update_mastery</span>
+        <span class="mod">get_mastery</span>
+        <span class="mod">get_all_mastery</span>
+        <span class="mod">get_weak_concepts</span>
+        <span class="mod">ensure_concept_learning_state</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-label">review_scheduler.py</div>
+      <div class="modules">
+        <span class="mod">sm2_schedule(quality, ease_factor, interval, review_count, now)</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-label">tutor_context.py</div>
+      <div class="modules">
+        <span class="mod">build_tutor_context(conn, concept_id) → TutorContext</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-label">universe.py</div>
+      <div class="modules">
+        <span class="mod">get_universe_projection(conn) → {nodes, edges}</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="layer-label">ai/</div>
+      <div class="modules">
+        <span class="mod core">tutor.build_prompt</span>
+        <span class="mod core">service.TutorService.ask</span>
+        <span class="mod core">providers.LLMProvider.complete</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION 9: Data Truth Flow ===== -->
+<div class="section">
+  <div class="section-title">9 · Data Truth Flow</div>
+  <div class="flow">
+    <div class="flow-title">Markdown → SQLite → Learning State → AI → Universe</div>
+    <div class="data-flow" style="font-size:12px;">
+      <span class="data-node" style="border-color:var(--ok)">vault/*.md</span>
+      <span class="data-arrow">→ parser →</span>
+      <span class="data-node">concepts</span>
+      <span class="data-arrow">+</span>
+      <span class="data-node">links</span>
+      <span class="data-arrow">+</span>
+      <span class="data-node">notes</span>
+      <span class="data-arrow">→</span>
+      <span class="data-node" style="border-color:var(--ok)">learning_events</span>
+      <span class="data-arrow">→</span>
+      <span class="data-node">concept_mastery</span>
+      <span class="data-arrow">→</span>
+      <span class="data-node">review_queue</span>
+    </div>
+    <div class="data-flow" style="font-size:12px;margin-top:6px;">
+      <span class="data-arrow">→</span>
+      <span class="data-node">Tutor Context</span>
+      <span class="data-arrow">→</span>
+      <span class="data-node" style="border-color:var(--brand)">LLM</span>
+      <span class="data-arrow">→</span>
+      <span class="data-node">Response</span>
+      <span class="data-arrow">&nbsp;&nbsp;&nbsp;</span>
+      <span class="data-node">concepts</span>
+      <span class="data-arrow">+</span>
+      <span class="data-node">links</span>
+      <span class="data-arrow">+</span>
+      <span class="data-node">mastery</span>
+      <span class="data-arrow">→</span>
+      <span class="data-node" style="border-color:var(--blue)">Universe</span>
+    </div>
+  </div>
+  <div class="truth-box">
+    <div class="truth-title">Data Rebuildability</div>
+    <ul class="truth-list">
+      <li>SQLite index ← rebuildable from vault/*.md (startup full-scan)</li>
+      <li>concept_mastery ← rebuildable from learning_events (event replay)</li>
+      <li>review_queue ← rebuildable from concept_mastery + SM-2 algorithm</li>
+      <li>Universe projection ← rebuildable from concepts + links + mastery</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== SECTION 10: Frozen Boundary ===== -->
+<div class="section">
+  <div class="section-title">10 · Frozen Boundary — What AI Agent Cannot Touch</div>
+  <div class="grid-2">
+    <div class="forbidden-box">
+      <strong>DO NOT MODIFY:</strong><br>
+      • learning_events schema (append-only)<br>
+      • concept_mastery formula (0.35K+0.30P+0.20R+0.15T)<br>
+      • sm2_schedule algorithm<br>
+      • build_prompt() contract<br>
+      • LLMProvider protocol<br>
+      • vault/*.md truth guarantee
+    </div>
+    <div class="forbidden-box">
+      <strong>SAFE TO EXTEND:</strong><br>
+      • New routers (add to main.py)<br>
+      • New core modules (add to core/)<br>
+      • New frontend views (add to App.tsx)<br>
+      • New event_types (extend mastery.py mapping)<br>
+      • New LLM providers (implement LLMProvider)<br>
+      • New UI components (add to components/)
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
