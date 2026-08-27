@@ -5,6 +5,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Documentation
+- **M7-003.5 Documentation & Architecture Sync Audit**：纯文档同步任务 ·
+  CURRENT_STATE 补齐 M7-001.5~M7-003 里程碑与 Next Up（M7-004 Apply 未开工）· 测试计数 251→327 ·
+  data-model INDEX 补登 ADR-020/021 数据边界行 · AGENTS §10 文档地图新增 docs/sync/ 条目 ·
+  TASKS 总览表同步至当前状态并新增 M7 拆解区 · 新增 docs/diagrams/sync-flow.html（旧图未动）·
+  Sync Core Boundary Audit：core/sync 八模块零 FastAPI/sqlite3/router 依赖违规 ·
+  附带一处死代码修复：MindMapCanvas.tsx 无消费的 searchingConcept 解构改为空位（恢复 tsc 门禁，零行为变化）
+
 ### Added
 - **M7-003 Sync Transport**：同步传输层（Transport only，不包含 Apply/Conflict）·
   messages.py（FileRequest/FileData/FileAck/SyncError 消息类型 + parse_message）·

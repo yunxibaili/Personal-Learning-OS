@@ -20,20 +20,36 @@
 | M2-C | 搜索 UI（FTS5 结果跳转） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2-D | Graph Read Model（GET /api/v1/graph 递归 CTE） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2-E | React Flow 基础图谱（仅渲染，无动画无 d3-force） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
-| M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[ ]` | — |
+| M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[~]` M2b-001~003 ✅，大纲反解析挂起 | — |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[x]` 完成 | [T-M3](#t-m3-m3-learning-graph-完成2026-08-26) |
-| M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[ ]` | — |
+| M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[x]` 完成（M3b-001~004） | 见 CURRENT_STATE |
 | M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[x]` 完成 | [T-M3.5A](#t-m35a-m35-a-knowledge-radar-mvp-完成2026-08-26) |
 | M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[ ]` | — |
-| M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[ ]` | — |
+| M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[x]` 完成（M4-A~E + Gate 1，ADR-014/015/016） | 见 CURRENT_STATE |
 | M5 | 复习闭环（队列/测验/时间线） | `[x]` 完成 | [T-M5](#t-m5-m5-复习闭环完成2026-08-27) |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
-| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[ ]` | — |
+| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[~]` M7-001~003 ✅，M7-004 Apply 未开工 | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
 | M9 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
 | M10 | AI 生成可视化 | `[ ]` | — |
 
-## M0 任务拆解（当前）
+## M7 LAN Sync 任务拆解（当前）
+
+> 详细设计：docs/sync/sync-model.md · sync-transport.md · ADR-020（真值模型）
+
+- [x] ADR-020 Sync Truth Model（三层真值模型冻结）
+- [x] M7-001 Sync Engine Core（manifest/scanner/diff，纯 Core 无网络）
+- [x] M7-001 Stabilization Audit（glob bug 修复 + settings 边界修复）
+- [x] M7-Nightly Full Audit Sprint
+- [x] M7-001.5 Sync Simulation Environment
+- [x] ADR-022 Product Mode Boundary
+- [x] M7-002 LAN Discovery（UDP 广播发现/PING 心跳，27 tests）
+- [x] M7-003 Sync Transport（messages/transfer/transport，31 tests · 总计 327 passed）
+- [ ] **M7-004 Vault Apply**：SyncPlan 落盘 vault/eventlogs/mind_maps（下一个任务）
+- [ ] M7-005 Conflict UI（冲突双份展示与解决）
+- [ ] routers/sync HTTP 层（manifest exchange + pairing，随 M7-004 建立）
+
+## M0 任务拆解
 
 - [x] server/：FastAPI 入口（绑 127.0.0.1）+ db.py + migrations/001_init.sql（TECH_DESIGN §4 DDL）+ routers 骨架 + GET/PUT /api/v1/settings
 - [x] web/：Vite React TS + Zustand store 骨架 + global.css + 六视图占位路由切换 + api client

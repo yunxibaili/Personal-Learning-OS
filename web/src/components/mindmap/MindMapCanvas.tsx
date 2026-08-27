@@ -78,7 +78,8 @@ export function MindMapCanvas() {
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [conceptQuery, setConceptQuery] = useState("");
   const [conceptResults, setConceptResults] = useState<ConceptResult[]>([]);
-  const [searchingConcept, setSearchingConcept] = useState(false);
+  // searchingConcept 值当前无消费方；仅保留 setter 供搜索流程置位
+  const [, setSearchingConcept] = useState(false);
 
   /** 加载 Map 列表 */
   const loadMaps = useCallback(async () => {

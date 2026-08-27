@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：679dc3a · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：117fcca · Branch：main · Clean：yes
 
 ---
 
@@ -49,6 +49,17 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | P2 | create_note atomic write（write→fsync→rename） | ✅ |
 | M7-001 | Sync Engine Core（manifest + scanner + diff） | ✅ |
 | Stabilization | M7-001 审计 + 修复（glob bug + settings boundary + tests） | ✅ |
+| M7-Nightly | Full Audit Sprint（全量审计） | ✅ |
+| M7-001.5 | Sync Simulation Environment（仿真环境） | ✅ |
+| ADR-022 | Product Mode Boundary（产品模式边界冻结） | ✅ |
+| M7-002 | LAN Discovery（UDP 广播设备发现） | ✅ |
+| M7-003 | Sync Transport（消息协议 + 原子传输，无 Apply/Conflict） | ✅ |
+
+## Next Up
+
+- **M7-004 Vault Apply**：SyncPlan 落盘 vault/eventlogs/mind_maps（⏳ 未开工）
+- M7-005 Conflict UI（冲突双份展示与解决）
+- 前置阅读：docs/sync/sync-model.md · sync-transport.md · ADR-020
 
 ## Do Not Touch
 
@@ -98,13 +109,23 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 ## 测试命令
 
 ```
-pytest -q          → 251 passed
+pytest -q          → 327 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
-## 本次会话改动
+## 本次会话改动（M7-003.5 Documentation & Architecture Sync Audit）
+
+纯文档任务，零业务代码改动：
+- CURRENT_STATE.md：commit 指针 → 117fcca · 补齐 M7-Nightly~M7-003 五行里程碑 · 测试计数 251→327 · 新增 Next Up 区块
+- docs/data-model/INDEX.md：补登 ADR-020 Sync Truth Model 数据模型行
+- AGENTS.md §10 文档地图：新增 docs/sync/ 条目
+- docs/diagrams/sync-flow.html：新增同步管线图（Discovery→Transport→Apply→Workspace），旧图未动
+- docs/tasks/TASKS.md：总览表同步已完成状态 + 新增 M7 子任务区
+- **Sync Core Boundary Audit**：core/sync 八模块仅依赖 stdlib（无 fastapi/sqlite3/router import）；routers/ 尚无 sync 端点——Router→Sync Core 边界留待 M7-004+ 建立
+
+## 上一会话改动存档（M7-001 Stabilization + Audit Sprint）
 
 - scanner.py：替换 _glob_match 为正确的 ** 递归匹配（修复嵌套目录匹配 bug）
 - manifest.py：移除死代码 `import os`

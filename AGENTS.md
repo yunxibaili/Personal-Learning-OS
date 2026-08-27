@@ -221,6 +221,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 | `docs/security/network-boundary.md` | 网络边界 / 出站白名单 / 数据不出本机规则 |
 | `docs/version-control/git-policy.md` | 分支/提交/标签/发布策略 |
 | `docs/data-model/INDEX.md` | 数据模型变更索引 |
+| `docs/sync/` | M7 同步模型文档（sync-model · sync-transport · conflict-resolution · recovery-guide） |
 | `docs/architecture/integration-upmark.md` | UpMark 联动计划（挂起中，未排期） |
 | `docs/architecture/separation.md` | 分层架构规范（四层职责/接口先行/契约测试） |
 | `docs/environment.md` | 环境治理规则与版本基线（sandbox/_local/收尾四件事） |

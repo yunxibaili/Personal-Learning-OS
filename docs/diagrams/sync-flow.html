@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sync Flow — Open Learning OS</title>
+<style>
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #666; --border: #e5e5e5; --brand: #ff8a00; --ok: #22c55e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .diagram { max-width: 700px; margin: 0 auto; }
+  .flow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .node { border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 280px; position: relative; }
+  .node-label { font-size: 14px; font-weight: 600; }
+  .node-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .node.done { border-color: var(--ok); background: rgba(34,197,94,0.03); }
+  .node.done .node-label { color: var(--ok); }
+  .node.pending { border-style: dashed; opacity: 0.75; }
+  .node.pending .node-label { color: var(--muted); }
+  .node.truth { border-color: var(--brand); background: rgba(255,138,0,0.03); }
+  .arrow-down { display: flex; flex-direction: column; align-items: center; padding: 6px 0; }
+  .arrow-line { width: 2px; height: 20px; background: var(--border); }
+  .arrow-head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--border); }
+  .arrow-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .twoway { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .legend { margin-top: 32px; font-size: 11px; color: var(--muted); display: flex; gap: 20px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-box { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
+  .legend-box.done { border-color: var(--ok); background: rgba(34,197,94,0.05); }
+  .legend-box.pending { border-color: var(--muted); border-style: dashed; }
+  .legend-box.truth { border-color: var(--brand); background: rgba(255,138,0,0.05); }
+  .never { margin-top: 24px; padding: 10px 14px; border: 1px dashed #ef4444; border-radius: 6px; font-size: 12px; color: #ef4444; text-align: center; }
+  .note { margin-top: 16px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<div class="diagram">
+  <h1>Sync Flow</h1>
+  <p class="subtitle">Discovery → Transport → Apply → Workspace · status as of M7-003 · ADR-005/020</p>
+
+  <div class="flow">
+    <div class="node">
+      <div class="node-label">User</div>
+      <div class="node-desc">触发配对 / 同步（M7-005 起）</div>
+    </div>
+    <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+    <div class="node done">
+      <div class="node-label">Discovery ✅ M7-002</div>
+      <div class="node-desc">UDP 广播 · DISCOVER/ACK/PING/PONG · 只交换 device_id / name / version</div>
+    </div>
+    <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">获得对端地址</div></div>
+
+    <div class="node done">
+      <div class="node-label">Manifest + Diff ✅ M7-001</div>
+      <div class="node-desc">scanner → Manifest（sha256）→ diff_manifests → SyncPlan</div>
+    </div>
+    <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">SyncPlan (UPLOAD/DOWNLOAD/SKIP)</div></div>
+
+    <div class="node done">
+      <div class="node-label">Transport ✅ M7-003</div>
+      <div class="node-desc">FileRequest / FileData / FileAck / SyncError · 原子写入（write→fsync→rename）· 哈希验证</div>
+    </div>
+    <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">文件字节流</div></div>
+
+    <div class="node pending">
+      <div class="node-label">Apply ⏳ M7-004 未开工</div>
+      <div class="node-desc">SyncPlan 落盘 vault/ eventlogs/ mind_maps/ · 冲突双份保留策略</div>
+    </div>
+    <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">原子写入</div></div>
+
+    <div class="node truth">
+      <div class="node-label">Workspace（Truth Source，ADR-020 Layer 1）</div>
+      <div class="node-desc">vault/**/*.md · metadata/eventlogs/**/*.jsonl · mind_maps/**/*.mindmap.json</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-box done"></span>已完成</span>
+    <span class="legend-item"><span class="legend-box pending"></span>未开工</span>
+    <span class="legend-item"><span class="legend-box truth"></span>同步范围</span>
+  </div>
+
+  <div class="never">
+    永不进入同步（ADR-020 Layer 3）：SQLite db/ · settings · API keys · metadata/devices.json
+  </div>
+  <div class="note">
+    边界：core/sync 仅依赖标准库；HTTP 层（routers/sync · manifest exchange · pairing）随 M7-004 建立。
+    本图为新增图，既有图未修改。
+  </div>
+</div>
+</body>
+</html>
