@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：待提交 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：3ef5060 · Branch：main · Clean：yes
 
 ---
 
@@ -11,7 +11,7 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
-P8-001A Concept Foundation 完成（收尾 commit 后回填 hash）。
+P8-001A Concept Foundation 完成（commit 3ef5060）。
 新增 `/api/v1/concepts` CRUD（GET/POST/PATCH）· `core/concepts.py` 纯 Core 业务层 ·
 Concept 来源唯一事实字段 `origin`（source_type 方案废弃，BLOCK 裁决）·
 seed_demo.py 35 个纯概念（五域）· ADR-023 冻结。
