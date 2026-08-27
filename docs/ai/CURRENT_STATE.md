@@ -7,7 +7,7 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → **M7-Nightly Audit ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → **ADR-022 Product Mode Boundary ✅**
 
 ## Last Completed
 
@@ -81,6 +81,7 @@ pytest 251 passed · vite build PASS。
 | MindMap Boundary | Frozen | ADR-019 |
 | MindMap Exchange Format | Frozen | ADR-021 |
 | Sync Truth Model | Frozen | ADR-020 |
+| Product Mode Boundary | Frozen | ADR-022 |
 
 ## Known Risks
 
