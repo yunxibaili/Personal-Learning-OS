@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS learning_events;
 DROP TABLE IF EXISTS concept_mastery;
 
 CREATE TABLE concept_mastery (
-    concept_id    INTEGER PRIMARY KEY REFERENCES concepts(id),
+    concept_id    INTEGER PRIMARY KEY REFERENCES concepts(id) ON DELETE CASCADE,
     dimensions    TEXT NOT NULL DEFAULT '{"knowledge":0,"practice":0,"recall":0,"transfer":0}',
     effective     REAL NOT NULL DEFAULT 0,
     next_review   TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE concept_mastery (
 
 CREATE TABLE learning_events (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    concept_id    INTEGER NOT NULL REFERENCES concepts(id),
+    concept_id    INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
     event_type    TEXT NOT NULL,
     dimension     TEXT,
     weight        REAL NOT NULL DEFAULT 1.0,
@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_events_concept ON learning_events(concept_id);
 CREATE INDEX IF NOT EXISTS idx_events_type ON learning_events(event_type);
 
 CREATE TABLE review_queue (
-    concept_id    INTEGER PRIMARY KEY REFERENCES concepts(id),
+    concept_id    INTEGER PRIMARY KEY REFERENCES concepts(id) ON DELETE CASCADE,
     due_at        TEXT NOT NULL,
     priority      REAL NOT NULL DEFAULT 0.5,
     status        TEXT NOT NULL DEFAULT 'pending',

@@ -199,6 +199,7 @@ def ensure_entity_by_title(conn, title: str) -> tuple[str, int, bool]:
     """字符串 → Entity。不存在则创建 concept 桩（origin=markdown, status=unconfirmed）。
 
     返回 (entity_type, entity_id, created)。
+    新建桩时同步初始化学习状态（mastery + review_queue）。
     """
     matches = resolve_title(conn, title)
     if matches:
@@ -208,7 +209,11 @@ def ensure_entity_by_title(conn, title: str) -> tuple[str, int, bool]:
         "INSERT INTO concepts (title, origin, status) VALUES (?, 'markdown', 'unconfirmed')",
         (title,),
     )
-    return "concept", cur.lastrowid, True
+    concept_id = cur.lastrowid
+    # 初始化学习状态（惰性：mastery + review_queue）
+    from .mastery import ensure_concept_learning_state
+    ensure_concept_learning_state(conn, concept_id)
+    return "concept", concept_id, True
 
 
 def promote_stub_to_note(conn, note_id: int, title: str) -> int:

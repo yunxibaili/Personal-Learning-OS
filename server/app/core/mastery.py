@@ -143,3 +143,27 @@ def get_weak_concepts(conn, limit: int = 10) -> list[dict]:
         (limit,),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+def ensure_concept_learning_state(conn, concept_id: int) -> None:
+    """概念首次触达时惰性初始化完整学习状态：mastery + review_queue。
+
+    触发时机（不绑定笔记）：
+    - 笔记创建时 [[新概念]] 解析创建 stub
+    - AI Tutor extractor 建议新概念
+    - Import（UpMark 等）
+    - Code Trace 产生新概念
+    """
+    # 1. 确保 mastery 行存在
+    get_or_create_mastery(conn, concept_id)
+    # 2. 确保 review_queue 行存在（due_at = now，首日可复习）
+    existing = conn.execute(
+        "SELECT 1 FROM review_queue WHERE concept_id=?", (concept_id,)
+    ).fetchone()
+    if existing is None:
+        now = _now_iso()
+        conn.execute(
+            "INSERT INTO review_queue (concept_id, due_at, priority, status) "
+            "VALUES (?, ?, 0.5, 'pending')",
+            (concept_id, now),
+        )
