@@ -28,7 +28,7 @@
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[x]` 完成（M4-A~E + Gate 1，ADR-014/015/016） | 见 CURRENT_STATE |
 | M5 | 复习闭环（队列/测验/时间线） | `[x]` 完成 | [T-M5](#t-m5-m5-复习闭环完成2026-08-27) |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
-| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[~]` M7-001~003 ✅，M7-004 Apply 未开工 | 见下方 M7 拆解 |
+| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[~]` M7-001~004 ✅，M7-005 未开工 | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
 | M9 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
 | M10 | AI 生成可视化 | `[ ]` | — |
@@ -45,9 +45,10 @@
 - [x] ADR-022 Product Mode Boundary
 - [x] M7-002 LAN Discovery（UDP 广播发现/PING 心跳，27 tests）
 - [x] M7-003 Sync Transport（messages/transfer/transport，31 tests · 总计 327 passed）
-- [ ] **M7-004 Sync Apply Layer + Boundary Audit**（当前任务，规则见 docs/ai/ACTIVE_TASK.md）：
-  core/sync/apply.py · 唯一写入口 · 双重校验 · eventlog append-merge（event_id 去重，禁 LWW）·
-  mindmap LWW + conflict copy · pytest 327→370+
+- [x] **M7-004 Sync Apply Layer + Boundary Audit** ✅：
+  core/sync/apply.py（唯一写入口 · 双重校验 · eventlog append-merge event_id 去重 ·
+  mindmap LWW + conflict backup）· tests/unit/test_sync_apply.py 27 个 · pytest 327→354
+  完成报告：见 CURRENT_STATE「本次会话改动」与 docs/sync/sync-model.md §Apply 层
 - [ ] M7-004.5 Sync Security Audit（Apply 落盘后全量安全复审）
 - [ ] M7-005 Conflict UI（冲突双份展示与解决）
 - [ ] M7-006 End-to-end LAN Demo

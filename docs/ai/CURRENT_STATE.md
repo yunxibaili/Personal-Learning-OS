@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：117fcca · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：e3eac45 · Branch：main · Clean：yes
 
 ---
 
@@ -54,12 +54,16 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | ADR-022 | Product Mode Boundary（产品模式边界冻结） | ✅ |
 | M7-002 | LAN Discovery（UDP 广播设备发现） | ✅ |
 | M7-003 | Sync Transport（消息协议 + 原子传输，无 Apply/Conflict） | ✅ |
+| M7-003.5 | Documentation & Architecture Sync Audit（6067332） | ✅ |
+| M7-004 | Sync Apply Layer（core/sync/apply.py + 27 tests） | ✅ |
 
 ## Next Up
 
-- **M7-004 Vault Apply**：SyncPlan 落盘 vault/eventlogs/mind_maps（⏳ 未开工）
+- **M7-004.5 Sync Security Audit**（Apply 落盘后全量安全复审）
 - M7-005 Conflict UI（冲突双份展示与解决）
-- 前置阅读：docs/sync/sync-model.md · sync-transport.md · ADR-020
+- M7-006 End-to-end LAN Demo
+- 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
+- 前置阅读：docs/sync/sync-model.md §Apply 层 · sync-transport.md · ADR-020
 
 ## Do Not Touch
 
@@ -109,13 +113,25 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 ## 测试命令
 
 ```
-pytest -q          → 327 passed
+pytest -q          → 354 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
-## 本次会话改动（M7-003.5 Documentation & Architecture Sync Audit）
+## 本次会话改动（M7-004 Sync Apply Layer）
+
+- core/sync/apply.py 新建：SyncApply / ApplyAction / SyncApplyResult / validate_rel_path
+  四条冻结规则落地——唯一写入口 · 双重校验（字节级 hash 重算，测试中实证了
+  PurePosixPath 对 `C:x` 盘符误判并修复）· eventlog append-merge（event_id 去重，
+  缺 id/坏 JSON 行拒绝合入，local 行数永不减少）· mindmap LWW + 首次冲突 `.local.json` 备份
+- 确定性：apply 不读墙钟不生成时间戳；TestDeterministicApply 双 workspace 字节级快照比对
+- 测试：tests/unit/test_sync_apply.py 27 个（Markdown 5 / Events 5 / MindMap 3 /
+  Security 4 组参数化 + 单元 / Determinism 2 / BoundaryAudit stdlib-only 扫描 2）
+  总计 pytest 327→354
+- 文档：sync-model.md 新增「Apply 层」节；ACTIVE_TASK 回执清空；CHANGELOG/INDEX 同步
+
+## 上一会话改动存档（M7-003.5 Documentation & Architecture Sync Audit）
 
 纯文档任务，零业务代码改动：
 - CURRENT_STATE.md：commit 指针 → 117fcca · 补齐 M7-Nightly~M7-003 五行里程碑 · 测试计数 251→327 · 新增 Next Up 区块

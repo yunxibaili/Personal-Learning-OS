@@ -5,6 +5,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **M7-004 Sync Apply Layer**：远端数据进入 workspace 的唯一写入口（core/sync/apply.py）·
+  四条冻结规则——唯一写入口 / 双重校验（字节级 SHA-256 重算 + 白名单复检 +
+  路径穿越/盘符拒绝）/ eventlog append-merge 按 event_id 幂等去重 /
+  mindmap LWW + 首次冲突 `.local.json` 备份 · 确定性 apply（不读墙钟，
+  同输入双 workspace 字节级一致）· 27 个新测试（含 core/sync stdlib-only
+  边界回归扫描与 Deterministic Apply）· pytest 327→354
+
 ### Documentation
 - **M7-003.5 Documentation & Architecture Sync Audit**：纯文档同步任务 ·
   CURRENT_STATE 补齐 M7-001.5~M7-003 里程碑与 Next Up（M7-004 Apply 未开工）· 测试计数 251→327 ·
