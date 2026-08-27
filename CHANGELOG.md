@@ -72,6 +72,24 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   four dimensions display · Open Note action · ADR-013 合规
 
 ### Added
+- **M3b-004 Navigation Layer**：Universe 导航层 ·
+  View Mode Tabs (All/Weak/Focus) · Domain Tabs ·
+  Weak Area View (mastery threshold slider) ·
+  Focus Mode (1/2/3 hop neighbor expansion + neighbor list)
+
+### Added
+- **ADR-019 MindMap Boundary**：Universe ≠ MindMap 冻结 ·
+  五条铁律 · 数据模型 (mind_maps + mind_map_nodes + mind_map_edges) ·
+  concept binding is reference
+
+### Added
+- **M2b-001 MindMap Canvas**：用户思考空间 CRUD ·
+  006_mindmap.sql migration · core/mindmap.py · routers/mindmap.py ·
+  MindMapCanvas.tsx (React Flow) · MapNode.tsx (concept badge) ·
+  sidebar map list · add node · drag save · connect edges ·
+  18 个测试 (含 ADR-019 isolation test) · pytest 150 passed
+
+### Added
 - **M4-C Smoke Test**：POST /api/v1/tutor/test 全链路验证端点 ·
   Context→Prompt→MockProvider→Response 闭环测试 · 5 个集成测试
 

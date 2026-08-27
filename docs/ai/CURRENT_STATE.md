@@ -7,14 +7,14 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → **M2b**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → **M2b-001 ✅** → M2b-002
 
 ## Last Completed
 
-M3b-001 Universe Projection + M3b-002 Universe Layout + M3b-003 Interaction + M3b-004 Navigation Layer 已完成。
-ADR-018 Knowledge Universe Design 已冻结。
-GET /api/v1/universe → React Flow 渲染 · mastery → radius + color · domain tabs · weak area view · focus mode + depth。
-npm run build 通过。
+M3b-001 Universe Projection + M3b-002 Universe Layout + M3b-003 Interaction + M3b-004 Navigation Layer + M2b-001 MindMap Canvas 已完成。
+ADR-018 Knowledge Universe + ADR-019 MindMap Boundary 已冻结。
+MindMap: 006_mindmap.sql + core/mindmap.py + routers/mindmap.py + MindMapCanvas.tsx + 18 tests。
+pytest 150 passed · npm run build 通过。
 
 ## 已完成
 
@@ -44,6 +44,8 @@ npm run build 通过。
 | M3b-002 | Universe Layout（React Flow + mastery encoding） | ✅ |
 | M3b-003 | Interaction + State Detail（tooltip + detail panel + click） | ✅ |
 | M3b-004 | Navigation Layer（domain tabs + weak area + focus mode） | ✅ |
+| ADR-019 | MindMap Boundary（Universe ≠ MindMap 冻结） | ✅ |
+| M2b-001 | MindMap Canvas（CRUD + React Flow + ADR-019 isolation） | ✅ |
 
 ## Do Not Touch
 
@@ -86,7 +88,7 @@ npm run build 通过。
 ## 测试命令
 
 ```
-pytest -q          → 132 passed
+pytest -q          → 150 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量

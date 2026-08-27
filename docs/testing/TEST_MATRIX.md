@@ -33,6 +33,8 @@
 | Tutor Router | `server/app/routers/tutor.py` | Tutor API | `test_tutor_smoke.py` |
 | Universe Projection | `server/app/core/universe.py` | 图投影 | `test_universe.py` |
 | Universe Router | `server/app/routers/universe.py` | Universe API | `test_universe.py` |
+| MindMap Core | `server/app/core/mindmap.py` | Map CRUD | `test_mindmap.py` |
+| MindMap Router | `server/app/routers/mindmap.py` | MindMap API | `test_mindmap.py` |
 
 ## 前端模块
 
@@ -46,6 +48,7 @@
 | Note Editor | `web/src/views/NoteEditor.tsx` | 笔记 | `npm run build` |
 | Tutor Panel | `web/src/components/tutor/TutorPanel.tsx` | Tutor UI | `npm run build` |
 | Knowledge Universe | `web/src/components/universe/` | Universe 渲染 | `npm run build` |
+| MindMap Canvas | `web/src/components/mindmap/` | MindMap 渲染 | `npm run build` |
 | App Layout | `web/src/App.tsx` | 布局 | `npm run build` + `npm run test` |
 
 ## 共享类型

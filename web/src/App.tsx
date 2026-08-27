@@ -4,8 +4,8 @@ import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
 import { TutorPanel } from "./components/tutor/TutorPanel";
 import { KnowledgeUniverse } from "./components/universe/KnowledgeUniverse";
+import { MindMapCanvas } from "./components/mindmap/MindMapCanvas";
 import {
-  MindMapView,
   ReviewQueueView,
 } from "./views/placeholders";
 
@@ -29,7 +29,7 @@ function ActiveView() {
     case "universe":
       return <KnowledgeUniverse />;
     case "mindmap":
-      return <MindMapView />;
+      return <MindMapCanvas />;
     case "tutor":
       return <TutorPanel />;
     case "review":
