@@ -1,7 +1,7 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：9aeff78 · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：bb5ff3a · Branch：main · Clean：yes
 
 ---
 
@@ -58,11 +58,11 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 | M7-004 | Sync Apply Layer（core/sync/apply.py + 27 tests） | ✅ |
 | M7-004.5 | Sync Boundary & Recovery Audit（fail-closed 修复 + 19 tests） | ✅ |
 | M7-005 | Conflict UI（SyncStatusPanel + /sync/status,/resolve，方案 a） | ✅ |
+| M7-006 | E2E LAN Demo（真实两进程全链路 + Recovery） | ✅ |
 
 ## Next Up
 
-- **M7-006 End-to-end LAN Demo**
-- M7-007 Vault Conflict Preservation（apply.py vault 分支双份机制，含 ADR-020 更新）
+- **M7-007 Vault Conflict Preservation**（apply.py vault 分支双份机制，含 ADR-020 更新）
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
 - 前置阅读：docs/sync/sync-model.md §Apply 层/§边界与恢复 · sync-transport.md · ADR-020
 
@@ -114,13 +114,27 @@ transport.py（SyncTransport 协调器：execute_plan + serve_file + receive_inc
 ## 测试命令
 
 ```
-pytest -q          → 390 passed
+pytest -q          → 397 passed
 npx vitest run     → 2 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
-## 本次会话改动（M7-005 Conflict UI，方案 a）
+## 本次会话改动（M7-006 E2E LAN Demo）
+
+- Phase 1/2：tests/integration/sync/test_e2e_demo.py SyncPair runner +
+  四场景（单向/双向/event merge 去重/mindmap 冲突收敛+resolve）+ 幂等重放
+- Phase 3.0 Transport completion：
+  - routers/sync.py 新增 GET /sync/files/{path}（serve_file 代理）与
+    POST /sync/receive（**强制经 SyncApply 落盘**——修正了 M7-003 的
+    receive_incoming 直写盘 Rule 1 违规，fail-closed 语义随之统一 rejected）
+  - _http_send 清理 sha 死代码；补 sender payload 缺失的 type 字段
+    （FileData.from_bytes 契约此前必然拒收，协议从未真正通过）
+- Phase 3.1/3.2：Device B 独立 uvicorn 子进程，A 经真实 HTTP 全链路同步
+  字节级一致；对端宕机→失败不破坏本地→重试最终一致
+- 测试 +12 · pytest 390→397（新增 e2e 7 + transport 断言更新）
+
+## 上一会话改动存档（M7-005 Conflict UI）
 
 - core/sync/status.py 新建：find_conflicts（从 mind_maps/*.local.json artifacts
   实时派生冲突列表 + 内联只读预览）/ resolve_conflict（keep_local/keep_remote，

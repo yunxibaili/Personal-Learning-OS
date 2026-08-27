@@ -1,6 +1,16 @@
 # Sync Transport Layer
 
-M7-003 同步传输层文档。
+M7-003 同步传输层文档。M7-006 补齐 server 侧端点并完成真实两进程验证。
+
+## HTTP 端点（M7-006 起）
+
+| 端点 | 方向 | 说明 |
+|---|---|---|
+| GET /api/v1/sync/files/{path} | B→A serve | 返回 FileData JSON；serve_file 白名单校验，缺失返回 SyncError |
+| POST /api/v1/sync/receive | A→B receive | FileData JSON 入站；**强制经 SyncApply 落盘**，应答 FileAck |
+
+Rule 1 铁律在传输场景同样成立：receive 端落盘只经 SyncApply
+（白名单复检 + 字节级 hash 重算 + fail-closed），不出现 Router→write_file。
 
 ## 概述
 

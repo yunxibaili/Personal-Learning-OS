@@ -18,6 +18,7 @@ Transport 层不负责：
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import urllib.request
 import urllib.error
@@ -252,20 +253,13 @@ class SyncTransport:
     ) -> TransferResult:
         """通过 HTTP 发送文件到对端。"""
         try:
+            # M7-006 修正：补齐协议必需的 type 字段（此前 payload 不符
+            # FileData.from_bytes 契约，会被对端拒收）
             payload = json.dumps({
+                "type": "file_data",
                 "path": path,
                 "content": encode_content(data),
-                "sha256": validate_hash.__code__.co_consts[1] if False else "",
-                "size": len(data),
-            }).encode("utf-8")
-
-            # 计算真实哈希
-            import hashlib
-            real_hash = hashlib.sha256(data).hexdigest()
-            payload = json.dumps({
-                "path": path,
-                "content": encode_content(data),
-                "sha256": real_hash,
+                "sha256": hashlib.sha256(data).hexdigest(),
                 "size": len(data),
             }).encode("utf-8")
 
@@ -336,43 +330,23 @@ class SyncTransport:
         workspace: Path,
         file_data: FileData,
     ) -> FileAck:
-        """接收对端发送的文件并写入本地。
+        """接收对端发送的文件并落盘。
 
-        Args:
-            workspace: 本设备 workspace
-            file_data: 收到的文件数据
-
-        Returns:
-            FileAck 确认
+        M7-006 修正：落盘统一经 SyncApply（Rule 1 唯一写入口）——
+        Apply 内部完成白名单复检 + 字节级 hash 重算 + fail-closed，
+        本方法不再自行写盘。
         """
-        if not is_syncable(file_data.path):
-            return FileAck(
-                path=file_data.path,
-                status="rejected",
-                message=f"path not syncable: {file_data.path}",
-            )
+        from .apply import SyncApply
 
         content = decode_content(file_data.content)
-
-        # 哈希验证
-        if not validate_hash(content, file_data.sha256):
-            return FileAck(
-                path=file_data.path,
-                status="error",
-                message="hash mismatch",
-            )
-
-        # 原子写入
-        written_hash = write_file_atomic(workspace, file_data.path, content)
-        if written_hash is None:
-            return FileAck(
-                path=file_data.path,
-                status="error",
-                message="write failed",
-            )
-
+        r = SyncApply().apply_file(
+            workspace, file_data.path, content,
+            expected_hash=file_data.sha256,
+        )
+        if not r.success:
+            return FileAck(path=file_data.path, status="rejected",
+                           message=r.message)
         return FileAck(
-            path=file_data.path,
-            status="ok",
-            message=f"written {len(content)} bytes",
+            path=file_data.path, status="ok",
+            message=f"{r.action.value}: {r.message}",
         )

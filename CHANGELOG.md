@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M7-006 E2E LAN Demo**：真实两进程经回环网络完成完整同步 ·
+  Phase 1 SyncPair 双 workspace runner · Phase 2 四场景仿真（单向/双向/
+  event merge 去重/mindmap 冲突+resolve）· Phase 3.0 Transport server 侧补齐：
+  GET /sync/files/{path} + POST /sync/receive（落盘强制经 SyncApply，
+  修正 receive_incoming 直写盘的 Rule 1 违规与 _http_send 死代码）·
+  Phase 3.1 全链路 HTTP 同步字节级一致 · Phase 3.2 对端宕机→重试→最终一致 ·
+  修正 sender payload 缺失 type 字段的协议失配 · 哈希拒绝语义统一 rejected ·
+  12 tests · pytest 390→397
+
+### Added
 - **M7-005 Conflict UI**（方案 a：冲突源仅 mindmap artifacts）：core/sync/status.py
   （find_conflicts 实时派生 + resolve_conflict keep_local/keep_remote）·
   routers/sync.py HTTP 层首次建立（GET /sync/status 只读 + POST /sync/resolve

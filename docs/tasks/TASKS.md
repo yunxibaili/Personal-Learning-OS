@@ -55,10 +55,13 @@
 - [x] M7-005 Conflict UI ✅（SyncStatusPanel @ Dashboard · GET /sync/status +
   POST /sync/resolve（方案 a：仅 mindmap 冲突源）· pytest 373→390）
   完成报告：见 CURRENT_STATE 与 shared/types/sync.ts 契约
-- [ ] M7-006 End-to-end LAN Demo
-- [ ] **M7-007 Vault Conflict Preservation**（用户登记的待办）：apply.py vault 分支
+- [x] M7-006 End-to-end LAN Demo ✅（Phase 1 runner · Phase 2 四场景 ·
+  Phase 3.0 serve/receive 端点补齐 + Rule 1 收缰 · Phase 3.1 真实两进程字节级一致 ·
+  Phase 3.2 宕机重试恢复 · pytest 390→397）完成报告：见 CURRENT_STATE
+- [ ] M7-007 Vault Conflict Preservation（用户登记的待办）：apply.py vault 分支
   增加 conflict copy · 更新 ADR-020 与 sync-model.md · 补恢复测试——
-  弥合「文档承诺 vault 双份保留 vs Apply 现为 LWW」的缺口（M7-003.5 发现）
+  弥合「文档承诺 vault 双份保留 vs Apply 现为 LWW」的缺口（M7-003.5 发现；
+  E2E Case 中 vault 冲突项当前为显式 no-op，见 test_e2e_demo.py）
 - [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）
 
 ## M0 任务拆解

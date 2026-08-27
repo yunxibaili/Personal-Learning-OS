@@ -365,7 +365,7 @@ class TestTransport:
 
         ack = transport.receive_incoming(ws, file_data)
         assert isinstance(ack, FileAck)
-        assert ack.status == "error"
+        assert ack.status == "rejected"  # M7-006: fail-closed 语义统一为 rejected
         assert "hash mismatch" in ack.message
 
     def test_serve_chinese_filename(self, tmp_path):
