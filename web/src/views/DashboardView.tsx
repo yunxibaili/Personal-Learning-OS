@@ -9,14 +9,24 @@ import type {
   AnswerResponse,
 } from "@shared/types/mastery";
 
+interface HistoryEvent {
+  id: number;
+  concept_id: number;
+  title: string;
+  event_type: string;
+  source: string;
+  created_at: string;
+}
+
 /**
- * DashboardView（M3 最小化版）：
- * 今日复习 + 掌握度排行 + 薄弱概念。
+ * DashboardView（M5 版）：
+ * 今日复习 + 掌握度排行 + 学习时间线。
  * 禁止：知识宇宙视觉 / 动画 / 复杂统计（属 M3b）。
  */
 export function DashboardView() {
   const [mastery, setMastery] = useState<MasteryDetail[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [history, setHistory] = useState<HistoryEvent[]>([]);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -25,6 +35,8 @@ export function DashboardView() {
       setMastery(m.mastery);
       const r = await apiGet<ReviewTodayResponse>("/review/today");
       setReviews(r.reviews);
+      const h = await apiGet<{ history: HistoryEvent[] }>("/review/history?limit=15");
+      setHistory(h.history);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -43,6 +55,29 @@ export function DashboardView() {
 
   const barColor = (eff: number) =>
     eff >= 0.7 ? "var(--ok)" : eff >= 0.4 ? "#e6a817" : "var(--err)";
+
+  const eventLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      answer_correct: "✅ 答对",
+      answer_wrong: "❌ 答错",
+      explain: "📖 讲解",
+      review: "🔄 复习",
+      visualize: "👁 可视化",
+      code_run: "💻 代码",
+    };
+    return labels[type] || type;
+  };
+
+  const sourceLabel = (src: string) => {
+    const labels: Record<string, string> = {
+      manual: "手动",
+      review: "复习",
+      tutor: "Tutor",
+      code_trace: "代码",
+      exam: "考试",
+    };
+    return labels[src] || src;
+  };
 
   return (
     <section className="dashboard-view">
@@ -84,6 +119,26 @@ export function DashboardView() {
             <span className="mastery-pct">{Math.round(m.effective * 100)}%</span>
           </div>
         ))}
+      </div>
+
+      <div className="dash-section">
+        <h3>🕐 学习时间线</h3>
+        {history.length === 0 && <p className="muted">暂无学习记录</p>}
+        <div className="timeline">
+          {history.map((ev) => (
+            <div key={ev.id} className="timeline-item">
+              <span className="timeline-dot" />
+              <div className="timeline-content">
+                <span className="timeline-event">{eventLabel(ev.event_type)}</span>
+                <span className="timeline-title">{ev.title}</span>
+                <span className="timeline-source">{sourceLabel(ev.source)}</span>
+                <span className="timeline-time">
+                  {new Date(ev.created_at + "Z").toLocaleString("zh-CN")}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
