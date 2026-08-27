@@ -5,6 +5,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **M7-002 LAN Discovery**：局域网设备发现能力（UDP broadcast）·
+  device.py（DeviceInfo + metadata/devices.json 设备身份存储）·
+  protocol.py（DISCOVER/ACK/PING/PONG JSON 协议 + parse_packet）·
+  discovery.py（discover_peers 广播发现 + start_discovery_listener 监听 + ping_device 心跳）·
+  27 个单元测试（DeviceInfo 8 + Protocol 11 + Listener 3 + Integration 4）·
+  Discovery 不访问 workspace / vault / events · 只传输 device_id / name / version
+
 ### Changed
 - **M7-001 Stabilization Audit**：scanner.py glob 匹配 bug 修复（嵌套目录文件现在正确匹配）·
   settings.py 边界违规修复（SQL 提取到 db.py）·

@@ -1,21 +1,20 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：be4580a · Branch：main · Clean：yes
+> 上次更新：2026-08-27 · Last commit：4dad099 · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → **ADR-022 Product Mode Boundary ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → **M7-002 LAN Discovery ✅**
 
 ## Last Completed
 
-M7-Nightly Full Audit Sprint 完成。
-6 Phase 审计：架构边界（3 Router 违规记录为 tech debt）· ADR 冻结检查（7/7 PASS）·
-代码质量（修复 10 问题，记录 8 tech debt）· 同步深度测试（28 tests）· 恢复测试（14 tests）·
-文档清理（sync docs + CHANGELOG + stability report）。
-pytest 251 passed · vite build PASS。
+M7-002 LAN Discovery 完成。
+三个新模块：device.py（DeviceInfo + device store）· protocol.py（DISCOVER/ACK/PING/PONG 协议）·
+discovery.py（UDP broadcast 发现 + listener + ping）。
+27 个新测试 · 总计 296 passed · vite build PASS。
 
 ## 已完成
 
