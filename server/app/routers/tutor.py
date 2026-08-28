@@ -15,8 +15,9 @@ from ..core.tutor_context import (
     NoteNotFoundError,
     MAX_NOTE_EXCERPTS,
 )
-from ..core.ai.service import TutorService
+from ..core.ai.config import create_provider, load_llm_config
 from ..core.ai.providers.mock import MockProvider
+from ..core.ai.service import TutorService
 from ..db import connect
 
 router = APIRouter(prefix="/api/v1/tutor", tags=["tutor"])
@@ -92,12 +93,12 @@ def tutor_smoke_test(body: TutorTestRequest) -> dict:
     conn = connect()
     try:
         context = build_tutor_context(conn, body.concept_id)
+        provider = create_provider(load_llm_config(conn))  # conn 打开期间读 settings
     except ConceptNotFoundError:
         return _err(404, "concept_not_found", f"concept {body.concept_id} not found")
     finally:
         conn.close()
 
-    provider = MockProvider()
     svc = TutorService(provider)
     answer = svc.ask(context, body.query, mode=body.mode)  # type: ignore[arg-type]
     prompt = svc.build_prompt_only(context, body.query, mode=body.mode)  # type: ignore[arg-type]
@@ -108,6 +109,6 @@ def tutor_smoke_test(body: TutorTestRequest) -> dict:
             "mode": prompt["metadata"]["mode"],
             "concept": context.get("concept", {}).get("title") if isinstance(context.get("concept"), dict) else None,
             "mastery_effective": context.get("mastery", {}).get("effective") if isinstance(context.get("mastery"), dict) else None,
-            "provider": "mock",
+            "provider": "mock" if isinstance(provider, MockProvider) else type(provider).__name__,
         },
     }

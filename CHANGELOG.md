@@ -6,6 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **9.1/B1a OpenAICompatProvider**（无凭据落地，stdlib urllib 零新依赖）：
+  ADR-003 协议 POST {base_url}/v1/chat/completions（容忍 base_url 含 /v1）·
+  空 api_key 不发 Authorization（本地 Ollama 直连）· 错误映射
+  HTTPError→ProviderError / URLError→ProviderTimeout ·
+  core/ai/config.py settings 驱动 factory（llm.provider/base_url/api_key/model，
+  未知 provider 回退 mock，repr 永不含 api_key）· router /tutor/test 接 factory ·
+  守护测试先行 9 项（monkeypatch urllib 层）· pytest 498→507
+- **P0 修复（M7-007 收尾）**：vault 冲突副本语义与 mindmap 分化——副本每次
+  冲突更新为最近被覆盖的本地版本（实证：连续冲突+本地编辑曾永久丢失 L2，
+  违反数据永不锁死红线）；mindmap 保留首份语义（布局可重建）。
+  ADR-020 附录 §2.1.2-a 显式记录分化及理由
+
+### Added
+
+### Added
 - **M7-007 Vault Conflict Preservation**（B27，方案 a）：apply.py vault 分支
   LWW 升级——冲突时远端胜者写主文件、本地版进 `<name>.md.conflict` 副本
   （副本后缀不在同步白名单，天然隔离不跨设备增殖；已有副本=更早分叉点永不覆盖）·

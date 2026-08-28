@@ -7,7 +7,11 @@
 
 ## Task ID
 
-**M7-007 Vault Conflict Preservation** ✅ 完成（B27 · 方案 a · 498 passed）
+**9.1/B1a OpenAICompatProvider** ✅ 完成（无凭据 · 507 passed · B1b 真实凭据冒烟押后）
+
+## 近期完成
+
+**M7-007 Vault Conflict Preservation** ✅（B27 · 方案 a · P0 语义分化修复 · 498→507）
 
 ## 上上任务
 

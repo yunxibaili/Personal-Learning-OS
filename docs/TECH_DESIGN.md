@@ -505,6 +505,9 @@ quality ≥ 3：interval = prev_interval × ease_factor
 - 配置全部来自 settings 表：`llm.base_url` / `llm.api_key` / `llm.model` / `llm.fast_model`（extractor/匹配用便宜模型）
 - 具体接哪家由用户在设置页填（DeepSeek/Qwen/OpenAI/…均可）；Ollama = base_url 指 `http://127.0.0.1:11434/v1`，零代码差异
 - 实现用 Python 标准库 `urllib.request` 手写 SSE 解析（~40 行），不用 SDK（§3.2）
+- **B1a 已实现（2026-08-29）**：`core/ai/providers/openai_compat.py`（非流式 complete）
+  + `core/ai/config.py` settings 驱动 factory（llm.provider/base_url/api_key/model）。
+  B1b 真实凭据端到端冒烟押后（需 API key）
 
 ### 6.2 记忆感知上下文管线（每轮用户消息触发）
 
