@@ -7,6 +7,10 @@
 
 ## Task ID
 
+**T-EXPORT（B11）** ✅ 完成（GET /api/v1/export · 493 passed）
+
+## 上一任务存档
+
 **P8-003E Tutor Review Bridge + Auto Notes**（纯后端）
 
 ## 路线调整（D1-D5 已落盘 · 审核收口 2026-08-29 完成 · 两项裁决待确认）

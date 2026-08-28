@@ -47,6 +47,7 @@ db/learning-os.db · metadata/devices.json · settings（含 API key）· manife
 
 ## 4. 当前缺口（发布前必办）
 
-- [ ] 导出脚本 `scripts/export.ps1` 或后端端点尚未实现（backlog T-EXPORT）
+- [x] 导出端点已实现（P8-T-EXPORT，2026-08-29）：`GET /api/v1/export` → zip
+      （core/export.py，白名单收集 + settings 脱敏，守护测试 7 项）
 - [ ] web/package-lock.json 入库与否需在首次 Release 前定案并写入 CONTRIBUTING
 - [ ] LICENSE 文件存在；README 需补「数据在哪/如何备份」一节时引用本 manifest

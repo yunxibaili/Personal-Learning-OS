@@ -18,6 +18,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .db import APP_ROOT, init_db
 from .routers.attachments import router as attachments_router
+from .routers.export import router as export_router
 from .routers.concepts import router as concepts_router
 from .routers.graph import router as graph_router
 from .routers.links import router as links_router
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(mindmap_router)
     app.include_router(concepts_router)
     app.include_router(sync_router)
+    app.include_router(export_router)
     app.include_router(admin_router)
 
     @app.exception_handler(RequestValidationError)

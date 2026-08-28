@@ -18,8 +18,8 @@
 
 ```
 1. ✅ 审核收口四项（SYNC 矛盾统一 · ADR-020 附录化 · 残留清零 · 基线）
-2. T-EXPORT 导出脚本（B11，进行中）
-3. M7-007 Vault Conflict Preservation（裁决 1/2 已按建议执行：入 §9 位次待最终编号；
+2. ✅ T-EXPORT 导出脚本（B11 完成：GET /api/v1/export · 493 passed）
+3. M7-007 Vault Conflict Preservation ← 下一项（裁决 1/2 已按建议执行：入 §9 位次待最终编号；
    ADR-020 修订 = 附录形式，见 adr/ADR-020 附录 §2.1.1）
 4. 9.1 AI 闭环（B1-B10）
 5. pairing + manifest（D4：CLI 驱动前置）

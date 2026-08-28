@@ -13,6 +13,8 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
+T-EXPORT（B11）一键全量导出完成（GET /api/v1/export，守护先行 7 tests）。
+
 P8-003E Review Bridge + Auto Notes 完成（mistakes 断链修复 + 乙路线 auto_notes，纯后端）。
 
 P8-003D Tutor Knowledge Base 完成（甲路线：显式引用 · POST /tutor/context · 死 tab 复活 · 守护测试先行）。

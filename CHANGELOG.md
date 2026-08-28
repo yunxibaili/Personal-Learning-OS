@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **T-EXPORT（B11）一键全量导出**：GET /api/v1/export → zip（core/export.py）·
+  白名单收集 vault/attachments/mind_maps/eventlogs · settings 脱敏
+  （api_key 条目整体排除，非掩码）· 防御性排除 devices.json/manifest.json ·
+  守护测试先行 7 项（范围/脱敏/zip 完整性）· EXPORT_MANIFEST 缺口勾销 ·
+  pytest 486→493
+
+### Added
+
+### Added
 - **P8-003E Review Bridge + Auto Notes**（纯后端）：修复 mistakes 表自 M3
   建表以来零生产者的断链——update_mastery(answer_wrong) 同事务落 mistakes，
   review 答错 → mistakes → Tutor context.mistakes 三跳连通 ·
