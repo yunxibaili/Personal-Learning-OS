@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ..core import mastery as M
+from ..core.mastery import get_effective_now
 from ..core.review_scheduler import sm2_schedule
 from ..db import connect
 
@@ -38,7 +39,7 @@ def list_mastery() -> dict:
     conn = connect()
     try:
         rows = M.get_all_mastery(conn)
-        return {"mastery": [_format_mastery(r) for r in rows]}
+        return {"mastery": [_format_mastery(r, conn=conn) for r in rows]}
     finally:
         conn.close()
 
@@ -51,7 +52,7 @@ def get_mastery_detail(concept_id: int) -> dict:
             return _err(404, "http_404", "概念不存在")
         m = M.get_or_create_mastery(conn, concept_id)
         conn.commit()
-        return {"mastery": _format_mastery(m)}
+        return {"mastery": _format_mastery(m, conn=conn)}
     finally:
         conn.close()
 
@@ -70,7 +71,7 @@ def create_event(body: EventCreate) -> dict:
             body.dimension, body.weight, body.source,
         )
         conn.commit()
-        return {"mastery": _format_mastery(m)}
+        return {"mastery": _format_mastery(m, conn=conn)}
     finally:
         conn.close()
 
@@ -79,7 +80,7 @@ def create_event(body: EventCreate) -> dict:
 
 @router.get("/review/today")
 def review_today() -> dict:
-    """今日复习队列：优先级 = 掌握度低 + 到期早 + 错答历史。"""
+    """今日复习队列：优先级 = 错答优先 + effective_now 低优先 + 到期早优先。"""
     conn = connect()
     try:
         now = M._now_iso()
@@ -89,13 +90,21 @@ def review_today() -> dict:
             "JOIN concepts c ON c.id = rq.concept_id "
             "LEFT JOIN concept_mastery cm ON cm.concept_id = rq.concept_id "
             "WHERE rq.due_at <= ? AND rq.status = 'pending' "
-            "ORDER BY "
-            "  CASE WHEN rq.last_result = 'wrong' THEN 0 ELSE 1 END, "
-            "  COALESCE(cm.effective, 0) ASC, "
-            "  rq.due_at ASC",
+            "ORDER BY rq.due_at ASC",
             (now,),
         ).fetchall()
-        return {"reviews": [dict(r) for r in rows]}
+        # Python 侧用 effective_now 重排（衰减后掌握度）
+        results = []
+        for r in rows:
+            d = dict(r)
+            d["effective_now"] = get_effective_now(conn, d["concept_id"])
+            results.append(d)
+        results.sort(key=lambda r: (
+            0 if r["last_result"] == "wrong" else 1,
+            r["effective_now"],
+            r["due_at"],
+        ))
+        return {"reviews": results}
     finally:
         conn.close()
 
@@ -148,7 +157,7 @@ def submit_answer(concept_id: int, body: AnswerSubmit) -> dict:
 
         conn.commit()
         return {
-            "mastery": _format_mastery(updated),
+            "mastery": _format_mastery(updated, conn=conn),
             "next_review": schedule["next_review"],
             "ease_factor": schedule["ease_factor"],
             "interval": schedule["interval"],
@@ -164,7 +173,7 @@ def weak_concepts() -> dict:
     conn = connect()
     try:
         rows = M.get_weak_concepts(conn, limit=10)
-        return {"weak": [_format_mastery(r) for r in rows]}
+        return {"weak": [_format_mastery(r, conn=conn) for r in rows]}
     finally:
         conn.close()
 
@@ -188,12 +197,12 @@ def review_history(limit: int = 20) -> dict:
         conn.close()
 
 
-def _format_mastery(row) -> dict:
+def _format_mastery(row, *, conn=None) -> dict:
     d = dict(row)
     dims = d.get("dimensions", "{}")
     if isinstance(dims, str):
         dims = json.loads(dims)
-    return {
+    result = {
         "concept_id": d["concept_id"],
         "title": d.get("title"),
         "dimensions": dims,
@@ -203,3 +212,6 @@ def _format_mastery(row) -> dict:
         "interval": d.get("interval"),
         "review_count": d.get("review_count"),
     }
+    if conn is not None:
+        result["effective_now"] = get_effective_now(conn, d["concept_id"])
+    return result

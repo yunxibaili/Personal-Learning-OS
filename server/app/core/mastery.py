@@ -1,4 +1,4 @@
-"""Learning Graph 核心：四维掌握度引擎（M3）。
+"""Learning Graph 核心：四维掌握度引擎（M3）+ 时间衰减（P8-003B）。
 
 四维定义（ADR-013 候选，当前冻结）：
   knowledge  知识理解（概念认知、定义记忆）
@@ -9,11 +9,15 @@
 effective = 0.35*knowledge + 0.30*practice + 0.20*recall + 0.15*transfer
 （权重可在 M4 根据用户行为调整，当前冻结）
 
+effective_now = effective × exp(-days_since_last_review / tau)
+（P8-003B：Ebbinghaus 时间衰减，tau=14 天半衰期）
+
 纯逻辑层：不 import FastAPI，可被 pytest 直接测试。
 """
 from __future__ import annotations
 
 import json
+import math
 from datetime import datetime, timezone
 
 from ..db import connect
@@ -146,6 +150,64 @@ def get_weak_concepts(conn, limit: int = 10) -> list[dict]:
         (limit,),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ── 时间衰减（P8-003B）────────────────────────────────────────────
+
+# Ebbinghaus 半衰期（天）：14 天不复习 → effective 降至 ~37%
+DEFAULT_TAU = 14.0
+
+
+def decay_effective(base: float, days: float, tau: float = DEFAULT_TAU) -> float:
+    """Ebbinghaus 遗忘曲线衰减。
+
+    base: 基础掌握度（concept_mastery.effective）
+    days: 距上次复习的天数（≥0）
+    tau:  半衰期（天），默认 14
+
+    返回: 衰减后的 effective（0~base）
+    """
+    if days <= 0 or base <= 0:
+        return base
+    return round(base * math.exp(-days / tau), 4)
+
+
+def _get_last_seen(conn, concept_id: int) -> datetime | None:
+    """从 learning_events 取最近一次学习事件时间（UTC-aware）。"""
+    row = conn.execute(
+        "SELECT MAX(created_at) AS last_seen "
+        "FROM learning_events WHERE concept_id=?",
+        (concept_id,),
+    ).fetchone()
+    if row is None or row["last_seen"] is None:
+        return None
+    dt = datetime.fromisoformat(row["last_seen"])
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def get_effective_now(conn, concept_id: int, *, now: datetime | None = None) -> float:
+    """动态计算当前 effective（含时间衰减）。
+
+    读取 base_mastery + last_seen，返回衰减后的掌握度。
+    从未学习的概念返回 0.0。
+    """
+    m = get_mastery(conn, concept_id)
+    if m is None:
+        return 0.0
+    base = m["effective"]
+    if base <= 0:
+        return 0.0
+
+    last_seen = _get_last_seen(conn, concept_id)
+    if last_seen is None:
+        return base
+
+    if now is None:
+        now = datetime.now(timezone.utc)
+    days = max(0.0, (now - last_seen).total_seconds() / 86400)
+    return decay_effective(base, days)
 
 
 def ensure_concept_learning_state(conn, concept_id: int) -> None:

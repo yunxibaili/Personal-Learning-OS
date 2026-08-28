@@ -12,6 +12,7 @@ export interface MasteryDetail {
   title: string | null;
   dimensions: MasteryDimensions;
   effective: number;
+  effective_now: number;
   next_review: string | null;
   ease_factor: number;
   interval: number;
@@ -29,6 +30,7 @@ export interface ReviewItem {
   priority: number;
   last_result: string | null;
   effective: number;
+  effective_now: number;
 }
 
 export interface ReviewTodayResponse {

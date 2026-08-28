@@ -96,11 +96,11 @@ P8-003A Review Session MVP      ✅ 已完成（SM-2 学习闭环接入 UI，202
         ↓
 P8-003C Vault Reindex           ✅ 已完成（Markdown→SQLite 索引恢复，2026-08-28）
         ↓
-P8-003B Mastery Decay            🔥 下一步（effective_now 动态衰减计算）
+P8-003B Mastery Decay           ✅ 已完成（Ebbinghaus 时间衰减，2026-08-28）
         ↓
-P8-003D Tutor Knowledge Base     🔥（RAG 层：question→concept→notes→context）
+P8-003D Tutor Knowledge Base    🔥 下一步（RAG 层：question→concept→notes→context）
         ↓
-P8-003E Tutor Review Bridge      🔥（Tutor 读取 mastery + 错答历史）
+P8-003E Tutor Review Bridge     🔥（Tutor 读取 mastery + 错答历史）
         ↓
 Home / UI Polish
 ```
@@ -232,6 +232,35 @@ Markdown → SQLite 索引恢复机制。修复 Sync 写入后 FTS5/links/concep
 | `npx vitest run` | 23 passed | 23 passed |
 | `npx vite build` | PASS | PASS |
 | `pytest --tb=short -q` | 439 passed | 439 passed |
+
+### P8-003B Mastery Decay（2026-08-28 ✅）
+
+掌握度时间衰减：effective 不再是静态快照，而是当前时间函数。
+
+**设计决策**（已裁定）：
+- D1 last_seen 数据源：learning_events MAX(created_at)（不是 next_review）
+- D2 DB 保留 effective 作为 baseline，API 新增 effective_now
+- D3 Ebbinghaus 衰减函数，tau=14 天半衰期
+- D4 review_today Python 侧排序（SQL 无法调用动态函数）
+- D5 Tutor context 使用衰减后掌握度
+- D6 Universe 视觉暂不改动（需要 Mastery vs Freshness 设计）
+
+**新增文件**：
+- `server/tests/unit/test_decay.py`：14 项测试（衰减函数 + get_effective_now + 时间真实性）
+
+**修改文件**：
+- `server/app/core/mastery.py`：+decay_effective +get_effective_now +_get_last_seen
+- `server/app/routers/mastery.py`：review_today 重排 + _format_mastery +effective_now
+- `server/app/core/tutor_context.py`：_get_mastery 使用 get_effective_now
+- `shared/types/mastery.ts`：MasteryDetail + ReviewItem 增加 effective_now
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| `pytest --tb=short -q` | 453 passed | 453 passed |
 
 ### 排序铁律（用户原话归纳）
 

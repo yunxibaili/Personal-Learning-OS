@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 
 from ..db import connect
+from .mastery import get_effective_now
 from .tutor_types import TutorContext
 
 # 上下文条目限制（防止 token 爆炸）
@@ -39,9 +40,9 @@ def _get_concept(conn, concept_id: int) -> dict:
 
 
 def _get_mastery(conn, concept_id: int) -> dict:
-    """获取掌握度快照。"""
+    """获取掌握度快照（含时间衰减）。"""
     row = conn.execute(
-        "SELECT dimensions, effective FROM concept_mastery WHERE concept_id=?",
+        "SELECT dimensions FROM concept_mastery WHERE concept_id=?",
         (concept_id,),
     ).fetchone()
     if row is None:
@@ -51,7 +52,7 @@ def _get_mastery(conn, concept_id: int) -> dict:
             "effective": 0.0,
         }
     dims = json.loads(row["dimensions"])
-    dims["effective"] = row["effective"]
+    dims["effective"] = get_effective_now(conn, concept_id)
     return dims
 
 

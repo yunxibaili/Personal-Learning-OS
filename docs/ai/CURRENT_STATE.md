@@ -1,15 +1,24 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-28 · Last commit：c020e53 · Branch：main · Clean：yes
+> 上次更新：2026-08-28 · Last commit：38208ef · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → **P8-003C Vault Reindex ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → **P8-003B Mastery Decay ✅**
 
 ## Last Completed
+
+P8-003B Mastery Decay 完成。
+掌握度时间衰减：decay_effective() Ebbinghaus 函数 + get_effective_now() 动态计算。
+review_today 使用 effective_now 排序（错答优先+低衰减掌握度优先+早到期优先）。
+Tutor context 使用衰减后掌握度。API 输出 effective_now 字段。
+14 项测试（衰减函数8 + get_effective_now 4 + 时间真实性2）。
+last_seen 数据源：learning_events MAX(created_at)。
+Universe 视觉暂不改动（保持 effective）。
+pytest 453 · tsc PASS · vite build PASS。
 
 P8-003C Vault Reindex 完成。
 Markdown → SQLite 索引恢复机制。新增 core/reindex.py（reindex_vault 纯函数）+
@@ -90,8 +99,7 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 
 ## Next Up
 
-- **P8-003B Mastery Decay**：effective_now 动态衰减计算
-- P8-003D Tutor Knowledge Base：RAG 层（FTS5 + concept→notes→context）
+- **P8-003D Tutor Knowledge Base**：RAG 层（FTS5 + concept→notes→context）
 - P8-003E Tutor Review Bridge：Tutor 读取 mastery + 错答历史
 - P8-FE-001 Visual Language Polish：MiMo 克制感配色
 - M8 Mobile（延后，先 PC 完整化，路线决议见 TASKS §路线决议）
@@ -144,7 +152,7 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 ## 测试命令
 
 ```
-pytest -q          → 439 passed
+pytest -q          → 453 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -163,6 +171,19 @@ npx vite build     → pass
 - `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
 - `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
 - 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
+
+## 本次会话改动（P8-003B Mastery Decay）
+
+- `server/app/core/mastery.py`：新增 decay_effective()（Ebbinghaus 衰减，tau=14天半衰期）+
+  get_effective_now()（动态计算当前掌握度，last_seen=MAX learning_events.created_at）+
+  _get_last_seen()（UTC-aware 时间解析）
+- `server/app/routers/mastery.py`：review_today 改为 Python 侧排序（effective_now）+
+  _format_mastery 增加 effective_now 输出 + 所有端点传递 conn
+- `server/app/core/tutor_context.py`：_get_mastery() 使用 get_effective_now()（AI Tutor 看到衰减后掌握度）
+- `server/tests/unit/test_decay.py`（新建，14项测试）：
+  衰减函数(8) + get_effective_now(4) + 时间真实性(2)
+- `shared/types/mastery.ts`：MasteryDetail + ReviewItem 增加 effective_now 字段
+- 验证：pytest 453 · tsc PASS · vite build PASS
 
 ## 本次会话改动（P8-003C Vault Reindex）
 

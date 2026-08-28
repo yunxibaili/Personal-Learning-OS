@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003B Mastery Decay**：掌握度时间衰减 ·
+  Ebbinghaus 遗忘曲线（tau=14天半衰期）·
+  get_effective_now() 动态计算当前掌握度 ·
+  last_seen = MAX(learning_events.created_at)（非 next_review）·
+  review_today Python 侧 effective_now 排序 ·
+  Tutor context 使用衰减后掌握度 ·
+  API 输出 effective_now 字段 ·
+  Universe 视觉暂保持 effective（Mastery vs Freshness 待设计）·
+  14 项测试（衰减函数 + get_effective_now + 时间真实性）·
+  pytest 453 · tsc PASS · vite build PASS
 - **P8-003C Vault Reindex**：Markdown → SQLite 索引恢复机制 ·
   core/reindex.py 独立模块（reindex_vault 纯函数）·
   扫描 vault/*.md → upsert_note_index + rebuild_note_links + 可选 prune ·
