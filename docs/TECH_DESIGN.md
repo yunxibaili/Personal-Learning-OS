@@ -650,7 +650,7 @@ Markdown Vault（事实源）
 |---|---|---|
 | 大小 | 连接度推导（度数 + 复习优先级），**不加存储列** | links 聚合查询 |
 | 亮度 | 掌握度有效值 effective ∈ [0,1] | concept_mastery |
-| 颜色 | **掌握三色**：绿=掌握(PRACTICED+)、黄=学习中(UNDERSTOOD~PRACTICED)、红=薄弱(FORGOTTEN/低分) | state + effective |
+| 颜色 | **掌握三色**：绿=掌握(effective≥0.7)、黄=学习中(0.4~0.7)、红=薄弱(<0.4)。**实然注记**：原设计映射离散 state（PRACTICED 等），但状态机未实现、无离散状态列——实然依据只有 effective 数值段 | effective（唯一可用依据） |
 | 呼吸节奏 | 学习活跃度（近 7 天事件频率） | learning_events |
 
 > 领域(domain)不再用颜色区分，改由力导向聚簇自然分组表达。
@@ -716,13 +716,13 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 
 ## §9 API 设计（REST，前缀 /api/v1——版本化，破坏性变更升 /v2）
 
-> **⚠️ 本表已按实际 14 APIRouter / 47 端点重写（2026-08-28）。**
+> **⚠️ 本表已按实际 14 APIRouter / 49 端点重写（2026-08-29；含 T-EXPORT）。**
 > 旧版本混入了 12 个从未实现的端点，同时遗漏了 30 个已实现端点。
 > 响应形状的唯一契约定义于 `shared/types/*.ts`，由 pytest 契约测试锁定。
 
 **图例**：✅ 已实现 · ❌ 设计意图未实现
 
-### 9.1 已实现（47 端点 / 14 Router）
+### 9.1 已实现（49 端点 / 14 Router）
 
 | 类别 | 方法&路径 | 说明 |
 |---|---|---|
@@ -739,6 +739,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | **Search** ✅ | `GET /search` | FTS5 全文检索 |
 | **Suggest** ✅ | `GET /knowledge/suggest` | 上下文感知建议（FTS + concept LIKE + 图谱邻居） |
 | **Settings** ✅ | `GET /settings` · `PUT /settings` | 配置读写（api_key 脱敏为 `******`） |
+| **Export** ✅ | `GET /export` | T-EXPORT/B11 一键全量导出 zip（vault+attachments+eventlogs+mind_maps+settings 脱敏） |
 | **Attachments** ✅ | `POST /attachments` · `GET /attachments/{name}` | 附件上传与读取 |
 | **Admin** ✅ | `POST /admin/reindex`（`prune` 参数） | Markdown → SQLite 索引恢复；Sync 接收后自动触发 |
 
@@ -782,7 +783,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | M2-E | React Flow 基础图谱 | 安装 @xyflow/react；节点/边渲染、点击跳转、双击局部展开；默认布局——无动画无 d3-force（M3b 边界） |
 | M2b | Mind Map 编辑器 | 笔记⇄导图双模式切换实时同步；Tab/Enter/拖拽改父（环检测生效）；折叠持久化；旁车 json 落盘；FTS 能命中导图文本；[[链接]] 经大纲段进入图谱 |
 | M3 | Learning Graph | 概念 CRUD；四维掌握度随事件变化（pytest 覆盖权重/衰减/SM-2 数学）；Dashboard 显示雷达图与状态徽章；FORGOTTEN 自动进复习队列 |
-| M3b | Knowledge Universe 视觉层 | 三模式切换（Galaxy/Explorer/Memory Map）；四维视觉编码生效（大小=连接度推导/亮度=effective/颜色=domain/呼吸=活跃度）；FORGOTTEN 变暗且复习后点亮；requires 技能树逐层展开；2 层动态过滤；d3-force 布局（ADR-007） |
+| M3b | Knowledge Universe 视觉层 | 三模式切换（Galaxy/Explorer/Memory Map）；四维视觉编码生效（大小=连接度推导/亮度=effective/颜色=domain/呼吸=活跃度）〔注：颜色编码后经 §8.1 修订为掌握三色（domain 改力导向聚簇表达），见「领域(domain)不再用颜色区分」行——本行为 M3b 立项时设计，保留原文〕；FORGOTTEN 变暗且复习后点亮；requires 技能树逐层展开；2 层动态过滤；d3-force 布局（ADR-007） |
 | M3.5-A | Knowledge Radar MVP | 编辑器右侧面板（Ctrl+Shift+K 唤起）；上下文关键词提取→FTS匹配+图谱邻居推荐；点击跳转笔记/概念；memory 字段暂 null（ADR-012 Phase A） |
 | M3.5-B | Full Omniscience | +concept_mastery 掌握度 +review_due 复习建议 +mistakes 错误历史（ADR-012 Phase B，前置 M3/M5） |
 | M4 | AI Tutor | 设置页填任意 OpenAI-compatible 端点即通；流式回答渲染 Markdown+KaTeX；问"什么是特征值"时上下文透视可见注入的掌握度/错误记录；回合后 mastery 数值自动变化；auto-link 建议弹 Accept/Ignore；Concept 页「生成思维导图」一键产出旁车 json+大纲并全量 ai_suggested 入图；AI Explain 时概念链在 Galaxy 上路径点亮 |
