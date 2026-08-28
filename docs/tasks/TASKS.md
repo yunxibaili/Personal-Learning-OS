@@ -93,6 +93,20 @@ P8-003 Home Experience          Dashboard 升级为 Learning OS Home
 P8-FE-001 Visual Language Polish ← 纯前端阶段（MiMo 克制感参考）
 ```
 
+### P8-001C Knowledge Planet（用户直接需求，2026-08-27 首版落地 ✅）
+
+首页知识星球：Cobe 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星。
+- 卫星 = 笔记：新建笔记即增卫星；尺寸随总数 6→13px 封顶；>16 篇聚合展示总数
+- 遮挡：数学 z-position（z<0 且在地球投影圆内 → opacity:0，sandbox 验证方案）
+- 交互：hover 放大+名称 · click 底部指示器 · 拖动旋转（pointer capture）
+- **性能契约**（修复 sandbox 版 CPU 90%）：
+  dpr=1（不乘 1.5）· 280px canvas（非 560）· 地球与卫星共用一个 30fps 节流 rAF ·
+  IntersectionObserver + visibilitychange 不可见即暂停 · prefers-reduced-motion 静态帧 ·
+  canvas/scene `contain: layout paint size`
+- 依赖：cobe ^0.6.5 入 REGISTRY（MIT · 5KB，性能边界随登记）
+- 位置：web/src/components/planet/KnowledgePlanet.tsx，挂 Dashboard；
+  sandbox/cobe-test*.html 为实验留档（按 environment.md 用完即删原则待清理）
+
 ### 排序铁律（用户原话归纳）
 
 1. 让 Universe 有东西看 → 2. 让节点关系有意义 → 3. 让首页像产品 →

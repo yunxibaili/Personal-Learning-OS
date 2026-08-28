@@ -16,6 +16,7 @@
     "@tiptap/react": "^3.30.5",
     "@tiptap/starter-kit": "^3.30.5",
     "@xyflow/react": "^12.11.5",
+    "cobe": "^0.6.5",
     "d3-force": "^3.0.0",
     "katex": "^0.16.47",
     "react": "^18.3.1",

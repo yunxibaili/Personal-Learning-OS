@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { apiGet, apiPost } from "../lib/api";
 import { SyncStatusPanel } from "../components/sync/SyncStatusPanel";
+import { KnowledgePlanet } from "../components/planet/KnowledgePlanet";
 import type {
   MasteryDetail,
   MasteryListResponse,
@@ -85,6 +86,8 @@ export function DashboardView() {
       {error && <div className="error-banner">{error}</div>}
 
       <SyncStatusPanel />
+
+      <KnowledgePlanet />
 
       <div className="dash-section">
         <h3>今日复习（{reviews.length}）</h3>
