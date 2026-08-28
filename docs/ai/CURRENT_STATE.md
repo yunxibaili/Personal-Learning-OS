@@ -13,6 +13,8 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
+B7 对话持久化 + 最小非流式对话完成（POST /api/v1/chat，快照落库，507→516 passed）。
+
 P0 修复（vault 冲突副本语义分化，ADR-020 §2.1.2-a）+ 9.1/B1a OpenAICompatProvider（无凭据落地，settings 驱动 factory）。
 
 M7-007 Vault Conflict Preservation 完成（方案 a：vault 冲突 .conflict 副本隔离白名单，ADR-020 附录 §2.1.2）。

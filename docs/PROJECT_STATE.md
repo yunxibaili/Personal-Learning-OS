@@ -452,7 +452,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B4 | 自动链接建议（auto-link） | 未实现 |
 | B5 | AI 概念提取 | 未实现 |
 | B6 | AI 生成思维导图 | 未实现 |
-| B7 | 对话持久化（`conversations` / `messages`） | 表已建，0 行，无 API |
+| B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（2026-08-29：CRUD + POST /chat 非流式，快照落库） |
 | B8 | 用户记忆（`memories` 接入 tutor_context） | 表已建，0 行，无生产者无消费者 |
 | B9 | 中文 FTS 分词优化 | unicode61 按字切分，长句检索受限（ADR-011 记录未解决） |
 | B10 | 本地 LLM（Ollama）实测验证 | 路径理论通，未验证 |

@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **B7 对话持久化 + 最小非流式对话**：core/conversations.py（两零生产者表的
+  生产者落地）· POST /api/v1/chat（context→provider→双消息落库，assistant 携
+  context_json 快照——上下文透视数据基础）· conversations CRUD 四端点 ·
+  B1a 测试盲区修复（URLError 用真实形态 api_key + 泄漏断言）·
+  守护先行 9 项 · pytest 507→516
+
+### Added
+
+### Added
 - **9.1/B1a OpenAICompatProvider**（无凭据落地，stdlib urllib 零新依赖）：
   ADR-003 协议 POST {base_url}/v1/chat/completions（容忍 base_url 含 /v1）·
   空 api_key 不发 Authorization（本地 Ollama 直连）· 错误映射

@@ -7,7 +7,11 @@
 
 ## Task ID
 
-**9.1/B1a OpenAICompatProvider** ✅ 完成（无凭据 · 507 passed · B1b 真实凭据冒烟押后）
+**B7 对话持久化 + 最小非流式对话** ✅ 完成（516 passed · memories 成为唯一零生产者表）
+
+## 近期完成
+
+**9.1/B1a OpenAICompatProvider** ✅（无凭据 · 盲区修复 · B1b 押后）
 
 ## 近期完成
 

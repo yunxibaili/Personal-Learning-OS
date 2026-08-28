@@ -112,12 +112,17 @@ class TestErrorMapping:
                                  model="m").complete(_prompt())
 
     def test_network_error_maps_to_timeout(self, monkeypatch):
+        """真实形态 api_key：映射为 Timeout 且错误消息不得携带 key。"""
         def fake_urlopen(req, timeout=None):
             raise urllib.error.URLError("connection refused")
         monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
-        with pytest.raises(ProviderTimeout):
-            OpenAICompatProvider(base_url="http://x", api_key="",
-                                 model="m").complete(_prompt())
+        provider = OpenAICompatProvider(base_url="http://x",
+                                        api_key="sk-real-shape-key",
+                                        model="m")
+        with pytest.raises(ProviderTimeout) as exc_info:
+            provider.complete(_prompt())
+        assert "sk-real-shape-key" not in str(exc_info.value)
+        assert "sk-real-shape-key" not in repr(exc_info.value)
 
 
 # ── settings 驱动的 factory ─────────────────────────────────────────

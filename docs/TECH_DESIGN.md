@@ -740,6 +740,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | **Suggest** ✅ | `GET /knowledge/suggest` | 上下文感知建议（FTS + concept LIKE + 图谱邻居） |
 | **Settings** ✅ | `GET /settings` · `PUT /settings` | 配置读写（api_key 脱敏为 `******`） |
 | **Export** ✅ | `GET /export` | T-EXPORT/B11 一键全量导出 zip（vault+attachments+eventlogs+mind_maps+settings 脱敏） |
+| **Conversations** ✅ | `GET/POST /conversations` · `GET/DELETE /conversations/{id}/messages|` · `POST /chat` | B7 对话持久化 + 最小非流式对话（context 快照落 messages） |
 | **Attachments** ✅ | `POST /attachments` · `GET /attachments/{name}` | 附件上传与读取 |
 | **Admin** ✅ | `POST /admin/reindex`（`prune` 参数） | Markdown → SQLite 索引恢复；Sync 接收后自动触发 |
 
