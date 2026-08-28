@@ -92,11 +92,17 @@ P8-004 Demo Cleanup             ✅ 已完成（清除 TestConcept/MasteryTest �
         ↓
 P8-002 Graph V2                 ✅ 已完成（dagre 层级布局 + 双视觉 + Layer Toggle，2026-08-28）
         ↓
-P8-003 Home Experience          ← 下一步（Dashboard 升级为 Learning OS Home）
+P8-003A Review Session MVP      ✅ 已完成（SM-2 学习闭环接入 UI，2026-08-28）
         ↓
-P8-003 Home Experience          Dashboard 升级为 Learning OS Home
+P8-003C Vault Reindex            🔥 下一步（架构 bug：vault→SQLite 断链修复）
         ↓
-P8-FE-001 Visual Language Polish ← 纯前端阶段（MiMo 克制感参考）
+P8-003B Mastery Decay            🔥（effective_now 动态衰减计算）
+        ↓
+P8-003D Tutor Knowledge Base     🔥（RAG 层：question→concept→notes→context）
+        ↓
+P8-003E Tutor Review Bridge      🔥（Tutor 读取 mastery + 错答历史）
+        ↓
+Home / UI Polish
 ```
 
 ### P8-001C Knowledge Planet（用户直接需求，2026-08-27 首版落地 ✅）
@@ -162,6 +168,34 @@ P8-FE-001 Visual Language Polish ← 纯前端阶段（MiMo 克制感参考）
 **CSS**：global.css +80行（gnode concept/note/tooltip/gedge/layer-toggle/inspector）
 
 **依赖**：dagre ^0.8.5 + @types/dagre（REGISTRY 登记）
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| `pytest --tb=short -q` | 426 passed | 426 passed |
+
+### P8-003A Review Session MVP（2026-08-28 ✅）
+
+SM-2 复习流程接入真实 UI。不新增后端、不改数据模型、不加新依赖。
+
+**设计决策**（已裁定）：
+- D1 不建 review_sessions 表（MVP 不需要 session 追踪）
+- D2 评分按钮：😵 忘记了(1) / 🤔 有点模糊(3) / ✨ 记得很清楚(5)
+- D3 概念标题直接显示（不是 Quiz，是记忆强度反馈）
+- D4 必须有 feedback 页（mastery 变化 + 下次复习日期）
+- D5 Dashboard 保留快速入口，Review 页面提供完整流程
+- D6 不改后端 / 不改 migration / 不加 API / 不加 store
+
+**新增文件**：
+- `web/src/views/ReviewSessionView.tsx`：完整复习流程（idle→loading→ready→answering→feedback→done）
+
+**修改文件**：
+- `web/src/App.tsx`：ReviewQueueView → ReviewSessionView
+- `web/src/global.css`：+120行复习状态样式
+- `shared/types/mastery.ts`：ReviewItem 增加 effective 字段（对齐后端实际返回）
 
 **测试**：
 | 命令 | 预期 | 实际 |

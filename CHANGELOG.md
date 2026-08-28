@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003A Review Session MVP**：SM-2 复习流程接入真实 UI ·
+  ReviewSessionView.tsx（idle→loading→ready→answering→feedback→done 状态机）·
+  概念卡片（标题+掌握度+上次结果）· 三按钮评分（😵忘记了/🤔有点模糊/✨记得很清楚）·
+  feedback 页（mastery 变化+下次复习日期）· 完成统计（复习数量+记忆保持率）·
+  DashboardView 保留快速入口 · CSS 120行复习状态样式 ·
+  ReviewItem 增加 effective 字段对齐后端 ·
+  不改后端 / 不改 migration / 不加 API / 不加新依赖 ·
+  tsc PASS · vitest 23 · pytest 426 · vite build PASS
 - **P8-002 Graph V2**：关系探索视图升级 ·
   dagre 层级布局（dagre ^0.8.5 安装，六连问通过）·
   Concept（圆形）/ Note（方形）双视觉节点 ·

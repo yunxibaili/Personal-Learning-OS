@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useUi, type ViewKey } from "./stores/ui";
 import { DashboardView } from "./views/DashboardView";
 import { GraphView } from "./views/GraphView";
@@ -5,9 +6,9 @@ import { NoteEditorView } from "./views/NoteEditor";
 import { TutorPanel } from "./components/tutor/TutorPanel";
 import { KnowledgeUniverse } from "./components/universe/KnowledgeUniverse";
 import { MindMapCanvas } from "./components/mindmap/MindMapCanvas";
-import {
-  ReviewQueueView,
-} from "./views/placeholders";
+import { ReviewSessionView } from "./views/ReviewSessionView";
+import { UniverseInteractionPreview } from "./components/universe/prototype/UniverseInteractionPreview";
+import KnowledgePlanet from "./components/universe/prototype/KnowledgePlanet";
 
 const TABS: Array<{ key: ViewKey; label: string }> = [
   { key: "notes", label: "笔记" },
@@ -33,7 +34,7 @@ function ActiveView() {
     case "tutor":
       return <TutorPanel />;
     case "review":
-      return <ReviewQueueView />;
+      return <ReviewSessionView />;
     case "dashboard":
       return <DashboardView />;
   }
@@ -42,6 +43,36 @@ function ActiveView() {
 export default function App() {
   const setActiveView = useUi((s) => s.setActiveView);
   const activeView = useUi((s) => s.activeView);
+
+  // P8-001C-Preview 临时入口：URL hash "#preview" 渲染交互原型（不触碰 ui store）
+  const [showPreview] = useState(
+    () => typeof window !== "undefined" && window.location.hash === "#preview",
+  );
+
+  // P8-001C Knowledge Planet 临时入口
+  const [showPlanet] = useState(
+    () => typeof window !== "undefined" && window.location.hash === "#planet",
+  );
+
+  if (showPreview) {
+    return (
+      <div className="app">
+        <main className="content">
+          <UniverseInteractionPreview />
+        </main>
+      </div>
+    );
+  }
+
+  if (showPlanet) {
+    return (
+      <div className="app">
+        <main className="content">
+          <KnowledgePlanet />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="app">

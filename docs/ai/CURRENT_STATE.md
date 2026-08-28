@@ -1,15 +1,22 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-28 · Last commit：7918d5e · Branch：main · Clean：yes
+> 上次更新：2026-08-28 · Last commit：1e63130 · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → **P8-002 Graph V2 ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → **P8-003A Review Session MVP ✅**
 
 ## Last Completed
+
+P8-003A Review Session MVP 完成。
+SM-2 复习流程接入真实 UI。不新增后端、不改数据模型、不加新依赖。
+ReviewSessionView.tsx（idle→loading→ready→answering→feedback→done 状态机）+
+DashboardView 保留快速入口 + CSS 120行复习样式。
+ReviewItem 增加 effective 字段对齐后端实际返回。
+vitest 23 passed · pytest 426 · vite build PASS。
 
 P8-002 Graph V2 完成。
 关系探索视图：dagre 层级布局 + Concept（圆形）/ Note（方形）双视觉 +
@@ -76,10 +83,12 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 
 ## Next Up
 
-- **P8-003 Unified Home**：HomeView 统一入口（Universe/Graph/Review/Tutor/MindMap）
+- **P8-003C Vault Reindex**：架构 bug 修复（vault→SQLite 断链）
+- P8-003B Mastery Decay：effective_now 动态衰减计算
+- P8-003D Tutor Knowledge Base：RAG 层（FTS5 + concept→notes→context）
+- P8-003E Tutor Review Bridge：Tutor 读取 mastery + 错答历史
 - P8-FE-001 Visual Language Polish：MiMo 克制感配色
 - M8 Mobile（延后，先 PC 完整化，路线决议见 TASKS §路线决议）
-- 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
 
 ## Do Not Touch
 
@@ -130,7 +139,7 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 
 ```
 pytest -q          → 426 passed
-npx vitest run     → 16 passed
+npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
@@ -147,6 +156,20 @@ npx vite build     → pass
   MiniMap + Floating Inspector + hover relation label + domain 过滤
 - `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
 - `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
+- 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
+
+## 本次会话改动（P8-003A Review Session MVP）
+
+- `web/src/views/ReviewSessionView.tsx`（新建，~200行）：
+  SM-2 复习流程 MVP。状态机 idle→loading→ready→answering→feedback→done。
+  开始复习按钮 → GET /review/today → 概念卡片（标题+掌握度+上次结果）→
+  三按钮评分（😵忘记了(1)/🤔有点模糊(3)/✨记得很清楚(5)）→
+  POST /review/{id}/answer → feedback（mastery 变化+下次复习日期）→ 下一个/完成。
+  完成统计：复习数量+记忆保持率。使用 apiGet/apiPost（架构合规）。
+- `web/src/App.tsx`：ReviewQueueView → ReviewSessionView（case "review"）
+- `web/src/global.css`：+120行复习状态样式（.review-session/.review-card-main/
+  .review-quality-btn/.review-feedback/.review-progress 等）
+- `shared/types/mastery.ts`：ReviewItem 增加 effective 字段（对齐后端实际返回）
 - 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
 
 ## 本次会话改动（P8-004 Demo Cleanup）

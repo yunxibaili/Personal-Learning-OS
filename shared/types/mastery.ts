@@ -28,6 +28,7 @@ export interface ReviewItem {
   due_at: string;
   priority: number;
   last_result: string | null;
+  effective: number;
 }
 
 export interface ReviewTodayResponse {
