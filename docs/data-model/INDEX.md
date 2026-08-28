@@ -3,6 +3,10 @@
 > **规范来源唯一**：完整 DDL、字段语义、索引与 vault 目录约定统一维护在
 > `docs/TECH_DESIGN.md` §4。本文件只做变更追踪，避免两处 DDL 漂移。
 
+> **🚨 新表登记规矩（2026-08-28 D5 裁决生效）**：任何 migration 新增表，
+> 必须在同一提交中登记生产者位置（模块 · 函数 · 调用路径），无生产者的表
+> 不得合入。全表生产者/消费者对照见 `TABLE_AUDIT.md`。
+
 ## 变更日志
 
 | 日期 | 变更 | 关联 |
@@ -16,6 +20,9 @@
 | 2026-08-27 | ADR-015 Language Contract 冻结：Content language independent + Concept aliases + Tutor 语言自适应 | ADR-015 |
 | 2026-08-27 | M2b-003 MindMap Exchange Format v1（.map.json 导入导出）：零新表，导图结构真相仍为旁车 json | ADR-021 |
 | 2026-08-27 | ADR-020 Sync Truth Model 冻结：三层真值——Layer1 同步层=vault/*.md + eventlogs/*.jsonl + mind_maps/*.mindmap.json；Layer2 本地重建=concepts/links/mastery/review_queue；Layer3 永不同步=settings/API keys/SQLite。零新表，白名单实现在 core/sync/manifest.py SYNC_PATTERNS，黑名单含 db/ 与 metadata/devices.json | ADR-020 · docs/sync/sync-model.md |
+
+| 2026-08-28 | P8-003E：mistakes 断链修复（mastery.answer_wrong 同事务落库）· 乙路线 auto_notes（ADR-014 附录许可，默认关闭）| P8-003E |
+| 2026-08-28 | **空表盘点（D5）**：14 张活表三分定界，零死表；memories/conversations/messages 三张 (b) 缺生产者待补（设计在案），TABLE_AUDIT.md 为准；新表登记规矩生效 | TABLE_AUDIT.md |
 
 ## 延后建表（禁止提前创建）
 

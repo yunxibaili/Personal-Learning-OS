@@ -9,21 +9,35 @@
 
 **P8-003E Tutor Review Bridge + Auto Notes**（纯后端）
 
-## 路线调整（用户指令 2026-08-28）
+## 路线调整（用户指令 2026-08-28 + PM 裁决 D1-D4）
 
-**前端暂时不动，优先完成全部后端。** 后端剩余队列（按序执行）：
+**前端暂时不动，优先完成全部后端。** 执行队列（PM 拍板版）：
 
 ```
-P8-003E Review Bridge + Auto Notes   ← 当前
-M7-007 Vault Conflict Preservation   （apply.py vault 分支 conflict copy + ADR-020 更新）
-routers/sync pairing + manifest exchange（TECH_DESIGN §9 已设计未实现）
-GET /api/v1/home 聚合端点（Mobile API Prep 决议 / P8-003 Home 数据层）
-event_id/event_uuid 术语统一（micro-task）
-T-EXPORT 导出脚本（首次公开发布前必须）
-（M9 Trace Engine：待用户单独拍板，不自动启动）
+1. 空表盘点（D5 微任务）            ✅ 2026-08-28 → docs/data-model/TABLE_AUDIT.md
+2. M7-007 Vault Conflict Preservation   ← 下一项（先补安全网再扩同步面）
+3. T-EXPORT 导出脚本（D2：承诺兑现，首次公开发布前置；盘点确认范围无需收窄）
+4. pairing + manifest exchange（D4：必须带 CLI/脚本驱动调用路径，否则降级至前端解冻后）
+5. event_id / event_uuid 术语统一（micro-task）
+   ── 以下阻塞于前端解冻 ──
+   /home 聚合端点（D1：前端冻结期零消费方，移出活跃队列）
 ```
 
-前端押后项：P8-003 Home Experience · FE-001 Visual Polish · Tutor UI 深化。
+**裁决记录**：
+- D1 /home → 移出活跃队列（撞"漂亮空壳"铁律：零消费方）
+- D2 T-EXPORT → 批准插队（PRODUCT_PRINCIPLES §1 一键导出承诺兑现；极便宜：
+  zip(vault+eventlogs+mind_maps) + settings 去 key）
+- D3 M7-007 先于 pairing → 认可且理由写死：conflict preservation 是安全网，
+  pairing 扩大同步面；先补网再扩面，与"守护先行"同原则
+- D4 pairing → 带 CLI 驱动才启动（无调用路径的端点=入口无出口）
+- D5 空表盘点 → 已完成；**新规矩自下一 migration 生效：新表必须同提交登记
+  生产者位置，无生产者不合入**（已写入 data-model/INDEX.md 顶部）
+- ⚠️ 风险要求：M7-007 与 pairing 连续动 ADR-020——各自完成后必须重跑同步
+  测试套件并重新核验三层模型（Layer1/2/3）仍成立
+
+**盘点结果摘要（D5）**：14 张活表零死表；memories（extractor 双缺）·
+conversations/messages（对话历史未立项）三张属 (b) 缺生产者待补、设计在案；
+T-EXPORT 范围确认无需收窄。详见 docs/data-model/TABLE_AUDIT.md。
 
 ## P8-003E 范围（两项，零前端）
 
