@@ -86,8 +86,22 @@ class TestSettingsSanitization:
 
 class TestZipIntegrity:
     def test_empty_workspace_valid_zip(self, client: TestClient):
+        """空 workspace：合法 zip 且只含真实数据（空 settings 不产出空文件）。"""
         z = _export(client)
-        assert z.namelist() is not None  # 合法 zip
+        assert z.namelist() == []
+        assert z.testzip() is None
+
+    def test_wider_sensitive_keys_excluded(self, client: TestClient):
+        """P1 并集规则：token/password 等精确命中键不得明文进包。"""
+        client.put("/api/v1/settings", json={
+            "settings": {"llm.token": "xoxb-abc", "db.password": "hunter2",
+                         "llm.model": "deepseek-chat"}})
+        z = _export(client)
+        blob = b"".join(
+            z.read(n) for n in z.namelist() if "settings" in n
+        ).decode("utf-8")
+        assert "xoxb-abc" not in blob and "hunter2" not in blob
+        assert "deepseek-chat" in blob  # 非敏感条目保留
 
     def test_zip_readable_roundtrip(self, client: TestClient):
         _mk_note(client, "往返笔记", "round trip")
