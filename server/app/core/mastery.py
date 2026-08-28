@@ -1,4 +1,4 @@
-"""Learning Graph 核心：四维掌握度引擎（M3）+ 时间衰减（P8-003B）。
+"""Learning Graph 核心：四维掌握度引擎（M3）+ 时间衰减（P8-003B）+ 事件日志（P8-003D）。
 
 四维定义（ADR-013 候选，当前冻结）：
   knowledge  知识理解（概念认知、定义记忆）
@@ -12,15 +12,23 @@ effective = 0.35*knowledge + 0.30*practice + 0.20*recall + 0.15*transfer
 effective_now = effective × exp(-days_since_last_review / tau)
 （P8-003B：Ebbinghaus 时间衰减，tau=14 天半衰期）
 
+事件日志（P8-003D / ADR-020）：
+  写入 learning_events 表的同一事务内，追加一行 JSON 到
+  metadata/eventlogs/<yyyy-mm>.jsonl，作为跨端同步真相源。
+
 纯逻辑层：不 import FastAPI，可被 pytest 直接测试。
 """
 from __future__ import annotations
 
 import json
 import math
+import os
+import socket
+import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
-from ..db import connect
+from ..db import connect, workspace_root
 
 # 四维权重（冻结常量，M3 评审批准）
 DIMENSION_WEIGHTS = {
@@ -31,6 +39,88 @@ DIMENSION_WEIGHTS = {
 }
 
 DEFAULT_DIMENSIONS = {"knowledge": 0.0, "practice": 0.0, "recall": 0.0, "transfer": 0.0}
+
+
+# ── Device ID（P8-003D / ADR-020）──────────────────────────────────
+
+_DEVICE_ID: str | None = None
+
+
+def _get_device_id() -> str:
+    """获取设备唯一标识（hostname + 首次生成的随机 UUID 持久化）。
+
+    优先级：
+    1. 环境变量 LEARNING_OS_DEVICE_ID
+    2. workspace/metadata/device_id 文件
+    3. 生成新 UUID 并持久化到 workspace
+    """
+    global _DEVICE_ID
+    if _DEVICE_ID is not None:
+        return _DEVICE_ID
+
+    # 1. 环境变量
+    env_id = os.environ.get("LEARNING_OS_DEVICE_ID")
+    if env_id:
+        _DEVICE_ID = env_id
+        return _DEVICE_ID
+
+    # 2. 持久化文件
+    device_file = workspace_root() / "metadata" / "device_id"
+    if device_file.exists():
+        _DEVICE_ID = device_file.read_text(encoding="utf-8").strip()
+        if _DEVICE_ID:
+            return _DEVICE_ID
+
+    # 3. 生成新 UUID（hostname-hash + random 部分）
+    hostname = socket.gethostname()
+    short_uuid = uuid.uuid4().hex[:8]
+    _DEVICE_ID = f"{hostname}-{short_uuid}"
+
+    # 持久化
+    device_file.parent.mkdir(parents=True, exist_ok=True)
+    device_file.write_text(_DEVICE_ID, encoding="utf-8")
+    return _DEVICE_ID
+
+
+# ── 事件日志（P8-003D / ADR-020）──────────────────────────────────
+
+def _write_eventlog(
+    concept_id: int,
+    event_type: str,
+    dimension: str | None,
+    weight: float,
+    source: str,
+    detail: str | None,
+    event_id: str,
+    created_at: str,
+) -> None:
+    """追加一行 JSON 到 metadata/eventlogs/<yyyy-mm>.jsonl（ADR-020）。
+
+    调用时机：learning_events INSERT 成功后，同事务上下文内。
+    文件操作：append-only + fsync，POSIX 保证 append 原子性。
+    """
+    eventlog_dir = workspace_root() / "metadata" / "eventlogs"
+    eventlog_dir.mkdir(parents=True, exist_ok=True)
+
+    month = created_at[:7]  # "2026-08"
+    event_file = eventlog_dir / f"{month}.jsonl"
+
+    event_line = json.dumps({
+        "event_id": event_id,
+        "concept_id": concept_id,
+        "event_type": event_type,
+        "dimension": dimension,
+        "weight": weight,
+        "source": source,
+        "detail": detail,
+        "device_id": _get_device_id(),
+        "created_at": created_at,
+    }, ensure_ascii=False) + "\n"
+
+    with open(event_file, "a", encoding="utf-8") as f:
+        f.write(event_line)
+        f.flush()
+        os.fsync(f.fileno())
 
 
 def _now_iso() -> str:
@@ -87,11 +177,29 @@ def update_mastery(
     返回更新后的 mastery 行。
     """
     # 写入事件
+    event_uuid = str(uuid.uuid4())
+    now = _now_iso()
+
     conn.execute(
         "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source, detail) "
         "VALUES (?, ?, ?, ?, ?, ?)",
         (concept_id, event_type, dimension, weight, source, detail),
     )
+
+    # 追加到 eventlog 文件（ADR-020：同事务上下文，跨端同步真相源）
+    try:
+        _write_eventlog(
+            concept_id=concept_id,
+            event_type=event_type,
+            dimension=dimension,
+            weight=weight,
+            source=source,
+            detail=detail,
+            event_id=event_uuid,
+            created_at=now,
+        )
+    except OSError:
+        pass  # 文件写入失败不阻断学习事件记录（SQLite 已写入）
 
     m = get_or_create_mastery(conn, concept_id)
     dims = json.loads(m["dimensions"])
@@ -111,7 +219,6 @@ def update_mastery(
             dims[dim] = round(max(0.0, min(1.0, dims[dim] + delta)), 4)
 
     effective = compute_effective(dims)
-    now = _now_iso()
 
     conn.execute(
         "UPDATE concept_mastery SET dimensions=?, effective=?, updated_at=? "

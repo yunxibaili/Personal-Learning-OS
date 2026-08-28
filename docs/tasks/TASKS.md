@@ -98,6 +98,8 @@ P8-003C Vault Reindex           ✅ 已完成（Markdown→SQLite 索引恢复�
         ↓
 P8-003B Mastery Decay           ✅ 已完成（Ebbinghaus 时间衰减，2026-08-28）
         ↓
+P8-003D Eventlog Producer      ✅（ADR-020 闭合：update_mastery → JSONL）
+        ↓
 P8-003D Tutor Knowledge Base    🔥 下一步（RAG 层：question→concept→notes→context）
         ↓
 P8-003E Tutor Review Bridge     🔥（Tutor 读取 mastery + 错答历史）
@@ -261,6 +263,31 @@ Markdown → SQLite 索引恢复机制。修复 Sync 写入后 FTS5/links/concep
 | `npx vitest run` | 23 passed | 23 passed |
 | `npx vite build` | PASS | PASS |
 | `pytest --tb=short -q` | 453 passed | 453 passed |
+
+### P8-003D Eventlog Producer（2026-08-28 ✅）
+
+ADR-020 闭合：update_mastery() 同事务追加 JSONL 写入，跨端同步真相源不再断链。
+
+**设计决策**（已裁定）：
+- D1 eventlog JSON 格式：event_id + concept_id + event_type + dimension + weight + source + detail + device_id + created_at
+- D2 device_id 生成：环境变量 > 持久化文件 > hostname-uuid
+- D3 同事务上下文：SQLite INSERT 后立即文件追加，OSError 不阻断
+- D4 按月归档：metadata/eventlogs/<yyyy-mm>.jsonl
+- D5 不加 migration（event_uuid 列后续再加）
+
+**新增文件**：
+- `server/tests/unit/test_eventlog.py`：8 项测试（device_id 3 + write_eventlog 2 + 集成 3）
+
+**修改文件**：
+- `server/app/core/mastery.py`：+_get_device_id +_write_eventlog +update_mastery 调用
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| `pytest --tb=short -q` | 461 passed | 461 passed |
 
 ### 排序铁律（用户原话归纳）
 

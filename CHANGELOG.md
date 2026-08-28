@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003D Eventlog Producer**：ADR-020 闭合 ·
+  update_mastery() 同事务追加 JSONL 写入 ·
+  metadata/eventlogs/<yyyy-mm>.jsonl 按月归档 ·
+  eventlog JSON 格式：event_id + concept_id + event_type + dimension + weight + source + detail + device_id + created_at ·
+  device_id 生成：环境变量 > 持久化文件 > hostname-uuid ·
+  OSError 不阻断学习事件记录 ·
+  8 项测试（device_id 3 + write_eventlog 2 + 集成 3）·
+  pytest 461 · tsc PASS · vite build PASS
 - **P8-003B Mastery Decay**：掌握度时间衰减 ·
   Ebbinghaus 遗忘曲线（tau=14天半衰期）·
   get_effective_now() 动态计算当前掌握度 ·

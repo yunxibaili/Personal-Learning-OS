@@ -7,18 +7,18 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → **P8-003B Mastery Decay ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → **P8-003D Eventlog Producer ✅**
 
 ## Last Completed
 
-P8-003B Mastery Decay 完成。
-掌握度时间衰减：decay_effective() Ebbinghaus 函数 + get_effective_now() 动态计算。
-review_today 使用 effective_now 排序（错答优先+低衰减掌握度优先+早到期优先）。
-Tutor context 使用衰减后掌握度。API 输出 effective_now 字段。
-14 项测试（衰减函数8 + get_effective_now 4 + 时间真实性2）。
-last_seen 数据源：learning_events MAX(created_at)。
-Universe 视觉暂不改动（保持 effective）。
-pytest 453 · tsc PASS · vite build PASS。
+P8-003D Eventlog Producer 完成（ADR-020 闭合）。
+update_mastery() 同事务追加 JSONL 写入到 metadata/eventlogs/<yyyy-mm>.jsonl。
+eventlog JSON 格式：event_id + concept_id + event_type + dimension + weight + source + detail + device_id + created_at。
+device_id 生成：环境变量 > 持久化文件 > hostname-uuid。
+_get_device_id() 缓存 + 持久化到 workspace/metadata/device_id。
+OSError 不阻断学习事件记录（SQLite 已写入）。
+8 项测试（device_id 3 + write_eventlog 2 + 集成 3）。
+pytest 461 · tsc PASS · vite build PASS。
 
 P8-003C Vault Reindex 完成。
 Markdown → SQLite 索引恢复机制。新增 core/reindex.py（reindex_vault 纯函数）+
@@ -152,7 +152,7 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 ## 测试命令
 
 ```
-pytest -q          → 453 passed
+pytest -q          → 461 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -171,6 +171,17 @@ npx vite build     → pass
 - `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
 - `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
 - 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
+
+## 本次会话改动（P8-003D Eventlog Producer）
+
+- `server/app/core/mastery.py`：
+  新增 _get_device_id()（设备唯一标识生成+持久化）+
+  _write_eventlog()（追加 JSONL 到 metadata/eventlogs/<yyyy-mm>.jsonl）+
+  update_mastery() 同事务调用 _write_eventlog()（OSError 不阻断）。
+  eventlog JSON 格式：event_id + concept_id + event_type + dimension + weight + source + detail + device_id + created_at。
+- `server/tests/unit/test_eventlog.py`（新建，8项测试）：
+  device_id(3) + write_eventlog(2) + 集成(3)
+- 验证：pytest 461 · tsc PASS · vite build PASS
 
 ## 本次会话改动（P8-003B Mastery Decay）
 
