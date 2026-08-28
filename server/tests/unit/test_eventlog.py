@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
+
+import pytest
 
 from app.core.mastery import update_mastery, _write_eventlog
 from app.core.sync.device import load_or_create_device
@@ -173,3 +176,92 @@ def test_update_mastery_eventlog_multiple_events(core_conn, tmp_workspace: Path)
     assert "explain" in event_types
     assert "answer_correct" in event_types
     assert "review" in event_types
+
+
+# ── Integrity: SQLite ↔ eventlog 两端连通（P0-2 回归守护）───────────
+# 背景（TECH_DESIGN_REVIEW §6.7.6 N3）：本套件曾出现"管道测试盲区"——
+# 分别断言两端各有行，却从不断言两端标识符相等；回退 INSERT 中的
+# event_uuid 后测试依然全绿。以下四条断言来自 _verify_p0.py 第 7/8/11/12 项。
+
+def test_event_uuid_lands_in_both_stores(core_conn, tmp_workspace: Path) -> None:
+    """SQLite.event_uuid 与 eventlog.event_id 必须一一对应（两端连通）。"""
+    cid = _create_concept(core_conn, "UuidIntegrity")
+
+    update_mastery(conn=core_conn, concept_id=cid,
+                   event_type="answer_correct", dimension="knowledge",
+                   weight=1.0, source="manual")
+
+    db_uuids = [
+        r["event_uuid"]
+        for r in core_conn.execute(
+            "SELECT event_uuid FROM learning_events WHERE concept_id=?", (cid,)
+        ).fetchall()
+    ]
+    assert db_uuids and all(db_uuids), "event_uuid 存在 NULL 行"
+
+    jl_ids = [l["event_id"] for l in _read_eventlog_lines(tmp_workspace)]
+    assert jl_ids, "eventlog 未生成"
+    assert sorted(db_uuids) == sorted(jl_ids), (
+        "SQLite 与 eventlog 的标识符不一致——event_uuid 落库链路已断"
+    )
+
+
+def test_eventlog_device_id_matches_identity_file(
+    core_conn, tmp_workspace: Path,
+) -> None:
+    """eventlog.device_id == devices.json.device_id == sync 侧读到的身份。"""
+    cid = _create_concept(core_conn, "DeviceIntegrity")
+    update_mastery(conn=core_conn, concept_id=cid,
+                   event_type="explain", dimension="knowledge",
+                   weight=1.0, source="manual")
+
+    dev_file = tmp_workspace / "metadata" / "devices.json"
+    assert dev_file.exists(), "devices.json 未生成"
+    identity = json.loads(dev_file.read_text(encoding="utf-8"))
+
+    lines = _read_eventlog_lines(tmp_workspace)
+    assert lines
+    assert all(l["device_id"] == identity["device_id"] for l in lines), (
+        "eventlog device_id 与设备身份文件不一致"
+    )
+
+    # sync 侧 load_or_create_device 必须读到同一身份（合并后单一来源）
+    from app.core.sync.device import load_or_create_device
+    assert load_or_create_device(tmp_workspace).device_id == identity["device_id"]
+
+
+def test_eventlog_never_contains_hostname(
+    core_conn, tmp_workspace: Path,
+) -> None:
+    """hostname 不得进入 Layer 1 同步内容（只允许存在于 Layer 3）。"""
+    import socket
+
+    cid = _create_concept(core_conn, "HostnameLeak")
+    update_mastery(conn=core_conn, concept_id=cid,
+                   event_type="explain", dimension="knowledge",
+                   weight=1.0, source="manual")
+
+    event_dir = tmp_workspace / "metadata" / "eventlogs"
+    for f in event_dir.glob("*.jsonl"):
+        assert socket.gethostname() not in f.read_text(encoding="utf-8"), (
+            "hostname 泄漏进 eventlog（Layer 1 同步内容）"
+        )
+
+
+def test_event_uuid_unique_index_enforced(core_conn) -> None:
+    """idx_events_uuid UNIQUE 索引必须真的生效（重复 uuid 被拒）。"""
+    cid = _create_concept(core_conn, "UniqueIndexTest")
+    update_mastery(conn=core_conn, concept_id=cid,
+                   event_type="explain", dimension="knowledge",
+                   weight=1.0, source="manual")
+    existing = core_conn.execute(
+        "SELECT event_uuid FROM learning_events LIMIT 1"
+    ).fetchone()[0]
+
+    with pytest.raises(sqlite3.IntegrityError):
+        core_conn.execute(
+            "INSERT INTO learning_events "
+            "(concept_id, event_type, dimension, weight, source, event_uuid) "
+            "VALUES (?, 'explain', 'knowledge', 1.0, 'test', ?)",
+            (cid, existing),
+        )
