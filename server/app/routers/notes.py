@@ -15,7 +15,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ..core import knowledge as K
-from ..db import connect
+from ..core.reindex import reindex_vault
+from ..db import connect, workspace_root
 
 router = APIRouter(prefix="/api/v1/notes", tags=["notes"])
 
@@ -204,3 +205,25 @@ def delete_note(note_id: int) -> dict:
     finally:
         conn.close()
     return {"ok": True}
+
+
+# ── Admin: Vault Reindex（P8-003C）────────────────────────────────────
+
+admin_router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+
+@admin_router.post("/reindex")
+def admin_reindex(prune: bool = False) -> dict:
+    """扫描 vault/ → 同步 SQLite notes + FTS5 + links。
+
+    prune=false（默认）：只新增/更新，不删除（安全模式）。
+    prune=true：删除 vault 中不存在的 notes（需确认）。
+    """
+    conn = connect()
+    try:
+        vault = workspace_root() / "vault"
+        stats = reindex_vault(conn, vault, prune_missing=prune)
+        conn.commit()
+    finally:
+        conn.close()
+    return {"stats": stats}

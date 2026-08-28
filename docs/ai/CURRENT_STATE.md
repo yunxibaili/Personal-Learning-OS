@@ -1,15 +1,22 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-28 · Last commit：1e63130 · Branch：main · Clean：yes
+> 上次更新：2026-08-28 · Last commit：c020e53 · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → **P8-003A Review Session MVP ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → **P8-003C Vault Reindex ✅**
 
 ## Last Completed
+
+P8-003C Vault Reindex 完成。
+Markdown → SQLite 索引恢复机制。新增 core/reindex.py（reindex_vault 纯函数）+
+POST /admin/reindex 端点 + Sync receive 后自动 reindex hook。
+接口预留 changed_paths 增量模式，删除检测默认关闭（prune_missing=False）。
+13 项单元测试（基础/幂等/删除安全/links/sync hook）。
+pytest 439 · tsc PASS · vite build PASS。
 
 P8-003A Review Session MVP 完成。
 SM-2 复习流程接入真实 UI。不新增后端、不改数据模型、不加新依赖。
@@ -83,8 +90,7 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 
 ## Next Up
 
-- **P8-003C Vault Reindex**：架构 bug 修复（vault→SQLite 断链）
-- P8-003B Mastery Decay：effective_now 动态衰减计算
+- **P8-003B Mastery Decay**：effective_now 动态衰减计算
 - P8-003D Tutor Knowledge Base：RAG 层（FTS5 + concept→notes→context）
 - P8-003E Tutor Review Bridge：Tutor 读取 mastery + 错答历史
 - P8-FE-001 Visual Language Polish：MiMo 克制感配色
@@ -138,7 +144,7 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 ## 测试命令
 
 ```
-pytest -q          → 426 passed
+pytest -q          → 439 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
@@ -157,6 +163,19 @@ npx vite build     → pass
 - `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
 - `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
 - 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
+
+## 本次会话改动（P8-003C Vault Reindex）
+
+- `server/app/core/reindex.py`（新建，~100行）：
+  reindex_vault(conn, vault_root, changed_paths=None, prune_missing=False) 纯函数。
+  扫描 vault/*.md → upsert_note_index + rebuild_note_links + 可选 prune 删除。
+  接口预留 changed_paths 增量模式（MVP 退化为全量）。
+- `server/app/routers/notes.py`：新增 admin_router + POST /api/v1/admin/reindex 端点
+- `server/app/routers/sync.py`：receive 后触发 reindex_vault（Post-sync consistency hook）
+- `server/app/main.py`：注册 admin_router
+- `server/tests/unit/test_reindex.py`（新建，13项测试）：
+  基础(4) + 幂等(2) + 删除安全(3) + Links(3) + Sync Hook(1)
+- 验证：pytest 439 · tsc PASS · vite build PASS
 
 ## 本次会话改动（P8-003A Review Session MVP）
 

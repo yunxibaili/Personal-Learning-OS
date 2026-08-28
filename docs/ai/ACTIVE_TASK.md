@@ -1,13 +1,13 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-28 · P8-003A Review Session MVP 完成
+> 上次更新：2026-08-28 · P8-003C Vault Reindex 完成
 
 ---
 
 ## Task ID
 
-P8-003C Vault Reindex（下一步）
+P8-003B Mastery Decay（下一步）
 
 ## Status
 
@@ -18,8 +18,8 @@ P8-001C Knowledge Planet       ✅
 P8-004 Demo Cleanup            ✅
 P8-002 Graph V2                ✅
 P8-003A Review Session MVP     ✅
-P8-003C Vault Reindex          ← 下一步（架构 bug：vault→SQLite 断链）
-P8-003B Mastery Decay          🔥（effective_now 动态衰减计算）
+P8-003C Vault Reindex          ✅
+P8-003B Mastery Decay          ← 下一步（effective_now 动态衰减计算）
 P8-003D Tutor Knowledge Base   🔥（RAG 层：FTS5 + concept→notes→context）
 P8-003E Tutor Review Bridge    🔥（Tutor 读取 mastery + 错答历史）
 ```
@@ -31,6 +31,7 @@ P8-003E Tutor Review Bridge    🔥（Tutor 读取 mastery + 错答历史）
 - workspace/db 测试脏数据已清除（P8-004）
 - Universe（概念空间）+ Graph（关系地图）+ Planet（首页地球）均已落地
 - Review Session MVP：SM-2 学习闭环已接入 UI（P8-003A）
+- Vault Reindex：Markdown→SQLite 索引恢复机制（P8-003C）
 
 ## 长期沟通规则
 
@@ -38,4 +39,4 @@ P8-003E Tutor Review Bridge    🔥（Tutor 读取 mastery + 错答历史）
 
 ## 路线
 
-P8-003C Vault Reindex → P8-003B Mastery Decay → P8-003D Tutor Knowledge Base → P8-003E Tutor Review Bridge → Home / UI Polish
+P8-003B Mastery Decay → P8-003D Tutor Knowledge Base → P8-003E Tutor Review Bridge → Home / UI Polish

@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003C Vault Reindex**：Markdown → SQLite 索引恢复机制 ·
+  core/reindex.py 独立模块（reindex_vault 纯函数）·
+  扫描 vault/*.md → upsert_note_index + rebuild_note_links + 可选 prune ·
+  接口预留 changed_paths 增量模式 · 删除检测默认关闭 ·
+  POST /api/v1/admin/reindex 端点（Admin 模式）·
+  Sync receive 后自动 reindex hook（Post-sync consistency）·
+  13 项单元测试（基础/幂等/删除安全/links/sync hook）·
+  pytest 439 · tsc PASS · vite build PASS
 - **P8-003A Review Session MVP**：SM-2 复习流程接入真实 UI ·
   ReviewSessionView.tsx（idle→loading→ready→answering→feedback→done 状态机）·
   概念卡片（标题+掌握度+上次结果）· 三按钮评分（😵忘记了/🤔有点模糊/✨记得很清楚）·

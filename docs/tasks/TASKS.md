@@ -94,9 +94,9 @@ P8-002 Graph V2                 ✅ 已完成（dagre 层级布局 + 双视觉 +
         ↓
 P8-003A Review Session MVP      ✅ 已完成（SM-2 学习闭环接入 UI，2026-08-28）
         ↓
-P8-003C Vault Reindex            🔥 下一步（架构 bug：vault→SQLite 断链修复）
+P8-003C Vault Reindex           ✅ 已完成（Markdown→SQLite 索引恢复，2026-08-28）
         ↓
-P8-003B Mastery Decay            🔥（effective_now 动态衰减计算）
+P8-003B Mastery Decay            🔥 下一步（effective_now 动态衰减计算）
         ↓
 P8-003D Tutor Knowledge Base     🔥（RAG 层：question→concept→notes→context）
         ↓
@@ -204,6 +204,34 @@ SM-2 复习流程接入真实 UI。不新增后端、不改数据模型、不加
 | `npx vitest run` | 23 passed | 23 passed |
 | `npx vite build` | PASS | PASS |
 | `pytest --tb=short -q` | 426 passed | 426 passed |
+
+### P8-003C Vault Reindex（2026-08-28 ✅）
+
+Markdown → SQLite 索引恢复机制。修复 Sync 写入后 FTS5/links/concepts 不更新的架构缺口。
+
+**设计决策**（已裁定）：
+- D1 独立模块 core/reindex.py（不放入 knowledge.py，职责分离）
+- D2 Sync 后自动 reindex（Post-sync hook，但 SyncApply 冻结不变）
+- D3 全量扫描 MVP，接口预留 changed_paths 增量模式
+- D4 删除检测默认关闭（prune_missing=False），Admin 模式可开启
+- D5 Post-sync hook 加注释标识，不膨胀 router
+
+**新增文件**：
+- `server/app/core/reindex.py`：reindex_vault 纯函数（~100行）
+- `server/tests/unit/test_reindex.py`：13 项测试
+
+**修改文件**：
+- `server/app/routers/notes.py`：新增 admin_router + POST /api/v1/admin/reindex
+- `server/app/routers/sync.py`：receive 后触发 reindex_vault
+- `server/app/main.py`：注册 admin_router
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| `pytest --tb=short -q` | 439 passed | 439 passed |
 
 ### 排序铁律（用户原话归纳）
 

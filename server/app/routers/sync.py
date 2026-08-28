@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from ..core.sync.messages import FileData, SyncError
 from ..core.sync.status import find_conflicts, resolve_conflict
 from ..core.sync.transport import SyncTransport
+from ..core.reindex import reindex_vault
 from ..db import workspace_root
 
 router = APIRouter(prefix="/api/v1/sync", tags=["sync"])
@@ -68,4 +69,17 @@ async def post_receive(request: Request):
             "type": "sync_error", "path": "",
             "code": "bad_message", "message": "unparseable FileData"})
     ack = SyncTransport().receive_incoming(workspace_root(), file_data)
+
+    # Post-sync consistency hook（P8-003C）：
+    # SyncApply 只写文件不更新 SQLite，此处触发 reindex 保持索引一致。
+    from ..db import connect
+    conn = connect()
+    try:
+        reindex_vault(conn, workspace_root() / "vault")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+
     return Response(content=ack.to_bytes(), media_type="application/json")

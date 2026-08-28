@@ -23,6 +23,7 @@ from .routers.graph import router as graph_router
 from .routers.links import router as links_router
 from .routers.mastery import router as mastery_router
 from .routers.notes import router as notes_router
+from .routers.notes import admin_router as admin_router
 from .routers.search import router as search_router
 from .routers.settings import router as settings_router
 from .routers.suggest import router as suggest_router
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(mindmap_router)
     app.include_router(concepts_router)
     app.include_router(sync_router)
+    app.include_router(admin_router)
 
     @app.exception_handler(RequestValidationError)
     def on_validation_error(_req, exc: RequestValidationError) -> JSONResponse:
