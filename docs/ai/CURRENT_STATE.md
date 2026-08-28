@@ -176,6 +176,10 @@ npx vite build     → pass
 - 需求更新（2026-08-28 二轮）：自转接缝回退闪烁修复（贴图正像+镜像无缝拼接）+
   近地轨道多环（4 条错倾，内环更快）+ 卫星改彩色圆点+墨色拖尾（去掉太阳能板形状）+
   卫星大小随笔记字数增长封顶 MAX_SAT_PX；EARTH_UI.md 规格已同步
+- 卫星跳变修复（三轮）：前后半球切换点透明度/大小/拖尾粗细改由深度 sin(t) 连续计算，消硬切跳变
+- 111 组件整合（2026-08-28）：app-redesign.html（集成版全页预览，自 111/ui-redesign/prototype.html 入库）+
+  ui/react/HeroEarth.tsx（自 111/mimo-clone HeroEarth.tsx 改造为 React 组件：LEO+圆点拖尾+字数定大小+
+  无缝贴图+深度连续，strict tsc PASS，浏览器验证通过）；EARTH_UI.md 方案对比扩为三套（Cobe/Canvas 2D/React）
 
 ## 本次会话改动（P8-002 Graph V2）
 

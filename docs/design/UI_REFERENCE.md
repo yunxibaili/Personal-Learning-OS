@@ -31,6 +31,11 @@
 - 干净编辑区域
 - 无干扰的 Markdown 环境
 
+## Earth UI（知识星球）
+
+首页地球效果的视觉与实现规格：`docs/design/EARTH_UI.md`
+示例代码：`ui/earth-hero.html` · `ui/earth-planet-card.html`（索引见 `ui/README.md`）
+
 ---
 
 ## Avoid
