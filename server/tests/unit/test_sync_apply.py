@@ -236,6 +236,52 @@ class TestDeterministicApply:
         assert leftovers == ["t.md"]
 
 
+# ── M7-007：vault 冲突副本（方案 a：.conflict 后缀规避白名单增殖）────
+
+class TestVaultConflictCopy:
+    def test_vault_conflict_creates_conflict_copy(self, ws, applyer):
+        """主文件已存在且内容不同 → 本地版进 .conflict 副本，远端胜者写主文件。"""
+        target = ws / "vault" / "story.md"
+        local_v1 = b"local version"
+        target.write_bytes(local_v1)
+
+        remote_v2 = b"remote version"
+        r = applyer.apply_file(ws, "vault/story.md", remote_v2,
+                               expected_hash=sha(remote_v2))
+        assert r.action is ApplyAction.CONFLICT_BACKUP and r.success
+        assert target.read_bytes() == remote_v2          # 主文件 = 远端胜者
+        backup = ws / "vault" / "story.md.conflict"
+        assert backup.exists() and backup.read_bytes() == local_v1
+
+    def test_conflict_copy_never_overwritten(self, ws, applyer):
+        """已存在的副本 = 更早分叉点，后续冲突不得覆盖（同 mindmap 语义）。"""
+        target = ws / "vault" / "story.md"
+        target.write_bytes(b"v1")
+        applyer.apply_file(ws, "vault/story.md", b"v2",
+                           expected_hash=sha(b"v2"))
+        applyer.apply_file(ws, "vault/story.md", b"v3",
+                           expected_hash=sha(b"v3"))
+        backup = ws / "vault" / "story.md.conflict"
+        assert backup.read_bytes() == b"v1"              # 首次备份保留
+
+    def test_conflict_copy_not_syncable(self, ws, applyer):
+        """.conflict 后缀天然不在白名单——副本永不参与同步（方案 a 核心）。"""
+        from app.core.sync.transfer import is_syncable
+        assert not is_syncable("vault/story.md.conflict")
+        # 且 Apply 闸门对它双保险拒绝
+        r = applyer.apply_file(ws, "vault/story.md.conflict", b"x")
+        assert r.action is ApplyAction.REJECTED
+
+    def test_identical_still_skipped(self, ws, applyer):
+        """内容相同不产生副本（LWW 幂等语义保留）。"""
+        target = ws / "vault" / "same.md"
+        target.write_bytes(b"same")
+        r = applyer.apply_file(ws, "vault/same.md", b"same",
+                               expected_hash=sha(b"same"))
+        assert r.action is ApplyAction.SKIPPED
+        assert not (ws / "vault" / "same.md.conflict").exists()
+
+
 # ── TestBoundaryAudit（M7-003.5 基线回归）─────────────────────
 
 class TestSyncCoreBoundaryAudit:

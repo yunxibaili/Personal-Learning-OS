@@ -197,3 +197,16 @@ M7-004 Sync Apply Layer 实施时，`apply.py _apply_mindmap()` 在 LWW 基础�
 （已存在的备份代表更早分叉点，永不覆盖），远端胜者写主文件。
 本附录追认该实现为 ADR-020 合规行为——Layer 1/2/3 划分与同步范围未变，
 仅细化 MindMap 文件类别的冲突处理细节。
+
+---
+
+## 附录 §2.1.2：vault 冲突副本与同步白名单（2026-08-29 · M7-007 · 方案 a）
+
+vault 冲突处理从 LWW 升级为「远端胜者写主文件 + 本地版进 `<name>.md.conflict`
+副本」（副本已存在 = 更早分叉点，永不覆盖；apply.py `_apply_lww` 实现）。
+
+**副本不参与同步**：`.conflict` 后缀不在 SYNC_PATTERNS 白名单（`vault/**/*.md`）
+内——天然隔离，避免副本跨设备增殖。选择此方案（a）而非显式修改白名单（b），
+因后者属于实现细节超出本 ADR 原文描述，按裁决判据应开 ADR-024；方案 a
+不动白名单，零流程成本。status v1 的冲突列表仍仅派生 mindmap 源，
+vault .conflict 列出为后续增量。

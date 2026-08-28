@@ -7,6 +7,10 @@
 
 ## Task ID
 
+**M7-007 Vault Conflict Preservation** ✅ 完成（B27 · 方案 a · 498 passed）
+
+## 上上任务
+
 **T-EXPORT（B11）** ✅ 完成（GET /api/v1/export · 493 passed）
 
 ## 上一任务存档

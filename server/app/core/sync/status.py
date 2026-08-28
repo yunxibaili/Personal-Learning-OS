@@ -1,10 +1,9 @@
 """M7 Sync Engine: Status — 同步冲突的只读查询与用户裁决。
 
 M7-005 冻结范围（方案 a）：
-  - 冲突源只有 mindmap conflict artifacts（mind_maps/*.local.json / *.remote.json），
-    由 M7-004 Apply 层落地的真实产物派生；不为未来场景制造假数据
-  - vault 双份机制不存在（Apply 对 vault 是 LWW），登记为 M7-007 Vault
-    Conflict Preservation，本模块不涉及
+  - 冲突源：mindmap conflict artifacts（M7-004）与 vault/*.md.conflict
+    副本（M7-007，方案 a 后缀隔离白名单）。status v1 只派生 mindmap 源；
+    vault .conflict 副本列出属后续增量
   - 只读 + 唯一写动作 resolve；不做自动解决/智能合并/学习状态写入
 
 边界：stdlib only；落盘统一走 transfer.write_file_atomic（与 Apply 同一规则）。

@@ -13,6 +13,8 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
+M7-007 Vault Conflict Preservation 完成（方案 a：vault 冲突 .conflict 副本隔离白名单，ADR-020 附录 §2.1.2）。
+
 T-EXPORT（B11）一键全量导出完成（GET /api/v1/export，守护先行 7 tests）。
 
 P8-003E Review Bridge + Auto Notes 完成（mistakes 断链修复 + 乙路线 auto_notes，纯后端）。

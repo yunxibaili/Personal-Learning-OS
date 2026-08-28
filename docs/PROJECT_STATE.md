@@ -470,6 +470,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B17 | 增量 reindex（`changed_paths`） | 接口已预留，MVP 退化为全量 |
 | B18 | M2b 大纲反解析（`*.mindmap.json` → Markdown） | 挂起 |
 | B19 | 外部格式导入（Obsidian / Notion / Markdown 目录） | 未实现 |
+| B27 | M7-007 vault 冲突副本（`.conflict` 后缀隔离同步白名单） | 已实现 ✅（2026-08-29） |
 
 ### 9.3 已知技术债（审核已定位，未修）
 

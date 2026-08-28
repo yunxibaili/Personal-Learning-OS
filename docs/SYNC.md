@@ -74,7 +74,7 @@ Layer 3: Local Cache（永不同步层）
 
 | 文件类型 | 策略 | 说明 |
 |---|---|---|
-| vault/*.md | **实然：LWW 原子替换**（M7-007 目标态：保留双份 + 手动合并） | 用户决定 |
+| vault/*.md | LWW + 冲突 `.conflict` 副本（M7-007 已实现；合并后删除副本） | 用户决定 |
 | eventlogs/*.jsonl | Append-only + event id 去重 | 自动合并 |
 | mind_maps/*.mindmap.json | LWW + 首次冲突 `.local.json` 备份（M7-004 已实现） | Apply CONFLICT_BACKUP |
 
@@ -108,7 +108,7 @@ Layer 3: Local Cache（永不同步层）
 
 | 类型 | 策略 | ApplyAction |
 |---|---|---|
-| vault/**/*.md | 相同则跳过 · 不同/新建则 LWW 原子替换（M7-007 将改为冲突双份） | WRITTEN / SKIPPED |
+| vault/**/*.md | 相同则跳过 · 冲突时远端胜者 + 本地版进 `.md.conflict` 副本（M7-007） | WRITTEN / CONFLICT_BACKUP / SKIPPED |
 | metadata/eventlogs/*.jsonl | append merge + event_id 去重 | MERGED |
 | mind_maps/*.mindmap.json | LWW + `.local.json` 冲突备份 | CONFLICT_BACKUP / WRITTEN |
 | 校验失败（任何类型） | 拒绝且不落盘 | REJECTED |
@@ -334,14 +334,14 @@ M7-003 只做传输，不做落盘决策。M7-004 将处理：
 
 两个设备都修改了同一个 `vault/*.md` 文件。
 
-**策略（M7-007 目标态）**：保留双份 + 用户手动合并。
-**实然（2026-08-28）**：vault 冲突当前为 LWW 直接替换、无双份——M7-007 Vault Conflict Preservation 落地前，本节目标态未生效。
+**策略（M7-007 已实现，2026-08-29）**：远端胜者写主文件，本地版进
+`<name>.md.conflict` 副本（首次冲突才写；副本不在同步白名单，不跨设备扩散）。
+用户合并后删除副本即可。
 
 ```
-vault/note.md              ← 设备 A 的版本
-vault/note_[conflict].md   ← 设备 B 的版本（待合并）
+vault/note.md             ← 胜者版本（两侧主文件收敛一致）
+vault/note.md.conflict    ← 被覆盖一方的本地版（M7-007 实然，不参与同步）
 ```
-*（以上为 M7-007 目标态示例；实然见 Apply 层策略表）*
 
 **原因**：Markdown 内容冲突无法自动解决，强制用户参与。
 

@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M7-007 Vault Conflict Preservation**（B27，方案 a）：apply.py vault 分支
+  LWW 升级——冲突时远端胜者写主文件、本地版进 `<name>.md.conflict` 副本
+  （副本后缀不在同步白名单，天然隔离不跨设备增殖；已有副本=更早分叉点永不覆盖）·
+  E2E runner vault 冲突从显式 no-op 改为单方向收敛断言 ·
+  ADR-020 附录 §2.1.2 · SYNC.md 三处目标态转实然 ·
+  守护先行 4 tests · pytest 494→498
+
+### Added
+
+### Added
 - **T-EXPORT（B11）一键全量导出**：GET /api/v1/export → zip（core/export.py）·
   白名单收集 vault/attachments/mind_maps/eventlogs · settings 脱敏
   （api_key 条目整体排除，非掩码）· 防御性排除 devices.json/manifest.json ·

@@ -93,7 +93,11 @@ class SyncPair:
                 move(self.a, self.b, True, path)
                 move(self.b, self.a, False, path)
                 moved.append((Action.CONFLICT, path))
-            # vault 冲突：不动作（M7-007 前禁止静默覆盖任一方的真相）
+            elif path.startswith("vault/"):
+                # M7-007：vault 冲突单方向收敛——A 版胜出为共同主文件，
+                # B 侧旧版进 .conflict 副本（副本不在白名单，不参与后续同步）
+                move(self.a, self.b, True, path)
+                moved.append((Action.CONFLICT, path))
         return moved
 
     def layer1_snapshot(self, device: Path) -> dict[str, str]:

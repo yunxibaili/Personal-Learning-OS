@@ -203,16 +203,36 @@ class SyncApply:
             return self._apply_mindmap(workspace, normalized, data)
         return self._apply_lww(workspace, normalized, data)
 
-    # ── Markdown 及其他普通文件：LWW 原子替换 ──────────────────────
+    # ── Markdown 及其他普通文件：LWW + 冲突副本（M7-007）──────────
 
     def _apply_lww(self, workspace: Path, path: str, data: bytes) -> ApplyItemResult:
+        """vault 等 LWW 文件：相同跳过；冲突时本地版进 .conflict 副本（方案 a）。
+
+        副本后缀 .conflict 不在同步白名单（vault/**/*.md）——天然隔离，
+        不会跨设备增殖（M7-007 方案 a 裁定，ADR-020 附录 §2.1.2）。
+        已存在的副本 = 更早分叉点，永不覆盖。
+        """
         target = workspace / path
         if target.exists() and target.read_bytes() == data:
             return ApplyItemResult(path, ApplyAction.SKIPPED, True, "identical")
+
+        had_conflict = target.exists()
+        if had_conflict:
+            backup_path = target.with_name(target.name + ".conflict")
+            if not backup_path.exists():
+                if write_file_atomic(workspace, path + ".conflict",
+                                     target.read_bytes()) is None:
+                    return ApplyItemResult(path, ApplyAction.REJECTED, False,
+                                           "backup write failed")
+
         if write_file_atomic(workspace, path, data) is None:
             return ApplyItemResult(path, ApplyAction.REJECTED, False, "write failed")
-        return ApplyItemResult(path, ApplyAction.WRITTEN, True,
-                               f"wrote {len(data)} bytes")
+        return ApplyItemResult(
+            path,
+            ApplyAction.CONFLICT_BACKUP if had_conflict else ApplyAction.WRITTEN,
+            True,
+            "remote wins, local backed up" if had_conflict else f"wrote {len(data)} bytes",
+        )
 
     # ── eventlogs：追加合并（Rule 3，禁 replace）──────────────────
 
