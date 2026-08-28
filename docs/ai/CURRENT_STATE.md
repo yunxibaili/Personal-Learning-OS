@@ -7,14 +7,16 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → **P8-004 Demo Cleanup ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → **P8-002 Graph V2 ✅**
 
 ## Last Completed
 
-P8-004 Demo Cleanup 完成。
-清除 workspace/db 中早期探针残留 TestConcept / MasteryTest（2 concepts + 1 mastery + 4 links），
-精确 IN 删除无误伤。验证：pytest 426 · vitest 16 · vite build PASS。
-备份：learning-os.db.backup-before-p8-004。
+P8-002 Graph V2 完成。
+关系探索视图：dagre 层级布局 + Concept（圆形）/ Note（方形）双视觉 +
+Layer Toggle（Mixed/Concept/Note）+ Edge 视觉层次（9种 relation 样式）+
+MiniMap 导航 + Floating Inspector + hover relation label。
+dagre ^0.8.5 安装（六连问通过，REGISTRY 登记）。
+vitest 23 passed（layout 7 + universe 14 + ui 2）· pytest 426 · vite build PASS。
 
 P8-001C Knowledge Planet 完成（commit 7918d5e）。
 Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动）。
@@ -70,12 +72,12 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 | P8-001B | Knowledge Universe V2（Planet + force 聚类 + Inspector + drag 持久化） | ✅ |
 | P8-001C | Knowledge Planet（Cobe 地球 + 轨道卫星 + 性能契约，7918d5e） | ✅ |
 | P8-004 | Demo Cleanup（清除 TestConcept/MasteryTest 探针残留） | ✅ |
+| P8-002 | Graph V2（dagre 层级布局 + 双视觉 + Layer Toggle + Inspector） | ✅ |
 
 ## Next Up
 
-- **P8-002 Graph V2**：复用 P8-001 组件，Concept/Note 双视觉 + domain clustering + layer toggle + minimap
-- **P8-003 Unified Home**：HomeView 统一入口（Universe/Review/Tutor/MindMap/Graph）
-- P8-FE-001 Visual Language Polish：MiMo 克制感配色（等 P8-003 后统一）
+- **P8-003 Unified Home**：HomeView 统一入口（Universe/Graph/Review/Tutor/MindMap）
+- P8-FE-001 Visual Language Polish：MiMo 克制感配色
 - M8 Mobile（延后，先 PC 完整化，路线决议见 TASKS §路线决议）
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
 
@@ -132,6 +134,20 @@ npx vitest run     → 16 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
+
+## 本次会话改动（P8-002 Graph V2）
+
+- `web/src/lib/graph/layout.ts`：dagre 层级布局引擎（纯函数，不 import React）。
+  dagreLayout(nodes, edges) → 坐标 + 画布尺寸。nodesep/edgesep/ranksep 参数化
+- `web/src/lib/graph/layout.test.ts`：7 项测试（空输入/单节点/层级方向/同层/确定性/混合类型）
+- `web/src/components/graph/GraphConceptNode.tsx`：圆形概念节点（固定尺寸，mastery 仅 tooltip）
+- `web/src/components/graph/GraphNoteNode.tsx`：方形笔记节点（document card 风格）
+- `web/src/components/graph/GraphEdge.tsx`：关系边（9种 relation 样式：wikilink 细浅线/prerequisite 粗实线/related 虚线等）
+- `web/src/views/GraphView.tsx`：完全重写。dagre 布局 + Layer Toggle（Mixed/Concept/Note）+
+  MiniMap + Floating Inspector + hover relation label + domain 过滤
+- `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
+- `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
+- 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
 
 ## 本次会话改动（P8-004 Demo Cleanup）
 

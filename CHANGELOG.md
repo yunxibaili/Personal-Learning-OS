@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-002 Graph V2**：关系探索视图升级 ·
+  dagre 层级布局（dagre ^0.8.5 安装，六连问通过）·
+  Concept（圆形）/ Note（方形）双视觉节点 ·
+  Layer Toggle（Mixed / Concept / Note）·
+  Edge 视觉层次（9种 relation 样式：wikilink 细浅线 / prerequisite 粗实线 / related 虚线）·
+  MiniMap 导航 · Floating Inspector（复用 Universe 交互模式）·
+  hover relation label · domain 过滤 · 隐藏未确认桩 ·
+  layout.test.ts 7 项 · vitest 23 · pytest 426 · vite build PASS
 - **P8-001C Knowledge Planet**：首页知识星球原型 ·
   Cobe WebGL 点阵地球（5KB/MIT，MiMo 风格）+ 4 条错倾轨道环 ·
   卫星 = 笔记（/api/v1/notes，16 颗上限聚合）·

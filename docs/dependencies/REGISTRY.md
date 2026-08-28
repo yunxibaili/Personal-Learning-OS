@@ -39,6 +39,7 @@ Security considerations:
 | python-multipart | 锁定 requirements.txt | multipart/form-data 解析（附件上传 UploadFile 必需件） | Apache-2.0 | FastAPI 文件上传的官方配套；无替代即无法实现已批 M1 计划第 4 条 | 活跃 |
 | @tiptap/extension-image | v3 线（M1，ECR 获批 2026-08-26） | 图片节点：`![alt](src)` markdown 往返与内嵌渲染 | MIT | StarterKit 无图片节点；无 schema 节点时 md 图片语法会在编辑往返中丢失 | 活跃 |
 | cobe | **^0.6.5**（2026-08-27 P8-001C 安装） | Knowledge Planet 点阵地球 WebGL 渲染（首页可视化） | MIT | 纯 CSS/SVG 散点球需手动维护数百坐标点且效果差；three-globe 依赖链重（30x+ 体积）。cobe 5KB 单文件即达 MiMo 风格点阵效果。**性能边界**：dpr=1 + 30fps 节流 + IntersectionObserver/visibilitychange 暂停，CPU 需保持 <10%（sandbox/cobe-test-math.html 已验证遮挡数学） | 活跃 |
+| dagre | **^0.8.5**（2026-08-28 P8-002 安装） | Graph V2 层级布局引擎（dagre 拓扑排序 + 坐标分配，ADR-023 Graph 边界） | MIT | TS 标准库无图布局能力；d3-force 做力导向不做层级（ADR-007 仅批准 d3-force 单模块）；React Flow 无内置布局器；手写拓扑排序+坐标分配属重复造轮子 | 稳定（功能完整，低活跃维护） |
 
 > tiptap-markdown 边界（批准附带）：**禁止作为任何存储格式**——数据真相永远是 `vault/` 的 .md 文件；
 > 数据库只保存 metadata/index/relations/learning state，不保存 TipTap JSON（除非未来 ADR 单独批准）。

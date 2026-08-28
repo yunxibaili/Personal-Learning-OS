@@ -90,7 +90,9 @@ P8-001C Knowledge Planet        ✅ 已完成（Cobe 地球 + 轨道卫星 + 性
         ↓
 P8-004 Demo Cleanup             ✅ 已完成（清除 TestConcept/MasteryTest 探针残留，2026-08-28）
         ↓
-P8-002 Graph V2                 ← 下一步（Concept/Note 双视觉 + domain clustering）
+P8-002 Graph V2                 ✅ 已完成（dagre 层级布局 + 双视觉 + Layer Toggle，2026-08-28）
+        ↓
+P8-003 Home Experience          ← 下一步（Dashboard 升级为 Learning OS Home）
         ↓
 P8-003 Home Experience          Dashboard 升级为 Learning OS Home
         ↓
@@ -133,6 +135,41 @@ P8-FE-001 Visual Language Polish ← 纯前端阶段（MiMo 克制感参考）
 
 **结论**：真实 DB 删除不影响测试隔离（tests 全用 tmp_workspace）。
 **辅助脚本**：`scripts/_cleanup_check.py` / `_cleanup_delete.py`（一次性，待清理）
+
+### P8-002 Graph V2（2026-08-28 ✅）
+
+关系探索视图升级：从网格布局升级为 dagre 层级布局 + 双视觉节点。
+
+**设计决策**（已裁定）：
+- D1 Mixed 默认（Concept 主视觉更大，Note 辅助更轻）
+- D2 Note = 方形卡片（document card）
+- D3 Edge 文字默认隐藏 hover 显示
+- D4 复用 Floating Inspector
+- D5 dagre 层级布局
+- D6 不改后端
+
+**新增文件**：
+- `web/src/lib/graph/layout.ts`：dagre 布局引擎（纯函数，7项测试）
+- `web/src/lib/graph/layout.test.ts`：空输入/单节点/层级/同层/确定性/混合
+- `web/src/components/graph/GraphConceptNode.tsx`：圆形概念节点
+- `web/src/components/graph/GraphNoteNode.tsx`：方形笔记节点
+- `web/src/components/graph/GraphEdge.tsx`：9种 relation 视觉层次
+- `web/src/components/graph/index.ts`：导出
+
+**重写文件**：
+- `web/src/views/GraphView.tsx`：dagre + Layer Toggle + MiniMap + Inspector + hover
+
+**CSS**：global.css +80行（gnode concept/note/tooltip/gedge/layer-toggle/inspector）
+
+**依赖**：dagre ^0.8.5 + @types/dagre（REGISTRY 登记）
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| `pytest --tb=short -q` | 426 passed | 426 passed |
 
 ### 排序铁律（用户原话归纳）
 

@@ -204,7 +204,7 @@ body {
 .gnode {
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1.5px solid var(--brand);
+  border: 1.5px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 12px;
@@ -212,10 +212,119 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
 }
-.gnode.concept { border-color: var(--ok); }
+.gnode.concept {
+  border-radius: 50%;
+  width: 80px; height: 80px;
+  justify-content: center;
+  border-color: var(--ok, #4a9);
+  padding: 0;
+}
+.gnode.note {
+  border-radius: 4px;
+  border-color: var(--border, #ddd);
+  background: var(--bg-primary, #fff);
+}
+.gnode.selected { box-shadow: 0 0 0 2px var(--brand, #ff8a00); }
 .gnode.unconf { border-style: dashed; opacity: 0.65; }
 .gnode:hover { box-shadow: 0 0 0 3px rgba(91, 157, 217, 0.25); }
+.gnode-icon { font-size: 11px; opacity: 0.5; flex-shrink: 0; }
+.gnode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Graph node tooltip */
+.gnode-tooltip {
+  position: absolute; top: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11px;
+  min-width: 120px;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.gnode-tooltip-title { font-weight: 600; margin-bottom: 2px; }
+.gnode-tooltip-domain { color: var(--text-secondary, #888); font-size: 10px; }
+.gnode-tooltip-status { color: var(--text-secondary, #888); margin-top: 4px; }
+.gnode-tooltip-type { color: var(--text-secondary, #888); margin-top: 2px; }
+.gnode-tooltip-bar-wrap {
+  height: 3px; background: #eee; border-radius: 2px; margin-top: 3px;
+}
+.gnode-tooltip-bar {
+  height: 100%; background: var(--ok, #4a9); border-radius: 2px;
+}
+.gnode-tooltip-effective { color: var(--text-secondary, #888); font-size: 10px; margin-top: 2px; }
+
+/* Graph edge styles by relation */
+.gedge { stroke: #c4c0b8; stroke-width: 1.5; }
+.gedge.wikilink { stroke: #d4d0c8; stroke-width: 1; }
+.gedge.prerequisite, .gedge.requires { stroke: #1a1a1a; stroke-width: 2; }
+.gedge.related, .gedge.mentions { stroke: #c4c0b8; stroke-width: 1.5; stroke-dasharray: 4 2; }
+.gedge:hover { stroke: var(--brand, #ff8a00); stroke-width: 2; }
+.gedge-label {
+  font-size: 10px; fill: var(--text-secondary, #888);
+  pointer-events: none;
+}
+
+/* Graph Layer Toggle */
+.graph-layer-toggle {
+  display: flex; gap: 2px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.graph-layer-toggle button {
+  border: none; background: var(--bg-secondary, #f7f7f7);
+  color: var(--text-secondary, #888);
+  padding: 3px 10px; font-size: 11px; cursor: pointer;
+  border-right: 1px solid var(--border, #ddd);
+}
+.graph-layer-toggle button:last-child { border-right: none; }
+.graph-layer-toggle button.active {
+  background: var(--brand, #ff8a00);
+  color: #fff;
+}
+
+/* Graph Inspector */
+.graph-inspector {
+  position: absolute; bottom: 16px; left: 16px;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  min-width: 180px; max-width: 260px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  z-index: 50;
+}
+.graph-inspector-header {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
+.graph-inspector-header strong { flex: 1; }
+.graph-inspector-header button {
+  border: none; background: none; cursor: pointer;
+  color: var(--text-secondary, #888); font-size: 14px;
+}
+.graph-inspector-type { font-size: 14px; }
+.graph-inspector-type.concept { color: var(--ok, #4a9); }
+.graph-inspector-type.note { color: var(--text-secondary, #888); }
+.graph-inspector-domain { color: var(--text-secondary, #888); font-size: 11px; margin-bottom: 4px; }
+.graph-inspector-mastery { font-size: 11px; margin-bottom: 4px; }
+.graph-inspector-actions { display: flex; gap: 6px; margin-top: 8px; }
+.graph-inspector-actions button {
+  border: 1px solid var(--border, #ddd);
+  background: var(--bg-secondary, #f7f7f7);
+  color: var(--text-primary);
+  padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+}
+.graph-inspector-actions button:hover { background: var(--brand, #ff8a00); color: #fff; }
 
 .searchbox {
   width: 220px;
