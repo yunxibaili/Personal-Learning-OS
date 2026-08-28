@@ -11,6 +11,8 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
+P8-003E Review Bridge + Auto Notes 完成（mistakes 断链修复 + 乙路线 auto_notes，纯后端）。
+
 P8-003D Tutor Knowledge Base 完成（甲路线：显式引用 · POST /tutor/context · 死 tab 复活 · 守护测试先行）。
 
 P8-003D-CodeReview P0 修复完成。

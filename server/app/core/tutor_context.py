@@ -15,7 +15,12 @@ from __future__ import annotations
 import json
 
 from ..db import connect
-from .knowledge import extract_snippet, read_note_file
+from .knowledge import (
+    extract_snippet,
+    get_note_row,
+    read_note_file,
+    search_notes,
+)
 from .mastery import get_effective_now
 from .tutor_types import TutorContext
 
@@ -167,16 +172,64 @@ def _get_user_notes(conn, note_ids: list[int]) -> list[dict]:
     return out
 
 
-def build_tutor_context(conn, concept_id: int,
-                        note_ids: list[int] | None = None) -> TutorContext:
-    """组装 AI Tutor 上下文（ADR-014 + P8-003D 附录）。
+def _get_auto_notes(conn, concept_id: int, exclude_ids: list[int],
+                    limit: int) -> list[dict]:
+    """乙路线自动检索（ADR-014 附录 §2.8.1.2 许可）：concept 标题+别名查 notes_fts。
 
-    note_ids 非空时注入用户引用的笔记片段，并收缩 related/recent 预算。
+    显式引用优先：exclude_ids（已引用）被跳过，只补剩余名额。
+    检索词来自概念自身元数据，非用户查询——可审计、可复算。
+    """
+    row = conn.execute(
+        "SELECT title, aliases_json FROM concepts WHERE id=?", (concept_id,)
+    ).fetchone()
+    if row is None:
+        return []
+    terms = [row["title"]] + json.loads(row["aliases_json"] or "[]")
+    out: list[dict] = []
+    for term in terms:
+        if not term or len(out) >= limit:
+            break
+        for hit in search_notes(conn, term, limit=limit + len(exclude_ids)):
+            if hit["note_id"] in exclude_ids:
+                continue
+            if any(n["note_id"] == hit["note_id"] for n in out):
+                continue
+            note_row = get_note_row(conn, hit["note_id"])
+            if note_row is None:
+                continue
+            try:
+                _, body = read_note_file(note_row["path"])
+            except (OSError, ValueError):
+                continue
+            out.append({
+                "note_id": hit["note_id"],
+                "title": note_row["title"],
+                "excerpt": extract_snippet(body, query=term,
+                                           max_chars=MAX_NOTE_EXCERPT_CHARS),
+            })
+            if len(out) >= limit:
+                break
+    return out
+
+
+def build_tutor_context(conn, concept_id: int,
+                        note_ids: list[int] | None = None,
+                        auto_notes: bool = False) -> TutorContext:
+    """组装 AI Tutor 上下文（ADR-014 + P8-003D/003E 附录）。
+
+    note_ids：用户显式引用（甲路线，≤2）。
+    auto_notes=True：以 concept 标题+别名 FTS 检索，只补显式引用之外的
+    剩余名额（乙路线；默认 False——隐私面扩大必须显式开启）。
     返回 TutorContext，不含 sensitive 数据。
     concept 不存在时抛出 ConceptNotFoundError；note 不存在抛出 NoteNotFoundError。
     """
     concept = _get_concept(conn, concept_id)
     notes = _get_user_notes(conn, list(note_ids)) if note_ids else []
+    if auto_notes and len(notes) < MAX_NOTE_EXCERPTS:
+        exclude = [n["note_id"] for n in notes]
+        notes = notes + _get_auto_notes(
+            conn, concept_id, exclude, MAX_NOTE_EXCERPTS - len(notes),
+        )
 
     return TutorContext(
         concept=concept,

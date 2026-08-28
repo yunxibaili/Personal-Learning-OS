@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003E Review Bridge + Auto Notes**（纯后端）：修复 mistakes 表自 M3
+  建表以来零生产者的断链——update_mastery(answer_wrong) 同事务落 mistakes，
+  review 答错 → mistakes → Tutor context.mistakes 三跳连通 ·
+  乙路线 Auto Notes（ADR-014 附录许可）：auto_notes=true 时以 concept
+  标题+别名 FTS5 检索补足笔记名额（显式引用优先、排除已引用、默认关闭）·
+  守护测试先行 10 项 · pytest 476→486
+
+### Added
+### Added
 - **P8-003D Tutor Knowledge Base**（甲路线：显式引用）：POST /api/v1/tutor/context
   （note_ids ≤2 篇确定性片段，注入时 related 10→6 / recent 5→3 预算收缩）·
   TutorPanel 笔记选择器（复用 FTS /search）+ 死 tab 复活（focusConceptId

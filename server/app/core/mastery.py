@@ -146,6 +146,21 @@ def update_mastery(
         (concept_id, event_type, dimension, weight, source, detail, event_uuid),
     )
 
+    # 答错同步落 mistakes（P8-003E Review Bridge：修复建表以来零生产者的断链）
+    if event_type == "answer_wrong":
+        desc = f"答错（source={source}）"
+        if detail:
+            try:
+                q = json.loads(detail).get("quality")
+                if q is not None:
+                    desc = f"复习答错（quality={q}）"
+            except (json.JSONDecodeError, AttributeError):
+                pass
+        conn.execute(
+            "INSERT INTO mistakes (concept_id, description) VALUES (?, ?)",
+            (concept_id, desc),
+        )
+
     # 追加到 eventlog 文件（ADR-020：同事务上下文，跨端同步真相源）
     try:
         device = load_or_create_device(workspace_root())

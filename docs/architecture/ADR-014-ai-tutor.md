@@ -155,9 +155,9 @@ AI 看不到什么（黑名单）：
    Tutor 上下文——本文 §2.5 既有条款「vault 全文（除非用户明确引用）」的实现。
    实现：POST /api/v1/tutor/context 的 note_ids 参数（TutorPanel 选择器，
    无自动检索）。
-2. **本附录解除**：FTS5 关键词自动检索（core 内手写，复用既有
-   search_notes/suggest_for_context）作为未来 P8-003E 的许可依据，
-   触发条件 = 用户反馈显式引用摩擦。
+2. **本附录解除（已于 2026-08-28 P8-003E 实施）**：FTS5 关键词自动检索
+   （core 内手写，复用既有 search_notes + concept 标题/别名检索词）。
+   默认关闭（`auto_notes=false`），显式开启时只补显式引用之外的剩余名额。
 3. **维持永久禁止**：向量数据库 / Embedding 服务 / LangChain 及一切
    AI 编排框架（AGENTS §2.3），无论任何阶段。
 

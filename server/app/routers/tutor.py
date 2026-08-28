@@ -46,6 +46,7 @@ def get_tutor_context(concept_id: int) -> dict:
 class TutorContextRequest(BaseModel):
     concept_id: int
     note_ids: list[int] | None = None  # 用户显式引用，≤2 篇
+    auto_notes: bool = False  # P8-003E：FTS5 自动检索补缺（默认关闭）
 
 
 @router.post("/context")
@@ -62,7 +63,8 @@ def post_tutor_context(body: TutorContextRequest) -> dict:
     note_ids = list(dict.fromkeys(note_ids))  # 去重保序（≤2 时无害）
     conn = connect()
     try:
-        return build_tutor_context(conn, body.concept_id, note_ids=note_ids)
+        return build_tutor_context(conn, body.concept_id, note_ids=note_ids,
+                                   auto_notes=body.auto_notes)
     except ConceptNotFoundError:
         return _err(404, "concept_not_found",
                     f"concept {body.concept_id} not found")
