@@ -5,7 +5,7 @@
 >    含做了什么、改动文件、**测试了什么（逐条列出实际执行的测试命令与预期/实际结果）**、遗留问题。
 > 2. 未回填报告的任务视为未完成，不得开始依赖它的下一项任务。
 > 3. 里程碑收尾**四件事**：依赖审计（REGISTRY 审计表）· 环境删除测试 + 删除优先检查
->    （docs/environment.md §五）· CHANGELOG 条目 · Git tag。
+>    （AGENTS.md §17 §五）· CHANGELOG 条目 · Git tag。
 >
 > 状态：`[ ]` 待办 · `[~]` 进行中 · `[x]` 完成（附报告锚点）
 
@@ -35,7 +35,7 @@
 
 ## M7 LAN Sync 任务拆解（当前）
 
-> 详细设计：docs/sync/sync-model.md · sync-transport.md · ADR-020（真值模型）
+> 详细设计：docs/SYNC.md · sync-transport.md · ADR-020（真值模型）
 
 - [x] ADR-020 Sync Truth Model（三层真值模型冻结）
 - [x] M7-001 Sync Engine Core（manifest/scanner/diff，纯 Core 无网络）
@@ -48,17 +48,17 @@
 - [x] **M7-004 Sync Apply Layer + Boundary Audit** ✅：
   core/sync/apply.py（唯一写入口 · 双重校验 · eventlog append-merge event_id 去重 ·
   mindmap LWW + conflict backup）· tests/unit/test_sync_apply.py 27 个 · pytest 327→354
-  完成报告：见 CURRENT_STATE「本次会话改动」与 docs/sync/sync-model.md §Apply 层
+  完成报告：见 CURRENT_STATE「本次会话改动」与 docs/SYNC.md §Apply 层
 - [x] M7-004.5 Sync Boundary & Recovery Audit ✅（19 tests · 发现并修复 Apply 未
   fail-closed 漏洞 · pytest 354→373）完成报告：见 CURRENT_STATE 与
-  docs/sync/sync-model.md §边界与恢复
+  docs/SYNC.md §边界与恢复
 - [x] M7-005 Conflict UI ✅（SyncStatusPanel @ Dashboard · GET /sync/status +
   POST /sync/resolve（方案 a：仅 mindmap 冲突源）· pytest 373→390）
   完成报告：见 CURRENT_STATE 与 shared/types/sync.ts 契约
 - [x] M7-006 End-to-end LAN Demo ✅（Phase 1 runner · Phase 2 四场景 ·
   Phase 3.0 serve/receive 端点补齐 + Rule 1 收缰 · Phase 3.1 真实两进程字节级一致 ·
   Phase 3.2 宕机重试恢复 · pytest 390→397）完成报告：见 CURRENT_STATE
-- [x] M7-006.5 Sync Release Audit ✅（AST 边界终审 PASS · Truth Model/Recovery 证据归档 · T-EXPORT 预检）产出 docs/sync/SYNC_BOUNDARY_REPORT.md · docs/release/EXPORT_MANIFEST.md · docs/release/RELEASE_AUDIT_M7.md
+- [x] M7-006.5 Sync Release Audit ✅（AST 边界终审 PASS · Truth Model/Recovery 证据归档 · T-EXPORT 预检）产出 docs/SYNC.md · docs/release/EXPORT_MANIFEST.md · docs/release/RELEASE_AUDIT_M7.md
 - [ ] M7-007 Vault Conflict Preservation（用户登记的待办）：apply.py vault 分支
   增加 conflict copy · 更新 ADR-020 与 sync-model.md · 补恢复测试——
   弥合「文档承诺 vault 双份保留 vs Apply 现为 LWW」的缺口（M7-003.5 发现；
@@ -365,7 +365,7 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 
 | 计划 | 触发条件 | 文档 |
 |---|---|---|
-| UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/architecture/integration-upmark.md |
+| UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/adr/integration-upmark.md |
 
 ## 完成报告
 
@@ -374,7 +374,7 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
   新增 ADR-005/006 与 integration-upmark.md；TECH_DESIGN §1/§2/§4.2/§5.4/§9/§10 更新；
   里程碑重排 M7=同步、M8=移动、M9/M10=可视化；AGENTS 冻结表/红线/优先级同步；
   REGISTRY 规划依赖补 RN 系；TASKS 重排并建挂起区
-- **改动文件**：docs/architecture/(ADR-005·006·integration-upmark) · TECH_DESIGN · AGENTS ·
+- **改动文件**：docs/adr/(ADR-005·006·integration-upmark) · TECH_DESIGN · AGENTS ·
   REGISTRY · TASKS · CHANGELOG · data-model/INDEX
 - **测试了什么**：
 
@@ -451,10 +451,10 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 进入 **M1 知识库核心**：notes CRUD API + vault md 读写 + FTS 索引管线 + TipTap/KaTeX/math-extension 安装（届时在 REGISTRY 打钩确认）。开工前照例输出 §12 八项清单。
 
 ### T-DOC-003 环境治理规则入库（2026-08-26）
-- **做了什么**：新增 docs/environment.md（版本基线/目录归属法/sandbox 规则/收尾四件事/
+- **做了什么**：新增 AGENTS.md §17（版本基线/目录归属法/sandbox 规则/收尾四件事/
   [ENVIRONMENT CHANGE REQUEST] 协议/环境变量表）；.gitignore 补 sandbox/ 与 server/.cache/；
   AGENTS §7.1 ECR 协议、§11 收尾扩为四件事；network-boundary 同步两区边界说明
-- **改动文件**：docs/environment.md(新) · .gitignore · AGENTS · network-boundary · 本文件 · CHANGELOG
+- **改动文件**：AGENTS.md §17(新) · .gitignore · AGENTS · network-boundary · 本文件 · CHANGELOG
 - **测试了什么**：
 
   | 检查 | 预期 | 实际 |
@@ -670,7 +670,7 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
 
 - **做了什么**：M5 全部交付——概念学习状态自动初始化、复习 API 优先级完善、学习时间线、数据模型冻结
 - **改动文件**：
-  - `docs/data-model/learning-model.md`（新增）——学习状态数据模型契约（truth hierarchy + event_uuid + source 枚举 + 时间计算规则 + SM-2 可替换声明）
+  - `docs/DATA_MODEL.md`（新增）——学习状态数据模型契约（truth hierarchy + event_uuid + source 枚举 + 时间计算规则 + SM-2 可替换声明）
   - `server/app/core/mastery.py`——新增 ensure_concept_learning_state()
   - `server/app/core/knowledge.py`——ensure_entity_by_title() 调用初始化
   - `server/app/routers/mastery.py`——review_today 优先级排序 + 错答提升 + review/history 端点
@@ -679,7 +679,7 @@ M2b Mind Map 编辑器（旁车 json + 大纲生成）或 M3 Learning Graph（�
   - `web/src/global.css`——timeline 样式
   - `docs/ai/CURRENT_STATE.md`——M5 路线确认 + Frozen Domains
   - `docs/ai/ACTIVE_TASK.md`——M5 子任务范围
-  - `docs/data-model/INDEX.md`——learning-model 条目
+  - `docs/DATA_MODEL.md`——learning-model 条目
 - **测试了什么**：
   | 命令 | 预期 | 实际 |
   |---|---|---|
@@ -810,7 +810,7 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 
 - **做了什么**：MindMap Exchange Format v1 冻结 + 导入导出 API + 前端 UI
 - **改动文件**：
-  - `docs/architecture/ADR-021-mindmap-exchange-format.md`——格式冻结（version/type/map）
+  - `docs/adr/ADR-021-mindmap-exchange-format.md`——格式冻结（version/type/map）
   - `server/app/core/mindmap.py`——export_map / import_map（ID 重映射 + concept_id 验证）
   - `server/app/routers/mindmap.py`——GET /export + POST /import
   - `server/tests/api/test_mindmap.py`——TestExportImport (6 tests)

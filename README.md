@@ -40,7 +40,7 @@ npm run dev
 
 ## 当前进度
 
-📋 任务看板与完成报告：[docs/tasks/TASKS.md](docs/tasks/TASKS.md) —— 当前焦点：**M2 双链·反链·图谱已完成 / M3.5-A 知识雷达 MVP 已完成**
+📋 任务看板与完成报告：[docs/TASKS.md](docs/TASKS.md) —— 当前焦点：**M2 双链·反链·图谱已完成 / M3.5-A 知识雷达 MVP 已完成**
 每个里程碑的验收标准见 [docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10。
 
 | 里程碑 | 状态 | 内容 |
@@ -67,5 +67,5 @@ CHANGELOG.md 变更日志
 ## 文档
 
 - 技术设计、数据模型、依赖取舍、里程碑：[docs/TECH_DESIGN.md](docs/TECH_DESIGN.md)
-- 重大架构决策（ADR）：[docs/architecture/](docs/architecture/)
-- 依赖注册表：[docs/dependencies/REGISTRY.md](docs/dependencies/REGISTRY.md)
+- 重大架构决策（ADR）：[docs/adr/](docs/adr/)
+- 依赖注册表：[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)

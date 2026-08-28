@@ -16,7 +16,7 @@
 
 九模块 AST 扫描：stdlib only、零三方依赖、零违规导入。
 三处例外全部定性合规（只读哈希 / Layer-3 设备身份 / 用户裁决删 artifact），
-详见 `docs/sync/SYNC_BOUNDARY_REPORT.md`。两道 AST 回归测试永久在库。
+详见 `docs/SYNC.md`。两道 AST 回归测试永久在库。
 
 ## Phase 2 · Truth Model Audit（ADR-020）— PASS
 

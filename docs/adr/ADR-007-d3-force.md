@@ -23,7 +23,7 @@ Knowledge Universe 视觉层（TECH_DESIGN §8.1）需要力导向布局。D3.js
 5. 组合可行？—— 否，力模拟必须有人写
 6. 值得长期成本？—— 值得：收敛行为经过大规模实战调校，手写版需反复调参且质量难保证
 
-登记字段详见 `docs/dependencies/REGISTRY.md` 运行时表 d3-force 行。
+登记字段详见 `docs/DEPENDENCIES.md` 运行时表 d3-force 行。
 
 ## Alternatives Considered
 

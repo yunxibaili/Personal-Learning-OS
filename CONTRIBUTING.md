@@ -5,12 +5,12 @@
 
 ## 环境搭建
 
-见 [README.md](README.md) 与 [docs/environment.md](docs/environment.md)：
+见 [README.md](README.md) 与 [AGENTS.md §17](AGENTS.md §17)：
 Python 3.12 + Node 20+，两条命令分别启动后端(8000)与前端(5173)，无其他全局依赖。
 
 ## 开发流程（强制）
 
-1. **认领/登记任务**：[docs/tasks/TASKS.md](docs/tasks/TASKS.md)——开始前写计划，完成后回填报告
+1. **认领/登记任务**：[docs/TASKS.md](docs/TASKS.md)——开始前写计划，完成后回填报告
    （必须含实际执行的测试命令与结果表）
 2. **写码前**：输出 §12 八项清单（功能目标/架构位置/各层改动/API 设计/文件列表）并获确认
 3. **自答设计三问**：用户真需要？现在必须做？三个月后新人能看懂？
@@ -26,7 +26,7 @@ Python 3.12 + Node 20+，两条命令分别启动后端(8000)与前端(5173)，�
 
 ## 决策记录
 
-任何影响架构的改动需要先写 ADR（docs/architecture/），
+任何影响架构的改动需要先写 ADR（docs/adr/），
 模板与既有决策（ADR-001~008）都在那里——先读再改。
 
 ## 提交 PR 前 checklist

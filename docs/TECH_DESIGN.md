@@ -1,7 +1,16 @@
 # Personal Learning OS — 技术设计文档
 
-> 本文档是项目唯一技术设计来源。所有依赖决定附「被否掉的备选及原因」，防止未来开发会话把已否决的方案加回来。配套工程宪法见仓库根 `AGENTS.md`。
-> 依赖登记与审查：`docs/dependencies/dependency-policy.md` + `REGISTRY.md` · 重大架构决策与原则：`docs/architecture/`（ADR + principles） · 安全边界：`docs/security/network-boundary.md` · 版本控制：`docs/version-control/git-policy.md`
+> 本文档是项目**唯一技术设计来源**（应然：我们打算怎么建）。
+> 当前实际状态（实然：现在建成什么样）见 `PROJECT_STATE.md`；任务与路线见 `TASKS.md`；
+> 工程宪法见仓库根 `AGENTS.md`。
+>
+> **⚠️ 开发政策：后端优先（2026-08-28 裁定）** —— 后端 backlog（`TASKS.md` §2）清零之前
+> **禁止新增任何前端任务**。详见 `PROJECT_STATE.md` §0 与 `TASKS.md` §0。
+>
+> 配套文档：依赖 `DEPENDENCIES.md` · 数据模型契约 `DATA_MODEL.md` · 同步 `SYNC.md` ·
+> 测试 `TESTING.md` · 评估 `EVALUATION.md` · 架构决策记录 `adr/`（ADR-001~023）
+>
+> 所有依赖决定附「被否掉的备选及原因」，防止未来开发会话把已否决的方案加回来。
 
 ---
 
@@ -89,7 +98,7 @@ server/app/ ▼         # Python 包（启动：uvicorn app.main:app）
 ```
 
 > 分层映射（强制）：web/=Frontend · main.py+routers/=Backend · core/=Core Engine · workspace/+SQLite=Data Layer。
-> 规范见 `docs/architecture/separation.md`；API 自 M0 起一律 `/api/v1/*`。
+> 规范见 `docs/adr/separation.md`；API 自 M0 起一律 `/api/v1/*`。
 
 ### 2.3 关键原则
 
@@ -123,8 +132,10 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 | Web | react / react-dom | UI |
 | Web | zustand | 状态管理 |
 | Web | katex | LaTeX 渲染 |
-| Web | marked | Chat 消息 Markdown 渲染 |
-| Web | @xyflow/react | 知识图谱视图 |
+| Web | dagre 0.8.5 | Graph 层级布局纯函数（`lib/graph/layout.ts`） |
+| Web | d3-force 3.0.0 | Universe 力导向域聚类（ADR-007 唯一批准例外） |
+| Web | cobe 0.6.5 | Knowledge Planet WebGL 点阵地球（含性能契约） |
+| Web | @xyflow/react | 知识图谱 / 导图画布（仅渲染） |
 | Web | @tiptap/react / @tiptap/pm / @tiptap/starter-kit | 富文本编辑器内核 |
 | Web | @aarkue/tiptap-math-extension | `$...$` 行内/块级 LaTeX（KaTeX 驱动，社区免费） |
 | Web | tiptap-markdown | TipTap JSON ↔ Markdown 双向转换；**禁作存储格式**，真相仍是 vault .md |
@@ -136,8 +147,11 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 > **TipTap 家族实装为 v3 线**（@tiptap/* 3.x）：由已批准依赖 tiptap-markdown 0.9 与
 > aarkue 数学扩展 1.4 的 peer 契约决定（2026-08-26）；v2 线已停止演进，钉旧版违背维护性要求。
 
-> 本表仅为摘要。完整登记（License/维护状态/Dependency Review 模板）见 `docs/dependencies/REGISTRY.md`；
-> 新增任何依赖前必须通过六连问审查（AGENTS.md §2）。
+> 本表仅为摘要。完整登记（License/维护状态/Dependency Review 模板）见 `DEPENDENCIES.md`；
+> 新增任何依赖前必须通过六连问审查（`AGENTS.md` §2）。
+>
+> **依赖纪律（后端优先阶段加强）**：新增前端依赖在后端 backlog 清零前一律不予受理，
+> 除非该依赖是后端能力的必要前提。
 
 ### 3.2 已否决备选（禁止回潮）
 
@@ -160,10 +174,14 @@ workspace/vault/**(md+旁车json) + attachments/** + metadata/eventlogs/*.jsonl
 
 ## §4 数据模型（SQLite）
 
-### 4.1 DDL
+> **⚠️ 本节 DDL 已按 migration 001~007 的实际产物校正（2026-08-28）。**
+> 旧版本此处的 DDL 停更于 M3，与 migration 004 重建后的 schema 不符，照抄会直接报错。
+> 字段语义、冻结约束与 Forbidden Changes 见 **`DATA_MODEL.md`**。
+
+### 4.1 DDL（当前实际 schema）
 
 ```sql
--- 配置（LLM base_url/api_key/model、主题等）
+-- 配置（LLM base_url/api_key/model；api_key 读取时脱敏为 ******）
 CREATE TABLE settings (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL              -- JSON 字符串或纯文本
@@ -199,36 +217,44 @@ CREATE TABLE links (
 CREATE INDEX idx_links_source ON links(source_type, source_id);
 CREATE INDEX idx_links_target ON links(target_type, target_id);
 
--- 学习状态：每概念一行，首次触达时惰性创建（缓存，可由 events 重放重建）
+-- 学习状态：每概念一行，首次触达时惰性创建
+-- ⚠️ migration 004 已重建此表：四维收敛为 JSON 列，不再是四个独立列
 CREATE TABLE concept_mastery (
-  concept_id       INTEGER PRIMARY KEY REFERENCES concepts(id) ON DELETE CASCADE,
-  understanding    REAL NOT NULL DEFAULT 0,    -- 定义/直觉
-  computation      REAL NOT NULL DEFAULT 0,    -- 计算/解题
-  proof            REAL NOT NULL DEFAULT 0,    -- 证明/推导
-  application      REAL NOT NULL DEFAULT 0,    -- 应用/编程
-  overall          REAL NOT NULL DEFAULT 0,
-  state            TEXT NOT NULL DEFAULT 'UNKNOWN',
-  ease             REAL NOT NULL DEFAULT 2.5,  -- SM-2
-  interval_days    REAL NOT NULL DEFAULT 0,
-  reps             INTEGER NOT NULL DEFAULT 0,
-  lapse_count      INTEGER NOT NULL DEFAULT 0,
-  mistake_count    INTEGER NOT NULL DEFAULT 0,
-  last_reviewed_at TEXT,
-  next_review_at   TEXT
+    concept_id    INTEGER PRIMARY KEY REFERENCES concepts(id) ON DELETE CASCADE,
+    dimensions    TEXT NOT NULL DEFAULT '{"knowledge":0,"practice":0,"recall":0,"transfer":0}',
+    effective     REAL NOT NULL DEFAULT 0,     -- 四维加权派生值
+    next_review   TEXT,
+    ease_factor   REAL NOT NULL DEFAULT 2.5,   -- SM-2
+    interval      INTEGER NOT NULL DEFAULT 0,
+    review_count  INTEGER NOT NULL DEFAULT 0,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- 学习事件：追加式日志，掌握度的唯一来源
+-- 学习事件：追加式日志，掌握度的唯一驱动源（永不修改已写入的行）
 CREATE TABLE learning_events (
-  id          INTEGER PRIMARY KEY,
-  concept_id  INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
-  event_type  TEXT NOT NULL,   -- study|explain|quiz_correct|quiz_wrong|code_run|visualize|review
-  dimension   TEXT NOT NULL DEFAULT 'understanding',
-  delta       REAL NOT NULL DEFAULT 0,        -- 实际施加的增量（记录用）
-  score       REAL,                           -- quiz 得分 0~1
-  detail_json TEXT NOT NULL DEFAULT '{}',     -- {source:"chat"/"note"/..., note_id, conv_id}
-  occurred_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    concept_id    INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+    event_type    TEXT NOT NULL,   -- answer_correct|answer_wrong|explain|visualize|review|code_run
+    dimension     TEXT,            -- knowledge|practice|recall|transfer
+    weight        REAL NOT NULL DEFAULT 1.0,
+    source        TEXT NOT NULL DEFAULT 'manual',
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    detail        TEXT,                     -- migration 005
+    event_uuid    TEXT                      -- migration 007，跨端幂等标识（UUID v4）
 );
-CREATE INDEX idx_events_concept ON learning_events(concept_id, occurred_at);
+CREATE UNIQUE INDEX idx_events_uuid ON learning_events(event_uuid);
+
+-- 复习队列：SM-2 调度结果（可由 mastery + SM-2 重建）
+CREATE TABLE review_queue (
+    concept_id    INTEGER PRIMARY KEY REFERENCES concepts(id) ON DELETE CASCADE,
+    due_at        TEXT NOT NULL,
+    priority      REAL NOT NULL DEFAULT 0.5,   -- 0.5 默认 / 0.8 错答
+    status        TEXT NOT NULL DEFAULT 'pending',
+    last_result   TEXT,                        -- correct|wrong
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 -- 错误记录
 CREATE TABLE mistakes (
@@ -285,9 +311,44 @@ CREATE TABLE messages (
 CREATE VIRTUAL TABLE notes_fts USING fts5(
   title, body, note_id UNINDEXED
 );
+
+-- 思维导图（migration 006，ADR-019）
+-- ⚠️ 三表只是编辑器工作区，结构真相仍是旁车 *.mindmap.json（ADR-002/021）
+CREATE TABLE mind_maps (
+  id         INTEGER PRIMARY KEY,
+  title      TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE mind_map_nodes (
+  id         INTEGER PRIMARY KEY,
+  map_id     INTEGER NOT NULL REFERENCES mind_maps(id) ON DELETE CASCADE,
+  concept_id INTEGER REFERENCES concepts(id) ON DELETE SET NULL,
+  label      TEXT NOT NULL,
+  note       TEXT NOT NULL DEFAULT '',
+  position_x REAL NOT NULL DEFAULT 0,
+  position_y REAL NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE mind_map_edges (
+  id         INTEGER PRIMARY KEY,
+  map_id     INTEGER NOT NULL REFERENCES mind_maps(id) ON DELETE CASCADE,
+  source     INTEGER NOT NULL REFERENCES mind_map_nodes(id) ON DELETE CASCADE,
+  target     INTEGER NOT NULL REFERENCES mind_map_nodes(id) ON DELETE CASCADE,
+  relation   TEXT NOT NULL DEFAULT 'related',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 ```
 
-延后建表（写入路线图，勿提前创建）：`blocks`（块级引用）、`embeddings`（向量）、`concept_demos`（概念↔保存的可视化示例）。
+**Migration 历史**：001_init → 002_links_unify → 003_concept_status → 004_learning（重建
+concept_mastery / learning_events / review_queue）→ 005_events_quality（`detail` 列）→
+006_mindmap（三表）→ 007_event_uuid（`event_uuid` 列 + UNIQUE 索引）。
+
+**新表规矩（自下一个 migration 生效）**：任何 migration 新增表，必须在同一提交中登记
+生产者位置（模块 / 函数 / 调用点）；无生产者的表不得合入。
+
+**延后建表（写入路线图，勿提前创建）**：`blocks`（块级引用）·
+`embeddings`（RAG 立项且概念数 >2000）· `concept_demos`（M9 后评估）。
 
 ### 4.2 数据目录约定（用户数据与应用源码分离）
 
@@ -302,10 +363,12 @@ learning-os/                 # 应用源码，Git 管理
     ├── attachments/         # 图片 / PDF（同步）
     ├── metadata/            # 同步与设备数据（ADR-005）
     │   ├── eventlogs/       # learning_events 追加日志 <yyyy-mm>.jsonl —— 跨端的学习状态真相
-    │   ├── devices.json     # 已配对设备注册表（同步）
-    │   └── manifest.json    # 本机文件指纹缓存（每设备私有，不同步）
+    │   └── devices.json     # 设备身份（纯 UUID4，由 core/sync/device.py 读写）
     └── db/learning-os.db    # SQLite 本地缓存/索引 —— 永不同步
 ```
+
+> **目录校正**：旧版本此处列出的 `metadata/manifest.json` **不存在**——
+> manifest 是每次扫描时内存计算的对象，不落盘缓存。
 
 - 工作区路径默认 `<repo>/workspace`，可改为任意本地目录（桌面版迁移至 Tauri userData）；
   用户可用任意编辑器直接改 vault 内文件
@@ -324,57 +387,117 @@ learning-os/                 # 应用源码，Git 管理
 
 ## §5 Learning Graph 引擎（core/mastery.py）
 
-### 5.1 四维掌握度
+> **⚠️ 本节已按实际实现重写（2026-08-28）。** 旧版本的四维命名、事件权重、衰减公式与状态机
+> 均为 M3 前的设计意图，**与代码不符**（原审核 §2.2 判定）。以下以代码为准。
+> 冻结约束与 Forbidden Changes 见 `DATA_MODEL.md`。
 
-维度：`understanding`(直觉/定义) `computation`(计算) `proof`(证明) `application`(编程/应用)，取值 [0,1]。
+### 5.1 四维掌握度（实际实现）
 
-事件权重（正事件增益随当前值衰减：`delta = w × (1 − current)`，保证渐近逼近 1）：
+维度（`concept_mastery.dimensions` JSON 列），取值 [0,1]：
 
-| event_type | 主维度 w | 备注 |
+| 维度 | 权重 | 含义 |
 |---|---|---|
-| study（打开/编辑关联笔记） | 0.05 understanding | 每笔记每概念每天最多计 1 次 |
-| explain（AI 讲解一轮涉及） | 0.04 understanding | extractor 判定 |
-| visualize（看完一次可视化） | 0.06 understanding | M9 起 |
-| code_run（运行相关代码成功） | 0.06 application | |
-| quiz_correct | 0.18 | 维度按题目标注 |
-| quiz_wrong | −0.10 固定 | 同时记 mistake、lapse++ |
-| review（复习队列完成） | 按 SM-2 quality 映射 ± | §5.3 |
-
-`overall = 0.35·understanding + 0.25·computation + 0.20·proof + 0.20·application`
-
-### 5.2 遗忘曲线与状态机
-
-展示用有效值（不改存储值）：`effective = score × exp(−Δdays / τ)`，`τ = 30 × ease / 2.5` 天。
-
-状态机（按 effective(overall) 迁移）：
+| `knowledge` | 0.35 | 知识理解（概念认知、定义记忆） |
+| `practice` | 0.30 | 应用能力（解题、代码实现） |
+| `recall` | 0.20 | 主动回忆（不提示下能否想起） |
+| `transfer` | 0.15 | 迁移能力（跨领域应用、类比） |
 
 ```
-UNKNOWN ──任意事件──▶ INTRODUCED ──≥0.40──▶ UNDERSTOOD ──≥0.60且quiz≥2次──▶ PRACTICED
-                          ▲                                            │ ≥0.80且近5次正确率≥80%
-                          │                                            ▼
-                     FORGOTTEN ◀──曾达PRACTICED且eff跌破0.35── MASTERED
-                          │
-                     进入复习队列；复习按 SM-2 重排，eff回升≥0.60 则回到 PRACTICED
+effective = 0.35×knowledge + 0.30×practice + 0.20×recall + 0.15×transfer
 ```
 
-### 5.3 SM-2 调度
+### 5.2 事件 → 维度增量映射（实际实现）
 
-quiz 得分 s∈[0,1] 映射 quality：`q = clamp(round(1 + s×4), 0, 5)`
-- q < 3：reps=0，interval=1天，ease −0.2（下限 1.3）
-- q ≥ 3：ease += 0.1 − (5−q)×(0.08+(5−q)×0.02)；interval: reps1→1天，reps2→6天，否则 round(prev_interval×ease)
+`update_mastery(conn, concept_id, event_type, dimension=None, weight=1.0, source="manual", detail=None)`：
 
-复习队列 = `next_review_at ≤ now` 或 state=FORGOTTEN 的概念，按优先级（FORGOTTEN > 最久未复习）排序。
+| event_type | 目标维度 | 增量 |
+|---|---|---|
+| `answer_correct` | `dimension` 或 knowledge | +0.15 × weight |
+| `answer_wrong` | `dimension` 或 knowledge | −0.10 × weight（不低于 0） |
+| `explain` | knowledge | +0.08 × weight |
+| `visualize` | practice | +0.05 × weight |
+| `review` | recall | +0.10 × weight |
+| `code_run` | practice | +0.08 × weight |
 
-### 5.4 事件日志导出（多端同步源，ADR-005）
+约束：增量后 clamp 到 [0.0, 1.0]。
 
-- 写入 learning_events 表的同一事务内，追加一行 JSON 到 `metadata/eventlogs/<yyyy-mm>.jsonl`
-  （表字段 + device_id + 全局唯一 event id）
-- 各端同步后按序回放 delta 重建掌握度；回放以 event id 幂等去重
-- 因此 mastery/sm2 计算必须保持纯函数性（禁止读墙钟做语义判断），这是 TS 移植版（M8）一致性的前提
+**与原设计的差异（有意偏离，非缺陷）**：
+
+- 原设计的 `study` / `quiz_correct` / `quiz_wrong` 事件类型**未实现**，实装为
+  `answer_correct` / `answer_wrong`
+- 原设计的「正事件增益随当前值衰减 `delta = w × (1 − current)`」**未采用**，实装为固定增量
+- 原设计的 `understanding`/`computation`/`proof`/`application` 四维命名**已被 migration 004 替换**
+- `answer_wrong` 时同步落 `mistakes`（P8-003E 补齐）
+
+`source` 枚举：manual · review · tutor · code_trace · exam · import · ai_generated
+
+### 5.3 时间衰减（P8-003B，实际实现）
+
+```
+decay_effective(base, days, tau=14) = base × exp(−days / tau)     # days ≤ 0 或 base ≤ 0 时返回 base
+effective_now = decay_effective(concept_mastery.effective, days_since_last_seen)
+last_seen = MAX(learning_events.created_at)                        # UTC-aware 解析
+```
+
+`tau = 14` 天（默认常量 `DEFAULT_TAU`）。**与原设计的差异**：原设计 `τ = 30 × ease / 2.5`，
+实装为固定 14 天，不随 ease 变化。
+
+`effective_now` 为**只读派生值，不落库**，用于：
+
+- `GET /review/today` 排序：错答优先 → `effective_now` 低优先 → 到期早优先
+- `build_tutor_context()` 让 AI 看到衰减后的真实水平
+- API 输出 `effective_now` 字段
+
+**状态机**：原设计的 UNKNOWN → INTRODUCED → UNDERSTOOD → PRACTICED → MASTERED / FORGOTTEN
+**未实现**。当前以 `effective_now` 连续值表达状态（`weak` 判定 = effective_now < 0.3），
+无离散状态列。
+
+### 5.4 SM-2 调度（core/review_scheduler.py，独立模块）
+
+```
+输入：quality(0-5), ease_factor, interval, review_count
+输出：{ease_factor, interval, next_review, review_count}
+
+quality < 3：interval 重置为 1 天
+quality ≥ 3：interval = prev_interval × ease_factor
+```
+
+可注入 `now` 参数保证测试确定性。**可替换声明**：SM-2 参数不是产品常量，
+替换为 FSRS/Leitner 时只改 `review_scheduler.py`，不改 mastery 模型；替换需开 ADR
+（评估项见 `TASKS.md` O13）。
+
+### 5.5 事件日志导出（多端同步源，ADR-005 / ADR-020）
+
+- `update_mastery()` 在 `learning_events` INSERT 成功后，追加一行 JSON 到
+  `metadata/eventlogs/<yyyy-mm>.jsonl`（`f.write` + `flush` + `os.fsync`）
+- JSONL 字段：`event_id`（= `event_uuid`）· `concept_id` · `event_type` · `dimension` ·
+  `weight` · `source` · `detail` · `device_id` · `created_at`
+- `device_id` 由 `core/sync/device.py` 的 `load_or_create_device()` 提供（纯 UUID4，
+  存 `metadata/devices.json`），**eventlog 与 M7 同步共用同一身份**
+- 各端同步后按序回放重建 `concept_mastery`；回放以 `event_id` 幂等去重
+
+> **⚠️ 「同事务」措辞修正**：SQLite 写入与文件追加之间**没有原子性保证**。
+> 实现上是「先写 SQLite，再追加文件；文件写失败时 `except OSError: pass`，不阻断 SQLite 写入」。
+> 崩溃窗口内可能出现「表有而文件无」。修正措辞与改为可观测降级见 `TASKS.md` B22 / B23。
+
+**纯度要求**：mastery / SM-2 计算必须保持纯函数性（禁止读墙钟做语义判断，
+时间必须显式传参）——这是 M8 TS 移植版一致性的前提。
 
 ---
 
 ## §6 AI Tutor（core/tutor.py + core/llm.py）
+
+> **实现状态（2026-08-28）** 本节大部分是**设计意图**，实际落地约 1/3：
+>
+> | 节 | 内容 | 状态 |
+> |---|---|---|
+> | 6.1 | LLM Adapter（OpenAI-compatible HTTP） | ❌ 未实现。仅 `MockProvider`，零 HTTP 调用 → `TASKS.md` B1 |
+> | 6.2 | 记忆感知上下文管线 | ⚠️ 部分实现。①②④ 未做，③ 前置链未做；白名单 6 类已冻结 |
+> | 6.2 ⑥ | 流式回答 | ❌ 未实现 → B2 |
+> | 6.3 | Extractor（回合后二次调用） | ❌ 未实现 → B3 |
+>
+> 已完成：`build_tutor_context()` 白名单 · `build_prompt()`（M4-B 冻结）·
+> `LLMProvider` Protocol + `MockProvider` · `TutorService` · 显式笔记引用（P8-003D 甲路线）。
 
 ### 6.1 LLM Adapter
 
@@ -437,6 +560,12 @@ quiz 得分 s∈[0,1] 映射 quality：`q = clamp(round(1 + s×4), 0, 5)`
 实现复用已装 @xyflow/react 自研编辑层，**零新增依赖**（ADR-002）。
 
 ### 7.2 存储模型
+
+> **实现状态（2026-08-28）**：migration 006 增加了 `mind_maps` / `mind_map_nodes` /
+> `mind_map_edges` 三表作为**编辑器工作区**；旁车 `*.mindmap.json` 仍是**结构真相**。
+> 两方案并存且分工明确，不是漂移——三表支撑 API 查询与 Concept Binding，
+> 旁车承载跨端同步（ADR-020 Layer 1）与结构恢复。
+> 大纲段反向解析（`*.mindmap.json` → Markdown 大纲）挂起 → `TASKS.md` B18。
 
 三角色分工：
 
@@ -584,41 +713,60 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 
 ## §9 API 设计（REST，前缀 /api/v1——版本化，破坏性变更升 /v2）
 
-> 响应形状的唯一契约定义于 `shared/types/*.ts`，由 pytest 契约测试锁定（separation.md §五）。
+> **⚠️ 本表已按实际 14 APIRouter / 47 端点重写（2026-08-28）。**
+> 旧版本混入了 12 个从未实现的端点，同时遗漏了 30 个已实现端点。
+> 响应形状的唯一契约定义于 `shared/types/*.ts`，由 pytest 契约测试锁定。
 
-| 方法&路径 | 说明 |
-|---|---|
-| GET/POST /notes · GET/PATCH/DELETE /notes/{id} | 笔记 CRUD（写 .md 文件 + 重索引） |
-| GET /notes/{id}/backlinks | 反链 |
-| POST /notes/{id}/links/suggest | AI auto-link 建议 |
-| GET/PUT /notes/{id}/mindmap | 读/写旁车 `.mindmap.json`；PUT 时重写大纲段并重索引 |
-| POST /ai/mindmap (M4) | LLM 生成导图 → 全节点 ai_suggested 入图 → 落盘 |
-| GET /search?q= | FTS5 全文搜索（notes） |
-| GET /knowledge/suggest?q=&note_id=&limit= | 知识雷达：上下文匹配+图谱邻居+学习状态占位（M3.5-A，ADR-012） |
-| POST /index/rebuild | 全量重建索引（启动自动跑一次） |
-| GET/POST /concepts · PATCH /concepts/{id} | 概念 CRUD（已实现 P8-001A，DELETE 暂缓） |
-| GET/POST /concepts/{id}/edges · DELETE /edges/{id} | 边管理 |
-| GET /graph?scope=global\|local&root={id}&depth=n | 图谱数据（递归 CTE） |
-| GET /suggestions/edges · POST /suggestions/edges/{id}/accept\|ignore | AI 概念建议队列 |
-| GET /mastery · GET /mastery/{concept_id} | 掌握度（含 effective 衰减值） |
-| POST /events | 手动记录学习事件 |
-| GET /review/today · POST /review/{concept_id}/answer | 复习队列 + 提交答案 |
-| GET/POST /conversations · GET /conversations/{id}/messages | 对话历史 |
-| POST /chat/stream (SSE) | Tutor 流式对话 |
-| POST /tutor/context (P8-003D) | 结构化上下文（可携用户显式引用的 note_ids ≤2） |
-| GET/PUT /settings | 配置读写（API key 写后永不再返回明文） |
-| GET /sync/pair (M7) | 生成一次性配对码/二维码 → 换取 LAN bearer token |
-| GET /sync/status (M7-005) | 只读同步状态：mindmap 冲突列表（自 *.local.json artifacts 派生） |
-| POST /sync/resolve (M7-005) | 用户裁决冲突 {path, resolution: keep_local\|keep_remote}；无自动解决 |
-| POST /sync/manifest (M7) | 交换双方文件指纹，返回三态差异清单（new/changed/conflict） |
-| POST /sync/fetch · /sync/push (M7) | 差量拉取/推送（vault+attachments+eventlogs 白名单范围） |
-| POST /trace/run (M9) | 运行并返回 TraceEvent[] |
+**图例**：✅ 已实现 · ❌ 设计意图未实现
+
+### 9.1 已实现（47 端点 / 14 Router）
+
+| 类别 | 方法&路径 | 说明 |
+|---|---|---|
+| **Notes** ✅ | `GET/POST /notes` · `GET/PATCH/DELETE /notes/{id}` | 笔记 CRUD（写 .md 文件 + 重索引）；POST @201 |
+| **Notes** ✅ | `GET /notes/{id}/backlinks` | 反链（links router） |
+| **Concepts** ✅ | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts` @201 · `PATCH /concepts/{id}` | 概念 CRUD。**无 DELETE**（ADR-023 边界） |
+| **Graph** ✅ | `GET /graph`（root_type / root_id / depth 1~3） | 图谱读模型，递归 CTE，只读 |
+| **Universe** ✅ | `GET /universe` | Universe 可视化投影（nodes + edges） |
+| **Mastery** ✅ | `GET /mastery` · `GET /mastery/{id}` · `POST /events` @201 · `GET /mastery/weak/list` | 四维掌握度 · 学习事件 · 薄弱概念（limit 10） |
+| **Review** ✅ | `GET /review/today` · `POST /review/{id}/answer` · `GET /review/history` | SM-2 队列 · 答题（更新 mastery + 排期 + 队列）· 历史 |
+| **MindMap** ✅ | `GET/POST/DELETE /mindmaps` · `/nodes` · `/nodes/{id}/bind` · `/edges` · `/concepts/search` · `/export` · `/import` | 14 端点。ADR-021 交换格式 v1 |
+| **Tutor** ✅ | `GET /tutor/context/{concept_id}` · `POST /tutor/context` · `POST /tutor/test` | 结构化上下文 · 显式笔记引用（P8-003D）· 全链路 Smoke |
+| **Sync** ✅ | `GET /sync/status` · `POST /sync/resolve` · `GET /sync/files/{path}` · `POST /sync/receive` | 冲突派生 · 裁决（keep_local/keep_remote）· 文件代理 · 接收（强制经 SyncApply） |
+| **Search** ✅ | `GET /search` | FTS5 全文检索 |
+| **Suggest** ✅ | `GET /knowledge/suggest` | 上下文感知建议（FTS + concept LIKE + 图谱邻居） |
+| **Settings** ✅ | `GET /settings` · `PUT /settings` | 配置读写（api_key 脱敏为 `******`） |
+| **Attachments** ✅ | `POST /attachments` · `GET /attachments/{name}` | 附件上传与读取 |
+| **Admin** ✅ | `POST /admin/reindex`（`prune` 参数） | Markdown → SQLite 索引恢复；Sync 接收后自动触发 |
+
+### 9.2 设计意图，未实现
+
+| 方法&路径 | 说明 | 归属 |
+|---|---|---|
+| ❌ `POST /notes/{id}/links/suggest` | AI auto-link 建议 | B4 |
+| ❌ `GET/PUT /notes/{id}/mindmap` | 旁车读写 + 重写大纲段（当前走三表 API） | B18 |
+| ❌ `POST /ai/mindmap` | LLM 生成导图 | B6 |
+| ❌ `POST /index/rebuild` | 全量重建索引（实装为 `POST /admin/reindex`） | — |
+| ❌ `GET/POST /concepts/{id}/edges` · `DELETE /edges/{id}` | 边管理（当前边由 links 表统一承载） | — |
+| ❌ `GET /suggestions/edges` · `POST /suggestions/edges/{id}/accept\|ignore` | AI 概念建议队列 | B5 |
+| ❌ `GET/POST /conversations` · `GET /conversations/{id}/messages` | 对话历史 | B7 |
+| ❌ `POST /chat/stream`（SSE） | Tutor 流式对话 | B1 + B2 |
+| ❌ `GET /sync/pair` | 配对码 → LAN bearer token | S2 |
+| ❌ `POST /sync/manifest` · `/sync/fetch` · `/sync/push` | 三态差异交换与差量传输（E2E 已验证传输协议，HTTP 层未建） | S2 |
+| ❌ `POST /trace/run` | 运行并返回 TraceEvent[]（M9） | M9 |
+| ❌ `GET /api/v1/home` | Mobile 聚合读（recent_notes + weak_concepts + review_count） | Mobile API Preparation，仅确有需求时补 |
 
 错误约定：`{error: {code, message}}`；业务异常 HTTP 400，内部错误 500 不泄露堆栈。
 
 ---
 
 ## §10 里程碑与路线图
+
+> **状态以 `TASKS.md` §4.3 为唯一来源**——本表只定义「验收标准」，不维护进度，
+> 避免双份维护产生漂移（原审核 §4.2 判定）。
+>
+> **当前阶段：后端优先**（`PROJECT_STATE.md` §0）。后端 backlog（`TASKS.md` §2）清零前，
+> 本表中所有含前端交付物的里程碑（M6 / M8 / M9 / M10）一律不启动。
 
 | # | 内容 | 验收标准 |
 |---|---|---|
@@ -657,7 +805,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 - Mind Map 节点属性/图标/过滤器（Freeplane 式）
 - XMind(.xmind) / markmap(.mm) 文件导入
 - 同步增强：WebSocket 实时推送 · CRDT(Yjs/Automerge，触发=双端并发编辑冲突频发) · 后台常驻同步 · iOS 客户端 · memories/conversations 跨端同步
-- **UpMark 联动**（错题登记→概念掌握度→双向出题）：挂起中，见 docs/architecture/integration-upmark.md
+- **UpMark 联动**（错题登记→概念掌握度→双向出题）：挂起中，见 docs/adr/integration-upmark.md
 
 ### Future Roadmap（云端与开源生态——明确延后，只预留接口，禁止提前实现）
 
@@ -671,3 +819,208 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | i18n 国际化 | 文案集中化管理 | 首个外部贡献者/英文需求 |
 | Docker 打包 | 构建脚本位预留 | 首次对外公开发布前 |
 | **T-EXPORT 全量数据导出**（vault+attachments+metadata+settings.json → zip） | —— | **首次对外公开发布前必须**（数据不锁死红线，AGENTS §3） |
+
+---
+
+## §11 架构原则（Engineering Principles）
+
+> 并入自 `docs/adr/principles.md`（原标题：架构原则（Engineering Principles））
+
+> 本文是项目原则的**权威来源**（AGENTS.md 为操作摘要）。修改原则须经确认并同步 AGENTS.md。
+> 关联：ADR-004 · `docs/DEPENDENCIES.md` · `AGENTS.md`
+
+日期：2026-08-26 · 状态：Accepted
+
+### 十大核心原则
+
+| # | 原则 | 在本项目中的含义 |
+|---|---|---|
+| 1 | Local-first | 所有功能默认离线可用；用户数据只在本机；云能力是可选增强，永远可关闭 |
+| 2 | Minimal Dependencies | 运行时依赖全集见 REGISTRY；新增走 Dependency Review |
+| 3 | Open Source Reuse | 非核心能力优先复用成熟开源，不自研 |
+| 4 | Standard Library First | Python/TS/Rust 各自标准库优先于一切第三方 |
+| 5 | No Reinventing the Wheel | 见下方禁重复实现清单 |
+| 6 | Modular Architecture | core/ 纯逻辑层可单测不依赖框架；router 薄；UI 组件保持简单 |
+| 7 | Explicit Data Ownership | 源码 / 用户知识库 / 用户代码 / AI 生成内容四者物理分离 |
+| 8 | Version Control First | Git 第一天启用，唯一版本真相 |
+| 9 | Reproducible Development | lockfile + requirements.txt + README 两条命令可跑 |
+| 10 | Small and Maintainable Codebase | 小文件、直白代码、拒绝抽象表演 |
+
+目标不是堆叠技术，而是在最少复杂度下实现完整能力；禁止为了"看起来高级"增加技术栈。
+
+### 能力复用优先级链
+
+```
+已有标准能力 → 已有项目代码 → 已装依赖 → 成熟开源项目 → 最后才是新依赖或自行实现
+```
+
+对应操作阶梯（Ponytail）：见 `AGENTS.md` §1。
+
+### 禁止重新实现的成熟基础设施
+
+Markdown parser · Git engine · SQL engine · Code editor · Syntax highlighter ·
+LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser ·
+Graph layout engine · Auth 框架 —— 除非有经 ADR 确认的架构原因。
+
+### 平衡式（防止机械执行）
+
+- 少量简单代码（几十行、标准库可完成）**<** 一个复杂依赖
+- 成熟复杂能力 **>** 自研大型轮子
+- 一切按长期维护成本判断，不机械遵守 DRY，也不为了"零依赖"自造轮子
+
+### 核心创新投入方向
+
+开发精力只投给真正的差异化：Knowledge Graph · Learning Memory · AI Tutor ·
+Visual Learning Engine · Personal Learning OS 整合。
+
+---
+
+## §12 分层架构规范（Separation of Concerns）
+
+> 并入自 `docs/adr/separation.md`（原标题：分层架构规范（Separation of Concerns））
+
+> **强制约束**。任何代码设计必须先做职责划分再实现。违反本文件触发
+> `[ARCHITECTURE WARNING]`（AGENTS §7）。宪法摘要见 `AGENTS.md` §12。
+
+日期：2026-08-26 · 状态：Accepted
+
+### 一、四层模型与本仓库映射
+
+```
+Frontend  web/          UI 渲染 · 交互 · Zustand 状态 · 路由切换 · 动画 · 可视化 · 只经 HTTP 调 API
+Backend   server/app/   main.py + routers/ —— 参数校验 · 业务编排 · API 服务 · 任务调度
+Core      server/core/  纯逻辑引擎（knowledge/mastery/tutor/llm/syncengine/tracer）——可单测、不依赖 FastAPI
+Data      workspace/    SQLite（仅经 core 内数据访问函数触达）+ Markdown/JSON 文件事实源
+```
+
+### 二、职责白名单 / 黑名单
+
+| 层 | 只允许 | 永远禁止 |
+|---|---|---|
+| Frontend | UI 渲染、交互、状态管理、动画、图形可视化、调 API、展示错误 | 直连 SQLite/文件系统；业务规则；AI 调用；图谱算法；持久化用户核心数据 |
+| Backend | API 接口、编排 Core、数据转换、同步服务、权限/配对校验、调度 | UI 代码；页面逻辑；保存前端状态 |
+| Core | 核心算法（掌握度/SM-2/图查询/上下文管线/SSE 解析/diff） | import FastAPI；读 HTTP 请求对象；关心 UI |
+| Data | schema migration、参数化 SQL、文件原子读写 | 被 Frontend 直接触碰；承载业务判断 |
+
+**唯一合法调用链**：`Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问函数 → SQLite/文件`
+
+### 三、接口先行开发流程（每个功能强制）
+
+```
+Step1 定义数据结构（表/文件格式变更先进 data-model/INDEX 变更日志）
+Step2 设计 API 契约（路径/schema/错误码，写入 TECH_DESIGN §9）
+Step3 实现 Backend + pytest（契约测试锁响应形状）
+Step4 实现 Frontend（只消费契约）
+Step5 双侧测试 → TASKS 回填报告
+```
+
+禁止先写页面再临时拼后端。
+
+### 四、模块隔离细则
+
+#### AI 隔离
+LLM 请求只允许出现在 `server/core/ai/*`（llm.py/tutor.py/extractor）。UI 组件零直连；
+链路恒为 `用户输入 → /api/v1/chat/stream → tutor.py → LLM → SSE 返回`。
+**Router 禁止 import llm**——一切提示词组装经 Context Builder（ADR-010），
+未来 RAG 仅作为 Builder 的数据源扩展。
+
+#### Knowledge Universe 三段式
+| 段 | 位置 | 职责 |
+|---|---|---|
+| graph-core | core/knowledge.py + 递归 CTE | node/edge/relation/图计算/2 层邻居过滤 |
+| graph-api | routers/graph.py | GET /api/v1/graph 契约输出 {nodes,edges} |
+| graph-ui | GraphView / MindMapView | React Flow + d3-force 视觉编码，零算法 |
+
+禁止在 React 组件里计算图算法；禁止 Backend 返回 UI 结构。
+
+#### 同步归属
+协议实现只在 `core/syncengine.py`（扫描/hash/diff/conflict）；桌面 router 与手机端都只是
+协议客户端/宿主。手机 App 禁止自行改动或另造同步语义（ADR-005 单一真相）。
+
+### 五、共享类型契约
+
+- `shared/types/*.ts` 是 API 响应形状的**唯一权威定义**（Concept/GraphNode/Edge/MasteryRecord/MemoryRecord…）
+- Python 侧不复制类型，而以 pytest **契约测试**断言真实响应与 shared/types 一致
+- 禁止前端自造一份形状、后端再造一份
+- backlog：若手工镜像漂移频繁，引入 openapi-typescript 代码生成（走 Dependency Review）
+
+### 六、错误契约
+
+Backend 输出 `{error: {code, message}}`（HTTP 400 业务错 / 500 不泄堆栈）；
+Frontend 仅负责展示与重试交互，**不得**在 UI 里重判业务规则。
+
+### 七、依赖控制
+
+新增依赖沿用 AGENTS §2 六连问 + REGISTRY 登记。分层本身不引入新框架：
+分层靠目录约定与测试约束，不靠 DI 容器/装饰器框架。
+
+---
+
+## §13 UpMark 联动计划（挂起中 · 未排期）
+
+> 并入自 `docs/adr/integration-upmark.md`（原标题：UpMark 联动计划（挂起中 · 未排期））
+
+> **状态：SHELVED**。本文档只记录计划与边界，不含任何已实现功能；
+> 用户显式发起联动开发时才解挂。关联：TECH_DESIGN §10 backlog · TASKS 挂起区。
+> 关联项目：https://github.com/yunxibaili/UpMark · 本地 `D:\dev\upmark`
+
+日期：2026-08-26 · 状态：Shelved
+
+### 一、UpMark 是什么（速览）
+
+- **升本通**：个人备考工具。PC(Windows) FastAPI + SQLAlchemy + SQLite（默认 :8000），
+  自研 MD 行扫描状态机解析题库导入；Flutter Android App 绑定 PC → 全量下载 →
+  离线刷题 → 回家批量幂等上报进度
+- 数据规模：~790 题 / 12 科目 / 48 章；题型 单选/判断/填空(+材料分组)；支持图像题与 `$公式$` 文本化
+- 题库格式：`练习题.md` 分区 + 编号题干 + 选项 + `**【答案】**` + `**【讲解】**`，
+  E/W 校验码体系（E100 BOM / W302 缺答案 …），规范见其 `docs/MD格式规范v2.2.md`
+- 与本联动直接相关的既有能力：**错题本（in_wrong_book）**、答题记录
+  （question_id/is_correct/answered_at，幂等去重）
+- 接口契约唯一依据：仓库根 `api_contract_v2.json`。常用：
+  `GET /api/sync/all` · `GET /api/sync/questions/{chapter_id}` ·
+  `POST /api/sync/progress` · `GET /api/health`
+
+### 二、为什么联动
+
+Learning OS 的 mistakes / learning_events / SM-2 复习与 UpMark 的错题本天然互补：
+
+```
+UpMark 刷题答错(is_correct=false, 入错题本)
+      ↓ U1: 桌面桥接客户端定期/手动拉取 progress
+Learning OS integrations/upmark.py
+      ↓ 题目↔概念映射（如"04-导数与微分"章 → Concept「导数」）
+quiz_wrong 事件 + mistakes 登记 → 掌握度下调 · FORGOTTEN 排期 · AI Tutor 定向讲解
+      ↓ U2: 反向通道
+复习队列推荐弱概念 → 经契约取对应章节题目嵌入测验 → 结果回传 progress
+```
+
+形成「做题 → 诊断 → 复习 → 再做题」闭环，两系统各守本职。
+
+### 三、联动阶段（解挂后再细化排期）
+
+| 阶段 | 内容 | 方向 | 前置 |
+|---|---|---|---|
+| U1 错题登记流入 | 拉 progress → 映射概念 → 写 quiz_wrong/mistakes | UpMark → Learning OS | M3+M4 完成 |
+| U2 双向出题 | 复习队列出题嵌入测验，结果回传 | 双向 | +M5 测验模式 |
+| U3 题库文件导入（远期可选） | 练习题.md 作为 exercises 资产引入 workspace（适配其格式规范） | UpMark → vault | U1/U2 验证价值后 |
+
+映射存储（U1 解挂时建）：`question_concept_map(upmark_question_id, concept_id, confidence)`
+——先登记于 data-model/INDEX 变更日志，走 migration，禁止提前创建。
+
+### 四、硬边界（红线）
+
+1. **只经 UpMark 公开 REST 契约通信**（以 api_contract_v2.json 为准）；
+   禁止直连其 SQLite——对方红线禁改表结构，外部直读存在锁与 schema 漂移风险
+2. 两仓库完全独立：不共享代码、不建 monorepo；Learning OS 侧只新增
+   `server/core/integrations/upmark.py` 一个客户端模块（标准库 HTTP，符合依赖纪律，
+   REGISTRY 登记）
+3. **端口共存**：两服务默认都占 :8000。FastAPI 自 M0 起支持 `PORT` 环境变量——
+   共存时以 `PORT=8100` 启动 Learning OS
+4. 不向 UpMark 写入其红线禁止的内容；不触碰其 test-bank/computer-bank 私有数据的分发
+5. 联动产生的学习数据仍遵循 ADR-005：以文件形式落 workspace 才可多端可见
+
+### 五、解挂流程
+
+用户说「启动 UpMark 联动 U1/U2/U3」→ 本文件升版记录决策 → TASKS 登记正式任务 →
+Dependency Review（如需）→ 按 AGENTS 流程开发。
+

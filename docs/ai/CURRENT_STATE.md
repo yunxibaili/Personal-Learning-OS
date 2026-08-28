@@ -1,5 +1,7 @@
 # Current State
 
+> 人类全景状态见 `docs/PROJECT_STATE.md`（唯一状态来源）；本文件是 AI 会话增量快照。
+
 > AI 启动时必读第二份。每次 git commit 后同步更新。
 > 上次更新：2026-08-28 · Last commit：38208ef · Branch：main · Clean：yes
 
@@ -170,8 +172,8 @@ npx vite build     → pass
 - `ui/`（新建）：UI 示例统一目录。earth-hero.html（MiMo 风格 Canvas 点阵地球 Hero 版）+
   earth-planet-card.html（280px Dashboard 卡片版，对齐 P8-001C 性能契约）+ assets/dots-world.png。
   原型取自 111/earth-effect，按项目约定改造（--brand 橙色生命线 / 卫星=笔记 / 节点=概念+mastery 弱化 / 30fps+reduced-motion）。
-- `docs/design/EARTH_UI.md`（新建）：地球效果规格冻结（语义映射 / 渲染参数 / 性能契约 / Cobe vs Canvas 2D 方案对比）
-- `docs/design/UI_REFERENCE.md`：新增 Earth UI 指向
+- `docs/DESIGN.md`（新建）：地球效果规格冻结（语义映射 / 渲染参数 / 性能契约 / Cobe vs Canvas 2D 方案对比）
+- `docs/DESIGN.md`：新增 Earth UI 指向
 - `ui/README.md`：示例索引与新增规则
 - 需求更新（2026-08-28 二轮）：自转接缝回退闪烁修复（贴图正像+镜像无缝拼接）+
   近地轨道多环（4 条错倾，内环更快）+ 卫星改彩色圆点+墨色拖尾（去掉太阳能板形状）+
@@ -192,7 +194,7 @@ npx vite build     → pass
 - `web/src/views/GraphView.tsx`：完全重写。dagre 布局 + Layer Toggle（Mixed/Concept/Note）+
   MiniMap + Floating Inspector + hover relation label + domain 过滤
 - `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
-- `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
+- `docs/DEPENDENCIES.md`：dagre ^0.8.5 登记
 - 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
 
 ## 本次会话改动（P8-003D-CodeReview P0 修复）
@@ -277,8 +279,8 @@ npx vite build     → pass
 - `web/src/global.css`：+55行 Planet 样式（.planet-scene/.planet-ring/.planet-sat 等）
 - `web/src/views/DashboardView.tsx`：挂载 KnowledgePlanet（SyncStatusPanel 下方）
 - `web/package.json`：cobe ^0.6.5
-- `docs/dependencies/REGISTRY.md`：cobe 登记（含性能边界）
-- `docs/tasks/TASKS.md`：P8-001C 任务说明
+- `docs/DEPENDENCIES.md`：cobe 登记（含性能边界）
+- `docs/TASKS.md`：P8-001C 任务说明
 
 - `web/src/lib/universe/layout.ts`：布局引擎纯函数（separation.md 图谱分层铁律）。
   domainGrouping（径向域中心）· forceLayout（d3-force：forceX/Y 域吸引 + 斥力 + 边弹簧 +
@@ -311,7 +313,7 @@ npx vite build     → pass
   无新增 migration（007 删除），DB 与 migration 文件一致
 - `scripts/seed_demo.py`：35 纯概念（ML/Optimization/DL/NLP/CV 五域）+ 4 笔记 +
   事件计划；origin=manual；幂等可重跑
-- `docs/architecture/ADR-023-visualization-boundary.md`：Universe/Graph/MindMap
+- `docs/adr/ADR-023-visualization-boundary.md`：Universe/Graph/MindMap
   边界冻结 + origin-only 冻结文本
 
 ## 本次会话改动（M7-006 E2E LAN Demo）
@@ -368,10 +370,10 @@ npx vite build     → pass
 
 纯文档任务，零业务代码改动：
 - CURRENT_STATE.md：commit 指针 → 117fcca · 补齐 M7-Nightly~M7-003 五行里程碑 · 测试计数 251→327 · 新增 Next Up 区块
-- docs/data-model/INDEX.md：补登 ADR-020 Sync Truth Model 数据模型行
+- docs/DATA_MODEL.md：补登 ADR-020 Sync Truth Model 数据模型行
 - AGENTS.md §10 文档地图：新增 docs/sync/ 条目
 - docs/diagrams/sync-flow.html：新增同步管线图（Discovery→Transport→Apply→Workspace），旧图未动
-- docs/tasks/TASKS.md：总览表同步已完成状态 + 新增 M7 子任务区
+- docs/TASKS.md：总览表同步已完成状态 + 新增 M7 子任务区
 - **Sync Core Boundary Audit**：core/sync 八模块仅依赖 stdlib（无 fastapi/sqlite3/router import）；routers/ 尚无 sync 端点——Router→Sync Core 边界留待 M7-004+ 建立
 
 ## 上一会话改动存档（M7-001 Stabilization + Audit Sprint）
@@ -393,5 +395,5 @@ npx vite build     → pass
 - test_smoke.py：expected 集合添加 review_queue
 - docs/audit/：M7-001-STABILITY-AUDIT.md + CODE_QUALITY_REPORT.md
 - docs/sync/：sync-model.md + conflict-resolution.md + recovery-guide.md
-- docs/testing/M7-STABILITY-REPORT.md
+- docs/archive/testing/M7-STABILITY-REPORT.md
 - CHANGELOG.md：新增 M7 stabilization 条目

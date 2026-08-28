@@ -24,7 +24,7 @@
 | 路径/模式 | 原因 |
 |---|---|
 | `workspace/` 整目录 | 用户私有数据（.gitignore 已覆盖）：vault/db/attachments/metadata |
-| `_local/` `sandbox/` | 本机归档与一次性实验（AGENTS §3.1/docs/environment.md） |
+| `_local/` `sandbox/` | 本机归档与一次性实验（AGENTS §3.1/AGENTS.md §17） |
 | `server/.venv/` `.cache/` `.pytest_cache/` | 环境与缓存产物 |
 | `node_modules/` `web/dist/` | 依赖与构建产物（发布含 dist 与否届时按分发方式决定） |
 | `.env` `.env.*` 及一切密钥 | 安全红线（network-boundary.md）；API key 仅存用户本机 settings 表，从不出现在任何导出中 |

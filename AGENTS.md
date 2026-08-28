@@ -5,7 +5,7 @@
 > 准备实施下述行为时必须先发出 `[ARCHITECTURE WARNING]` 并等待确认（见 §7）。
 >
 > **任何会话开始写代码之前，必须先通读以下四份文件**：
-> ① `docs/architecture/principles.md`　② `docs/dependencies/dependency-policy.md`
+> ① `docs/adr/principles.md`　② `docs/DEPENDENCIES.md`
 > ③ `docs/security/network-boundary.md`　④ `docs/version-control/git-policy.md`
 
 ## 0. 核心工程原则
@@ -15,6 +15,8 @@ No Reinventing the Wheel · Modular Architecture · Explicit Data Ownership ·
 Version Control First · Reproducible Development · Small and Maintainable Codebase
 
 项目目标不是堆叠技术，而是在尽可能少的复杂度下实现完整能力。禁止为了"看起来高级"而增加技术栈。
+
+> **⚠️ 当前开发政策：后端优先（2026-08-28）** —— 前端任务冻结，见 `docs/PROJECT_STATE.md` §0。
 
 ## 1. 能力复用优先级链（Ponytail 阶梯）
 
@@ -53,7 +55,7 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
 5. 能否组合已有能力解决？
 6. 若必须新增，是否真的值得长期维护成本？
 
-只有前面方案都不合理才允许新增。登记模板见 `docs/dependencies/REGISTRY.md`，答不全不准加入。
+只有前面方案都不合理才允许新增。登记模板见 `docs/DEPENDENCIES.md`，答不全不准加入。
 
 ### 2.2 禁止清单（永久）
 - ORM / Query Builder（后端直写 SQL）
@@ -182,7 +184,7 @@ AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件
 新增内容 / 目的 / 替代方案 / 删除风险 / 长期维护成本
 ```
 
-完整治理规则见 `docs/environment.md`。
+完整治理规则见 `AGENTS.md §17`。
 
 ## 8. 核心创新优先级
 
@@ -211,48 +213,55 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 
 ## 10. 文档地图与同步义务
 
+> **文档结构（2026-08-29 整合后）**：docs/ 根部 9 份主题文档为唯一有效层；
+> 被合并的旧文档全部在 `docs/archive/`（不再更新）；历史目录已移除。
+> 任何新文档先问：能不能并进现有主题文件？禁止再开新散文件。
+
+### 开发政策（最高优先级）
+
+**后端优先（Backend-First，2026-08-28 裁定）**：后端 backlog 清零之前禁止新增
+任何前端任务；前端仅允许最小接线 / 阻断性修复 / 类型契约同步三类。
+权威表述：`docs/PROJECT_STATE.md` §0（含解冻条件）。`P8-FE-001` 无限期冻结。
+
+### 入口与权威来源
+
 | 文档 | 职责 |
 |---|---|
+| `README.md` | 项目入口与启动说明 |
 | `AGENTS.md`（本文件） | 工程宪法（操作摘要与强制流程） |
-| `docs/architecture/principles.md` | 十大核心原则权威来源 |
-| `docs/architecture/`（ADR-\*） | 重大决策记录（禁止只在聊天记录中决定架构） |
-| `docs/dependencies/dependency-policy.md` | 依赖引入流程与红线 |
-| `docs/dependencies/REGISTRY.md` | 依赖注册表 + Review 模板 + 审计记录 |
-| `docs/security/network-boundary.md` | 网络边界 / 出站白名单 / 数据不出本机规则 |
-| `docs/version-control/git-policy.md` | 分支/提交/标签/发布策略 |
-| `docs/data-model/INDEX.md` | 数据模型变更索引 |
-| `docs/sync/` | M7 同步模型文档（sync-model · sync-transport · conflict-resolution · recovery-guide） |
-| `docs/architecture/integration-upmark.md` | UpMark 联动计划（挂起中，未排期） |
-| `docs/architecture/separation.md` | 分层架构规范（四层职责/接口先行/契约测试） |
-| `docs/environment.md` | 环境治理规则与版本基线（sandbox/_local/收尾四件事） |
-| `CONTRIBUTING.md` | 开源贡献指南 |
-| `docs/tasks/TASKS.md` | 任务列表与完成报告（见 §11） |
-| `docs/TECH_DESIGN.md` | 技术设计唯一来源（架构/DDL/API/里程碑） |
-| `README.md` | 入口说明 |
-| `CHANGELOG.md` | 变更日志 |
-| `docs/ai/PROJECT_MEMORY.md` | AI 永久记忆（<200行，启动必读） |
-| `docs/ai/CURRENT_STATE.md` | AI 当前状态快照（每次 commit 后更新） |
-| `docs/ai/ACTIVE_TASK.md` | AI 工作记忆（当前子任务范围） |
-| `docs/ai/SESSION_PROTOCOL.md` | AI 启动协议与行为规则 |
-| `docs/ai/ADR_INDEX.md` | ADR 索引（按需展开，不全读） |
-| `docs/testing/TEST_PLAN.md` | 全局测试策略 + Gate 制度 |
-| `docs/testing/TEST_MATRIX.md` | 模块→测试映射（改代码必查） |
-| `docs/testing/GATE-0-M4-PREFLIGHT.md` | M4 开工前检查清单 |
-| `docs/testing/REGRESSION_CHECKLIST.md` | 回归测试清单 |
-| `docs/testing/DATA_RECOVERY_TEST.md` | 数据恢复测试方案 |
-| `docs/testing/RELEASE_CHECKLIST.md` | 公开发布检查 |
+| `docs/PROJECT_STATE.md` | **状态唯一来源**（实然）· §0 = 后端优先政策 |
+| `docs/TECH_DESIGN.md` | **技术设计唯一来源**（应然：架构/DDL/API/里程碑） |
+| `docs/TASKS.md` | 任务列表、路线与完成报告（见 §11） |
 
-同步义务：出现新依赖 / 新模块 / 新数据结构 / 新 API / 新存储机制 / 新版本控制规则 /
-新代码执行机制时，对应文档必须在同一批变更中更新——不允许代码变了文档没变。
-新想法一律写入 TECH_DESIGN §10 backlog；里程碑验收标准见 §10。
+### 主题文档（docs/ 根，按主题垂直整合）
+
+| 文档 | 覆盖内容 |
+|---|---|
+| `docs/DEPENDENCIES.md` | 依赖政策 + 注册表（后端优先期冻结前端依赖） |
+| `docs/DATA_MODEL.md` | 数据模型契约：learning-model · tutor-context · prompt · language · 表审计 |
+| `docs/SYNC.md` | M7 同步全链：model/transport/conflict/recovery/边界审计 |
+| `docs/TESTING.md` | 测试策略 · 矩阵 · 回归 · 发布清单 |
+| `docs/EVALUATION.md` | Tutor 评估体系（plan/metrics/cases） |
+| `docs/DESIGN.md` | 前端设计规格（**冻结**：Learning Loop · UI Reference · Earth UI） |
+
+### 参考目录
+
+| 目录 | 内容 |
+|---|---|
+| `docs/adr/` | ADR-001~023 + principles + separation + upmark（重大决策记录） |
+| `docs/ai/` | AI 会话流程（PROJECT_MEMORY · SESSION_PROTOCOL · CURRENT_STATE · ACTIVE_TASK · ADR_INDEX） |
+| `docs/release/` | 发布审计与导出清单（RELEASE_AUDIT_M7 · EXPORT_MANIFEST） |
+| `docs/security/` · `docs/version-control/` | 网络边界 · Git 策略（活契约，未合并） |
+| `docs/diagrams/` · `docs/audit/` | 架构图 · 里程碑审计报告 |
+| `docs/archive/` | 已整合旧文档（只读，不再更新） |
 
 ## 11. 任务与报告制度（强制）
 
-- **每次会话开始任何工作前，必须先读 `docs/tasks/TASKS.md` 对齐当前状态；收工前立即同步状态并回填报告**
-- 全部开发任务登记于 `docs/tasks/TASKS.md`：开始前写计划，完成后回填报告
+- **每次会话开始任何工作前，必须先读 `docs/TASKS.md` 对齐当前状态；收工前立即同步状态并回填报告**
+- 全部开发任务登记于 `docs/TASKS.md`：开始前写计划，完成后回填报告
 - 报告必须包含：做了什么 · 改动文件 · **测试了什么（实际执行的测试命令+预期/实际结果表）** · 遗留问题
 - 未回填报告的任务视为未完成；里程碑收尾**四件事**：依赖审计(REGISTRY) →
-  **环境删除测试 + 删除优先检查**（docs/environment.md §五）→ CHANGELOG → tag
+  **环境删除测试 + 删除优先检查**（AGENTS.md §17 §五）→ CHANGELOG → tag
 
 ## 12. 分层架构纪律（前后端分离，强制）
 
@@ -267,7 +276,7 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 - Backend 禁止：UI 代码、控制页面逻辑、保存前端状态
 - Core 不 import FastAPI；LLM 请求只允许在 `core/ai/*`；图谱算法只在 core；同步协议只在 syncengine
 - API 全部版本化 `/api/v1/*`；响应形状以 `shared/types/*.ts` 为唯一契约，pytest 契约测试锁定
-- 白名单/黑名单与模块隔离细则见 `docs/architecture/separation.md`
+- 白名单/黑名单与模块隔离细则见 `docs/adr/separation.md`
 
 ### 写码前输出协议（强制）
 
@@ -294,9 +303,9 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 | 前端 | React + TypeScript + Vite + Zustand + 单一 global.css |
 | 端口 | FastAPI 默认 :8000（绑 127.0.0.1），环境变量 `PORT` 可覆盖——与 UpMark 共存时用 `PORT=8100`；Vite :5173（proxy `/api/v1` → 后端） |
 | 测试 | pytest（server/tests），vitest（web）——只测 core 逻辑，不为 UI 写测试 |
-| 任务跟踪 | docs/tasks/TASKS.md（完成必须回填测试报告） |
+| 任务跟踪 | docs/TASKS.md（完成必须回填测试报告） |
 | 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
-| 实验沙盒 | `sandbox/` 一次性实验用完即删；版本基线与环境变量见 docs/environment.md |
+| 实验沙盒 | `sandbox/` 一次性实验用完即删；版本基线与环境变量见 AGENTS.md §17 |
 | 用户数据 | 一律在 `workspace/`（默认路径，设置可改），永不入库 |
 | 一键测试 | `.\scripts\test.ps1`（全量）/ `-Smoke`（M2 烟测）/ `-Watch`（监听） |
 
@@ -357,8 +366,8 @@ docs/ai/
 ## 16. Frontend Generation Rules
 
 AI 生成 UI 必须遵守 ADR-013 Frontend Design System。
-详细规范见 `docs/architecture/ADR-013-frontend-design-system.md`。
-视觉参考见 `docs/design/UI_REFERENCE.md`。
+详细规范见 `docs/adr/ADR-013-frontend-design-system.md`。
+视觉参考见 `docs/DESIGN.md`。
 
 ### Design Philosophy
 
@@ -404,3 +413,201 @@ Minimal · Clean · Professional · Scientific
 
 允许参考：Obsidian / VS Code / Linear / Typora
 禁止模仿：AI 营销网站 / Dashboard 模板 / 游戏 UI
+
+---
+
+## 17. 开发环境治理（Environment Governance）
+
+> 并入自 `AGENTS.md §17`（原标题：开发环境记录与环境治理（Environment Governance））
+
+> **强制约束**。原则：Minimal · Reproducible · Clean Workspace · Disposable Experiment。
+> 目标：新机器可重装 · 一条命令启动 · 依赖来源可追溯 · 删临时文件不影响项目 · 零不可追踪污染。
+> 关联：`AGENTS.md` §11（里程碑收尾）/ §7（WARNING 协议）· `docs/version-control/git-policy.md`
+
+日期：2026-08-26 · 状态：Accepted
+
+### 一、版本基线（本机实测）
+
+| 工具 | 版本 | 说明 |
+|---|---|---|
+| Python | 3.12.10 | venv 隔离于 `server/.venv`（不入库） |
+| Node.js | 24.18.1（npm 11.16） | 依赖锁 `web/package-lock.json` 必须提交 |
+| Rust | **未安装** | M6 前不需要；届时 rustup 安装并更新此行 |
+
+### 二、安装与启动（唯一权威来源 = README.md）
+
+```
+后端：cd server && python -m venv .venv && pip install -r requirements.txt
+      uvicorn app.main:app --reload --port 8000        # 或 python -m app.main（读 PORT）
+前端：cd web && npm install && npm run dev             # http://127.0.0.1:5173
+```
+
+禁止出现"你电脑装了 xxx 就能跑"——一切以项目内配置文件定义为准。
+
+### 三、目录归属法
+
+任何文件创建前必须能归入且仅归入一类：
+Source Code / Configuration / Documentation / Test / Build Artifact / Runtime Data。
+
+| 路径 | 归属 | 入库？ |
+|---|---|---|
+| `web/src/` 等 | Source | ✅ |
+| `migrations/` · `requirements*.txt` · `package.json` · 各 md | Config/Doc/Test | ✅ |
+| `web/dist/` | Build Artifact | ❌ gitignore |
+| `server/.cache/` | Backend 缓存产物 | ❌ gitignore |
+| `server/.venv/` · `node_modules/` | 环境本体 | ❌ gitignore |
+| `workspace/` | Runtime Data（用户私有） | ❌ gitignore |
+| `_local/` | 本地归档：旧代码快照/被替换文档 | ❌ gitignore，**长期保留** |
+| `sandbox/` | 一次性实验 | ❌ gitignore，**用完即删** |
+
+禁止出现 `temp/ test2/ backup/ old/ new/ demo-final/ *-copy/` 这类目录；
+禁止把生成物混进源码目录。
+
+### 四、sandbox 实验规则
+
+- 实验代码一律进 `sandbox/<实验名>/`（如 `sandbox/force_layout_try/`）
+- 不进入正式模块、不被正式代码 import、不加正式依赖声明
+- 实验结束**必须删除**；有价值的结论沉淀为 ADR 或 TECH_DESIGN 条目，代码本身丢弃
+- 与 `_local/` 的区别：`_local/`=有保留价值的归档；`sandbox/=`即弃草稿
+
+### 五、里程碑收尾检查（并入 AGENTS §11，共四件事）
+
+1. **依赖审计** → REGISTRY 审计记录
+2. **环境删除测试**：删掉 `.venv/ node_modules/ dist/ .cache/ 临时文件` 后，
+   仅凭源码+配置按 README 能否完整重建运行？（实测通过才算过）
+3. **删除优先检查**：未使用依赖 / 未使用文件 / 空目录 / 废弃代码 / 重复实现 —— 优先删除而非保留
+4. CHANGELOG 条目 + Git tag（版本策略见 git-policy.md）
+
+### 六、禁止清单
+
+- 项目目录外随意安装工具；保存下载缓存/AI 缓存/日志垃圾/测试数据入库
+- 未经批准引入：Docker（部署前）/ Kubernetes / 复杂 CI / Monorepo 工具 / Nx / Turborepo / Bazel——简单脚本够就不加工具
+
+### 七、[ENVIRONMENT CHANGE REQUEST] 协议
+
+AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件 · 引入开发工具 · 保留无用代码。
+认为需要时，先输出并等待确认：
+
+```
+[ENVIRONMENT CHANGE REQUEST]
+新增内容：
+目的：
+替代方案：
+删除风险：
+长期维护成本：
+```
+
+### 八、环境变量
+
+| 变量 | 默认 | 作用 |
+|---|---|---|
+| `PORT` | 8000 | FastAPI 监听端口（仅 `python -m app.main` 方式读取）；与 UpMark 共存设 8100 |
+| `API_PORT` | 8000 | Vite dev proxy 目标端口 |
+| `WORKSPACE_DIR` | `<repo>/workspace` | 用户数据根，可指向任意本地目录 |
+
+---
+
+## 18. 版本控制策略（Version Control Policy）
+
+> 并入自 `docs/version-control/git-policy.md`（原标题：版本控制策略（Version Control Policy））
+
+> 强制约束来源：`AGENTS.md` §4。Git 是本项目唯一的版本控制真相；
+> 禁止自造 commit / diff / patch / branch / history 系统。
+
+### 1. 基本规则
+- 项目**第一天**启用 Git（已于 2026-08-26 初始化）
+- 主干 `main`；个人项目允许 main 直接小步提交，较大功能开 `feature/<name>` 短分支
+- Commit 必须小、清晰、可回滚、单一目的；禁止 "feat: everything" 式巨型混合提交
+- Conventional 风格前缀：
+
+| 前缀 | 用途 |
+|---|---|
+| feat: | 新功能 |
+| fix: | 缺陷修复 |
+| refactor: | 重构（不改行为） |
+| docs: | 文档 |
+| chore: | 构建/工具/杂项 |
+| test: | 测试 |
+
+### 2. 用户数据永不入库
+- `workspace/` 整体 `.gitignore`（知识库、附件、SQLite、AI 生成内容）
+- `.env*` 及一切密钥凭证禁止提交
+- 导入的外部 Git repository 保留原始 `.git`，默认只读；
+  commit/push/pull/checkout/merge/rebase 仅在用户明确要求时执行，
+ 且绝不自动 push
+
+### 3. 版本发布（Semver）
+- 格式 `MAJOR.MINOR.PATCH`；MVP 开发期固定 `0.x.y`
+- 每个稳定里程碑：
+  - annotated tag：`git tag -a v0.Y.0 -m "..."`
+  - CHANGELOG.md 新增条目（Keep a Changelog 格式）
+  - 对应里程碑验收标准全部满足才允许打 tag
+- 预期映射（按实际完成度执行）：M1→v0.1.0 · M2/M2b→v0.2.x · M3→v0.3.0 ·
+  M4→v0.4.0 · M5→v0.5.0 · M6（桌面安装包）→v0.6.0 · 1.0.0 待产品稳定后评估
+
+### 4. 可复现开发
+- Python：requirements.txt 固定版本区间 + venv
+- Node：package-lock.json 必须提交
+- 启动命令以 README.md 为准，保持两条命令可用
+
+---
+
+## 19. 安全与网络边界（Security & Network Boundary）
+
+> 并入自 `docs/security/network-boundary.md`（原标题：安全与网络边界（Security & Network Boundary））
+
+> 强制约束。关联：`AGENTS.md` §3/§4.1 · ADR-003 · `docs/version-control/git-policy.md`
+> 违反本文的行为必须先发 `[ARCHITECTURE WARNING]`（AGENTS §7）。
+
+日期：2026-08-26 · 状态：Accepted
+
+### 默认姿态
+
+1. **零遥测**：无统计、无崩溃上报、无匿名分析、无"检查更新"外呼
+2. **只绑回环**：FastAPI/Uvicorn 监听 `127.0.0.1`，禁止 `0.0.0.0`（防局域网暴露）
+3. **无出站即无风险**：不写任何非白名单的网络请求代码路径
+
+### 出站白名单（唯一例外）
+
+| 用途 | 目标 | 启用条件 |
+|---|---|---|
+| LLM 对话/抽取 | 用户在设置中显式配置的 `base_url`（OpenAI-compatible `/v1/chat/completions`） | 设置页填写后才存在此代码路径 |
+| Embedding（Phase 3 起） | 同上协议，另行显式启用 | 触发条件见 REGISTRY 规划表 |
+
+白名单之外的一切出站请求（更新检查、字体/CDN 拉取、第三方统计等）一律不做。
+前端构建产物必须完全本地化，不引用 CDN。
+
+### 发送给云端 LLM 的上下文最小化
+
+- 只发送：当前用户问题 + 检索到的相关概念/掌握度/错误摘要 + 明确授权的笔记片段
+- **绝对排除**（无论用户如何配置，代码层硬过滤）：
+  `.env` · API 密钥 · Token · SSH keys · Git credentials · 数据库文件 ·
+  `workspace/db/` · 系统私人配置
+- UI 义务：首次使用云端 LLM 前明示"哪些内容会被发送到哪里"；对话页提供
+  「本次发送的上下文」透视（与 TECH_DESIGN §6.2 context_json 对应）
+- AI 不获得整库访问权：只能拿到管线检索出的片段与用户显式授权的范围
+
+### 外部 Git 仓库导入
+
+- 默认 Read-only / Safe Import；保留原始 `.git`，不改历史、不改用户 Git 配置
+- commit / push / pull / checkout / merge / rebase 仅在用户明确指令时执行
+- 禁止默认上传用户代码到云端；同步/推送必须用户逐次发起
+
+### 密钥与凭证
+
+- LLM API key 仅存 `workspace/db/` 内 SQLite；API 响应永不再返回明文；不写日志
+- `.env*` 一律 gitignore；生产形态下无服务器端密钥
+
+### 未来扩展的边界预留
+
+- Phase 5 代码执行沙箱：Docker 容器 `--network none`，CPU/内存/时长受限
+- 多语言 trace（gdb/LLDB）：同样仅本地子进程
+
+### 本地归档区（不入库）
+
+`_local/`（仓库根，整体 gitignore）：旧代码快照、被替换的历史文档版本、
+临时实验脚本、个人调试脚本——仅存本机，永不提交。
+**正式回归测试（pytest/vitest 用例）不属于此类，必须随代码入库**（可复现开发原则）。
+`sandbox/` 为一次性实验区，同样不入库且用完即删；有价值的结论沉淀为 ADR/TECH_DESIGN 条目。
+（两区边界与环境删除测试见 `AGENTS.md §17` §三/§四/§五）
+

@@ -14,7 +14,7 @@
 **前端暂时不动，优先完成全部后端。** 执行队列（PM 拍板版）：
 
 ```
-1. 空表盘点（D5 微任务）            ✅ 2026-08-28 → docs/data-model/TABLE_AUDIT.md
+1. 空表盘点（D5 微任务）            ✅ 2026-08-28 → docs/DATA_MODEL.md
 2. M7-007 Vault Conflict Preservation   ← 下一项（先补安全网再扩同步面）
 3. T-EXPORT 导出脚本（D2：承诺兑现，首次公开发布前置；盘点确认范围无需收窄）
 4. pairing + manifest exchange（D4：必须带 CLI/脚本驱动调用路径，否则降级至前端解冻后）
@@ -37,7 +37,7 @@
 
 **盘点结果摘要（D5）**：14 张活表零死表；memories（extractor 双缺）·
 conversations/messages（对话历史未立项）三张属 (b) 缺生产者待补、设计在案；
-T-EXPORT 范围确认无需收窄。详见 docs/data-model/TABLE_AUDIT.md。
+T-EXPORT 范围确认无需收窄。详见 docs/DATA_MODEL.md。
 
 ## P8-003E 范围（两项，零前端）
 

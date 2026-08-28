@@ -1,7 +1,7 @@
 # 架构原则（Engineering Principles）
 
 > 本文是项目原则的**权威来源**（AGENTS.md 为操作摘要）。修改原则须经确认并同步 AGENTS.md。
-> 关联：ADR-004 · `docs/dependencies/dependency-policy.md` · `AGENTS.md`
+> 关联：ADR-004 · `docs/DEPENDENCIES.md` · `AGENTS.md`
 
 日期：2026-08-26 · 状态：Accepted
 
