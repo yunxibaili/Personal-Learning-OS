@@ -28,7 +28,7 @@ Data      workspace/    SQLite（仅经 core 内数据访问函数触达）+ Mar
 ## 三、接口先行开发流程（每个功能强制）
 
 ```
-Step1 定义数据结构（表/文件格式变更先进 data-model/INDEX 变更日志）
+Step1 定义数据结构（表/文件格式变更先进 docs/DATA_MODEL.md §A 变更日志）
 Step2 设计 API 契约（路径/schema/错误码，写入 TECH_DESIGN §9）
 Step3 实现 Backend + pytest（契约测试锁响应形状）
 Step4 实现 Frontend（只消费契约）

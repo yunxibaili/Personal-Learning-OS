@@ -338,9 +338,10 @@ M7-003 只做传输，不做落盘决策。M7-004 将处理：
 **实然（2026-08-28）**：vault 冲突当前为 LWW 直接替换、无双份——M7-007 Vault Conflict Preservation 落地前，本节目标态未生效。
 
 ```
-vault/note.md          ← 设备 A 的版本
-vault/note_[conflict].md  ← 设备 B 的版本（待合并）
+vault/note.md              ← 设备 A 的版本
+vault/note_[conflict].md   ← 设备 B 的版本（待合并）
 ```
+*（以上为 M7-007 目标态示例；实然见 Apply 层策略表）*
 
 **原因**：Markdown 内容冲突无法自动解决，强制用户参与。
 

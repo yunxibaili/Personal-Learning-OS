@@ -62,7 +62,7 @@ Data      workspace/    Markdown 文件 + SQLite（仅经 core 触达）
 | memories | 用户记忆（fact/preference/goal） |
 | settings | KV 配置（LLM key 不回传明文） |
 
-DDL 完整版见 `TECH_DESIGN.md §4`；变更追踪见 `data-model/INDEX.md`。
+DDL 完整版见 `TECH_DESIGN.md §4`；变更追踪见 `docs/DATA_MODEL.md §A`。
 
 ## Core Innovation Boundary
 

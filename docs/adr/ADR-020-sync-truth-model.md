@@ -29,7 +29,7 @@ ADR-005 冻结了同步范围（白名单/黑名单）和协议 v1（manifest + 
 | Learning Events | `eventlogs/*.jsonl` | 追加合并 | append-only | 按 event id 幂等去重 |
 | Mastery | `concept_mastery` | 不同步 | 从 events 重建 | 各设备独立重放 |
 | Review Queue | `review_queue` | 不同步 | 从 mastery 重建 | 各设备独立重放 |
-| MindMap Layout | `mind_maps` / `mind_map_nodes` / `mind_map_edges` | 文件同步 | LWW + 首次冲突 `.local.json` 备份（2026-08-28 修订：追认 M7-004 apply.py CONFLICT_BACKUP 实现） | ADR-021 格式导出 |
+| MindMap Layout | `mind_maps` / `mind_map_nodes` / `mind_map_edges` | 文件同步 | last-write-wins | ADR-021 格式导出 |
 | AI Context | `tutor_memories` / `tutor_conversations` | 不同步 | 单设备私有 | v1 不同步 |
 
 ### 2.2 三层事实模型
@@ -185,3 +185,15 @@ metadata/devices.json
 - WebSocket 实时推送
 - 云端中转
 - 自动合并
+
+---
+
+## 附录 §2.1.1：MindMap 冲突备份追认（2026-08-28 修订）
+
+§2.1 表中 MindMap 行的「last-write-wins」为 M7 决策时的判断，**原文保持不动**。
+
+M7-004 Sync Apply Layer 实施时，`apply.py _apply_mindmap()` 在 LWW 基础上
+追加了**首次冲突备份**：本地版本先落 `mind_maps/<name>.local.json`
+（已存在的备份代表更早分叉点，永不覆盖），远端胜者写主文件。
+本附录追认该实现为 ADR-020 合规行为——Layer 1/2/3 划分与同步范围未变，
+仅细化 MindMap 文件类别的冲突处理细节。

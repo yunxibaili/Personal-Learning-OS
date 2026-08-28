@@ -59,7 +59,7 @@ workspace/ 用户私有数据（vault 笔记 + 附件 + 数据库）——永不
 server/    FastAPI 后端（SQLite + 学习引擎 + AI）
 web/       React 前端
 docs/      技术设计唯一来源 + adr/(principles+ADR) + dependencies/(policy+registry)
-           + security/network-boundary + version-control/git-policy + tasks/TASKS
+           + security/network-boundary + version-control/git-policy + TASKS
 AGENTS.md  工程宪法（强制约束，AI 与人类共同遵守；写码前必读四文件见文首）
 CHANGELOG.md 变更日志
 ```

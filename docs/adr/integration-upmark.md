@@ -45,7 +45,7 @@ quiz_wrong 事件 + mistakes 登记 → 掌握度下调 · FORGOTTEN 排期 · A
 | U3 题库文件导入（远期可选） | 练习题.md 作为 exercises 资产引入 workspace（适配其格式规范） | UpMark → vault | U1/U2 验证价值后 |
 
 映射存储（U1 解挂时建）：`question_concept_map(upmark_question_id, concept_id, confidence)`
-——先登记于 data-model/INDEX 变更日志，走 migration，禁止提前创建。
+——先登记于 docs/DATA_MODEL.md §A 变更日志，走 migration，禁止提前创建。
 
 ## 四、硬边界（红线）
 

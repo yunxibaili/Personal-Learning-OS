@@ -279,7 +279,7 @@ web/src/
 ```
 □ CURRENT_STATE.md 已更新
 □ TECH_DESIGN.md 如有改动已同步
-□ data-model/INDEX.md 如有改动已同步
+□ DATA_MODEL.md §A 如有改动已同步
 □ TASKS.md 回填完成报告
 □ CHANGELOG.md 有对应条目
 ```
