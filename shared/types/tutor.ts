@@ -37,6 +37,13 @@ export interface TutorEvent {
   created_at: string;
 }
 
+/** 用户显式引用的笔记片段（P8-003D，≤2 篇，excerpt ≤600 字符） */
+export interface TutorNote {
+  note_id: number;
+  title: string;
+  excerpt: string;
+}
+
 export interface TutorContext {
   concept: TutorConcept;
   mastery: TutorMastery;
@@ -44,4 +51,5 @@ export interface TutorContext {
   related: TutorRelated[];
   review: TutorReview | null;
   recent_events: TutorEvent[];
+  notes?: TutorNote[];
 }

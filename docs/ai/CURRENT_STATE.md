@@ -11,11 +11,19 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 
 ## Last Completed
 
+P8-003D Tutor Knowledge Base 完成（甲路线：显式引用 · POST /tutor/context · 死 tab 复活 · 守护测试先行）。
+
 P8-003D-CodeReview P0 修复完成。
 P0-1：设备身份合并，删除 _get_device_id()，复用 core/sync/device.py 的 load_or_create_device()。
-P0-2：migration 007 补 event_uuid 列 + UPDATE 回填 + UNIQUE 索引。
+P0-2：migration 007 补 event_uuid 列 + UNIQUE 索引 + INSERT 写入。
+  历史行保持 NULL，不做回填（learning-model.md:219 追加式约束禁止修改已写入的 learning_events 行）。
 P0-3：notes.py 连接泄漏修复（try 块内读取 row，finally 块关闭）。
 pytest 459 · tsc PASS · vite build PASS。
+
+遗留（见 docs/TECH_DESIGN_REVIEW.md §6.7.3）：
+- event_uuid 目前只写不读（同步去重走 jsonl 的 event_id，消费方待 M8）
+- load_or_create_device() 无内存缓存，且 devices.json 解析失败时会静默生成新 device_id 并覆盖原文件
+- CURRENT_STATE 原写「UPDATE 回填」与实现不符，已更正
 
 P8-003C Vault Reindex 完成。
 Markdown → SQLite 索引恢复机制。新增 core/reindex.py（reindex_vault 纯函数）+
@@ -163,6 +171,9 @@ npx vite build     → pass
 - `docs/design/EARTH_UI.md`（新建）：地球效果规格冻结（语义映射 / 渲染参数 / 性能契约 / Cobe vs Canvas 2D 方案对比）
 - `docs/design/UI_REFERENCE.md`：新增 Earth UI 指向
 - `ui/README.md`：示例索引与新增规则
+- 需求更新（2026-08-28 二轮）：自转接缝回退闪烁修复（贴图正像+镜像无缝拼接）+
+  近地轨道多环（4 条错倾，内环更快）+ 卫星改彩色圆点+墨色拖尾（去掉太阳能板形状）+
+  卫星大小随笔记字数增长封顶 MAX_SAT_PX；EARTH_UI.md 规格已同步
 
 ## 本次会话改动（P8-002 Graph V2）
 

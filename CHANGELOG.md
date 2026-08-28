@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003D Tutor Knowledge Base**（甲路线：显式引用）：POST /api/v1/tutor/context
+  （note_ids ≤2 篇确定性片段，注入时 related 10→6 / recent 5→3 预算收缩）·
+  TutorPanel 笔记选择器（复用 FTS /search）+ 死 tab 复活（focusConceptId
+  跳转目标模式，GraphView「问 Tutor」入口）· suggest_for_context snippet
+  从硬编码 None 修为真实片段（extract_snippet 复用）·
+  守护测试先行：连通性 5 跳 + 反向断言（未引用笔记全文/api_key/vault 绝对路径
+  不得出现）+ 可达性（死 tab 回归）+ 预算边界 · pytest 463→476 ·
+  ADR-014 附录 §2.8.1（RAG 禁令部分解除：FTS5 许可，向量/Embedding 永久禁止）
+
+### Added
+### Added
 - **P8-003D-CodeReview P0 修复**：
   P0-1：设备身份合并（删除 _get_device_id，复用 core/sync/device.py）·
   P0-2：migration 007 补 event_uuid 列 + UNIQUE 索引 ·

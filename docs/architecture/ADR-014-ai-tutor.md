@@ -145,6 +145,26 @@ AI 看不到什么（黑名单）：
 
 理由：先验证核心价值——AI 是否因为知道用户状态而更有帮助。
 
+---
+
+## 附录 §2.8.1：RAG 禁令的 P8 部分解除（2026-08-28）
+
+§2.8 的 Forbidden 限定于「M4 阶段」，属延后型禁止而非自动过期。自 P8 起：
+
+1. **即日生效**：用户显式引用的笔记（≤2 篇确定性片段 ≤600 字符）可进入
+   Tutor 上下文——本文 §2.5 既有条款「vault 全文（除非用户明确引用）」的实现。
+   实现：POST /api/v1/tutor/context 的 note_ids 参数（TutorPanel 选择器，
+   无自动检索）。
+2. **本附录解除**：FTS5 关键词自动检索（core 内手写，复用既有
+   search_notes/suggest_for_context）作为未来 P8-003E 的许可依据，
+   触发条件 = 用户反馈显式引用摩擦。
+3. **维持永久禁止**：向量数据库 / Embedding 服务 / LangChain 及一切
+   AI 编排框架（AGENTS §2.3），无论任何阶段。
+
+Concept identity source is defined by origin. Visualization layers must
+consume origin only. No derived source classification field may become
+persistent state.（P8-001A 冻结，此处一并重申）
+
 ## 3. Consequences
 
 ### 代码结构

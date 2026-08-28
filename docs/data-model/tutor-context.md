@@ -61,12 +61,13 @@ GET /api/v1/tutor/context/{concept_id}
 | Review | next_review, last_result, ease, interval | 判断复习紧迫性 |
 | Related | title, type (1-hop) | 关联知识引导 |
 | Events | event_type, source, created_at | 学习轨迹 |
+| Notes（P8-003D） | note_id, title, excerpt（≤2 篇，片段 ≤600 字符） | 用户显式引用的笔记片段（ADR-014:114「除非用户明确引用」+ 附录 §2.8.1） |
 
 ## 3. AI 不可见字段（黑名单）
 
 | 数据 | 原因 |
 |---|---|
-| vault 全文 | 隐私 + token 预算 |
+| vault 全文 | 隐私 + token 预算（用户显式引用的 ≤2 篇笔记片段除外，P8-003D） |
 | 全部聊天记录 | 隐私 + 上下文过长 |
 | .env / API key | 安全 |
 | 其他用户数据 | 隐私 |
@@ -103,6 +104,9 @@ GET /api/v1/tutor/context/{concept_id}
 | Response | ~1000 tokens |
 
 总计 < 3000 tokens/次，兼容所有模型。
+
+**P8-003D 增记（2026-08-28）**：注入用户引用笔记时（≤2 篇 × ≤600 字符 ≈ ≤600 tokens），
+related 10→6、recent_events 5→3 收缩让位；总预算维持不变。未引用笔记全文永不进入 context。
 
 ## 6. 错误处理
 

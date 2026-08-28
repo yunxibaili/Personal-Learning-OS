@@ -605,6 +605,7 @@ StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳
 | GET /review/today · POST /review/{concept_id}/answer | 复习队列 + 提交答案 |
 | GET/POST /conversations · GET /conversations/{id}/messages | 对话历史 |
 | POST /chat/stream (SSE) | Tutor 流式对话 |
+| POST /tutor/context (P8-003D) | 结构化上下文（可携用户显式引用的 note_ids ≤2） |
 | GET/PUT /settings | 配置读写（API key 写后永不再返回明文） |
 | GET /sync/pair (M7) | 生成一次性配对码/二维码 → 换取 LAN bearer token |
 | GET /sync/status (M7-005) | 只读同步状态：mindmap 冲突列表（自 *.local.json artifacts 派生） |

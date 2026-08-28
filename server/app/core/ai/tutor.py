@@ -161,6 +161,12 @@ def _format_context(context: TutorContext) -> str:
         lines = [f"- {e['event_type']} ({e['source']})" for e in events]
         sections.append("Recent Learning Events:\n" + "\n".join(lines))
 
+    # Referenced Notes（P8-003D：用户显式引用，≤2 篇确定性片段）
+    notes = context.get("notes") or []
+    if notes:
+        lines = [f"- {n['title']}: {n['excerpt']}" for n in notes]
+        sections.append("Referenced Notes:\n" + "\n".join(lines))
+
     return "\n\n".join(sections)
 
 

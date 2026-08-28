@@ -71,6 +71,7 @@ export function GraphView() {
   const [error, setError] = useState("");
 
   const openNote = useUi((s) => s.openNote);
+  const openTutorForConcept = useUi((s) => s.openTutorForConcept);
 
   const load = useCallback(async (r: RootRef | null) => {
     setError("");
@@ -269,6 +270,11 @@ export function GraphView() {
           <div className="graph-inspector-actions">
             {selectedNode.type === "note" && (
               <button onClick={() => openNote(selectedNode.refId)}>打开笔记</button>
+            )}
+            {selectedNode.type === "concept" && (
+              <button onClick={() => openTutorForConcept(selectedNode.refId)}>
+                问 Tutor
+              </button>
             )}
             <button onClick={() => setRoot({ type: selectedNode.type, id: selectedNode.refId })}>
               以此为根展开

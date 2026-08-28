@@ -9,7 +9,12 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from ..core.tutor_context import build_tutor_context, ConceptNotFoundError
+from ..core.tutor_context import (
+    build_tutor_context,
+    ConceptNotFoundError,
+    NoteNotFoundError,
+    MAX_NOTE_EXCERPTS,
+)
 from ..core.ai.service import TutorService
 from ..core.ai.providers.mock import MockProvider
 from ..db import connect
@@ -26,12 +31,43 @@ def _err(status: int, code: str, message: str) -> JSONResponse:
 
 @router.get("/context/{concept_id}")
 def get_tutor_context(concept_id: int) -> dict:
-    """返回 AI Tutor 所需的结构化学习上下文。"""
+    """返回 AI Tutor 所需的结构化学习上下文（无笔记引用，notes=[]）。"""
     conn = connect()
     try:
         return build_tutor_context(conn, concept_id)
     except ConceptNotFoundError:
         return _err(404, "concept_not_found", f"concept {concept_id} not found")
+    finally:
+        conn.close()
+
+
+# ── P8-003D：显式笔记引用（甲路线，ADR-014:114 + 附录 §2.8.1）────────
+
+class TutorContextRequest(BaseModel):
+    concept_id: int
+    note_ids: list[int] | None = None  # 用户显式引用，≤2 篇
+
+
+@router.post("/context")
+def post_tutor_context(body: TutorContextRequest) -> dict:
+    """带可选笔记引用的结构化上下文。
+
+    note_ids 由用户在 UI 显式选择（TutorPanel 选择器）——不自动检索；
+    注入时 related/recent 预算收缩（tutor-context.md §5）。
+    """
+    note_ids = body.note_ids or []
+    if len(note_ids) > MAX_NOTE_EXCERPTS:
+        return _err(400, "too_many_notes",
+                    f"note_ids 最多 {MAX_NOTE_EXCERPTS} 篇")
+    note_ids = list(dict.fromkeys(note_ids))  # 去重保序（≤2 时无害）
+    conn = connect()
+    try:
+        return build_tutor_context(conn, body.concept_id, note_ids=note_ids)
+    except ConceptNotFoundError:
+        return _err(404, "concept_not_found",
+                    f"concept {body.concept_id} not found")
+    except NoteNotFoundError as exc:
+        return _err(404, "note_not_found", str(exc))
     finally:
         conn.close()
 

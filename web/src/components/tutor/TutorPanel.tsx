@@ -6,8 +6,9 @@
  *   - 禁止：气泡、头像、打字动画、魔法按钮
  *   - 允许：context panel、structured answer、action suggestion
  */
-import { useCallback, useState } from "react";
-import { apiPost } from "../../lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { apiGet, apiPost } from "../../lib/api";
+import { useUi } from "../../stores/ui";
 import "./TutorPanel.css";
 
 type TutorMode = "explain" | "hint" | "review";
@@ -60,10 +61,18 @@ interface TutorContextData {
   related: RelatedContext[];
   review: ReviewContext | null;
   recent_events: unknown[];
+  notes?: TutorNoteRef[];
+}
+
+/** 用户显式引用的笔记（P8-003D，≤2 篇） */
+interface TutorNoteRef {
+  note_id: number;
+  title: string;
+  excerpt: string;
 }
 
 interface Props {
-  /** 当前活跃 concept ID（从 NoteEditor 或 Graph 传入） */
+  /** 当前活跃 concept ID（显式传入优先；否则消费 store 跳转目标） */
   conceptId?: number | null;
 }
 
@@ -95,7 +104,15 @@ function MasteryBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function TutorPanel({ conceptId }: Props) {
+export function TutorPanel({ conceptId: conceptIdProp }: Props) {
+  const focusConceptId = useUi((s) => s.focusConceptId);
+  const clearConceptFocus = useUi((s) => s.clearConceptFocus);
+  // 显式 props 优先；否则消费跨视图跳转目标（消费即清除，与 focusNoteId 同构）
+  const conceptId = conceptIdProp ?? focusConceptId;
+  useEffect(() => {
+    if (conceptIdProp == null && focusConceptId != null) clearConceptFocus();
+  }, [conceptIdProp, focusConceptId, clearConceptFocus]);
+
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<TutorMode>("explain");
   const [answer, setAnswer] = useState<TutorAnswer | null>(null);
@@ -103,22 +120,56 @@ export function TutorPanel({ conceptId }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /** 加载 concept context */
-  const loadContext = useCallback(async (cid: number) => {
+  // 笔记引用（P8-003D：用户显式选择，≤2 篇）
+  const [selectedNotes, setSelectedNotes] = useState<TutorNoteRef[]>([]);
+  const [noteSearch, setNoteSearch] = useState("");
+  const [noteResults, setNoteResults] = useState<Array<{ note_id: number; title: string }>>([]);
+  const [showNotePicker, setShowNotePicker] = useState(false);
+
+  /** 加载 concept context（有笔记引用时走 POST，携带 note_ids） */
+  const loadContext = useCallback(async (cid: number, noteIds: number[] = []) => {
     try {
-      const { apiGet } = await import("../../lib/api");
-      const data = await apiGet<TutorContextData>(`/tutor/context/${cid}`);
+      const data =
+        noteIds.length > 0
+          ? await apiPost<TutorContextData>("/tutor/context", {
+              concept_id: cid,
+              note_ids: noteIds,
+            })
+          : await apiGet<TutorContextData>(`/tutor/context/${cid}`);
       setContext(data);
     } catch {
       setContext(null);
     }
   }, []);
 
-  /** 当 conceptId 变化时加载 context */
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  if (conceptId != null && context?.concept?.id !== conceptId && !loading) {
-    void loadContext(conceptId);
-  }
+  /** conceptId 变化或笔记引用变化时重新加载 context */
+  useEffect(() => {
+    if (conceptId != null) void loadContext(conceptId, selectedNotes.map((n) => n.note_id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conceptId, selectedNotes, loadContext]);
+
+  /** 笔记搜索（复用 FTS /search） */
+  const searchNotes = useCallback(async (q: string) => {
+    if (!q.trim()) { setNoteResults([]); return; }
+    try {
+      const data = await apiGet<{ results: Array<{ note_id: number; title: string }> }>(
+        `/search?q=${encodeURIComponent(q.trim())}`,
+      );
+      setNoteResults(data.results.slice(0, 5));
+    } catch {
+      setNoteResults([]);
+    }
+  }, []);
+
+  const toggleNote = useCallback((n: { note_id: number; title: string }) => {
+    setSelectedNotes((prev) => {
+      if (prev.some((p) => p.note_id === n.note_id)) {
+        return prev.filter((p) => p.note_id !== n.note_id);
+      }
+      if (prev.length >= 2) return prev; // 上限 2 篇（后端 400 契约）
+      return [...prev, { note_id: n.note_id, title: n.title, excerpt: "" }];
+    });
+  }, []);
 
   /** 提交问题 */
   const handleSubmit = useCallback(async () => {
@@ -197,6 +248,63 @@ export function TutorPanel({ conceptId }: Props) {
           </ul>
         </div>
       )}
+
+      {/* Referenced Notes（P8-003D：显式选择 ≤2 篇） */}
+      <div className="tutor-section">
+        <div className="tutor-section-title">
+          Notes
+          <button
+            className="tutor-note-toggle"
+            onClick={() => setShowNotePicker((v) => !v)}
+          >
+            {showNotePicker ? "Close" : "Reference notes"}
+          </button>
+        </div>
+        {selectedNotes.length > 0 && (
+          <ul className="tutor-note-list">
+            {selectedNotes.map((n) => (
+              <li key={n.note_id}>
+                {n.title}
+                <button
+                  className="tutor-note-remove"
+                  onClick={() => toggleNote({ note_id: n.note_id, title: n.title })}
+                  aria-label={`remove ${n.title}`}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {showNotePicker && (
+          <div className="tutor-note-picker">
+            <input
+              className="tutor-input"
+              value={noteSearch}
+              onChange={(e) => {
+                setNoteSearch(e.target.value);
+                void searchNotes(e.target.value);
+              }}
+              placeholder="Search notes to reference"
+            />
+            <ul className="tutor-note-results">
+              {noteResults.map((n) => {
+                const picked = selectedNotes.some((p) => p.note_id === n.note_id);
+                return (
+                  <li key={n.note_id}>
+                    <button
+                      className={`tutor-note-option ${picked ? "picked" : ""}`}
+                      onClick={() => toggleNote(n)}
+                    >
+                      {n.title}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
 
       {/* Mode Selector */}
       <div className="tutor-section">

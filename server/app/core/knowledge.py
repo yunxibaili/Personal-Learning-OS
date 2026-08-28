@@ -420,13 +420,21 @@ def suggest_for_context(
 
     q = query.strip()
 
-    # 1. FTS 笔记匹配
+    # 1. FTS 笔记匹配（P8-003D：snippet 从硬编码 None 修为真实片段）
     matches: list[dict] = []
     fts_rows = search_notes(conn, q, limit=limit)
     for r in fts_rows:
+        snippet = ""
+        row = get_note_row(conn, r["note_id"])
+        if row is not None:
+            try:
+                _, body = read_note_file(row["path"])
+                snippet = extract_snippet(body, query=q, max_chars=200)
+            except (OSError, ValueError):
+                snippet = ""
         matches.append({
             "type": "note", "id": r["note_id"],
-            "title": r["title"], "snippet": None, "score": 0.9,
+            "title": r["title"], "snippet": snippet or None, "score": 0.9,
         })
 
     # 2. Concept 标题 LIKE 匹配（补 FTS 未覆盖的概念）
@@ -476,6 +484,28 @@ def read_note_file(rel_path: str) -> tuple[list[str], str]:
     return tags, body
 
 
+def extract_snippet(body: str, query: str | None = None, max_chars: int = 600) -> str:
+    """从笔记正文提取确定性片段（P8-003D）。
+
+    规则：压缩空白后，有 query 且命中时取命中点前 80 字符起的窗口，
+    否则取正文开头。首尾用 … 标记截断。纯函数，可复算（连通性断言依赖）。
+    """
+    text = " ".join((body or "").split())
+    if not text:
+        return ""
+    if query:
+        q = " ".join(query.split()).lower()
+        pos = text.lower().find(q) if q else -1
+        if pos >= 0:
+            start = max(0, pos - 80)
+            window = text[start:start + max_chars]
+            prefix = "…" if start > 0 else ""
+            suffix = "…" if start + len(window) < len(text) else ""
+            return prefix + window + suffix
+    snippet = text[:max_chars]
+    return snippet + ("…" if len(text) > max_chars else "")
+
+
 def get_note_row(conn, note_id: int):
     return conn.execute(
         "SELECT * FROM notes WHERE id = ?", (note_id,)
@@ -491,4 +521,5 @@ __all__ = [
     "ensure_entity_by_title", "promote_stub_to_note", "rebuild_note_links",
     "cascade_drop_entity", "local_graph", "backlinks_of_note",
     "suggest_for_context", "MAX_SUGGEST_MATCHES", "MAX_RELATED_CONCEPTS",
+    "extract_snippet",
 ]

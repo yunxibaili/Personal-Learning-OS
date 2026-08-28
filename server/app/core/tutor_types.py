@@ -47,6 +47,13 @@ class EventContext(TypedDict):
     created_at: str
 
 
+class NoteContext(TypedDict):
+    """用户显式引用的笔记片段（P8-003D，ADR-014:114 既有条款）。"""
+    note_id: int
+    title: str
+    excerpt: str
+
+
 # ── TutorContext（核心输入）────────────────────────────────────────
 
 class TutorContext(TypedDict):
@@ -57,6 +64,7 @@ class TutorContext(TypedDict):
     related: list[RelatedContext]
     review: NotRequired[ReviewContext | None]
     recent_events: list[EventContext]
+    notes: NotRequired[list[NoteContext]]
 
 
 # ── TutorMode ──────────────────────────────────────────────────────
