@@ -98,6 +98,7 @@ def create_note(body: NoteCreate) -> dict:
         K.promote_stub_to_note(conn, note_id, title)
         link_stats = K.rebuild_note_links(conn, note_id, body_text)
         conn.commit()
+        row = K.get_note_row(conn, note_id)
     except OSError as exc:
         conn.rollback()
         return _err(500, "io_error", f"写入失败: {exc}")
@@ -107,7 +108,6 @@ def create_note(body: NoteCreate) -> dict:
     finally:
         conn.close()
 
-    row = K.get_note_row(connect(), note_id)
     _, body_text = K.read_note_file(rel_path)
     return _detail(row, body_text)
 

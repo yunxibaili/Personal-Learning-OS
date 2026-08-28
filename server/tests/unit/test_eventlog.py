@@ -7,13 +7,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.core.mastery import (
-    update_mastery,
-    _get_device_id,
-    _write_eventlog,
-    _DEVICE_ID,
-)
-import app.core.mastery as M
+from app.core.mastery import update_mastery, _write_eventlog
+from app.core.sync.device import load_or_create_device
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -34,43 +29,11 @@ def _read_eventlog_lines(ws: Path, month: str = "2026-08") -> list[dict]:
     return [json.loads(line) for line in lines if line.strip()]
 
 
-# ── Device ID Tests ────────────────────────────────────────────────
-
-def test_get_device_id_returns_string(core_conn, tmp_workspace: Path) -> None:
-    """_get_device_id() 返回非空字符串。"""
-    device_id = _get_device_id()
-    assert isinstance(device_id, str)
-    assert len(device_id) > 0
-
-
-def test_get_device_id_persists(core_conn, tmp_workspace: Path) -> None:
-    """_get_device_id() 持久化到文件，二次读取一致。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None  # 重置缓存
-
-    id1 = _get_device_id()
-    id2 = _get_device_id()
-    assert id1 == id2
-
-    device_file = tmp_workspace / "metadata" / "device_id"
-    assert device_file.exists()
-    assert device_file.read_text(encoding="utf-8").strip() == id1
-
-
-def test_get_device_id_from_env(core_conn, tmp_workspace: Path, monkeypatch) -> None:
-    """环境变量 LEARNING_OS_DEVICE_ID 优先。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None
-    monkeypatch.setenv("LEARNING_OS_DEVICE_ID", "test-device-abc")
-    assert _get_device_id() == "test-device-abc"
-
-
 # ── Eventlog Write Tests ───────────────────────────────────────────
 
 def test_write_eventlog_creates_file(core_conn, tmp_workspace: Path) -> None:
     """_write_eventlog() 创建 eventlog 文件。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None
+    device = load_or_create_device(tmp_workspace)
 
     _write_eventlog(
         concept_id=1,
@@ -80,6 +43,7 @@ def test_write_eventlog_creates_file(core_conn, tmp_workspace: Path) -> None:
         source="manual",
         detail=None,
         event_id="test-uuid-001",
+        device_id=device.device_id,
         created_at="2026-08-28 10:00:00",
     )
 
@@ -88,13 +52,12 @@ def test_write_eventlog_creates_file(core_conn, tmp_workspace: Path) -> None:
     assert lines[0]["event_id"] == "test-uuid-001"
     assert lines[0]["concept_id"] == 1
     assert lines[0]["event_type"] == "explain"
-    assert lines[0]["device_id"]
+    assert lines[0]["device_id"] == device.device_id
 
 
 def test_write_eventlog_appends(core_conn, tmp_workspace: Path) -> None:
     """_write_eventlog() 追加多行，不覆盖。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None
+    device = load_or_create_device(tmp_workspace)
 
     for i in range(3):
         _write_eventlog(
@@ -105,6 +68,7 @@ def test_write_eventlog_appends(core_conn, tmp_workspace: Path) -> None:
             source="manual",
             detail=None,
             event_id=f"uuid-{i}",
+            device_id=device.device_id,
             created_at=f"2026-08-28 10:0{i}:00",
         )
 
@@ -113,13 +77,30 @@ def test_write_eventlog_appends(core_conn, tmp_workspace: Path) -> None:
     assert [l["event_id"] for l in lines] == ["uuid-0", "uuid-1", "uuid-2"]
 
 
+# ── Device Identity Tests ──────────────────────────────────────────
+
+def test_device_identity_shared_with_sync(core_conn, tmp_workspace: Path) -> None:
+    """eventlog 的 device_id 与 sync device identity 一致。"""
+    device = load_or_create_device(tmp_workspace)
+
+    update_mastery(
+        conn=core_conn,
+        concept_id=_create_concept(core_conn, "DeviceTest"),
+        event_type="explain",
+        dimension="knowledge",
+        weight=1.0,
+        source="manual",
+    )
+
+    lines = _read_eventlog_lines(tmp_workspace)
+    assert len(lines) >= 1
+    assert lines[-1]["device_id"] == device.device_id
+
+
 # ── Integration: update_mastery → eventlog ─────────────────────────
 
 def test_update_mastery_writes_eventlog(core_conn, tmp_workspace: Path) -> None:
     """update_mastery() 同时写入 SQLite 和 eventlog 文件。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None
-
     cid = _create_concept(core_conn, "EventlogIntegration")
 
     # 调用 update_mastery
@@ -153,9 +134,6 @@ def test_update_mastery_writes_eventlog(core_conn, tmp_workspace: Path) -> None:
 
 def test_update_mastery_eventlog_with_detail(core_conn, tmp_workspace: Path) -> None:
     """update_mastery() 的 detail 字段正确写入 eventlog。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None
-
     cid = _create_concept(core_conn, "DetailTest")
 
     update_mastery(
@@ -177,9 +155,6 @@ def test_update_mastery_eventlog_with_detail(core_conn, tmp_workspace: Path) -> 
 
 def test_update_mastery_eventlog_multiple_events(core_conn, tmp_workspace: Path) -> None:
     """多次 update_mastery() 追加多行到 eventlog。"""
-    global _DEVICE_ID
-    M._DEVICE_ID = None
-
     cid = _create_concept(core_conn, "MultiEvent")
 
     for event_type in ["explain", "answer_correct", "review"]:

@@ -7,18 +7,15 @@
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → **P8-003D Eventlog Producer ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → P8-003D Eventlog Producer ✅ → **P8-003D-CodeReview P0 修复 ✅**
 
 ## Last Completed
 
-P8-003D Eventlog Producer 完成（ADR-020 闭合）。
-update_mastery() 同事务追加 JSONL 写入到 metadata/eventlogs/<yyyy-mm>.jsonl。
-eventlog JSON 格式：event_id + concept_id + event_type + dimension + weight + source + detail + device_id + created_at。
-device_id 生成：环境变量 > 持久化文件 > hostname-uuid。
-_get_device_id() 缓存 + 持久化到 workspace/metadata/device_id。
-OSError 不阻断学习事件记录（SQLite 已写入）。
-8 项测试（device_id 3 + write_eventlog 2 + 集成 3）。
-pytest 461 · tsc PASS · vite build PASS。
+P8-003D-CodeReview P0 修复完成。
+P0-1：设备身份合并，删除 _get_device_id()，复用 core/sync/device.py 的 load_or_create_device()。
+P0-2：migration 007 补 event_uuid 列 + UPDATE 回填 + UNIQUE 索引。
+P0-3：notes.py 连接泄漏修复（try 块内读取 row，finally 块关闭）。
+pytest 459 · tsc PASS · vite build PASS。
 
 P8-003C Vault Reindex 完成。
 Markdown → SQLite 索引恢复机制。新增 core/reindex.py（reindex_vault 纯函数）+
@@ -152,11 +149,20 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 ## 测试命令
 
 ```
-pytest -q          → 461 passed
+pytest -q          → 459 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
+
+## 本次会话改动（Earth UI 示例入库）
+
+- `ui/`（新建）：UI 示例统一目录。earth-hero.html（MiMo 风格 Canvas 点阵地球 Hero 版）+
+  earth-planet-card.html（280px Dashboard 卡片版，对齐 P8-001C 性能契约）+ assets/dots-world.png。
+  原型取自 111/earth-effect，按项目约定改造（--brand 橙色生命线 / 卫星=笔记 / 节点=概念+mastery 弱化 / 30fps+reduced-motion）。
+- `docs/design/EARTH_UI.md`（新建）：地球效果规格冻结（语义映射 / 渲染参数 / 性能契约 / Cobe vs Canvas 2D 方案对比）
+- `docs/design/UI_REFERENCE.md`：新增 Earth UI 指向
+- `ui/README.md`：示例索引与新增规则
 
 ## 本次会话改动（P8-002 Graph V2）
 
@@ -171,6 +177,15 @@ npx vite build     → pass
 - `web/src/global.css`：+80行 Graph 样式（.gnode concept/note/.gnode-tooltip/.gedge/layer-toggle/inspector）
 - `docs/dependencies/REGISTRY.md`：dagre ^0.8.5 登记
 - 验证：tsc PASS · vitest 23 · vite build PASS · pytest 426
+
+## 本次会话改动（P8-003D-CodeReview P0 修复）
+
+- `server/app/routers/notes.py`：修复连接泄漏（line 110），try 块内读取 row，finally 块关闭
+- `server/app/core/mastery.py`：删除 _get_device_id()，复用 core/sync/device.py 的 load_or_create_device()
+- `server/migrations/007_event_uuid.sql`（新建）：ALTER TABLE learning_events ADD COLUMN event_uuid + UNIQUE 索引
+- `server/tests/test_smoke.py`：migration count 6→7
+- `server/tests/unit/test_eventlog.py`：移除 _get_device_id/_DEVICE_ID 引用，新增 test_device_identity_shared_with_sync
+- 验证：pytest 459 · tsc PASS · vite build PASS
 
 ## 本次会话改动（P8-003D Eventlog Producer）
 

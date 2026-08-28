@@ -23,12 +23,12 @@ from __future__ import annotations
 import json
 import math
 import os
-import socket
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from ..db import connect, workspace_root
+from .sync.device import load_or_create_device
 
 # 四维权重（冻结常量，M3 评审批准）
 DIMENSION_WEIGHTS = {
@@ -41,47 +41,6 @@ DIMENSION_WEIGHTS = {
 DEFAULT_DIMENSIONS = {"knowledge": 0.0, "practice": 0.0, "recall": 0.0, "transfer": 0.0}
 
 
-# ── Device ID（P8-003D / ADR-020）──────────────────────────────────
-
-_DEVICE_ID: str | None = None
-
-
-def _get_device_id() -> str:
-    """获取设备唯一标识（hostname + 首次生成的随机 UUID 持久化）。
-
-    优先级：
-    1. 环境变量 LEARNING_OS_DEVICE_ID
-    2. workspace/metadata/device_id 文件
-    3. 生成新 UUID 并持久化到 workspace
-    """
-    global _DEVICE_ID
-    if _DEVICE_ID is not None:
-        return _DEVICE_ID
-
-    # 1. 环境变量
-    env_id = os.environ.get("LEARNING_OS_DEVICE_ID")
-    if env_id:
-        _DEVICE_ID = env_id
-        return _DEVICE_ID
-
-    # 2. 持久化文件
-    device_file = workspace_root() / "metadata" / "device_id"
-    if device_file.exists():
-        _DEVICE_ID = device_file.read_text(encoding="utf-8").strip()
-        if _DEVICE_ID:
-            return _DEVICE_ID
-
-    # 3. 生成新 UUID（hostname-hash + random 部分）
-    hostname = socket.gethostname()
-    short_uuid = uuid.uuid4().hex[:8]
-    _DEVICE_ID = f"{hostname}-{short_uuid}"
-
-    # 持久化
-    device_file.parent.mkdir(parents=True, exist_ok=True)
-    device_file.write_text(_DEVICE_ID, encoding="utf-8")
-    return _DEVICE_ID
-
-
 # ── 事件日志（P8-003D / ADR-020）──────────────────────────────────
 
 def _write_eventlog(
@@ -92,6 +51,7 @@ def _write_eventlog(
     source: str,
     detail: str | None,
     event_id: str,
+    device_id: str,
     created_at: str,
 ) -> None:
     """追加一行 JSON 到 metadata/eventlogs/<yyyy-mm>.jsonl（ADR-020）。
@@ -113,7 +73,7 @@ def _write_eventlog(
         "weight": weight,
         "source": source,
         "detail": detail,
-        "device_id": _get_device_id(),
+        "device_id": device_id,
         "created_at": created_at,
     }, ensure_ascii=False) + "\n"
 
@@ -181,13 +141,14 @@ def update_mastery(
     now = _now_iso()
 
     conn.execute(
-        "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source, detail) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (concept_id, event_type, dimension, weight, source, detail),
+        "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source, detail, event_uuid) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (concept_id, event_type, dimension, weight, source, detail, event_uuid),
     )
 
     # 追加到 eventlog 文件（ADR-020：同事务上下文，跨端同步真相源）
     try:
+        device = load_or_create_device(workspace_root())
         _write_eventlog(
             concept_id=concept_id,
             event_type=event_type,
@@ -196,6 +157,7 @@ def update_mastery(
             source=source,
             detail=detail,
             event_id=event_uuid,
+            device_id=device.device_id,
             created_at=now,
         )
     except OSError:

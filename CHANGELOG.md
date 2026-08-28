@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-003D-CodeReview P0 修复**：
+  P0-1：设备身份合并（删除 _get_device_id，复用 core/sync/device.py）·
+  P0-2：migration 007 补 event_uuid 列 + UNIQUE 索引 ·
+  P0-3：notes.py 连接泄漏修复 ·
+  6 项测试更新 · pytest 459 · tsc PASS · vite build PASS
 - **P8-003D Eventlog Producer**：ADR-020 闭合 ·
   update_mastery() 同事务追加 JSONL 写入 ·
   metadata/eventlogs/<yyyy-mm>.jsonl 按月归档 ·
