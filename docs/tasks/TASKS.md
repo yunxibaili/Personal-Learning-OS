@@ -76,17 +76,21 @@
 - 发现缺口待裁定：
   ① TECH_DESIGN §9 的 GET/POST /concepts CRUD 未实现——概念只能经 wikilink
   stub 产生，与笔记同名的主题无法成为概念节点。建议纳入 M7-008 或 P8。
-  ② workspace/db 存在早年探针残留 TestConcept / MasteryTest（含 mastery 行），
-  属测试脏数据，待用户确认后清除。
+   ② workspace/db 存在早年探针残留 TestConcept / MasteryTest（含 mastery 行），
+   属测试脏数据 → P8-004 已清除（2026-08-28）。
 
 ## P8 任务链规划（2026-08-27 用户裁定：先内容结构，后视觉语言）
 
 ```
 P8-001A Concept Foundation      ✅ 已完成（origin 唯一来源 + /concepts CRUD，2026-08-27）
         ↓
-P8-001B Universe V2 Layout      分层布局 · Domain 聚类 · 节点语义（下一步）
+P8-001B Universe V2 Layout      ✅ 已完成（d3-force + Planet + Inspector，2026-08-27）
         ↓
-P8-001C Universe Interaction    Focus / Weak / 路径高亮等交互
+P8-001C Knowledge Planet        ✅ 已完成（Cobe 地球 + 轨道卫星 + 性能契约，2026-08-28）
+        ↓
+P8-004 Demo Cleanup             ✅ 已完成（清除 TestConcept/MasteryTest 探针残留，2026-08-28）
+        ↓
+P8-002 Graph V2                 ← 下一步（Concept/Note 双视觉 + domain clustering）
         ↓
 P8-003 Home Experience          Dashboard 升级为 Learning OS Home
         ↓
@@ -106,6 +110,29 @@ P8-FE-001 Visual Language Polish ← 纯前端阶段（MiMo 克制感参考）
 - 依赖：cobe ^0.6.5 入 REGISTRY（MIT · 5KB，性能边界随登记）
 - 位置：web/src/components/planet/KnowledgePlanet.tsx，挂 Dashboard；
   sandbox/cobe-test*.html 为实验留档（按 environment.md 用完即删原则待清理）
+
+### P8-004 Demo Cleanup（2026-08-28 ✅）
+
+清除 workspace/db 早期探针残留，恢复 demo 数据纯净。
+
+**删除目标**（精确 IN，无模糊匹配）：
+- `TestConcept`（id=1, origin=manual）+ `MasteryTest`（id=2, origin=manual）
+- 关联：links 4行 · concept_mastery 1行 · learning_events 0 · review_queue 0 · mistakes 0
+
+**执行**：
+1. 备份 `learning-os.db` → `learning-os.db.backup-before-p8-004`
+2. SQL 精确删除：links → concept_mastery → concepts（按外键依赖顺序）
+3. 验证：残留检查 = 0 · 清理后 concepts=17 · links=5
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `pytest --tb=short -q` | 426 passed | 426 passed |
+| `npx vitest run` | 16 passed | 16 passed |
+| `npx vite build` | PASS | PASS |
+
+**结论**：真实 DB 删除不影响测试隔离（tests 全用 tmp_workspace）。
+**辅助脚本**：`scripts/_cleanup_check.py` / `_cleanup_delete.py`（一次性，待清理）
 
 ### 排序铁律（用户原话归纳）
 

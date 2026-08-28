@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P8-001C Knowledge Planet**：首页知识星球原型 ·
+  Cobe WebGL 点阵地球（5KB/MIT，MiMo 风格）+ 4 条错倾轨道环 ·
+  卫星 = 笔记（/api/v1/notes，16 颗上限聚合）·
+  数学 z-position 遮挡（isBehind，sandbox 验证）·
+  拖动旋转 + hover 放大 + click 指示器 ·
+  性能契约：dpr=1 · 280px · 30fps 节流 · IntersectionObserver/visibilitychange 暂停 ·
+  prefers-reduced-motion 静态帧 · canvas contain:layout paint size ·
+  cobe ^0.6.5 入 REGISTRY · 挂载 DashboardView
+- **P8-004 Demo Cleanup**：清除 workspace/db 早期探针残留
+  TestConcept（id=1）+ MasteryTest（id=2）+ 关联 4 links + 1 mastery ·
+  精确 IN 删除无误伤 · 备份 before-p8-004 · 验证 0 残留 ·
+  pytest 426 · vitest 16 · vite build PASS
 - **P8-001B Knowledge Universe V2**：Universe 从静态图升级为可探索知识星球 ·
   `lib/universe/layout.ts` 布局纯函数（domain 聚类 + d3-force 确定性输出，separation 分层铁律）·
   PlanetNode 中央聚合星球（concept 数→半径 / mastery→光晕 / 活跃→呼吸 / domain→轨道，不入库）·
@@ -20,8 +32,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   seed_demo.py 35 个纯概念（ML/Optimization/Deep Learning/NLP/CV 五域）·
   ADR-023 Visualization Boundary 冻结 · 测试 425 通过（新增 test_concepts.py 29 项）
 
-### Audit
-- **M7-006.5 Sync Release Audit**：M7 转入稳定发布基线 ·
+### Audit：M7 转入稳定发布基线 ·
   Phase 1 九模块 AST 边界终审（PASS，三处例外合规定性）→ docs/sync/SYNC_BOUNDARY_REPORT.md ·
   Phase 2 Truth Model 审计（白名单=Layer 1 三类 · 禁比 derived state）·
   Phase 3 Recovery 证据收集（断网/半写/tmp 残留/重复同步 + 附加探针）·

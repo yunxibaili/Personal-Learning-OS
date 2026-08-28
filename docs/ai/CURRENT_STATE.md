@@ -1,22 +1,25 @@
 # Current State
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-27 · Last commit：5b3b09c · Branch：main · Clean：yes
+> 上次更新：2026-08-28 · Last commit：7918d5e · Branch：main · Clean：yes
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → **P8-001B Knowledge Universe V2 ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → **P8-004 Demo Cleanup ✅**
 
 ## Last Completed
 
-P8-001B Knowledge Universe V2（Spatial Experience）完成。
-布局引擎 `lib/universe/layout.ts` 纯函数（domain 聚类 + d3-force 确定性）·
-PlanetNode 中央聚合星球（半径/光晕/呼吸/轨道，不入库）· ConceptNode hover 抬升 + weak 环 ·
-Floating Inspector 替换右侧大抽屉 · Planet/节点拖动 + viewport 持久化（localStorage）·
-d3-force 3.0.0 安装（ADR-007）。
-vitest 16 passed（layout 14 + ui 2）· pytest 426 passed · vite build PASS。
+P8-004 Demo Cleanup 完成。
+清除 workspace/db 中早期探针残留 TestConcept / MasteryTest（2 concepts + 1 mastery + 4 links），
+精确 IN 删除无误伤。验证：pytest 426 · vitest 16 · vite build PASS。
+备份：learning-os.db.backup-before-p8-004。
+
+P8-001C Knowledge Planet 完成（commit 7918d5e）。
+Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动）。
+性能契约：dpr=1 · 280px canvas · 30fps 节流 · IntersectionObserver/visibilitychange 暂停。
+挂载 DashboardView，拖动旋转 + hover/click 交互。
 
 ## 已完成
 
@@ -65,14 +68,14 @@ vitest 16 passed（layout 14 + ui 2）· pytest 426 passed · vite build PASS。
 | M7-Preview-001 | Local Demo Preparation（seed_demo.py 已就位，等用户体验） | `[~]` |
 | P8-001A | Concept Foundation（/api/v1/concepts + origin 唯一来源 + ADR-023） | ✅ |
 | P8-001B | Knowledge Universe V2（Planet + force 聚类 + Inspector + drag 持久化） | ✅ |
+| P8-001C | Knowledge Planet（Cobe 地球 + 轨道卫星 + 性能契约，7918d5e） | ✅ |
+| P8-004 | Demo Cleanup（清除 TestConcept/MasteryTest 探针残留） | ✅ |
 
 ## Next Up
 
-- **P8-001C Universe Interaction**（等待裁定）：Search / Command Palette · Review 状态环
-  （需后端 /universe 提供 review 数据）· 其它交互增强
-- **P8-004 Demo Cleanup**：workspace/db 残留测试脏数据（TestConcept/MasteryTest）清除
-- **P8-002 Graph V2**：复用 P8-001 组件，dagre 层级布局选项
+- **P8-002 Graph V2**：复用 P8-001 组件，Concept/Note 双视觉 + domain clustering + layer toggle + minimap
 - **P8-003 Unified Home**：HomeView 统一入口（Universe/Review/Tutor/MindMap/Graph）
+- P8-FE-001 Visual Language Polish：MiMo 克制感配色（等 P8-003 后统一）
 - M8 Mobile（延后，先 PC 完整化，路线决议见 TASKS §路线决议）
 - 挂起：Data Model Terminology Cleanup（event_id/event_uuid 术语统一，独立 micro-task）
 
@@ -130,7 +133,30 @@ npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
 
-## 本次会话改动（P8-001B Knowledge Universe V2）
+## 本次会话改动（P8-004 Demo Cleanup）
+
+- 清除 workspace/db/learning-os.db 中早期探针残留：
+  - `TestConcept`（id=1）+ `MasteryTest`（id=2）
+  - 关联删除：links 4行 · concept_mastery 1行
+  - 使用精确 `WHERE title IN (...)` 删除，无模糊匹配
+- 备份：`learning-os.db.backup-before-p8-004`
+- 验证：清理后真实 DB concepts=17 · links=5 · 残留检查=0
+- 测试：pytest 426 · vitest 16 · vite build PASS
+- 文档：CURRENT_STATE / TASKS / CHANGELOG 同步
+- 辅助脚本：`scripts/_cleanup_check.py` / `scripts/_cleanup_delete.py`（一次性，待清理）
+
+## 本次会话改动（P8-001C Knowledge Planet，commit 7918d5e）
+
+- `web/src/components/planet/KnowledgePlanet.tsx`（220行）：
+  Cobe 点阵地球（mapSamples=6000 · dpr=1 · 280px）+ 4条错倾轨道环 + 卫星（笔记驱动）。
+  性能契约：单 rAF 30fps 节流 · IntersectionObserver/visibilitychange 暂停 ·
+  prefers-reduced-motion 静态帧 · canvas contain:layout paint size。
+  数学 z-position 遮挡（isBehind 函数）+ hover/click/拖动旋转
+- `web/src/global.css`：+55行 Planet 样式（.planet-scene/.planet-ring/.planet-sat 等）
+- `web/src/views/DashboardView.tsx`：挂载 KnowledgePlanet（SyncStatusPanel 下方）
+- `web/package.json`：cobe ^0.6.5
+- `docs/dependencies/REGISTRY.md`：cobe 登记（含性能边界）
+- `docs/tasks/TASKS.md`：P8-001C 任务说明
 
 - `web/src/lib/universe/layout.ts`：布局引擎纯函数（separation.md 图谱分层铁律）。
   domainGrouping（径向域中心）· forceLayout（d3-force：forceX/Y 域吸引 + 斥力 + 边弹簧 +
