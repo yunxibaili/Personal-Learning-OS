@@ -352,7 +352,9 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 | `schema_migrations` | `db.migrate` | 7 |
 
 **零行但有在案设计承诺**（不删，见 `DATA_MODEL.md` §6.1）：
-`memories` · `conversations` · `messages`
+`memories`（B7 后唯一零生产者表，等 B3 extractor；2026-08-29）
+
+**B7 已接入**（2026-08-29）：`conversations` · `messages`（routers/conversations.py）
 
 ### 6.2 数据流向
 
@@ -369,7 +371,7 @@ Mastery  (concept_mastery：四维 dimensions → effective → effective_now �
 Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 旁路：learning_events（追加日志）──驱动──▶ Mastery 更新 ──驱动──▶ mistakes（答错时）
-      memories / conversations / messages ──（表已建，未接入）
+      memories ──（B3 extractor 待实现）· conversations/messages ──（B7 已接入）
 ```
 
 ### 6.3 Migration 历史

@@ -30,7 +30,7 @@ def create_conversation(conn, title: str = DEFAULT_TITLE) -> int:
 
 
 def list_conversations(conn) -> list[dict]:
-    """对话列表（含消息数，按最近消息时间倒序）。"""
+    """对话列表（含消息数，按 id 倒序 = 插入序倒序；created_at 秒级精度不足）。"""
     rows = conn.execute(
         "SELECT c.id, c.title, c.created_at, "
         "  (SELECT COUNT(*) FROM messages m WHERE m.conversation_id=c.id) AS message_count "

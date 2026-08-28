@@ -16,6 +16,7 @@ from ..core.tutor_context import (
     MAX_NOTE_EXCERPTS,
 )
 from ..core.ai.config import create_provider, load_llm_config
+from ..core.ai.errors import ProviderError, ProviderTimeout
 from ..core.ai.providers.mock import MockProvider
 from ..core.ai.service import TutorService
 from ..db import connect
@@ -100,8 +101,13 @@ def tutor_smoke_test(body: TutorTestRequest) -> dict:
         conn.close()
 
     svc = TutorService(provider)
-    answer = svc.ask(context, body.query, mode=body.mode)  # type: ignore[arg-type]
-    prompt = svc.build_prompt_only(context, body.query, mode=body.mode)  # type: ignore[arg-type]
+    try:
+        answer = svc.ask(context, body.query, mode=body.mode)
+        prompt = svc.build_prompt_only(context, body.query, mode=body.mode)
+    except ProviderTimeout as exc:
+        return _err(504, "provider_timeout", str(exc))
+    except ProviderError as exc:
+        return _err(502, "provider_error", str(exc))
 
     return {
         "answer": answer,

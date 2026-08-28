@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import io
 import json
 
 import pytest
@@ -133,11 +134,74 @@ class TestChatBounds:
         assert any(x["note_id"] == n for x in snapshot.get("notes", []))
 
     def test_messages_never_contain_api_key(self, client: TestClient, core_conn):
-        """落库内容反向断言：无 api_key/settings 值。"""
+        """盲区转正（第四次）：真实形态 key 放进真实存放处（settings 表），
+        走完整 /chat 流程，断言落库内容不携带——实现安全必须由测试证明。"""
+        client.put("/api/v1/settings", json={
+            "settings": {"llm.api_key": "sk-real-shape-key-999"}})
         cid = _mk_concept(client, "安全概念")
         r = client.post("/api/v1/chat", json={"concept_id": cid, "query": "q"})
         conv_id = r.json()["conversation_id"]
         blob = core_conn.execute(
             "SELECT group_concat(content || context_json) AS b FROM messages "
             "WHERE conversation_id=?", (conv_id,)).fetchone()["b"]
-        assert "sk-" not in blob and "api_key" not in blob
+        assert "sk-real-shape-key-999" not in blob
+        assert "api_key" not in blob
+
+    def test_provider_timeout_maps_504(self, client: TestClient, monkeypatch):
+        """P1 守护：provider 超时 → 504（非未处理 500）。"""
+        import urllib.error
+        import urllib.request
+        cid = _mk_concept(client, "超时概念")
+        client.put("/api/v1/settings", json={
+            "settings": {"llm.provider": "openai_compat",
+                         "llm.base_url": "http://127.0.0.1:9",
+                         "llm.api_key": "sk-timeout-check"}})
+
+        def fake_urlopen(req, timeout=None):
+            raise urllib.error.URLError("connection refused")
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+        r = client.post("/api/v1/chat", json={
+            "concept_id": cid, "query": "q"})
+        assert r.status_code == 504
+        assert r.json()["error"]["code"] == "provider_timeout"
+        assert "sk-timeout-check" not in r.text  # 错误响应也不带 key
+
+    def test_provider_error_maps_502(self, client: TestClient, monkeypatch):
+        """P1 守护：provider HTTP 错误 → 502。"""
+        import urllib.error
+        import urllib.request
+        cid = _mk_concept(client, "错误概念")
+        client.put("/api/v1/settings", json={
+            "settings": {"llm.provider": "openai_compat",
+                         "llm.base_url": "http://127.0.0.1:9"}})
+
+        def fake_urlopen(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 500, "boom",
+                                         io.BytesIO(b"{}"), io.BytesIO(b"boom"))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+        r = client.post("/api/v1/chat", json={
+            "concept_id": cid, "query": "q"})
+        assert r.status_code == 502
+        assert r.json()["error"]["code"] == "provider_error"
+
+    def test_no_orphan_conversation_on_provider_failure(
+        self, client: TestClient, core_conn, monkeypatch):
+        """P1 守护：ask 失败不得残留孤儿空对话（B3 双 LLM 调用前必修）。"""
+        import urllib.error
+        import urllib.request
+        cid = _mk_concept(client, "孤儿概念")
+        client.put("/api/v1/settings", json={
+            "settings": {"llm.provider": "openai_compat",
+                         "llm.base_url": "http://127.0.0.1:9"}})
+        monkeypatch.setattr(urllib.request, "urlopen",
+                            lambda req, timeout=None: (_ for _ in ()).throw(
+                                urllib.error.URLError("boom")))
+        before = core_conn.execute(
+            "SELECT COUNT(*) FROM conversations").fetchone()[0]
+        r = client.post("/api/v1/chat", json={"concept_id": cid, "query": "q"})
+        assert r.status_code == 504
+        after = core_conn.execute(
+            "SELECT COUNT(*) FROM conversations").fetchone()[0]
+        assert after == before, "provider 失败残留孤儿对话"

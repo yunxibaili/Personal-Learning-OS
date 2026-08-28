@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from ..core.ai.config import create_provider, load_llm_config
+from ..core.ai.errors import ProviderError, ProviderTimeout
 from ..core.ai.service import TutorService
 from ..core.conversations import (
     ConversationNotFoundError,
@@ -36,8 +37,7 @@ from ..db import connect
 
 router = APIRouter(prefix="/api/v1", tags=["conversations"])
 
-VALID_MODES = ("explain", "hint", "review", "debug")
-MAX_QUERY_CHARS = 4000  # ≈ 1000 tokens（QUERY_CHAR_LIMIT 内再截断，此处防滥用）
+MAX_QUERY_CHARS = 2000  # 与 core/ai/constants.QUERY_CHAR_LIMIT 对齐：超限 400 拒绝，避免"落库原文≠模型所见"的静默截断不一致
 
 
 def _err(status: int, code: str, message: str) -> JSONResponse:
@@ -103,7 +103,7 @@ class ChatRequest(BaseModel):
     auto_notes: bool = False
     conversation_id: int | None = None
     query: str = Field(..., min_length=1, max_length=MAX_QUERY_CHARS)
-    mode: str = "explain"
+    mode: TutorMode = "explain"
 
 
 @router.post("/chat")
@@ -111,22 +111,17 @@ def post_chat(body: ChatRequest) -> dict:
     query = body.query.strip()
     if not query:
         return _err(400, "empty_query", "query 不能为空")
-    if body.mode not in VALID_MODES:
-        return _err(400, "invalid_mode",
-                    f"mode 须为 {'/'.join(VALID_MODES)}")
     note_ids = body.note_ids or []
     if len(note_ids) > 2:
         return _err(400, "too_many_notes", "note_ids 最多 2 篇")
 
     conn = connect()
     try:
-        # 1. 对话定位（无则新建）
+        # 1. 对话定位（已有对话校验存在）
         conv_id = body.conversation_id
         if conv_id is not None and not conversation_exists(conn, conv_id):
             return _err(404, "conversation_not_found",
                         f"conversation {conv_id} not found")
-        if conv_id is None:
-            conv_id = create_conversation(conn, title=query[:50])
 
         # 2. context（concept 可选；引用/自动笔记可选）
         context: dict = {}
@@ -137,11 +132,13 @@ def post_chat(body: ChatRequest) -> dict:
             ))
 
         # 3. provider（settings 驱动 factory）→ 回答
+        #    P1 修正：ask 在建对话之前——provider 失败不再残留孤儿空对话
         provider = create_provider(load_llm_config(conn))
-        answer = TutorService(provider).ask(
-            context, query, mode=body.mode)  # type: ignore[arg-type]
+        answer = TutorService(provider).ask(context, query, mode=body.mode)
 
-        # 4. 落库：user（无快照）+ assistant（context_json 快照）
+        # 4. 落库（仅 ask 成功后）：新建对话 + user/assistant 双消息
+        if conv_id is None:
+            conv_id = create_conversation(conn, title=query[:50])
         append_message(conn, conv_id, role="user", content=query)
         append_message(conn, conv_id, role="assistant", content=answer,
                        context=context)
@@ -152,5 +149,9 @@ def post_chat(body: ChatRequest) -> dict:
                     f"concept {body.concept_id} not found")
     except NoteNotFoundError as exc:
         return _err(404, "note_not_found", str(exc))
+    except ProviderTimeout as exc:
+        return _err(504, "provider_timeout", str(exc))
+    except ProviderError as exc:
+        return _err(502, "provider_error", str(exc))
     finally:
         conn.close()
