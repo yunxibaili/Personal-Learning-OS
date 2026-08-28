@@ -157,12 +157,12 @@ T-M1R（ADR-008 模型冻结 + migration 002 已应用真实 workspace）。
 **依赖清单**：Python 运行时 3（fastapi/uvicorn/python-multipart）；
 Web 运行时 12（react/react-dom/zustand/katex/marked/@xyflow/react 未装/
 tiptap×3/tiptap-markdown/math-ext/extension-image/d3-force 未装）；
-全部登记于 docs/dependencies/REGISTRY.md 并含否决备选记录。
+全部登记于 docs/DEPENDENCIES.md 并含否决备选记录。
 
 **技术文档**：AGENTS（宪法）· TECH_DESIGN（唯一技术来源 §1-§10）·
-environment · separation · CONTRIBUTING · architecture/(principles+ADR-001~008+
-integration-upmark) · dependencies/(policy+REGISTRY) · version-control/git-policy ·
-data-model/INDEX · tasks/TASKS · CHANGELOG。
+PROJECT_STATE（状态唯一来源）· DATA_MODEL · SYNC · TESTING · EVALUATION ·
+DESIGN（冻结）· DEPENDENCIES · adr/(principles+ADR-001~023+separation+
+integration-upmark) · version-control/git-policy · TASKS · CHANGELOG。
 
 ---
 
@@ -184,9 +184,9 @@ data-model/INDEX · tasks/TASKS · CHANGELOG。
 | 要求 | 实际文件 |
 |---|---|
 | 必须：TECH_DESIGN.md | [docs/TECH_DESIGN.md](docs/TECH_DESIGN.md)（§1-§10 含 DB 设计/API 设计/路线） |
-| 必须：TASKS.md | [docs/tasks/TASKS.md](docs/tasks/TASKS.md) |
-| 必须：ARCHITECTURE | [AGENTS.md](AGENTS.md)（宪法）+ [docs/architecture/](docs/architecture/)（principles + separation + ADR-001~008 + integration-upmark） |
-| 必须：REGISTRY.md | [docs/dependencies/REGISTRY.md](docs/dependencies/REGISTRY.md)（+ dependency-policy.md） |
-| 数据库设计 | TECH_DESIGN §4 + [docs/data-model/INDEX.md](docs/data-model/INDEX.md) |
+| 必须：TASKS.md | [docs/TASKS.md](docs/TASKS.md) |
+| 必须：ARCHITECTURE | [AGENTS.md](AGENTS.md)（宪法）+ [docs/adr/](docs/adr/)（principles + separation + ADR-001~023 + integration-upmark） |
+| 必须：REGISTRY.md | [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)（+ dependency-policy.md） |
+| 数据库设计 | TECH_DESIGN §4 + [docs/DATA_MODEL.md](docs/DATA_MODEL.md) |
 | API 设计 | TECH_DESIGN §9（/api/v1 全量清单）+ shared/types/*.ts 契约 |
 | 目录结构 | README「目录」节 + environment.md §三 归属表 |

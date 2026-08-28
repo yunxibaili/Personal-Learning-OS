@@ -3,7 +3,7 @@
 > **项目唯一状态来源**（Single Source of Truth for current state）。
 > 第一次接触项目、或 AI 会话启动时，从这里开始。
 >
-> 基线：2026-08-28 · HEAD `1843894` · Branch `main` · Commits 107 · License Apache-2.0
+> 基线：2026-08-29 · HEAD `2852866` · Branch `main` · Commits 108 · License Apache-2.0
 > 验证：`pytest` **486 passed** · `vitest` 23 passed · `tsc --noEmit` PASS · `vite build` PASS
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，

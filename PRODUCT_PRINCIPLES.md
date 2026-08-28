@@ -1,7 +1,7 @@
 # Product Principles（产品原则）
 
 > 决策冲突时的最高裁决依据，优先级高于功能诉求与实现便利。
-> 关联：AGENTS.md（工程宪法）· docs/architecture/principles.md（工程原则）
+> 关联：AGENTS.md（工程宪法）· docs/adr/principles.md（工程原则）
 
 状态：Accepted · 2026-08-26
 

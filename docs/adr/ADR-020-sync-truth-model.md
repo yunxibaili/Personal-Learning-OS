@@ -29,7 +29,7 @@ ADR-005 冻结了同步范围（白名单/黑名单）和协议 v1（manifest + 
 | Learning Events | `eventlogs/*.jsonl` | 追加合并 | append-only | 按 event id 幂等去重 |
 | Mastery | `concept_mastery` | 不同步 | 从 events 重建 | 各设备独立重放 |
 | Review Queue | `review_queue` | 不同步 | 从 mastery 重建 | 各设备独立重放 |
-| MindMap Layout | `mind_maps` / `mind_map_nodes` / `mind_map_edges` | 文件同步 | last-write-wins | ADR-021 格式导出 |
+| MindMap Layout | `mind_maps` / `mind_map_nodes` / `mind_map_edges` | 文件同步 | LWW + 首次冲突 `.local.json` 备份（2026-08-28 修订：追认 M7-004 apply.py CONFLICT_BACKUP 实现） | ADR-021 格式导出 |
 | AI Context | `tutor_memories` / `tutor_conversations` | 不同步 | 单设备私有 | v1 不同步 |
 
 ### 2.2 三层事实模型

@@ -9,35 +9,32 @@
 
 **P8-003E Tutor Review Bridge + Auto Notes**（纯后端）
 
-## 路线调整（用户指令 2026-08-28 + PM 裁决 D1-D4）
+## 路线调整（D1-D5 已落盘 · 审核收口 2026-08-29 完成 · 两项裁决待确认）
 
-**前端暂时不动，优先完成全部后端。** 执行队列（PM 拍板版）：
+**审核收口（2026-08-29 已执行）**：
+- ✅ SYNC.md 三重矛盾统一（vault：实然 LWW，M7-007 目标态双份；mindmap 行对齐 CONFLICT_BACKUP）
+- ✅ ADR-020 §2.1 MindMap 行回改（追认 M7-004 CONFLICT_BACKUP，带修订标注）
+- ✅ 残留清零：3 处代码注释断链（core/__init__ · db.py · note.ts）+ README/PROJECT_BRIEF/PRODUCT_PRINCIPLES + ADR-017 自引——活文档旧路径 0 处
+- ✅ PROJECT_STATE 基线更新（2852866 / 108 commits）· README 焦点行更新
 
+**待项目所有者确认的两项裁决（建议已给出）**：
+- 裁决 1（M7-007 与 §9 归属）：建议**入 §9 给位次**（保持解冻条件单一来源）。
+  同时接受优先级 pushback：队列调整为 **T-EXPORT（B11，README 背书 + D2 批准 + 体量小）
+  先于 M7-007**；M7-007 的显式优先理由 = 修复 ADR-020 既成事实违反的安全网 +
+  E2E 显式 no-op 缺口，但不再抢占 T-EXPORT。
+- 裁决 2（ADR-020 修订方式）：建议 **ADR-020 内联修订 + 修订标注**（不开 ADR-024）。
+  理由：修订性质为追认既成事实 + 细化 Layer 1 冲突策略，三层真值模型本体不动；
+  先例 ADR-014 附录 §2.8.1；避免同主题双 ADR。MindMap 行已按此形式修订。
+
+**执行队列（更新版）**：
 ```
-1. 空表盘点（D5 微任务）            ✅ 2026-08-28 → docs/DATA_MODEL.md
-2. M7-007 Vault Conflict Preservation   ← 下一项（先补安全网再扩同步面）
-3. T-EXPORT 导出脚本（D2：承诺兑现，首次公开发布前置；盘点确认范围无需收窄）
-4. pairing + manifest exchange（D4：必须带 CLI/脚本驱动调用路径，否则降级至前端解冻后）
-5. event_id / event_uuid 术语统一（micro-task）
-   ── 以下阻塞于前端解冻 ──
-   /home 聚合端点（D1：前端冻结期零消费方，移出活跃队列）
+1. 审核收口四项                    ✅ 2026-08-29
+2. T-EXPORT 导出脚本（B11）        ← 下一项（裁决 2 不阻塞它）
+3. M7-007 Vault Conflict Preservation（等裁决 1/2 确认，含 ADR-020 内联修订）
+4. 9.1 AI 闭环（§9 自标最高优先）
+5. pairing + manifest（D4：CLI 驱动前置）
+6. 术语统一 micro-task
 ```
-
-**裁决记录**：
-- D1 /home → 移出活跃队列（撞"漂亮空壳"铁律：零消费方）
-- D2 T-EXPORT → 批准插队（PRODUCT_PRINCIPLES §1 一键导出承诺兑现；极便宜：
-  zip(vault+eventlogs+mind_maps) + settings 去 key）
-- D3 M7-007 先于 pairing → 认可且理由写死：conflict preservation 是安全网，
-  pairing 扩大同步面；先补网再扩面，与"守护先行"同原则
-- D4 pairing → 带 CLI 驱动才启动（无调用路径的端点=入口无出口）
-- D5 空表盘点 → 已完成；**新规矩自下一 migration 生效：新表必须同提交登记
-  生产者位置，无生产者不合入**（已写入 data-model/INDEX.md 顶部）
-- ⚠️ 风险要求：M7-007 与 pairing 连续动 ADR-020——各自完成后必须重跑同步
-  测试套件并重新核验三层模型（Layer1/2/3）仍成立
-
-**盘点结果摘要（D5）**：14 张活表零死表；memories（extractor 双缺）·
-conversations/messages（对话历史未立项）三张属 (b) 缺生产者待补、设计在案；
-T-EXPORT 范围确认无需收窄。详见 docs/DATA_MODEL.md。
 
 ## P8-003E 范围（两项，零前端）
 

@@ -1,6 +1,6 @@
 """Data Layer：SQLite 连接、workspace 目录、migration runner。
 
-规则（docs/architecture/separation.md）：
+规则（docs/adr/separation.md）：
 - 只有本模块及其调用方（core 内数据访问函数）允许触碰 SQLite；
 - 数据库是可重建缓存，workspace 文件才是事实源（ADR-001/005）。
 """

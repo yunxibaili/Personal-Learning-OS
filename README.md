@@ -40,7 +40,7 @@ npm run dev
 
 ## 当前进度
 
-📋 任务看板与完成报告：[docs/TASKS.md](docs/TASKS.md) —— 当前焦点：**M2 双链·反链·图谱已完成 / M3.5-A 知识雷达 MVP 已完成**
+📋 任务看板与完成报告：[docs/TASKS.md](docs/TASKS.md) —— 当前焦点：**后端优先阶段**（前端冻结，见 PROJECT_STATE §0）· M7 同步系统完整 · P8 进行中
 每个里程碑的验收标准见 [docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10。
 
 | 里程碑 | 状态 | 内容 |
@@ -58,7 +58,7 @@ npm run dev
 workspace/ 用户私有数据（vault 笔记 + 附件 + 数据库）——永不入库，路径可在设置中改
 server/    FastAPI 后端（SQLite + 学习引擎 + AI）
 web/       React 前端
-docs/      技术设计唯一来源 + architecture/(principles+ADR) + dependencies/(policy+registry)
+docs/      技术设计唯一来源 + adr/(principles+ADR) + dependencies/(policy+registry)
            + security/network-boundary + version-control/git-policy + tasks/TASKS
 AGENTS.md  工程宪法（强制约束，AI 与人类共同遵守；写码前必读四文件见文首）
 CHANGELOG.md 变更日志

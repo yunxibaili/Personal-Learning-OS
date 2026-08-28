@@ -33,7 +33,7 @@ Diagram is a map, not a mirror.
 
 ```
 docs/
-├── architecture/
+├── adr/
 │   └── ADR-017-architecture-visualization.md
 └── diagrams/
     ├── system-map.yaml        ← 声明式节点/边定义

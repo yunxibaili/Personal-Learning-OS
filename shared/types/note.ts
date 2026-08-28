@@ -1,5 +1,5 @@
 /**
- * API 响应契约的唯一权威定义（docs/architecture/separation.md §五）。
+ * API 响应契约的唯一权威定义（docs/adr/separation.md §五）。
  * Python 侧以 pytest 契约测试断言真实响应与此文件一致。
  */
 
