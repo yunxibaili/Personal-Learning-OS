@@ -209,8 +209,9 @@ class SyncApply:
         """vault 等 LWW 文件：相同跳过；冲突时本地版进 .conflict 副本（方案 a）。
 
         副本后缀 .conflict 不在同步白名单（vault/**/*.md）——天然隔离，
-        不会跨设备增殖（M7-007 方案 a 裁定，ADR-020 附录 §2.1.2）。
-        已存在的副本 = 更早分叉点，永不覆盖。
+        不会跨设备增殖（M7-007 方案 a，ADR-020 附录 §2.1.2）。
+        副本语义（vault 与 mindmap 分化）：每次冲突都更新为最近一次被
+        覆盖的本地版本——保护用户基于上一版的新编辑（P0）。
         """
         target = workspace / path
         if target.exists() and target.read_bytes() == data:
@@ -218,12 +219,13 @@ class SyncApply:
 
         had_conflict = target.exists()
         if had_conflict:
-            backup_path = target.with_name(target.name + ".conflict")
-            if not backup_path.exists():
-                if write_file_atomic(workspace, path + ".conflict",
-                                     target.read_bytes()) is None:
-                    return ApplyItemResult(path, ApplyAction.REJECTED, False,
-                                           "backup write failed")
+            # vault 语义（与 mindmap 分化）：副本 = 最近一次被覆盖的本地版本，
+            # 每次冲突都更新——保护用户基于上一版的新编辑（P0 修复）。
+            # mindmap 保留"首份不覆盖"语义（布局可重建，不需要）。
+            if write_file_atomic(workspace, path + ".conflict",
+                                 target.read_bytes()) is None:
+                return ApplyItemResult(path, ApplyAction.REJECTED, False,
+                                       "backup write failed")
 
         if write_file_atomic(workspace, path, data) is None:
             return ApplyItemResult(path, ApplyAction.REJECTED, False, "write failed")

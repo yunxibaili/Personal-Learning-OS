@@ -253,16 +253,26 @@ class TestVaultConflictCopy:
         backup = ws / "vault" / "story.md.conflict"
         assert backup.exists() and backup.read_bytes() == local_v1
 
-    def test_conflict_copy_never_overwritten(self, ws, applyer):
-        """已存在的副本 = 更早分叉点，后续冲突不得覆盖（同 mindmap 语义）。"""
+    def test_consecutive_conflicts_keep_latest_local_edit(self, ws, applyer):
+        """P0 守护：连续冲突 + 用户本地编辑 → 副本必须保住最近编辑。
+
+        场景：L1 本地 → apply R1（副本=L1，主=R1）→ 用户基于 R1 编辑出 L2
+        → apply R2。L2 既不在主文件也不在旧副本，若副本不更新则永久丢失。
+        vault 语义与 mindmap 分化：副本 = 最近一次被覆盖的本地版本。
+        """
         target = ws / "vault" / "story.md"
-        target.write_bytes(b"v1")
-        applyer.apply_file(ws, "vault/story.md", b"v2",
-                           expected_hash=sha(b"v2"))
-        applyer.apply_file(ws, "vault/story.md", b"v3",
-                           expected_hash=sha(b"v3"))
+        target.write_bytes(b"L1")
+        applyer.apply_file(ws, "vault/story.md", b"R1",
+                           expected_hash=sha(b"R1"))
+        target.write_bytes(b"L2")                        # 用户基于 R1 编辑
+        r = applyer.apply_file(ws, "vault/story.md", b"R2",
+                               expected_hash=sha(b"R2"))
+        assert r.action is ApplyAction.CONFLICT_BACKUP
+        assert target.read_bytes() == b"R2"              # 主 = 最新远端
         backup = ws / "vault" / "story.md.conflict"
-        assert backup.read_bytes() == b"v1"              # 首次备份保留
+        assert backup.read_bytes() == b"L2", (
+            "用户最近本地编辑丢失——P0 回归"
+        )
 
     def test_conflict_copy_not_syncable(self, ws, applyer):
         """.conflict 后缀天然不在白名单——副本永不参与同步（方案 a 核心）。"""
