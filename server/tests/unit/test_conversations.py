@@ -20,6 +20,24 @@ def _mk_concept(client: TestClient, title: str) -> int:
     return r.json()["id"]
 
 
+def _parse_sse(body: str) -> list[dict]:
+    """SSE 响应体 → [{event, data}]。``data:`` 为 JSON 对象。"""
+    frames: list[dict] = []
+    for block in body.split("\n\n"):
+        block = block.strip()
+        if not block:
+            continue
+        event = "data"
+        data: dict = {}
+        for line in block.split("\n"):
+            if line.startswith("event: "):
+                event = line[len("event: "):]
+            elif line.startswith("data: "):
+                data = json.loads(line[len("data: "):])
+        frames.append({"event": event, "data": data})
+    return frames
+
+
 # ── 连通性：/chat 全链落库 ──────────────────────────────────────────
 
 class TestChatPersistence:
@@ -205,3 +223,103 @@ class TestChatBounds:
         after = core_conn.execute(
             "SELECT COUNT(*) FROM conversations").fetchone()[0]
         assert after == before, "provider 失败残留孤儿对话"
+
+
+# ── B2 流式输出（SSE）───────────────────────────────────────────────
+
+class TestChatStreaming:
+    """B2-A 后端骨架：stream=true 走 SSE，增量拼装=整段回答，结尾 event:done。"""
+
+    def test_stream_content_type(self, client: TestClient):
+        cid = _mk_concept(client, "流式概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/event-stream")
+
+    def test_stream_chunks_reassemble_to_nonstream(self, client: TestClient):
+        """流式增量拼装 == 非流式整段回答（一致性契约）。"""
+        cid = _mk_concept(client, "一致概念")
+        s = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        ns = client.post("/api/v1/chat", json={"concept_id": cid, "query": "q"})
+        frames = _parse_sse(s.text)
+        chunks = [f["data"]["text"] for f in frames if f["event"] == "data"]
+        assert len(chunks) > 1, "默认 Mock 回答足够长，应有多个增量块"
+        assert "".join(chunks) == ns.json()["answer"]
+
+    def test_stream_done_event_carries_conversation_id(
+        self, client: TestClient, core_conn):
+        cid = _mk_concept(client, "收尾概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        frames = _parse_sse(r.text)
+        done = [f for f in frames if f["event"] == "done"]
+        assert len(done) == 1, "正常收尾应恰好一个 event:done"
+        conv_id = done[0]["data"]["conversation_id"]
+        assert conv_id > 0
+        n = core_conn.execute("SELECT COUNT(*) FROM messages WHERE conversation_id=?",
+                              (conv_id,)).fetchone()[0]
+        assert n == 2  # user + assistant
+
+    def test_stream_persists_assistant_message(self, client: TestClient, core_conn):
+        """流式落库：assistant 消息内容 == 增量拼装结果（非空，且已双消息）。"""
+        cid = _mk_concept(client, "落库概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        frames = _parse_sse(r.text)
+        done = [f for f in frames if f["event"] == "done"][0]["data"]
+        conv_id = done["conversation_id"]
+        joined = "".join(f["data"]["text"] for f in frames if f["event"] == "data")
+        rows = core_conn.execute(
+            "SELECT role, content FROM messages WHERE conversation_id=? "
+            "ORDER BY id", (conv_id,)).fetchall()
+        assert [m["role"] for m in rows] == ["user", "assistant"]
+        assert rows[1]["content"] == joined
+        assert rows[1]["content"]
+
+    def test_stream_extractor_runs_into_context_json(
+        self, client: TestClient, core_conn):
+        """B3 extractor 在流式 finally 亦运行：assistant context_json 含 extractor 键。"""
+        cid = _mk_concept(client, "抽取概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        done = [f for f in _parse_sse(r.text) if f["event"] == "done"][0]["data"]
+        row = core_conn.execute(
+            "SELECT context_json FROM messages WHERE conversation_id=? AND role='assistant'",
+            (done["conversation_id"],)).fetchone()
+        ctx = json.loads(row["context_json"])
+        assert "extractor" in ctx
+
+    def test_stream_unknown_concept_emits_error_event(
+        self, client: TestClient):
+        """SSE 契约：concept 不存在 → event:error（HTTP 200 流，非 404 JSON）。"""
+        r = client.post("/api/v1/chat", json={"concept_id": 999999,
+                                              "query": "q", "stream": True})
+        assert r.status_code == 200
+        frames = _parse_sse(r.text)
+        errs = [f for f in frames if f["event"] == "error"]
+        assert len(errs) == 1
+        assert errs[0]["data"]["code"] == "concept_not_found"
+
+    def test_stream_unknown_conversation_emits_error_event(
+        self, client: TestClient):
+        r = client.post("/api/v1/chat", json={"conversation_id": 999999,
+                                              "query": "q", "stream": True})
+        assert r.status_code == 200
+        frames = _parse_sse(r.text)
+        errs = [f for f in frames if f["event"] == "error"]
+        assert errs and errs[0]["data"]["code"] == "conversation_not_found"
+
+    def test_stream_same_conversation_appends(self, client: TestClient, core_conn):
+        """带 conversation_id 的流式 → 追加到既有对话（不新建）。"""
+        cid = _mk_concept(client, "追加流式概念")
+        r1 = client.post("/api/v1/chat", json={"concept_id": cid, "query": "q1"})
+        conv_id = r1.json()["conversation_id"]
+        r2 = client.post("/api/v1/chat", json={"concept_id": cid, "query": "q2",
+                                               "conversation_id": conv_id, "stream": True})
+        done = [f for f in _parse_sse(r2.text) if f["event"] == "done"][0]["data"]
+        assert done["conversation_id"] == conv_id
+        n = core_conn.execute("SELECT COUNT(*) FROM messages WHERE conversation_id=?",
+                              (conv_id,)).fetchone()[0]
+        assert n == 4  # 两轮 user+assistant

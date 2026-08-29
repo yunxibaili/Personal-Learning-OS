@@ -98,6 +98,25 @@ class TestRequestConstruction:
         OpenAICompatProvider(base_url="http://x", api_key="", model="m").complete(_prompt())
         assert "authorization" not in captured["headers"]
 
+    def test_stream_falls_back_to_complete(self, monkeypatch):
+        """B2-A：stream() 非流式回退 = 一次性 yield complete() 结果（拼装不变）。"""
+        captured = {"stream": None}
+
+        def fake_urlopen(req, timeout=None):
+            captured["stream"] = json.loads(req.data.decode("utf-8"))["stream"]
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "流式回退文本"}}]
+            }).encode("utf-8"))
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        provider = OpenAICompatProvider(base_url="http://127.0.0.1:11434",
+                                        api_key="sk-test", model="m")
+        chunks = list(provider.stream(_prompt()))
+        assert chunks == ["流式回退文本"]
+        assert "".join(chunks) == provider.complete(_prompt())
+        # B2-A 回退仍走非流式请求（stream:false）；真 SSE 解析留 B2-B
+        assert captured["stream"] is False
+
 
 # ── 错误映射 ────────────────────────────────────────────────────────
 

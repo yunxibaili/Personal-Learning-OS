@@ -3,6 +3,10 @@
 ADR-003 唯一协议：POST {base_url}/v1/chat/completions（非流式 complete）。
 api_key 只存在于实例内部，绝不进入 context / export（守护测试在库）。
 本地 Ollama 无 key：空 api_key 时不发送 Authorization 头。
+
+B2-A：stream() 目前为**非流式回退**（一次性 yield complete() 结果），
+真实 SSE 解析（``stream: true`` + 逐条 ``data:`` 帧解析）留待 B2-B 落此——接口形状已定，
+以免 Router 契约后续返工。
 """
 from __future__ import annotations
 
@@ -10,6 +14,7 @@ import json
 import socket
 import urllib.error
 import urllib.request
+from collections.abc import Iterator
 
 from ...tutor_types import TutorPrompt
 from ..errors import ProviderError, ProviderTimeout
@@ -71,3 +76,11 @@ class OpenAICompatProvider:
             return data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
             raise ProviderError("LLM 响应缺少 choices[0].message.content") from exc
+
+    def stream(self, prompt: TutorPrompt) -> Iterator[str]:
+        """B2-A 非流式回退：一次性 yield 整段回答（接口形状已定）。
+
+        语义仍满足 ``"".join(stream(prompt)) == complete(prompt)``。
+        真实 SSE 增量解析（``stream: true``）留待 B2-B 覆盖此方法。
+        """
+        yield self.complete(prompt)

@@ -1,8 +1,10 @@
-"""Conversations Core（B7）：对话与消息的持久化函数。
+"""Conversations Core（B7+）：对话与消息的持久化函数。
 
 纯逻辑层：不 import FastAPI。conversations / messages 两张表的生产者
 （TABLE_AUDIT (b)→(a)）。context_json 快照随 assistant 消息落库——
 上下文透视与审计的数据基础。
+
+B3 新增：update_message_context() 将 extractor 结果写进消息 context_json。
 """
 from __future__ import annotations
 
@@ -80,6 +82,29 @@ def append_message(conn, conversation_id: int, *, role: str,
     return cur.lastrowid
 
 
+def update_message_context(conn, message_id: int, patch: dict) -> None:
+    """向既有消息的 context_json 合并一个键（B3：extractor 结果回写）。
+
+    同键覆盖 = 重放/重试天然幂等。消息不存在静默跳过。
+    """
+    row = conn.execute(
+        "SELECT context_json FROM messages WHERE id=?", (message_id,)
+    ).fetchone()
+    if row is None:
+        return  # 消息不存在，静默跳过
+    try:
+        ctx = json.loads(row["context_json"] or "{}")
+    except json.JSONDecodeError:
+        ctx = {}
+    # B3 spec：extractor 结果存入 ctx["extractor"] 键
+    ctx["extractor"] = patch
+    conn.execute(
+        "UPDATE messages SET context_json=? WHERE id=?",
+        (json.dumps(ctx, ensure_ascii=False, default=str), message_id),
+    )
+    conn.commit()
+
+
 def delete_conversation(conn, conversation_id: int) -> None:
     """删除对话（messages 经 FK CASCADE 级联消失）。不存在抛错。"""
     if not conversation_exists(conn, conversation_id):
@@ -91,5 +116,5 @@ def delete_conversation(conn, conversation_id: int) -> None:
 __all__ = [
     "ConversationNotFoundError", "create_conversation", "list_conversations",
     "conversation_exists", "get_messages", "append_message",
-    "delete_conversation", "DEFAULT_TITLE",
+    "delete_conversation", "update_message_context", "DEFAULT_TITLE",
 ]

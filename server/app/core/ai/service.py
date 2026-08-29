@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 from ..tutor_types import TutorContext, TutorMode, TutorPrompt
 from .tutor import build_prompt
 from .errors import ProviderError, ProviderTimeout, TutorError
@@ -41,6 +43,32 @@ class TutorService:
         prompt = build_prompt(context, query, mode)
         try:
             return self._provider.complete(prompt)
+        except TutorError:
+            raise
+        except TimeoutError:
+            raise ProviderTimeout()
+        except Exception as exc:
+            raise ProviderError() from exc
+
+    def ask_stream(
+        self,
+        context: TutorContext,
+        query: str,
+        mode: TutorMode = "explain",
+    ) -> Iterator[str]:
+        """Context + Query → 流式增量块（B2）。
+
+        纯生成器链：build_prompt() → provider.stream() → 逐块 str。
+        调用方约定：``"".join(ask_stream(...)) == ask(...)``（增量拼装恒等于整段回答）。
+
+        不访问 DB，不修改状态；错误传播与 ask() 一致（TutorError 透传）。
+
+        Raises:
+            TutorError: Provider 超时或错误（用户友好消息）
+        """
+        prompt = build_prompt(context, query, mode)
+        try:
+            yield from self._provider.stream(prompt)
         except TutorError:
             raise
         except TimeoutError:

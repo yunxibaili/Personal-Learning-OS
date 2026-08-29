@@ -44,6 +44,14 @@ export interface TutorNote {
   excerpt: string;
 }
 
+/** 用户长期记忆条目（B8，≤5 条，importance×新近度排序） */
+export interface TutorMemory {
+  kind: string;
+  content: string;
+  importance: number;
+  last_used_at: string;
+}
+
 export interface TutorContext {
   concept: TutorConcept;
   mastery: TutorMastery;
@@ -53,3 +61,10 @@ export interface TutorContext {
   recent_events: TutorEvent[];
   notes?: TutorNote[];
 }
+
+/** B2 流式输出（SSE）事件契约。POST /chat 请求体 stream=true 时返回 text/event-stream。
+ * 帧格式与 server/app/routers/conversations.py `_sse`/`_chat_stream` 对齐。 */
+export type TutorStreamFrame =
+  | { event: "data"; text: string }
+  | { event: "done"; conversation_id: number }
+  | { event: "error"; code: string; message: string };
