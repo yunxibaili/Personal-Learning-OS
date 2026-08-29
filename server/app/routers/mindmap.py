@@ -40,6 +40,7 @@ from ..core.mindmap import (
     delete_node,
     export_map,
     get_map,
+    get_map_outline,
     import_map,
     list_maps,
     search_concepts,
@@ -203,6 +204,15 @@ def api_delete_edge(map_id: int, edge_id: int) -> dict:
 
 
 # ── Export / Import（ADR-021 Exchange Format v1）────────────────
+
+@router.get("/{map_id}/outline")
+def api_map_outline(map_id: int) -> dict:
+    """B18：mindmap 结构 → Markdown 大纲段（嵌套列表 + [[label]]）。"""
+    outline = get_map_outline(map_id)
+    if outline is None:
+        raise HTTPException(404, "map not found")
+    return {"map_id": map_id, "outline": outline}
+
 
 @router.get("/{map_id}/export")
 def api_export_map(map_id: int):

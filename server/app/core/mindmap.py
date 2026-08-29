@@ -407,3 +407,76 @@ def _get_edges(conn, map_id: int) -> list[dict[str, Any]]:
         (map_id,),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ── B18 大纲反解析（mindmap 结构 → Markdown 大纲段）────────────────
+
+# md 内「结构大纲」片段的标记（ADR-002）：结构唯一事实源是 *.mindmap.json，
+# 大纲段为派生视图；这里从 json 结构生成该派生段。
+GENERATED_MINDMAP_MARKER = "<!-- generated:mindmap -->"
+
+
+def build_outline(map_data: dict[str, Any]) -> str:
+    """把导出后的 map 结构转为 Markdown 嵌套列表大纲（含标记）。
+
+    规则（ADR-002 / TECH_DESIGN §7.8）：
+      - 无边向层级以「边 source=父，target=子」推导
+      - 根节点 = 无入边的节点；环/孤点兜底避免漏项
+      - 每个节点渲染为 ``- [[label]]`` 编号层级缩进（原生 wikilink，供 ADR-008 建链）
+    """
+    nodes = {n["id"]: n for n in map_data.get("nodes", [])}
+    if not nodes:
+        return GENERATED_MINDMAP_MARKER + "\n"
+
+    def label_of(nid: int) -> str:
+        n = nodes[nid]
+        return (n.get("label") or "").strip() or f"节点{nid}"
+
+    children: dict[int, list[int]] = {nid: [] for nid in nodes}
+    incoming: dict[int, set[int]] = {nid: set() for nid in nodes}
+    for e in map_data.get("edges", []):
+        s, t = e.get("source"), e.get("target")
+        if s in nodes and t in nodes and s != t:
+            children[s].append(t)
+            incoming[t].add(s)
+
+    roots = [nid for nid in nodes if not incoming[nid]]
+    if not roots:
+        roots = [min(nodes)]  # 纯环：取单一入口兜底
+
+    lines = [GENERATED_MINDMAP_MARKER]
+    visited: set[int] = set()
+
+    def walk(nid: int, depth: int) -> None:
+        if nid in visited:
+            return
+        visited.add(nid)
+        lines.append(f"{'  ' * depth}- [[{label_of(nid)}]]")
+        for c in children[nid]:
+            walk(c, depth + 1)
+
+    for r in roots:
+        walk(r, 0)
+    for nid in nodes:  # 兜底：非树可达的孤立/环残留节点
+        if nid not in visited:
+            walk(nid, 0)
+
+    return "\n".join(lines) + "\n"
+
+
+def get_map_outline(map_id: int, conn=None) -> str | None:
+    """生成某 Map 的 Markdown 大纲段。Map 不存在返回 None。"""
+    close = conn is None
+    conn = conn or connect()
+    try:
+        m = conn.execute(
+            "SELECT id FROM mind_maps WHERE id=?", (map_id,)
+        ).fetchone()
+        if m is None:
+            return None
+        nodes = _get_nodes(conn, map_id)
+        edges = _get_edges(conn, map_id)
+        return build_outline({"nodes": nodes, "edges": edges})
+    finally:
+        if close:
+            conn.close()

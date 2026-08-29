@@ -512,3 +512,56 @@ class TestExportImport:
         conn.close()
         assert after_events == before_events
         assert after_mastery == before_mastery
+
+# ── B18 大纲反解析（mindmap 结构 → Markdown 大纲段）────────────────
+
+class TestMindmapOutline:
+    def test_build_outline_hierarchy(self):
+        """边 source=父, target=子 → 嵌套列表缩进。"""
+        from app.core.mindmap import build_outline, GENERATED_MINDMAP_MARKER
+        data = {
+            "nodes": [
+                {"id": 1, "label": "数学"},
+                {"id": 2, "label": "线性代数"},
+                {"id": 3, "label": "微积分"},
+            ],
+            "edges": [
+                {"source": 1, "target": 2, "relation": "related"},
+                {"source": 1, "target": 3, "relation": "related"},
+            ],
+        }
+        md = build_outline(data)
+        lines = md.strip().split("\n")
+        assert lines[0] == GENERATED_MINDMAP_MARKER
+        assert lines[1] == "- [[数学]]"
+        assert lines[2] == "  - [[线性代数]]"
+        assert lines[3] == "  - [[微积分]]"
+
+    def test_build_outline_forest_multiple_roots(self):
+        """多个根（无入边）各自顶层；环兜底不丢节点。"""
+        from app.core.mindmap import build_outline
+        data = {
+            "nodes": [{"id": 1, "label": "A"}, {"id": 2, "label": "B"},
+                      {"id": 3, "label": "C"}],
+            "edges": [{"source": 1, "target": 2, "relation": "r"}],
+        }
+        md = build_outline(data)
+        assert "- [[A]]" in md
+        assert "  - [[B]]" in md
+        assert "- [[C]]" in md  # 孤立节点 → 顶层兜底
+
+    def test_build_outline_empty(self):
+        from app.core.mindmap import build_outline, GENERATED_MINDMAP_MARKER
+        assert build_outline({"nodes": [], "edges": []}) == GENERATED_MINDMAP_MARKER + "\n"
+
+    def test_outline_endpoint_and_404(self, client):
+        mid = client.post("/api/v1/mindmaps", json={"title": "Outline"}).json()["id"]
+        n1 = client.post(f"/api/v1/mindmaps/{mid}/nodes", json={"label": "Root"}).json()["id"]
+        n2 = client.post(f"/api/v1/mindmaps/{mid}/nodes", json={"label": "Child"}).json()["id"]
+        client.post(f"/api/v1/mindmaps/{mid}/edges", json={"source": n1, "target": n2})
+        r = client.get(f"/api/v1/mindmaps/{mid}/outline")
+        assert r.status_code == 200
+        outline = r.json()["outline"]
+        assert "[[Root]]" in outline
+        assert "  - [[Child]]" in outline
+        assert client.get("/api/v1/mindmaps/9999/outline").status_code == 404
