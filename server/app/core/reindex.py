@@ -38,8 +38,9 @@ def reindex_vault(
     参数：
       conn:         SQLite 连接（调用方负责 commit/rollback）
       vault_root:   vault 目录绝对路径
-      changed_paths: 增量路径列表（MVP 忽略，退化为全量）
-      prune_missing: 是否删除 vault 中不存在的 notes
+      changed_paths: None → 全量扫描；非 None → **增量**：仅处理列出的路径，
+                    文件存在则 upsert，不存在则删除该 note（含级联 links）。
+      prune_missing: 仅全量模式生效：删除 vault 中不存在的 notes
 
     返回统计字典：
       {notes_scanned, notes_upserted, notes_dropped, links_rebuilt, stubs_created}
@@ -56,7 +57,34 @@ def reindex_vault(
         logger.warning("vault_root does not exist: %s", vault_root)
         return stats
 
-    # 1. 扫描 vault/*.md，建立 path → file 映射
+    root = vault_root.resolve()
+
+    # ── 增量模式（changed_paths 明确给出，B17）──────────────────────
+    if changed_paths is not None:
+        for rel in changed_paths:
+            file = _safe_vault_file(root, rel)
+            if file is None:
+                logger.warning("reindex: skip path outside vault: %s", rel)
+                continue
+            rel_posix = file.relative_to(root).as_posix()
+            if file.exists() and file.is_file():
+                stats["notes_scanned"] += 1
+                try:
+                    _upsert_single_note(conn, file, rel_posix, root, stats)
+                except Exception:
+                    logger.exception("reindex failed for %s", rel_posix)
+            else:
+                # 路径不存在 → 视为删除（仅删除确实存在于 DB 的 note）
+                row = conn.execute(
+                    "SELECT id FROM notes WHERE path=?", (rel_posix,)).fetchone()
+                if row:
+                    K.drop_note_index(conn, row["id"])
+                    K.cascade_drop_entity(conn, "note", row["id"])
+                    stats["notes_dropped"] += 1
+                    logger.info("incremental reindex dropped note: %s", rel_posix)
+        return stats
+
+    # ── 全量模式（MVP 默认）────────────────────────────────────────
     existing_paths: set[str] = set()
     for md_file in vault_root.rglob("*.md"):
         rel = md_file.relative_to(vault_root).as_posix()
@@ -78,6 +106,20 @@ def reindex_vault(
                 logger.info("pruned orphan note: %s", row["path"])
 
     return stats
+
+
+def _safe_vault_file(root: Path, rel: str) -> Path | None:
+    """把增量路径解析为 vault 内的文件，越界（绝对路径 / 穿越）返回 None。
+
+    返回的 Path 一定位于 root 之下（否则 None）。
+    """
+    rel_p = Path(rel)
+    if rel_p.is_absolute() or ".." in rel_p.parts:
+        return None
+    candidate = (root / rel_p).resolve()
+    if not candidate.is_relative_to(root):
+        return None
+    return candidate
 
 
 def _upsert_single_note(

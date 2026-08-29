@@ -212,17 +212,29 @@ def delete_note(note_id: int) -> dict:
 admin_router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
+class ReindexBody(BaseModel):
+    changed_paths: list[str] | None = None  # B17：增量路径；None=全量
+    prune: bool | None = None
+
+
 @admin_router.post("/reindex")
-def admin_reindex(prune: bool = False) -> dict:
+def admin_reindex(body: ReindexBody | None = None, prune: bool = False) -> dict:
     """扫描 vault/ → 同步 SQLite notes + FTS5 + links。
 
-    prune=false（默认）：只新增/更新，不删除（安全模式）。
-    prune=true：删除 vault 中不存在的 notes（需确认）。
+    两种用法：
+      - 全量：POST /admin/reindex（body 或 `?prune=true`）
+      - 增量（B17）：POST /admin/reindex body={"changed_paths": ["a.md", "b.md"]}
+        文件存在则 upsert，不存在则删除该 note（含级联）。
     """
     conn = connect()
     try:
         vault = workspace_root() / "vault"
-        stats = reindex_vault(conn, vault, prune_missing=prune)
+        changed = body.changed_paths if body is not None else None
+        prune_flag = prune
+        if body is not None and body.prune is not None:
+            prune_flag = body.prune
+        stats = reindex_vault(conn, vault, changed_paths=changed,
+                              prune_missing=prune_flag)
         conn.commit()
     finally:
         conn.close()

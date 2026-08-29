@@ -157,3 +157,81 @@ class TestReindexSyncHook:
         assert resp.status_code == 200
         data = resp.json()
         assert "stats" in data
+
+
+# ── B17 增量 reindex（changed_paths）────────────────────────────────
+
+class TestReindexIncremental:
+    def test_incremental_only_processes_given_paths(self, conn, tmp_workspace):
+        """changed_paths 只处理列出的路径，其余不动。"""
+        vault = tmp_workspace / "vault"
+        vault.mkdir(exist_ok=True)
+        _write_note(vault, "A.md", "# A")
+        _write_note(vault, "B.md", "# B")
+        reindex_vault(conn, vault)
+        assert conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0] == 2
+
+        _write_note(vault, "C.md", "# C")
+        stats = reindex_vault(conn, vault, changed_paths=["C.md"])
+        assert stats["notes_scanned"] == 1
+        assert stats["notes_upserted"] == 1
+        n = conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
+        assert n == 3  # A/B 未重复处理，C 新增
+
+    def test_incremental_update_changed_note(self, conn, tmp_workspace):
+        vault = tmp_workspace / "vault"
+        vault.mkdir(exist_ok=True)
+        _write_note(vault, "X.md", "# X\n\nold")
+        reindex_vault(conn, vault)
+        _write_note(vault, "X.md", "# X\n\nnew content [[Link]]")
+        stats = reindex_vault(conn, vault, changed_paths=["X.md"])
+        assert stats["notes_upserted"] == 1
+        fts = conn.execute(
+            "SELECT body FROM notes_fts WHERE note_id=?",
+            (conn.execute("SELECT id FROM notes WHERE path='X.md'").fetchone()["id"],),
+        ).fetchone()
+        assert "new content" in fts["body"]
+        # 链接也同步（stub 创建）
+        assert stats["stubs_created"] >= 1
+
+    def test_incremental_deletion_drops_note_and_cascades(self, conn, tmp_workspace):
+        vault = tmp_workspace / "vault"
+        vault.mkdir(exist_ok=True)
+        _write_note(vault, "Del.md", "# Del\n\n[[ConceptKeep]]")
+        reindex_vault(conn, vault)
+        assert conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0] == 1
+        assert conn.execute("SELECT COUNT(*) FROM links").fetchone()[0] >= 1
+
+        (vault / "Del.md").unlink()
+        stats = reindex_vault(conn, vault, changed_paths=["Del.md"])
+        assert stats["notes_dropped"] == 1
+        assert conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0] == 0
+        # 级联清理该 note 的全部 links
+        assert conn.execute(
+            "SELECT COUNT(*) FROM links WHERE source_type='note'").fetchone()[0] == 0
+
+    def test_incremental_ignores_unknown_paths(self, conn, tmp_workspace):
+        """不存在的路径且 DB 无该记录 → 不增不删，安全。"""
+        vault = tmp_workspace / "vault"
+        vault.mkdir(exist_ok=True)
+        stats = reindex_vault(conn, vault, changed_paths=["Ghost.md"])
+        assert stats["notes_scanned"] == 0
+        assert stats["notes_dropped"] == 0
+
+    def test_incremental_rejects_path_traversal(self, conn, tmp_workspace):
+        """越界路径（绝对 / 穿越）被拒绝，不触碰 vault 外文件。"""
+        vault = tmp_workspace / "vault"
+        vault.mkdir(exist_ok=True)
+        outside = tmp_workspace / "secrets.md"
+        outside.write_text("# secret", encoding="utf-8")
+        stats = reindex_vault(conn, vault, changed_paths=["../secrets.md"])
+        assert stats["notes_scanned"] == 0
+        assert stats["notes_upserted"] == 0
+
+    def test_admin_endpoint_accepts_changed_paths_body(self, client):
+        """POST /admin/reindex body={"changed_paths":[...]} 走增量。"""
+        resp = client.post("/api/v1/admin/reindex",
+                           json={"changed_paths": ["DoesNotExist.md"]})
+        assert resp.status_code == 200
+        stats = resp.json()["stats"]
+        assert stats["notes_scanned"] == 0
