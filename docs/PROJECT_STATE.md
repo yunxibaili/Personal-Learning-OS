@@ -156,7 +156,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 |---|---|
 | 服务框架 | Python 3.12 + FastAPI 0.115 + uvicorn，仅绑 `127.0.0.1`（`$env:PORT` 可覆盖） |
 | 数据库 | SQLite（标准库 `sqlite3` 直写 SQL）+ FTS5；**无 ORM**（`AGENTS.md` §2.2 永久禁止） |
-| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 52 端点；错误统一 `{error:{code,message}}` |
+| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 53 端点；错误统一 `{error:{code,message}}` |
 | 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层 |
 | 图查询 | 递归 CTE（`local_graph`），不引图数据库 |
 | 代码规模 | `server/app` Python ≈ 6,119 行 |
@@ -394,11 +394,11 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §7 API Overview
 
-统一前缀 `/api/v1`，**18 APIRouter / 52 端点**。
+统一前缀 `/api/v1`，**18 APIRouter / 53 端点**。
 
 | 类别 | 前缀 | 端点 |
 |---|---|---|
-| Notes | `/api/v1/notes` | `GET /notes` · `POST /notes`@201 · `GET /notes/{id}` · `PATCH /notes/{id}` · `DELETE /notes/{id}` · `GET /notes/{id}/link-suggestions`（B4） |
+| Notes | `/api/v1/notes` | `GET /notes` · `POST /notes`@201 · `POST /notes/batch`（B15）· `GET /notes/{id}` · `PATCH /notes/{id}` · `DELETE /notes/{id}` · `GET /notes/{id}/link-suggestions`（B4） |
 | Concepts | `/api/v1/concepts` | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts`@201 · `PATCH /concepts/{id}`（**无 DELETE**，ADR-023） |
 | Links | `/api/v1/notes` | `GET /notes/{id}/backlinks` |
 | Graph | `/api/v1/graph` | `GET /graph`（root_type / root_id / depth 1~3，递归 CTE，只读） |
@@ -468,7 +468,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B12 | 错题本 API（`mistakes` 已有生产者） | ✅ 已实现（2026-08-30：`GET/PATCH/DELETE /mistakes` + `/mistakes/stats`，含按概念归因） |
 | B13 | Review 历史分析 | ✅ 已实现（2026-08-30：`GET /review/stats` 准确率/当前连对/按概念归因） |
 | B14 | Study Session | 未实现 |
-| B15 | 批量导入 | 未实现 |
+| B15 | 批量导入 | ✅ 已实现（2026-08-30：`POST /notes/batch`，逐篇部分成功不阻断） |
 | B16 | Vault 自动监听（文件系统 watcher） | 仅手动 `POST /admin/reindex` |
 | B17 | 增量 reindex（`changed_paths`） | ✅ 已实现（2026-08-30：`POST /admin/reindex` body `changed_paths` 增量 upsert+删除，含越界守卫） |
 | B18 | M2b 大纲反解析（`*.mindmap.json` → Markdown） | ✅ 已实现（2026-08-30：`get_map_outline`/`build_outline` + `GET /mindmaps/{id}/outline`） |
@@ -479,13 +479,13 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | # | 项 | 位置 | 状态 |
 |---|---|---|---|
-| B20 | Router 含业务逻辑（应下沉 Core） | `routers/mastery.py:135-159` | 未修 |
+| B20 | Router 含业务逻辑（应下沉 Core） | `routers/mastery.py:135-159` | ✅ 已修（2026-08-30：submit_answer 下沉 `core.mastery.submit_review_answer`） |
 | B21 | `_now_iso()` 跨模块重复实现 | `mastery.py` / `review_scheduler.py` | ✅ 已修（2026-08-30：`core/timeutil.py`，去重复+删死码） |
 | B22 | `except OSError` 静默降级不可观测 | `mastery.py` | ✅ 已修（2026-08-30：加日志告警） |
-| B23 | 「同事务」措辞名不副实（SQLite 与文件写无原子性） | `mastery.py` ~189 + `TECH_DESIGN.md` §5.5 | 未修 |
+| B23 | 「同事务」措辞名不副实（SQLite 与文件写无原子性） | `mastery.py` ~189 + `TECH_DESIGN.md` §5.5 | ✅ 已修（2026-08-30：措辞更正为「尽力而为追加」） |
 | B24 | `load_or_create_device()` 无内存缓存；`devices.json` 损坏时静默轮转身份 | `core/sync/device.py:70` | ✅ 已修（2026-08-30：进程内缓存 + 损坏备份 `.corrupt` + 日志） |
-| B25 | `core.mastery` → `core/sync/__init__.py` 传递依赖整个同步引擎 | `mastery.py:29`（非缺陷，可选解耦） | 未做 |
-| B26 | 端点返回类型标注与实现不符（约 18 处 `-> dict` 实返 `JSONResponse`） | 各 router | 未修 |
+| B25 | `core.mastery` → `core/sync/__init__.py` 传递依赖整个同步引擎 | `mastery.py:29`（非缺陷，可选解耦） | 保留（非缺陷，解耦收益低） |
+| B26 | 端点返回类型标注与实现不符（约 18 处 `-> dict` 实返 `JSONResponse`） | 各 router | 分析后保留：FastAPI 对 `dict|JSONResponse` 注释会建响应模型报错，采用 `-> dict`（settings.py 先例/T-M0）为既定模式 |
 
 ### 9.4 已闭环的历史缺口（存档，勿重复排查）
 
@@ -502,7 +502,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **692 passed**（~57s） |
+| `pytest -q` | **705 passed**（~64s） |
 | `npx vitest run` | **23 passed**（3 files） |
 | `tsc --noEmit` | **PASS** |
 | `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |
