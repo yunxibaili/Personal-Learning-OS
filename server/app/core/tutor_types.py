@@ -47,6 +47,14 @@ class EventContext(TypedDict):
     created_at: str
 
 
+class MemoryContext(TypedDict):
+    """用户长期记忆条目（B8，ADR-014 附录 §2.5.1）。"""
+    kind: str
+    content: str
+    importance: float
+    last_used_at: str
+
+
 class NoteContext(TypedDict):
     """用户显式引用的笔记片段（P8-003D，ADR-014:114 既有条款）。"""
     note_id: int
@@ -65,6 +73,7 @@ class TutorContext(TypedDict):
     review: NotRequired[ReviewContext | None]
     recent_events: list[EventContext]
     notes: NotRequired[list[NoteContext]]
+    memories: NotRequired[list[MemoryContext]]
 
 
 # ── TutorMode ──────────────────────────────────────────────────────

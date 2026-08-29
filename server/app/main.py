@@ -33,6 +33,7 @@ from .routers.sync import router as sync_router
 from .routers.tutor import router as tutor_router
 from .routers.universe import router as universe_router
 from .routers.mindmap import router as mindmap_router
+from .routers.memories import router as memories_router
 
 APP_VERSION = "0.1.0-dev"
 WEB_DIST = APP_ROOT / "web" / "dist"
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(sync_router)
     app.include_router(export_router)
     app.include_router(conversations_router)
+    app.include_router(memories_router)
     app.include_router(admin_router)
 
     @app.exception_handler(RequestValidationError)

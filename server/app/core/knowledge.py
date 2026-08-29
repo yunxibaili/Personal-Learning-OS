@@ -233,9 +233,12 @@ def resolve_title(conn, title: str) -> list[tuple[str, int]]:
     return out
 
 
-def ensure_entity_by_title(conn, title: str) -> tuple[str, int, bool]:
-    """字符串 → Entity。不存在则创建 concept 桩（origin=markdown, status=unconfirmed）。
+def ensure_entity_by_title(conn, title: str, *,
+                           origin: str = "markdown") -> tuple[str, int, bool]:
+    """字符串 → Entity。不存在则创建 concept 桩（status=unconfirmed）。
 
+    origin 默认 markdown（wikilink 管线）；B3 extractor 传 ai_suggested
+    （C4：来源字段诚实，Accept 只改 status）。
     返回 (entity_type, entity_id, created)。
     新建桩时同步初始化学习状态（mastery + review_queue）。
     """
@@ -244,8 +247,8 @@ def ensure_entity_by_title(conn, title: str) -> tuple[str, int, bool]:
         etype, eid = matches[0]
         return etype, eid, False
     cur = conn.execute(
-        "INSERT INTO concepts (title, origin, status) VALUES (?, 'markdown', 'unconfirmed')",
-        (title,),
+        "INSERT INTO concepts (title, origin, status) VALUES (?, ?, 'unconfirmed')",
+        (title, origin),
     )
     concept_id = cur.lastrowid
     # 初始化学习状态（惰性：mastery + review_queue）

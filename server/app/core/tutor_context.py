@@ -5,8 +5,9 @@
 review/recent_events/notes，返回 context dict。
 不负责：prompt 组装、LLM 调用、HTTP 响应格式。
 
-可见性白名单（ADR-014 + tutor-context.md + P8-003D 附录）：
+可见性白名单（ADR-014 + DATA_MODEL.md §C + P8-003D 附录）：
   允许：concept, mastery, mistakes, related, review, recent_events,
+       memories (B8, ADR-014 附录 §2.5.1),
        notes（仅用户显式引用的 ≤2 篇，确定性片段 ≤600 字符）
   禁止：未引用笔记全文, settings, api_key, 历史聊天
 """
@@ -21,6 +22,7 @@ from .knowledge import (
     read_note_file,
     search_notes,
 )
+from .memories import get_memories
 from .mastery import get_effective_now
 from .tutor_types import TutorContext
 
@@ -30,9 +32,10 @@ MAX_RELATED = 10
 MAX_RECENT_EVENTS = 5
 
 # P8-003D 笔记引用（甲路线：仅用户显式引用；乙自动检索属 P8-003E）
+MAX_MEMORIES = 5  # B8：上下文记忆条数（ADR-014 附录 §2.5.1）
 MAX_NOTE_EXCERPTS = 2
 MAX_NOTE_EXCERPT_CHARS = 600
-# 注入笔记时的收缩预算（tutor-context.md §5 增记）：related/recent 让位
+# 注入笔记时的收缩预算（DATA_MODEL.md §C 预算增记）：related/recent 让位
 NOTE_RELATED_CAP = 6
 NOTE_RECENT_CAP = 3
 
@@ -212,6 +215,16 @@ def _get_auto_notes(conn, concept_id: int, exclude_ids: list[int],
     return out
 
 
+def _get_memories(conn) -> list[dict]:
+    """B8：上下文记忆选取（复合排序 + 敏感排除 + 命中刷新，ADR-014 §2.5.1）。"""
+    picked = get_memories(conn, limit=MAX_MEMORIES, touch_on_hit=True)
+    return [
+        {"kind": m["kind"], "content": m["content"],
+         "importance": m["importance"], "last_used_at": m["last_used_at"]}
+        for m in picked
+    ]
+
+
 def build_tutor_context(conn, concept_id: int,
                         note_ids: list[int] | None = None,
                         auto_notes: bool = False) -> TutorContext:
@@ -245,4 +258,5 @@ def build_tutor_context(conn, concept_id: int,
             limit=NOTE_RECENT_CAP if notes else None,
         ),
         notes=notes,
+        memories=_get_memories(conn),
     )

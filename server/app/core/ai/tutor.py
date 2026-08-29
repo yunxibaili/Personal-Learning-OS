@@ -21,6 +21,7 @@ from .constants import (
     CHARS_PER_TOKEN,
     CONTEXT_CHAR_LIMIT,
     CONTEXT_VERSION,
+    MEMORIES_CHAR_BUDGET,
     QUERY_CHAR_LIMIT,
     SENSITIVE_CONTENT_PREFIXES,
     SENSITIVE_FIELD_NAMES,
@@ -121,7 +122,7 @@ def _format_mastery(mastery: dict) -> str:
     return " | ".join(parts)
 
 
-def _format_context(context: TutorContext) -> str:
+def _format_context(context: TutorContext) -> tuple[str, bool]:
     """TutorContext → 可读文本，注入 prompt。"""
     sections = []
 
@@ -167,7 +168,19 @@ def _format_context(context: TutorContext) -> str:
         lines = [f"- {n['title']}: {n['excerpt']}" for n in notes]
         sections.append("Referenced Notes:\n" + "\n".join(lines))
 
-    return "\n\n".join(sections)
+    # Memories（B8：用户长期记忆 top ≤5，importance×新近度）
+    # 方案 C 分段预算（B8-R2 裁决，替代被实证否决的方案 B"前置"）：memories
+    # 段独立 2000 字符预算（≈500 tokens），段内截断——既保证 memories 存活，
+    # 又不挤占其他段落额度；单头保留的全局截断仅作最终防线。
+    memories = context.get("memories") or []
+    mem_truncated = False
+    if memories:
+        lines = [f"- {m['kind']}: {m['content']}" for m in memories]
+        block, mem_truncated = _truncate("User Memories:\n" + "\n".join(lines),
+                                         MEMORIES_CHAR_BUDGET)
+        sections.append(block)
+
+    return "\n\n".join(sections), mem_truncated
 
 
 # ── 主入口 ────────────────────────────────────────────────────────
@@ -196,15 +209,15 @@ def build_prompt(
     # 2. Sanitize context（双重防御 Layer 2）
     safe_context = _sanitize_dict(dict(context))
 
-    # 3. Format context text
-    context_text = _format_context(safe_context)
+    # 3. Format context text（memories 段内截断并入 truncated 上报）
+    context_text, mem_truncated = _format_context(safe_context)
 
     # 4. Truncate
     system_text = _SYSTEM_PROMPTS[effective_mode]
     system_text, sys_truncated = _truncate(system_text, SYSTEM_CHAR_LIMIT)
     context_text, ctx_truncated = _truncate(context_text, CONTEXT_CHAR_LIMIT)
     query_text, q_truncated = _truncate(query, QUERY_CHAR_LIMIT)
-    truncated = sys_truncated or ctx_truncated or q_truncated
+    truncated = sys_truncated or ctx_truncated or q_truncated or mem_truncated
 
     # 5. Assemble messages
     user_content = f"Learner context:\n\n{context_text}\n\nQuestion:\n{query_text}"

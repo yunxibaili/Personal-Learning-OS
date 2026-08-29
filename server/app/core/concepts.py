@@ -21,6 +21,7 @@ from ..db import connect
 
 
 VALID_ORIGINS = {"manual", "markdown", "ai_suggested"}  # ADR-008/009 冻结枚举（用户裁决 2026-08-27）
+VALID_STATUS = {"unconfirmed", "confirmed", "active", "archived", "ignored"}  # B7.2: +ignored 软删（M7-007 裁决 1 解除）
 
 
 @dataclass
@@ -190,8 +191,14 @@ def update_concept(
         updates.append("aliases_json = ?")
         params.append(json.dumps(aliases, ensure_ascii=False))
     if status is not None:
-        if status not in ("active", "archived", "unconfirmed"):
+        if status not in VALID_STATUS:
             raise ValueError(f"invalid status: {status}")
+        # B7.3-R：方向感知守卫——进入 ignored 需 unconfirmed+ai_suggested，离开免守卫
+        if status == "ignored" and concept.status != "ignored":
+            if concept.status != "unconfirmed" or concept.origin != "ai_suggested":
+                raise ValueError(
+                    "只有 ai_suggested/unconfirmed 的建议桩可忽略；"
+                    "已确认概念请走 archived 流程")
         updates.append("status = ?")
         params.append(status)
 
@@ -215,13 +222,46 @@ def get_concept_domains(conn) -> list[str]:
     return [r["domain"] for r in rows]
 
 
+# ── B3：AI Suggestion 生命周期 ──────────────────────────────────────
+
+def accept_concept(conn, concept_id: int) -> Concept | None:
+    """Accept AI suggestion：status=unconfirmed → active。
+
+    只允许接受 unconfirmed 状态的 concept（origin=ai_suggested）。
+    其他状态返回 None（静默失败）。
+    """
+    concept = get_concept(conn, concept_id)
+    if concept is None or concept.status != "unconfirmed":
+        return None
+
+    return update_concept(conn, concept_id, status="active")
+
+
+def ignore_concept(conn, concept_id: int) -> bool:
+    """Ignore AI suggestion：status=unconfirmed → ignored（B7.2 软删）。
+
+    只允许忽略 ai_suggested + unconfirmed 的 concept（origin 校验由调用方负责，
+    但 core 层做防御深度对齐）。不物理删除，保留桩位以去重。
+    返回是否成功忽略。
+    """
+    concept = get_concept(conn, concept_id)
+    if concept is None or concept.status != "unconfirmed":
+        return False
+    if concept.origin != "ai_suggested":
+        return False
+
+    return update_concept(conn, concept_id, status="ignored") is not None
+
+
 __all__ = [
     "Concept",
-    "VALID_ORIGINS",
+    "VALID_ORIGINS", "VALID_STATUS",
     "create_concept",
     "get_concept",
     "get_concept_by_title",
     "list_concepts",
     "update_concept",
     "get_concept_domains",
+    "accept_concept",
+    "ignore_concept",
 ]

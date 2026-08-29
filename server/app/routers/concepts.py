@@ -15,13 +15,16 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from ..core.knowledge import cascade_drop_entity
 from ..core.concepts import (
     VALID_ORIGINS,
     create_concept,
     get_concept,
     get_concept_by_title,
+    ignore_concept,
     list_concepts,
     update_concept,
     get_concept_domains,
@@ -48,7 +51,7 @@ class ConceptPatch(BaseModel):
     domain: str | None = Field(default=None, max_length=100)
     summary: str | None = Field(default=None, max_length=1000)
     aliases: list[str] | None = None
-    status: str | None = Field(default=None, pattern="^(active|archived|unconfirmed)$")
+    status: str | None = Field(default=None, pattern="^(active|archived|unconfirmed|ignored)$")
 
 
 def _concept_to_response(conn, concept) -> dict:
@@ -199,5 +202,29 @@ def patch_concept_api(concept_id: int, body: ConceptPatch) -> dict:
         return _concept_to_response(conn, concept)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        conn.close()
+
+
+@router.delete("/{concept_id}")
+def delete_concept_stub(concept_id: int) -> dict:
+    """Ignore 语义（B7.2 软删）：unconfirmed → ignored。
+
+    领域守卫收敛到 core ignore_concept（status + origin 双检），
+    router 只负责 404/400 分离。
+    """
+    conn = connect()
+    try:
+        concept = get_concept(conn, concept_id)
+        if concept is None:
+            return JSONResponse(status_code=404, content={
+                "error": {"code": "not_found",
+                          "message": f"concept {concept_id} not found"}})
+        if not ignore_concept(conn, concept_id):
+            return JSONResponse(status_code=400, content={
+                "error": {"code": "not_a_stub",
+                          "message": "只有 ai_suggested/unconfirmed 的建议桩可忽略；"
+                                     "已确认概念请走 archived 流程"}})
+        return {"ok": True}
     finally:
         conn.close()
