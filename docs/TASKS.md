@@ -388,6 +388,30 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 
 ## 完成报告
 
+### T-B2A B2-A 流式输出（SSE）后端骨架 完成（2026-08-30）
+- **做了什么**：`LLMProvider` 协议增 `stream()`（`"".join(stream)==complete` 契约）；
+  `MockProvider.stream()` 确定性字符分块（不 sleep）；`OpenAICompatProvider.stream()` 非流式回退
+  （真 SSE 解析留 B2-B）；`TutorService.ask_stream()`（生成器，无 DB/无直连网络）；
+  `POST /api/v1/chat` 请求体增 `stream: bool`（默认 false，向后兼容），`stream=true` 返回
+  `text/event-stream`；SSE 帧契约 `data:{text}` ×N → `event:done{conversation_id}` /
+  `event:error{code,message}`；assistant 落库 + B3 extractor 置于 `try/finally`（客户端断开不丢消息）。
+  非流式路径共用 `_apply_turn_extractor`。
+- **改动文件**：`server/app/core/ai/providers/{base,mock,openai_compat}.py` ·
+  `server/app/core/ai/service.py` · `server/app/routers/conversations.py` ·
+  `shared/types/tutor.ts` · `docs/adr/ADR-003-llm.md`（附录 §A）· 测试 3 文件
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest tests/unit/test_conversations.py tests/unit/test_llm_provider.py tests/unit/test_openai_provider.py -q` | 56 passed | 56 passed ✓ |
+  | `pytest -q` | 全绿（627→651） | 651 passed ✓（56.04s） |
+  | `npx tsc --noEmit` | PASS | PASS ✓ |
+  | `npx vitest run` | 23 passed | 23 passed ✓ |
+  | `npx vite build --outDir dist-verify` | PASS | PASS ✓ |
+- **结果与遗留**：B2-A 完成，AI 闭环流式骨架就位。遗留：① 前端零接线（TutorPanel 未切流式，
+  按 §0 规则二留待最小接线）；② `openai_compat` 真 SSE 解析（B2-B，`stream:true` + 逐条 `data:` 帧）；
+  ③ 路由 `response_model=None` 规避 `dict|StreamingResponse` 契约冲突（同 T-M0 已知项）。
+- 下一项：**B2-B OpenAICompatProvider 真 SSE 解析**。
+
 ### T-DOC-001 多端架构修订 + UpMark 联动挂起（2026-08-26）
 - **做了什么**：产品定位升级为 Local-first 多端（Tauri 桌面 + RN Android + LAN Sync）；
   新增 ADR-005/006 与 integration-upmark.md；TECH_DESIGN §1/§2/§4.2/§5.4/§9/§10 更新；

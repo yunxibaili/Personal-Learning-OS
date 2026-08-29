@@ -1,17 +1,24 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-28 · 路线调整：前端冻结，后端优先 · P8-003E 执行中
+> 上次更新：2026-08-30 · 路线：前端冻结，后端优先 · B2-A（流式 SSE 骨架）完成
 
 ---
 
 ## Task ID
 
-**B7-P1 审核修复 + 盲区转正** ✅（519 passed）
+**B2-A 流式输出（SSE）后端骨架** ✅（651 passed）
 
 ## 当前任务
 
-**B3 Extractor spec v2（已按团队审核 REVISE 意见全部修正）**——待复核后开工
+**B2-B OpenAICompatProvider 真 SSE 解析**（`stream: true` + 逐条 `data:` 帧解析，覆盖 `stream()`）
+
+## 近期完成
+
+**B2-A 流式输出（SSE）后端骨架** ✅（2026-08-30 · pytest 632→651）——
+Provider `stream()` 协议 · Mock 确定性分块 · `/chat` SSE `StreamingResponse` ·
+`event:done`/`event:error` · try/finally 落库 + extractor · ADR-003 附录 §A ·
+`shared/types/tutor.ts` `TutorStreamFrame`。前端零改动（仅类型契约同步）。
 
 ### 范围（收窄定案，v1 只做两类产出）
 

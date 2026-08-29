@@ -216,3 +216,24 @@ LLM 从未持有任何写能力，校验失败的建议被丢弃（静默），�
 §2.6 未列 `llm.fast_model`，而 ADR-003/TECH_DESIGN §6.1 均有——本附录补齐：
 `llm.fast_model`（可空，空则回退 `llm.model`）用于 extractor 等辅助调用。
 实现于 `core/ai/config.py LLMConfig.fast_model`（B3 前置）。
+
+---
+
+## 附录 §2.5.1：memories 进入上下文白名单（2026-08-29 · B8）
+
+§2.5 白名单新增第 7 类：**memories**（top-N ≤5，importance × 新近度复合排序，
+`core/memories.get_memories` 产出）。
+
+- 隐私面处置（保守默认，项目所有者可改判）：content 以
+  `SENSITIVE_CONTENT_PREFIXES` 开头的条目**排除出上下文**（保留在库）；
+  出口另有 prompt assembly 的双重 sanitize 兜底
+- 命中更新：进入 context 的记忆刷新 `last_used_at`（裁决 3 的 B8 侧兑现），
+  排序随之从"importance 主导退化态"升级为 importance × recency 复合
+- **方案 C 分段预算（B8-R2 裁决）**：memories 段独立 2000 字符预算
+  （`constants.MEMORIES_CHAR_BUDGET`），段内超限截断并计入 `truncated`
+  上报。方案 B"前置 memories"被实测否决——/chat 场景尾段
+  （recent_events ≤3 条 + notes 可空 ≈ 150 字符）不足以吸收全局截断量
+  （超预算 ~2500+ 字符），前置后 memories 仍被切
+- 去重扫描 `LIMIT 500`（最近 500 条参与去重）：未登记的取舍——超 500 条后
+  旧记忆不参与去重，个人规模下可接受，如实登记
+- 白名单同步：`docs/DATA_MODEL.md` §C 增列（tutor-context.md 已归档，活契约在 DATA_MODEL）；`shared/types/tutor.ts` 契约同步

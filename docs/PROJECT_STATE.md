@@ -169,7 +169,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 | Context 系统 | `core/tutor_context.py` → `build_tutor_context(conn, concept_id)`，白名单式：concept / mastery / mistakes / related / review / recent_events；**禁止** vault 全文、settings、api_key、历史聊天、raw markdown |
 | Prompt 系统 | `core/ai/tutor.py` → `build_prompt()`（M4-B 冻结）；分段截断 + 双重敏感过滤 |
 | Token 控制 | `core/ai/constants.py`：`CHARS_PER_TOKEN=4`、SYSTEM 2000 / CONTEXT 10000 / QUERY 2000 字符上限 |
-| 流式输出 | **未实现**。`complete(prompt) -> str` 一次性返回；无 SSE / StreamingResponse |
+| 流式输出 | **B2-A 已实现**（2026-08-30）。`stream()` + `/chat` SSE `StreamingResponse`；`MockProvider.stream()` 确定性分块；`openai_compat` 真 SSE 解析留 **B2-B**。`complete(prompt)->str` 一次性非流式仍为默认向后兼容路径 |
 | 编排框架 | 无 LangChain / LlamaIndex（永久禁止），管线全手写 |
 
 ### 2.5 Storage
@@ -351,8 +351,7 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 | `mind_maps` / `mind_map_nodes` / `mind_map_edges` | `core/mindmap.py` | 0（用户未创建） |
 | `schema_migrations` | `db.migrate` | 7 |
 
-**零行但有在案设计承诺**（不删，见 `DATA_MODEL.md` §6.1）：
-`memories`（B7 后唯一零生产者表，等 B3 extractor；2026-08-29）
+**零生产者表：无**（2026-08-29 B3 后 memories 已接入；DATA_MODEL §F 历史结论随之闭合）
 
 **B7 已接入**（2026-08-29）：`conversations` · `messages`（routers/conversations.py）
 
@@ -371,7 +370,7 @@ Mastery  (concept_mastery：四维 dimensions → effective → effective_now �
 Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 旁路：learning_events（追加日志）──驱动──▶ Mastery 更新 ──驱动──▶ mistakes（答错时）
-      memories ──（B3 extractor 待实现）· conversations/messages ──（B7 已接入）
+      memories ──（B3 extractor 已接入）· conversations/messages ──（B7 已接入）
 ```
 
 ### 6.3 Migration 历史
@@ -449,15 +448,16 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | # | 项 | 现状 |
 |---|---|---|
 | B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat 非流式 + factory）；B1b 真实凭据冒烟押后 |
-| B2 | 流式输出（SSE / StreamingResponse） | 未实现 |
-| B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | 未实现；`memories` 表因之零生产者 |
+| B2 | 流式输出（SSE / StreamingResponse） | ✅ B2-A 已实现（2026-08-30：Provider `stream()` + `/chat` SSE 骨架 + `event:done`；**B2-B openai_compat 真 SSE 解析未做**） |
+| B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（2026-08-29：memories+概念桩，范围收窄 v1；B3 核心闭环） |
 | B4 | 自动链接建议（auto-link） | 未实现 |
 | B5 | AI 概念提取 | 未实现 |
 | B6 | AI 生成思维导图 | 未实现 |
 | B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（2026-08-29：CRUD + POST /chat 非流式，快照落库） |
-| B8 | 用户记忆（`memories` 接入 tutor_context） | 表已建，0 行，无生产者无消费者 |
+| B8 | 用户记忆（`memories` 接入 tutor_context） | ✅ 已实现（2026-08-29：B3 Extractor 为生产者；B8/B8.1 复合排序 + 敏感排除 + 命中刷新接入 tutor_context，ADR-014 附录 §2.5.1） |
 | B9 | 中文 FTS 分词优化 | unicode61 按字切分，长句检索受限（ADR-011 记录未解决） |
 | B10 | 本地 LLM（Ollama）实测验证 | 路径理论通，未验证 |
+| B28 | Memories 管理面 API（记忆可见 / 可改 / 可删） | ✅ 已实现（2026-08-29：`GET /api/v1/memories` 列表 + 详情 / `PATCH` 改写 / `DELETE` 硬删；B3 自动写入记忆的人工兜底，51 项测试） |
 
 ### 9.2 数据与服务闭环
 
@@ -501,7 +501,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **486 passed**（186.42s） |
+| `pytest -q` | **651 passed**（186.42s） |
 | `npx vitest run` | **23 passed**（3 files） |
 | `tsc --noEmit` | **PASS** |
 | `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |
@@ -531,9 +531,9 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | **理解** | 概念 → 图谱（Graph/Universe/Planet）可视化 | ✅ 已通 |
 | **复习** | SM-2 队列 → 答题 → mastery 更新 → 衰减 → 重排期 | ✅ 已通 |
 | **同步** | Scan → Diff → Transport → Apply → Workspace → Reindex | ✅ 已通（E2E 双进程字节级一致） |
-| **AI** | Context → Prompt → Provider → Response → UI | ⚠️ **半通**——链路已接通，但 Provider 仅 Mock，无流式，无自动检索 |
+| **AI** | Context → Prompt → Provider → Response（流式 SSE，B2-A）→ UI | ⚠️ **半通**——流式链路已接通，但 Provider 仅 Mock（无真实 LLM）、无自动检索 |
 
-**尚未完成的闭环**：AI 真实闭环（B1–B8）· 数据导出闭环（B11）· 桌面/移动分发闭环（M6/M8）。
+**尚未完成的闭环**：AI 真实闭环（B1–B8，B1a/B3/B7/B8/B2-A 已就位，剩真实 Provider 凭据冒烟 B1b + 真 SSE 解析 B2-B + B4–B6 自动链路）· 桌面/移动分发闭环（M6/M8）。
 
 ---
 

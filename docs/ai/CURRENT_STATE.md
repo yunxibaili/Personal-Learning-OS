@@ -3,15 +3,36 @@
 > 人类全景状态见 `docs/PROJECT_STATE.md`（唯一状态来源）；本文件是 AI 会话增量快照。
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-28 · Last commit：38208ef · Branch：main · Clean：yes
+> 上次更新：2026-08-30 · Branch：feature/backend-first ·
+> Clean：**no**——B2-A（流式输出 SSE 骨架）实现与测试已完成，待提交与文档登记
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → P8-003D Eventlog Producer ✅ → **P8-003D-CodeReview P0 修复 ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → P8-003D Eventlog Producer ✅ → **P8-003D-CodeReview P0 修复 ✅** → **B2-A 流式输出（SSE）骨架 ✅**
 
 ## Last Completed
+
+**B2-A 流式输出（SSE）后端骨架** 完成（未提交）：`LLMProvider` 协议协议加 `stream()`；
+`MockProvider.stream()` 确定性字符分块（不 sleep，拼装恒等于 complete）；
+`OpenAICompatProvider.stream()` 非流式回退（真 SSE 解析留 B2-B）；
+`TutorService.ask_stream()`（同为无 DB/无直连网络）；
+`POST /api/v1/chat` 请求体加 `stream: bool`（默认 false 向后兼容），`stream=true` 返回
+`text/event-stream`；SSE 帧契约 `data:{text}` ×N → `event:done{conversation_id}` /
+`event:error{code,message}`；assistant 落库 + B3 extractor 均进 `try/finally`（客户端断开不丢消息）。
+ADR-003 附录 §A 追认 B1a 非流式偏离 + B2 恢复流式契约。守护先行 +19 项 · pytest 632→651。
+**遗留**：前端零接线（ScheduleList/现有 TutorPanel 未切流式，按 §0 规则二）；openai_compat 真 SSE 解析（B2-B）留待后续。
+
+B8.1 Memory Context Integration 完成（importance × recency 复合排序 + 确定性 tie-breaker + 端到端验证，563→569 passed）。
+
+B7.2 端到端守护 + Ignore 语义收口完成（软删 status=ignored + 集成测试锁死全链路 + EXTRACTOR_PROMPT braces 修复，571→576 passed）。
+
+B3.1 Extractor Integration Audit 完成（合并重复 update_message_context + 11 项集成测试，552→563 passed）。
+
+B3 Extractor v2 完成（memories 生产者 + 概念建议桩 + 快照回写 + update_mastery 链，551→552 passed）。
+
+B8 memories 进 Tutor 上下文完成（复合排序+敏感排除+命中刷新，550→558 passed）。
 
 B7 对话持久化 + 最小非流式对话完成（POST /api/v1/chat，快照落库，507→516 passed）。
 
@@ -116,10 +137,23 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 
 ## Next Up
 
-- **P8-003D Tutor Knowledge Base**：RAG 层（FTS5 + concept→notes→context）
-- P8-003E Tutor Review Bridge：Tutor 读取 mastery + 错答历史
-- P8-FE-001 Visual Language Polish：MiMo 克制感配色
-- M8 Mobile（延后，先 PC 完整化，路线决议见 TASKS §路线决议）
+> **编号以 `PROJECT_STATE.md §9` 为准。** 本节曾用旧编号
+> （B9 = Memory CRUD API / B10 = Memory Agent），与 §9 的
+> B9 = 中文 FTS 分词、B10 = 本地 LLM 实测**冲突**；Memory CRUD 已按新编号
+> **B28** 落盘，下述列表已重写。
+
+- **B2-A 流式输出（SSE）后端骨架** ✅（2026-08-30）
+  - 交付：Provider `stream()` · Mock 确定性分块 · `/chat` SSE `StreamingResponse` ·
+    `event:done`/`event:error` · try/finally 落库 · ADR-003 附录 §A
+  - 前置①（ADR-003 附录 B1a 偏离追认）✅ · 前置②（接口形状先定）✅ · 前置③（断开不丢消息）✅
+- **B2-B OpenAICompatProvider 真 SSE 解析** ← 下一项（`stream: true` + 逐条 `data:` 帧解析覆盖 `stream()`）
+- **B4 自动链接建议 · B5 AI 概念提取 · B6 AI 生成思维导图**
+- **B9 中文 FTS 分词（ADR-011 未解决）· B10 本地 LLM（Ollama）实测**
+- **Memory Agent（智能记忆管理——沿用旧编号 B10 的实质内容，未排期）**
+
+**不属于 Next Up**：P8-FE-001 Visual Language Polish 与一切前端任务
+——`PROJECT_STATE.md §0` 后端优先政策下无限期冻结，解冻需所有者显式宣布。
+M8 Mobile 延后（先 PC 完整化，路线决议见 TASKS §路线决议）。
 
 ## Do Not Touch
 
@@ -169,11 +203,83 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 ## 测试命令
 
 ```
-pytest -q          → 459 passed
+pytest -q          → 651 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
 ```
+
+## 本次会话改动（B2-A 流式输出 SSE）
+
+- `server/app/core/ai/providers/base.py`：`LLMProvider` 协议新增 `stream() -> Iterator[str]`
+  （`"".join(stream)==complete` 契约）
+- `server/app/core/ai/providers/mock.py`：`MockProvider.stream()`（`DEFAULT_CHUNK_SIZE` 字符确定性分块，
+  复用 complete 分派）
+- `server/app/core/ai/providers/openai_compat.py`：`stream()` 非流式回退（真 SSE 解析留 B2-B）
+- `server/app/core/ai/service.py`：`TutorService.ask_stream()`（生成器，错误映射同 ask）
+- `server/app/routers/conversations.py`：`ChatRequest.stream` 参数 + `_chat_stream` SSE 生成器
+  （自持连接、try/finally 落库 + extractor、`event:done`/`event:error`）；非流式路径复用
+  `_apply_turn_extractor`；路由 `response_model=None` 规避 `dict|StreamingResponse` 契约冲突
+- `shared/types/tutor.ts`：`TutorStreamFrame` 流式帧契约类型
+- `docs/adr/ADR-003-llm.md`：附录 §A 追认 B1a 非流式偏离 + B2 恢复流式
+- 测试：`test_llm_provider.py`（MockProvider.stream 5 + ask_stream 3 + 错误 2）·
+  `test_openai_provider.py`（stream 回退 1）· `test_conversations.py`（TestChatStreaming 8）
+- 验证：pytest 651 · tsc PASS · vitest 23 · vite build PASS（build --outDir dist-verify）
+
+## 本次会话改动（B7.1 Conversation History）
+
+- `server/app/core/ai/providers/mock.py`：
+  MockProvider 默认返回合法 JSON（extractor 需要），含 metadata.mode 检测：
+  extractor 调用返回空结果 JSON，Tutor 调用返回人类可读文本。
+- `web/src/components/tutor/TutorPanel.tsx`：
+  - 移除 conceptId==null 时的早退，SuggestionList 始终可见
+  - handleSubmit 后递增 suggestionRefreshKey 触发 SuggestionList 刷新
+- `web/src/components/suggestions/SuggestionList.tsx`：
+  +refreshKey prop，对话后自动 refetch；错误处理改为 console.error（移除误导性 ADR-014 注释）
+- `web/src/components/universe/KnowledgeUniverse.tsx`：
+  Floating Inspector 新增 "Ask Tutor" 按钮（openTutorForConcept）
+- `server/tests/unit/test_llm_provider.py`：修复 test_default_response 断言对齐新默认响应
+- 验证：pytest 569 · tsc PASS · vitest 23 · vite build PASS
+
+## 本次会话改动（B3.2 Concept Suggestion UI）
+
+- `web/src/components/suggestions/SuggestionList.tsx`（新建）：
+  AI 概念建议人工确认入口。GET /concepts?status=unconfirmed&origin=ai_suggested →
+  显示标题 + 摘要 + Accept/Ignore 按钮 → PATCH status/DELETE → 列表更新。
+- `web/src/components/suggestions/SuggestionList.css`（新建）：
+  建议列表样式（ADR-013 合规：无装饰、无渐变、无阴影）。
+- `web/src/components/tutor/TutorPanel.tsx`：
+  挂载 SuggestionList 组件（Answer 段下方）。
+- 验证：pytest 569 · tsc PASS · vitest 23 · vite build PASS
+
+## 本次会话改动（B8.1 Memory Context Integration）
+
+- `server/app/core/memories.py`：
+  - get_memories() 排序从 `ORDER BY importance DESC` 改为复合排序：
+    `ORDER BY importance DESC, last_used_at DESC, created_at DESC, id DESC`
+  - 确定性 tie-breaker：importance → last_used_at → created_at → id
+  - touch_on_hit 注释更新（B8.1：命中后刷新 recency 排序位）
+- `server/tests/unit/test_memories.py`：+3 项测试
+  - test_recency_tie_breaker：同 importance 时 last_used_at DESC 排序
+  - test_deterministic_tie_breaker：同 importance + 同 last_used_at 时 created_at DESC
+  - test_touch_on_hit_updates_last_used_at：touch_on_hit=True 刷新 last_used_at
+- `server/tests/integration/test_extractor_integration.py`：+3 项测试
+  - test_memory_enters_tutor_prompt：Memory → TutorContext → prompt
+  - test_memory_recency_ordering_in_context：TutorContext 中 recency 排序验证
+  - test_memory_budget_respected：MAX_MEMORIES 限制验证
+- `server/tests/unit/test_memories_context.py`：修复 test_segmented_budget 断言对齐新排序（id DESC）
+- 验证：pytest 569 · tsc PASS · vitest 23 · vite build PASS
+
+## 本次会话改动（B3.1 Extractor Integration Audit）
+
+- `server/app/core/conversations.py`：合并两个重复的 update_message_context 为一个
+  - extractor 结果存入 `ctx["extractor"]` 键（非直接 merge）
+  - 删除重复的第二函数定义
+- `server/tests/integration/test_extractor_integration.py`（新建，11 项）：
+  - 完整链路 / extractor 失败不影响 answer / 非法 JSON / memory 幂等
+  - concept suggestion 生命周期（accept/ignore）/ learning event 链
+  - extractor 快照 / secret 排除 / 无重复写入 / E2E
+- 验证：pytest 563 · tsc PASS · vitest 23 · vite build PASS
 
 ## 本次会话改动（Earth UI 示例入库）
 

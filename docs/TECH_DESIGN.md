@@ -209,7 +209,7 @@ CREATE TABLE links (
   target_type TEXT NOT NULL,
   target_id   INTEGER NOT NULL,
   relation    TEXT NOT NULL,      -- wikilink|mentions|requires|related|contains|contrasts_with|derived_from|implements
-  origin      TEXT NOT NULL DEFAULT 'manual',  -- manual|markdown|ai_suggested|accepted
+  origin      TEXT NOT NULL DEFAULT 'manual',  -- manual|markdown|ai_suggested|accepted（历史注释含 accepted，实际枚举校对归 origin 统一 micro-task）
   weight      REAL NOT NULL DEFAULT 1.0,
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(source_type, source_id, target_type, target_id, relation)
@@ -494,6 +494,7 @@ quality ≥ 3：interval = prev_interval × ease_factor
 > | 6.1 | LLM Adapter（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat + settings factory，非流式）；SSE 流式未实现 → B2 |
 > | 6.2 | 记忆感知上下文管线 | ⚠️ 部分实现。①②④ 未做，③ 前置链未做；白名单 6 类已冻结 |
 > | 6.2 ⑥ | 流式回答 | ❌ 未实现 → B2 |
+| 6.3 | Extractor | ✅ B3 v1 已实现（范围收窄：memories+概念桩；events 经 update_mastery；C1-C5 修正全部吸收） |
 > | 6.3 | Extractor（回合后二次调用） | ❌ 未实现 → B3 |
 >
 > 已完成：`build_tutor_context()` 白名单 · `build_prompt()`（M4-B 冻结）·
@@ -541,10 +542,10 @@ quality ≥ 3：interval = prev_interval × ease_factor
 ```
 
 处理规则：
-- learning_events/mistakes/memories 直接落库（memories 去重靠 content 相似前缀匹配，简单字符串比较即可）
-- note_links 写入统一表：links(note→concept, relation='mentions', origin='ai')
-- concept_suggestions 进「待确认」队列，GraphView 弹 Accept/Ignore；Accept 时 origin='accepted'
-- extractor 失败静默跳过，不影响主对话
+- learning_events 经 `mastery.update_mastery(source='ai_extractor')` 落库（绝不裸 INSERT）
+- memories 直接落库（upsert_memory + 前缀去重）
+- concept_suggestions 进「待确认」队列（origin='ai_suggested' + status='unconfirmed'），Accept 时只改 status（origin 永不变，C4）；Ignore 删除 unconfirmed 桩
+- extractor 失败静默跳过，不影响主对话（单点故障禁止）
 
 ---
 

@@ -34,8 +34,11 @@ Accepted
 - **视觉编码**：
   - Note = 方形，Concept = 圆形+mastery环
   - Layer Toggle：Note Layer / Concept Layer / Mixed
+  - 边：`prerequisite` / `requires` 提升一级权重；其余关系统一为最轻层级
+    （见下「编码通道预算」）
 - **交互**：双击展开、根节点切换、Domain 过滤、隐藏未确认桩
-- **禁止**：mastery 视觉投射（仅 GraphView 内部状态）
+- **禁止**：mastery 视觉投射 —— **唯一例外**是 Concept 的 mastery 环（视觉编码条款）。
+  禁止尺寸 / 填充色 / 排序 / 动画等其他任何 mastery 投射。
 
 ### MindMap
 - **核心隐喻**：用户自主思维空间
@@ -46,6 +49,21 @@ Accepted
 - **交互**：CRUD、bind/unbind Concept、Export/Import (.map.json)
 - **禁止**：自动生成布局覆盖用户手动位置、mastery 自动改变节点样式
 
+### 编码通道预算（横切约束 · 2026-08-29 追加）
+
+**一个维度 = 一个通道。** 同一维度被多个视觉通道重复编码即为过度，是"花哨"的量化判据。
+
+| 维度 | 允许通道 | 禁止 |
+|------|---------|------|
+| 关系类型 | 单一通道（Graph：线色 2 级；Universe：边类型） | 颜色 + 线宽 + 虚线 叠加 |
+| 语义强弱 | 线宽（1px / 1.5px） | 引入新色相 |
+| 交互状态 | 品牌橙（hover / selected） | 橙白体系外的第三色相 |
+| 掌握度 | Graph：Concept 环 · Universe：节点大小 + 颜色 | Graph 中环以外的任何 mastery 投射 |
+
+- **橙色 = 注意力指针**，只用于两处：① 交互焦点（hover / selected）② mastery 进度。
+  **不用于静态分类**（关系类型、领域等）——一旦用于静态元素即被稀释。
+- **形状即语义，不靠颜色区分**：Note = 方形，Concept = 圆形。加颜色区分等于再引入一套色相。
+
 ## 数据流边界
 
 | 数据源 | Universe | Graph | MindMap |
@@ -55,7 +73,11 @@ Accepted
 | links (concept↔concept) | ✅ | ✅ | ❌ |
 | links (note↔*) | ❌ | ✅ | ❌ |
 | mind_map_nodes/edges | ❌ | ❌ | ✅ |
-| mastery | ✅ (视觉核心) | ❌ (仅 tooltip) | ❌ (仅 bind tooltip) |
+| mastery | ✅ (视觉核心) | ⚠️ (仅 mastery 环 + tooltip) | ❌ (仅 bind tooltip) |
+
+> **Graph / mastery 澄清（2026-08-29 裁决）**：上表原写「仅 tooltip」，与「视觉编码」
+> 「Concept = 圆形+mastery环」互斥。裁决取**视觉编码条款**：Graph 允许 mastery 环，
+> 但这是 Graph 中 mastery 的**唯一**视觉出口，其余投射（尺寸/填充色/排序/动画）一律禁止。
 
 ## 接口契约
 - Universe 只消费 `/api/v1/universe` 投影
@@ -79,3 +101,7 @@ Accepted
 
 ## 变更记录
 - 2026-08-27: 初版冻结 (P8-001A 完成后)
+- 2026-08-29: 裁决 Graph/mastery 内部矛盾（数据流表「仅 tooltip」vs 视觉编码「mastery 环」），
+  取视觉编码条款；新增「编码通道预算」横切约束；Graph 边视觉由 9 色 3 通道收敛为
+  2 级中性灰 1 通道。实现见 `ui/graph-view.html` 规范页。
+  **本次为消除文档内部互斥，未放宽任何冻结边界。**

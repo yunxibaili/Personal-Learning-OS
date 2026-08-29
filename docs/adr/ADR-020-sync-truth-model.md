@@ -222,3 +222,59 @@ vault 冲突处理从 LWW 升级为「远端胜者写主文件 + 本地版进 `<
 因后者属于实现细节超出本 ADR 原文描述，按裁决判据应开 ADR-024；方案 a
 不动白名单，零流程成本。status v1 的冲突列表仍仅派生 mindmap 源，
 vault .conflict 列出为后续增量。
+
+---
+
+## 附录 §3.1.1：Ignore 语义从物理删除改为软删（2026-08-29 · B7.2）
+
+### 背景
+
+原 M7-007 裁决 1 规定：「Ignore = 删除 unconfirmed 桩，不引入 rejected」。
+B7.2 端到端守护测试暴露了该裁决的副作用：
+
+```
+/chat → extractor → ensure_entity_by_title → INSERT (unconfirmed)
+→ 用户 Ignore → DELETE（物理删除）
+→ 下一轮 /chat → 又查不到 → 又 INSERT → 复活
+```
+
+mock 模式下 100% 复现；真实 LLM 下取决于是否重复建议同一概念。
+
+### 修订
+
+**原裁决（M7-007 裁决 1）**：Ignore = 物理删除 unconfirmed 桩。
+
+**修订为**：Ignore = 软删（`status=unconfirmed → ignored`），桩位保留以去重。
+
+`VALID_STATUS` 新增 `ignored` 枚举值：
+```python
+VALID_STATUS = {"unconfirmed", "confirmed", "active", "archived", "ignored"}
+```
+
+`ignore_concept`（core）改为：
+```python
+def ignore_concept(conn, concept_id: int) -> bool:
+    concept = get_concept(conn, concept_id)
+    if concept is None or concept.status != "unconfirmed":
+        return False
+    return update_concept(conn, concept_id, status="ignored") is not None
+```
+
+`DELETE /concepts/{id}`（router）改为 `update_concept(status="ignored")`，
+移除 `cascade_drop_entity` + `DELETE FROM concepts`。
+
+### 理由
+
+1. **原裁决目标**（防止误删真实知识资产）在软删下**更好地达成**——连桩都不用删
+2. `ensure_entity_by_title` 按 title 去重，ignored 桩仍存在，extractor 重复建议时不会重新 INSERT
+3. 软删可恢复：PATCH status=active 即可撤销 Ignore（原物理删除不可逆）
+
+### 已知取舍（P2-c）
+
+`resolve_title`（knowledge.py:212）不过滤 status。笔记中 `[[已忽略的概念]]`
+会解析到那个 ignored 的 ai_suggested 桩——而物理删除时代会新建 markdown 桩。
+
+这是"抗复活"与"wikilink 复用"的一体两面：同一去重查询服务两个语义，
+无法同时最优。当前取舍：**优先抗复活**（extractor 链路完整性），
+wikilink 复用 ignored 桩为已知可接受行为。若未来需拆分，需将"去重查询"
+与"解析查询"分为两套独立语义。

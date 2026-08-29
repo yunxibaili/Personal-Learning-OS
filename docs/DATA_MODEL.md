@@ -331,6 +331,7 @@ GET /api/v1/tutor/context/{concept_id}
 | Related | title, type (1-hop) | 关联知识引导 |
 | Events | event_type, source, created_at | 学习轨迹 |
 | Notes（P8-003D） | note_id, title, excerpt（≤2 篇，片段 ≤600 字符） | 用户显式引用的笔记片段（ADR-014:114「除非用户明确引用」+ 附录 §2.8.1） |
+| Memories（B8） | kind, content, importance, last_used_at（top ≤5，importance×新近度） | 用户长期记忆（ADR-014 附录 §2.5.1；敏感形态条目排除出上下文） |
 
 ## 3. AI 不可见字段（黑名单）
 

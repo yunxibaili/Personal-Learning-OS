@@ -6,6 +6,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **B28 Memories 管理面 API**（AI 自动写入记忆的可见性兜底）：
+  `GET /api/v1/memories`（列表 · kind 过滤 + 分页 · total 为过滤后总数）·
+  `GET /api/v1/memories/{id}` · `PATCH`（部分改写，409 = 改写后前缀撞车）·
+  `DELETE`（硬删）· `core/memories.py` 抽 `_validate_*` / `_row_to_memory` /
+  `_dup_conflict` 共用助手（写入面与改写面抛同一批异常，前端只写一套错误处理）·
+  **两条通道语义冻结**：消费面 `get_memories` 过滤敏感前缀（不进 prompt），
+  管理面 `list_memories`/`get_memory` **不过滤**——管理面过滤会让 `sk-` 前缀
+  记忆变成用户看不见、删不掉的暗账，与「用户数据永不锁死」冲突 ·
+  不提供 POST（唯一生产者是 B3 Extractor，AGENTS §1 YAGNI）·
+  守护先行 51 项（含 Router 不直写 SQL 静态守护）· pytest 581→632
+
+### Added
+- **B8 memories 进 Tutor 上下文**（ADR-014 附录 §2.5.1）：tutor_context 新增
+  memories 键（top ≤5）· get_memories 复合排序 importance×recency（消除
+  importance 主导退化态，now 可注入）· 敏感形态条目排除出上下文（保守默认，
+  方向二；prompt sanitize 出口兜底）· 命中刷新 last_used_at（裁决 3 兑现）·
+  shared/types/tutor.ts TutorMemory 契约 · 守护先行 8 项 · pytest 550→558
+
+### Added
+
+### Added
+- **B3 Extractor v1**（回合后二次 LLM 调用，spec v2 收窄范围）：core/ai/extractor.py
+  + core/memories.py（memories 唯一生产者：kind/区间应用层校验、前缀去重、
+  last_used_at 裁决 3）· update_message_context（快照回写 extractor 键，同键
+  覆盖幂等）· extractor 概念走 ensure_entity_by_title(origin='ai_suggested')
+  （C4）· DELETE /api/v1/concepts/{id}（裁决 1：仅 unconfirmed 桩可删）·
+  FakeExtractorProvider 关闭 I5 假绿 · learning_events 经 update_mastery（C2）·
+  守护先行 17 项 · pytest 524→541 · TABLE_AUDIT (b) 清单清零
+
+### Added
+
+### Added
 - **B7 对话持久化 + 最小非流式对话**：core/conversations.py（两零生产者表的
   生产者落地）· POST /api/v1/chat（context→provider→双消息落库，assistant 携
   context_json 快照——上下文透视数据基础）· conversations CRUD 四端点 ·

@@ -56,7 +56,7 @@ def post_tutor_context(body: TutorContextRequest) -> dict:
     """带可选笔记引用的结构化上下文。
 
     note_ids 由用户在 UI 显式选择（TutorPanel 选择器）——不自动检索；
-    注入时 related/recent 预算收缩（tutor-context.md §5）。
+    注入时 related/recent 预算收缩（DATA_MODEL.md §C 预算增记）。
     """
     note_ids = body.note_ids or []
     if len(note_ids) > MAX_NOTE_EXCERPTS:
