@@ -1,0 +1,339 @@
+# UI Design System — Open Learning OS
+
+> 视觉与交互设计系统。视觉语言对齐 **mimo.mi.com**（白空间 + 橙色生命线 + 大字 + 点阵地球）。
+> 单一来源：`ui/tokens.css`（CSS 变量） + 本文档（语义/规则/边界）。
+> 与 `web/src/global.css` 互为镜像；改动先改令牌，再同步本文件，最后通知前端实现。
+>
+> 状态：v1 · 2026-08-29 · 同步 tokens.css v1
+> 关联：`docs/DESIGN.md`（学习循环 + UI 边界）· `AGENTS.md` §2.3（禁 CSS 框架 / 第二状态库）· `PRODUCT_PRINCIPLES.md`（五条）· `docs/adr/`（ADR-019/020/021/023）
+
+---
+
+## 0. 速查
+
+| 项 | 令牌 | 用途 |
+|---|---|---|
+| 主品牌 | `--brand #FF6B35` | 主 CTA、强调态、进度激活、轨道卫星 |
+| 渐变末端 | `--brand-2 #F7931E` | 按钮渐变、英雄渐变 |
+| 品牌底 | `--brand-soft #FFF1EA` | 选中态、提示徽章 |
+| 双链高亮 | `--hl #FBF1CF` | `[[wikilink]]` 行内荧光笔、命中标记 |
+| 页面底 | `--bg-soft #F5F5F5` | MiMo 同款页面灰底（替代纯白更耐看） |
+| 卡片 | `--surface #FFFFFF` + `--border #ECECEC` | 卡片表面 |
+| 正文 | `--text #171717` | 主文 |
+| 副文 | `--text-2 #525252` | 描述、辅助 |
+| 辅色 | `--ink #35618F` | 次级强调 / 链接（项目原 靛墨蓝，降为辅） |
+| 字体 | `MiSans → Inter → 系统栈` | 中文 MiSans/苹方/雅黑；西文 Inter/Segoe |
+| 圆角 | `--r-lg 10px` | 卡片默认；按钮 8/999 |
+| 入场曲线 | `--ease cubic-bezier(0.16, 1, 0.3, 1)` | MiMo 标志曲线 |
+| 容器 | `--container 1200px` / 阅读 `--container-sm 960px` | 页面/阅读 |
+
+---
+
+## 1. 设计原则（执行顺序）
+
+1. **白空间优先**。内容是主角，装饰只服务于层级。先排版，再配色，最后加动效。
+2. **橙色生命线**。整站仅一个暖色焦点（品牌橙），其他全为黑白灰 + 双链荧光笔黄；禁止多色拼接 / 紫渐变 / 蓝渐变。
+3. **单一焦点**。每屏一个视觉中心：首页 = 地球，Dashboard = 今日复习，Bento = 掌握度雷达。眼睛不需要找。
+4. **可读性 > 美观**。阅读正文 14.5–15.5px / 行高 1.7–1.85；卡片标题 16–20px，禁用全大写长段。
+5. **动效服务于状态**。hover/focus/进入/离开 = 150–250ms；地球/聚光 = 30fps 限帧；`prefers-reduced-motion: reduce` → 全部停。
+6. **诚实显示数据**。掌握度数字 = 真实计算；禁用伪造进度条、假活跃、虚标。
+7. **审美边界**（继承 `docs/DESIGN.md` §2 Avoid）：禁 Notion 营销页、禁 AI 套壳、禁数据驾驶舱、禁游戏化（无等级/连签/徽章）、禁 SaaS 落地页。
+
+---
+
+## 2. 色彩系统
+
+### 2.1 品牌 / 中性 / 状态 三层
+
+| 层 | 令牌组 | 用法 |
+|---|---|---|
+| **品牌** | `--brand / --brand-2 / --brand-deep / --brand-soft / --brand-tint / --brand-line` | 主 CTA、强调、激活、轨道卫星、复习进度 |
+| **中性** | `--bg / --bg-soft / --surface / --border / --text / --text-2 / --text-3` | 结构、文本、分割（占比 ≥ 90%） |
+| **状态** | `--ok / --warn / --err / --info` | 仅反馈（toast / 表单校验 / mastery 状态徽章） |
+
+### 2.2 关键对比与可达性
+
+- 主文 `--text #171717` on `--bg-soft #F5F5F5` → 对比度 15.4:1（WCAG AAA）
+- 副文 `--text-2 #525252` on `--bg-soft` → 7.5:1（AAA）
+- 品牌橙 `--brand #FF6B35` on 白 → 3.6:1（仅用于 ≥18px 文字与图形元素，禁用 <14px 纯橙正文）
+- 双链高亮 `--hl #FBF1CF` 底 + `--ink #35618F` 字 → 8.1:1
+- **规则**：禁止 <14px 字号使用品牌橙单色作正文；需配深底（按钮白字）或 700 字重（≥18px）。
+
+### 2.3 配色禁忌
+
+- ✘ 多色品牌（紫/蓝/青渐变）
+- ✘ 深色科技感背景（除明确暗色场景）
+- ✘ 彩虹 / 荧光 / 霓虹
+- ✘ 大面积纯品牌色块（除 Hero 按钮）
+- ✘ 卡片 1px 内描边 + 阴影叠加（取一）
+
+---
+
+## 3. 字体系统
+
+### 3.1 字体栈
+
+```
+display:  MiSans → Inter → -apple-system → Segoe UI → 系统
+body:     MiSans → Inter → -apple-system → Segoe UI → PingFang SC → 微软雅黑 → 系统
+mono:     Geist Mono → JetBrains Mono → Fira Code → Consolas
+num:      Geist / Inter （数字等宽，行内数字更稳）
+```
+
+> **依赖策略**：项目禁 CSS 框架，字体走系统栈 + 可选本地子集。MiSans 走小米官网 woff2 离线包（后续 P8-FE-001 收口），未加载时静默降级苹方/雅黑，**不出现 FOIT/FOUT 闪烁**。
+
+### 3.2 字阶（模块化 1.250 · Major Third）
+
+| 令牌 | 尺寸 | 字重 | 行高 | 用途 |
+|---|---|---|---|---|
+| `--fs-7xl` | 60px | 700 | 1.05 | Hero 主标题（桌面） |
+| `--fs-6xl` | 48px | 700 | 1.1 | Hero 主标题（中等屏） / 页面 H1 |
+| `--fs-5xl` | 36px | 600 | 1.15 | 页面 H2 |
+| `--fs-4xl` | 30px | 600 | 1.2 | 大区段 |
+| `--fs-3xl` | 24px | 600 | 1.25 | 区段 |
+| `--fs-2xl` | 20px | 600 | 1.3 | 卡片 H |
+| `--fs-xl` | 18px | 500 | 1.4 | 段首 |
+| `--fs-lg` | 16px | 400 | 1.55 | 阅读正文 |
+| `--fs-md` | 15px | 400 | 1.6 | 卡片正文 |
+| `--fs-base` | 14px | 400 | 1.5 | 项目基线（编辑器/列表） |
+| `--fs-sm` | 13px | 500 | 1.4 | 按钮/标签 |
+| `--fs-xs` | 12px | 500 | 1.35 | 微标签 / 计数 |
+
+### 3.3 排版规则
+
+- 标题字距 `--tracking-tight -0.02em`；正文 0；全大写微标签 `--tracking-caps 0.08em`。
+- 段落最大宽 720px（`--container-sm`），行长 50–75 字符最佳。
+- 中文与西文间自动 1/4 空格（编辑器层处理，非 CSS 责任）。
+- 标题禁用感叹号；禁用"行业黑话+emoji"组合（"🚀 立即开始"）。
+
+---
+
+## 4. 间距与栅格
+
+### 4.1 间距（4px 基准 · 几何级数）
+
+```
+4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48 · 64 · 80 · 96 · 120
+```
+
+- 卡片内边距：16/20/24 三档
+- 卡片之间：16/20/24
+- 区段上下：48/64/80
+- 页面外边距：≥ 96px（桌面）/ 24px（移动端）
+
+### 4.2 容器与栅格
+
+- 内容最大宽 1200px（`--container`），居中
+- 阅读最大宽 960px（`--container-sm`），笔记编辑 / 文档
+- 12 列响应栅格；列间 24px；gutter 24px
+- 断点：`sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1536`（与 web/src 保持一致）
+
+### 4.3 布局骨架
+
+| 容器 | 用途 |
+|---|---|
+| `--nav-h 64px` | 顶栏（半透白 + backdrop-blur 12px） |
+| `--rail-w 280px` | 应用侧边栏；可缩 240 / 展开 320 |
+| 内容区 | `calc(100vh - var(--nav-h))`；最小宽 720 |
+| 弹层最大宽 | 480 / 640 / 800 三档 |
+
+---
+
+## 5. 圆角、描边、阴影
+
+### 5.1 圆角
+
+- 按钮：8px（主）/ 999px（药丸/标签）
+- 卡片：10px（默认）/ 16px（大卡片 / 弹层）
+- 输入框：8px
+- 头像：50%
+- 标签 chip：999px
+
+### 5.2 描边
+
+- 默认 `--border #ECECEC`（比项目旧 `#E5E5E5` 更轻，与页面灰底 `#F5F5F5` 拉出层次）
+- 强调态 `--border-strong #D4D4D4`
+- 品牌描边仅在 brand-soft 底上用 `--brand-line #F5C7B0`
+
+### 5.3 阴影
+
+克制使用：阴影 = 浮起信号，不要叠满。
+
+| 令牌 | 用途 |
+|---|---|
+| `--shadow-1` | 行内/极弱浮起 |
+| `--shadow-2` | 卡片默认（与 1px 描边二选一） |
+| `--shadow-3` | popover / dropdown |
+| `--shadow-4` | modal / dialog |
+| `--shadow-glow` | 仅品牌按钮 hover（MiMo 标志） |
+
+---
+
+## 6. 动效系统
+
+### 6.1 时长与曲线
+
+| 用途 | 时长 | 曲线 |
+|---|---|---|
+| 颜色 / 透明度 hover | 150ms | `--ease-out` |
+| 浮起 / 阴影 | 250ms | `--ease`（MiMo 标志曲线） |
+| 展开 / 折叠 | 250ms | `--ease` |
+| 弹层进场 | 250ms | `--ease` |
+| 弹层出场 | 150ms | `--ease-in` |
+| 数字滚动 | 800ms | `--ease-out` |
+| 地球 / 聚光 | 30fps 限帧 | 线性 |
+
+### 6.2 性能契约（继承 P8-001C）
+
+- **限帧**：`--frame-ms = 1000/30`；地球 / 聚光 / 动效 rAF 节流
+- **dpr 上限**：Hero 1.5；卡片 1
+- **离屏暂停**：`IntersectionObserver` + `document.hidden` 停 rAF
+- **降级**：`prefers-reduced-motion: reduce` → 全部 `--dur` = 0
+- **禁止**：循环内 `getComputedStyle`、逐帧 DOM 重建、`box-shadow` 动画（用 transform/opacity）
+
+### 6.3 微交互清单
+
+- 按钮：hover 抬升 -1px + `--shadow-glow`；active 抬升 0
+- 卡片：hover 描边由 `--border` → `--border-strong` + 抬升 -2px
+- 链接：颜色 `--text` → `--ink`（无下划线，hover 加 `--hl` 底色块）
+- 输入框：focus 描边 `--border` → `--brand`，外发光 0 0 0 3px `rgba(255,107,53,.15)`
+- 切换 / Tab：下划线从左展开 250ms `--ease`
+
+---
+
+## 7. 组件清单
+
+每个组件配：用途 / 视觉 / 交互 / 状态 / 与 `web/src` 实现映射。
+
+### 7.1 基础（Base）
+
+| 组件 | 视觉 | 示例 | 实现映射 |
+|---|---|---|---|
+| Button | 主/次/幽灵/链接/图标；尺寸 sm/md/lg；药丸可选 | `home-hero.html` · `app-shell.html` | `web/src/components/ui/Button.tsx`（待建） |
+| Input | 8px 圆角，42px 高，focus 橙描边 + 外发光 | `motion-primitives.html` | 待建 |
+| Textarea | 同 Input；自适应高度 | — | 待建 |
+| Select | 自绘下拉（禁浏览器默认） | `motion-primitives.html` | 待建 |
+| Checkbox / Radio / Switch | 自绘；switch 滑过用 brand-soft → brand | — | 待建 |
+| Tag / Chip | 灰底无描边 / brand-soft 底（激活） | `bento-dashboard.html` | 待建 |
+| Avatar | 圆形 32/40/56；首字母 / 域色 | `app-shell.html` | 待建 |
+| Badge | 状态色徽章（ok/warn/err/info） | `bento-dashboard.html` | 待建 |
+| Tooltip | 黑底白字 8px 圆角 4px 阴影 3 | `bento-dashboard.html` | 待建 |
+| Toast | 右上角堆叠，4s 自动消失 | `motion-primitives.html` | 待建 |
+| Modal | 居中，遮罩 30% 黑，240ms 进场 | — | 待建 |
+| Skeleton | 灰块 1.2s 闪烁（`--surface-2` ↔ `--surface-3`） | `motion-primitives.html` | 待建 |
+| Progress | 进度条 / 圆环；品牌橙填充 | `bento-dashboard.html` · `motion-primitives.html` | 待建 |
+| Segmented Control | 滑块移动 250ms `--ease` | `motion-primitives.html` | 待建 |
+| Tabs | 下划线从左展开 | `app-shell.html` | 待建 |
+
+### 7.2 复合（Composite）
+
+| 组件 | 视觉 | 示例 | 实现映射 |
+|---|---|---|---|
+| AppShell | 顶栏 64 + 侧边栏 280 + 内容区 | `app-shell.html` | `web/src/App.tsx`（重设） |
+| Hero | 12 列，左文 6 / 右图 6，地球 | `home-hero.html` | `components/planet/`（待建） |
+| BentoGrid | 不等高网格（1+1+2 / 1+3 等） | `bento-dashboard.html` | `DashboardView.tsx`（重设） |
+| SpotlightCard | 鼠标跟随聚光描边（开源 Aceternity 风） | `spotlight-card.html` | 待建 |
+| Marquee | 无缝横向滚动（开源 Magic UI 风） | `marquee.html` | 待建 |
+| CommandPalette | Ctrl+K，浮层居顶 | v1 未建示例 | `stores/ui.ts` |
+| Wikilink | `[[...]]` 黄色高亮 + 墨蓝字 | `app-shell.html`（笔记正文） | `editor/` |
+| TutorPanel | 流式对话 + 抽屉 | v1 未建示例 | `components/tutor/` |
+| KnowledgePlanet | 点阵球 + 轨道卫星（无概念节点） | `home-hero.html` | `components/planet/` |
+| Graph | 力导向/层级，d3-force | v1 未建示例（`bento-dashboard.html` 有缩略） | `components/graph/` |
+| ReviewCard | 复习专注模式 | v1 未建示例 | `ReviewSessionView.tsx` |
+| MasteryRadar | SVG 雷达四维 | `bento-dashboard.html`（雷达块） | M3 |
+
+### 7.3 动效基元
+
+| 基元 | 视觉 | 示例 |
+|---|---|---|
+| FadeInUp | IntersectionObserver 触发 0→1 + translateY 16→0 | `motion-primitives.html` |
+| CountUp | 数字 0→target，800ms ease-out | `motion-primitives.html` |
+| Skeleton | 1.2s 闪烁 | `motion-primitives.html` |
+| Toast | 右上滑入 | `motion-primitives.html` |
+| ProgressRing | 0→62% 描边动画 | `motion-primitives.html` |
+| WaveUnderline | 链接 hover 下划线展开 | `motion-primitives.html` |
+
+---
+
+## 8. 页面骨架
+
+| 页面 | 布局 | 核心 |
+|---|---|---|
+| **首页** `/` | Hero（大字 + 地球 + CTA） + 最新动态卡片 + 产品矩阵（Bento 4 块） + 共建生态（Marquee） + 用户声音 + 关于 | `home-hero.html` |
+| **Dashboard** `/dashboard` | 顶栏 + 侧边栏 + Bento 网格（今日复习卡 / 掌握度雷达 / 最近笔记 / 图谱缩略 / 趋势图 / 错题） | `bento-dashboard.html` |
+| **笔记工作区** `/note/:id` | 三栏（列表 240 + 编辑 720 + 右栏 320） | `app-shell.html` |
+| **图谱** `/graph` | 全屏画布 + 左浮工具条 + 右浮 Inspector | v1 未建示例 |
+| **复习** `/review` | 顶栏 + 居中专注卡 + 键盘提示 | v1 未建示例 |
+| **Tutor** `/tutor` | 右栏抽屉 + 主区对话 | v1 未建示例 |
+
+---
+
+## 9. 可访问性
+
+- **对比度**：正文 ≥ 4.5:1；大号 ≥ 3:1（已验证 §2.2）
+- **键盘**：所有交互元素 `tab` 可达；focus ring 2px brand
+- **语义**：标题层级 h1→h6 单调；按钮用 `<button>`，链接用 `<a>`，禁用 div 模拟
+- **动效**：`prefers-reduced-motion: reduce` → 全部停
+- **触摸目标**：≥ 44×44px
+- **语言**：`html lang="zh-CN"`；中英数字间自动空格（编辑器层）
+
+---
+
+## 10. 性能契约（与 P8-001C 一致 · 冻结）
+
+- 单 rAF · 30fps 节流（`--frame-ms = 1000/30`）
+- canvas 卡片版 dpr=1 / Hero dpr≤1.5
+- 容器 `contain: layout paint size`
+- `IntersectionObserver` + `visibilitychange` 不可见即停
+- `prefers-reduced-motion: reduce` → 静态一帧
+- 循环内禁 `getComputedStyle` / 逐帧 DOM 重建 / `box-shadow` 动画
+- 卫星渲染上限 16 颗（地球）
+
+---
+
+## 11. 与 web/src 映射
+
+| 设计令牌 | web/src 现状 | 同步 |
+|---|---|---|
+| `--brand #FF6B35` | `global.css` 现 `--brand #FF8A00` | v1 切到 `#FF6B35`；旧 `#FF8A00` 仅作 `--brand-hover` 备份 |
+| `--bg-soft #F5F5F5` | `global.css` 现 `--bg-secondary #F7F7F7` | 切到 `#F5F5F5` |
+| `--border #ECECEC` | 现 `--border #E5E5E5` | 切到 `#ECECEC` |
+| `--text #171717` | 现 `--text-primary #1A1A1A` | 切到 `#171717` |
+| `--hl #FBF1CF` | 组件 HTML 已有，全局未声明 | 提升为全局令牌 |
+| `--ink #35618F` | 组件 HTML 已有 | 提升为全局辅色 |
+
+> **同步纪律**：改 `tokens.css` → 改本文件 §0/§2/§3 → 改 `web/src/global.css` → 跑 `npm run build`。
+> 不允许 ui/ 内部与 web/ 颜色值漂移。
+
+---
+
+## 12. 选型与参考（开源）
+
+视觉/组件灵感来源（实现为自包含 HTML，**不引入依赖**）：
+
+| 来源 | 用法 | 链接 |
+|---|---|---|
+| **mimo.mi.com** | 整体视觉语言（白空间 + 橙 + 大字 + 地球） | https://mimo.mi.com/ |
+| **shadcn/ui** | 组件 API 形态、tokens 结构、a11y 模式 | https://github.com/shadcn-ui/ui |
+| **Aceternity UI** | SpotlightCard / BentoGrid 模式 | https://ui.aceternity.com/ |
+| **Magic UI** | Marquee / Text Reveal / Shimmer Button | https://magicui.design/ |
+| **React Bits** | 微交互模式参考 | https://reactbits.dev/ |
+| **Uiverse** | 社区 UI 元素灵感（按需挑选） | https://uiverse.io/ |
+| **Linear** | 命令面板、列表、键盘驱动 | https://linear.app/ |
+| **Obsidian** | 侧边栏 + 双链 + 信息密度 | https://obsidian.md/ |
+| **VS Code** | 工作区 + 状态栏 + 键盘提示 | — |
+
+> 上述均为**视觉/结构灵感**，代码 100% 自写；项目禁 CSS 框架（AGENTS §2.3），禁第二状态库。
+
+---
+
+## 13. 变更记录
+
+| 版本 | 日期 | 变更 |
+|---|---|---|
+| v1 | 2026-08-29 | 初版。统一令牌到 MiMo 橙白体系；新增 5 个组件页（Home Hero / App Shell / Bento Dashboard / Spotlight / Marquee）+ 1 个动效基元页 + 总览导航页。`ui/README.md` 索引同步。 |
+
+---
+
+**维护人**：UI Design（design-experts · ui-designer）
+**验收**：交付后须在 `web/src/global.css` 应用 v1 令牌并跑通 `npm run build` + `npx vitest run`。

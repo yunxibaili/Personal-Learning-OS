@@ -222,19 +222,34 @@ body {
   border-radius: 50%;
   width: 80px; height: 80px;
   justify-content: center;
-  border-color: var(--ok, #4a9);
   padding: 0;
+  /* 边框由绿色 --ok 改中性：语义色交给 mastery 环，一个节点不出现两个色相 */
+  border-color: var(--border, #ddd);
+  /* 环画在节点外侧，需允许溢出；文本另由 .gnode-label 截断兜底 */
+  overflow: visible;
 }
+.gnode.concept .gnode-label { max-width: 68px; text-align: center; }
 .gnode.note {
   border-radius: 4px;
   border-color: var(--border, #ddd);
   background: var(--bg-primary, #fff);
 }
-.gnode.selected { box-shadow: 0 0 0 2px var(--brand, #ff8a00); }
+.gnode.selected { box-shadow: 0 0 0 1.5px var(--brand, #ff8a00); }
 .gnode.unconf { border-style: dashed; opacity: 0.65; }
-.gnode:hover { box-shadow: 0 0 0 3px rgba(91, 157, 217, 0.25); }
+/* hover 由蓝色环改为中性投影（React Flow 官方 --xy-node-boxshadow-hover-default） */
+.gnode:hover { box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08); }
 .gnode-icon { font-size: 11px; opacity: 0.5; flex-shrink: 0; }
 .gnode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Concept mastery 环（ADR-023 视觉编码：Concept = 圆形 + mastery 环） */
+.gnode-ring {
+  position: absolute; top: -5px; left: -5px;
+  width: calc(100% + 10px); height: calc(100% + 10px);
+  pointer-events: none;
+  transform: rotate(-90deg);
+}
+.gnode-ring-track { fill: none; stroke: var(--border, #ddd); stroke-width: 2; }
+.gnode-ring-value { fill: none; stroke: var(--brand, #ff8a00); stroke-width: 2; stroke-linecap: round; }
 
 /* Graph node tooltip */
 .gnode-tooltip {
@@ -243,33 +258,25 @@ body {
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border, #ddd);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 5px 8px;
   font-size: 11px;
-  min-width: 120px;
+  white-space: nowrap;
   z-index: 100;
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.gnode-tooltip-title { font-weight: 600; margin-bottom: 2px; }
+.gnode-tooltip-mastery { font-weight: 600; color: var(--text-primary, #171717); }
 .gnode-tooltip-domain { color: var(--text-secondary, #888); font-size: 10px; }
-.gnode-tooltip-status { color: var(--text-secondary, #888); margin-top: 4px; }
-.gnode-tooltip-type { color: var(--text-secondary, #888); margin-top: 2px; }
-.gnode-tooltip-bar-wrap {
-  height: 3px; background: #eee; border-radius: 2px; margin-top: 3px;
-}
-.gnode-tooltip-bar {
-  height: 100%; background: var(--ok, #4a9); border-radius: 2px;
-}
-.gnode-tooltip-effective { color: var(--text-secondary, #888); font-size: 10px; margin-top: 2px; }
 
-/* Graph edge styles by relation */
-.gedge { stroke: #c4c0b8; stroke-width: 1.5; }
-.gedge.wikilink { stroke: #d4d0c8; stroke-width: 1; }
-.gedge.prerequisite, .gedge.requires { stroke: #1a1a1a; stroke-width: 2; }
-.gedge.related, .gedge.mentions { stroke: #c4c0b8; stroke-width: 1.5; stroke-dasharray: 4 2; }
-.gedge:hover { stroke: var(--brand, #ff8a00); stroke-width: 2; }
+/* 边样式已收敛为两级中性灰 + hover 品牌橙，见 GraphEdge.tsx。
+   旧的 9 种按 relation 分色规则未被任何组件引用，属死代码，已移除。 */
 .gedge-label {
-  font-size: 10px; fill: var(--text-secondary, #888);
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  color: var(--text-secondary, #888);
   pointer-events: none;
 }
 

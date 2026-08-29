@@ -6,25 +6,33 @@
  *   - 节点：Note + Concept 双层
  *   - 边：links 表全部关系类型
  *   - 布局：dagre 层级
- *   - 视觉：Note = 方形，Concept = 圆形
+ *   - 视觉：Note = 方形，Concept = 圆形 + mastery 环
  *   - 交互：双击展开、根节点切换、Domain 过滤、隐藏未确认桩
- *   - 禁止：mastery 视觉投射（仅 tooltip）
+ *   - 禁止：mastery 视觉投射 —— 唯一例外是 Concept  mastery 环；
+ *           禁止尺寸 / 填充色 / 排序 / 动画等其他投射
+ *
+ * 编码通道预算（ADR-023 横切约束）：一个维度 = 一个通道。
+ *   - 关系类型 → 线色（2 级中性灰，不按 relation 分色）
+ *   - 语义强弱 → 线宽（prerequisite / requires 提升一级）
+ *   - 交互状态 → 品牌橙（hover / selected）
+ *   - 掌握度   → Concept 环（Graph 中 mastery 的唯一视觉出口）
  *
  * P8-002 新增：
  *   - dagre 层级布局（lib/graph/layout.ts）
  *   - ConceptNode / NoteNode 双视觉组件
- *   - Edge 视觉层次（按 relation 区分）
  *   - Layer Toggle（Mixed / Concept / Note）
- *   - MiniMap 导航
  *   - Floating Inspector
  *   - hover relation label
+ *
+ * 简约化（2026-08-29）：
+ *   - 边由 9 色 × 3 通道（颜色+线宽+虚线）收敛为 2 级中性灰 × 1 通道
+ *   - 移除点阵 Background 与 MiniMap（与「白空间优先 / 单一焦点」冲突）
+ *   - 规范页：ui/graph-view.html
  */
 import "@xyflow/react/dist/style.css";
 
 import {
-  Background,
   Controls,
-  MiniMap,
   ReactFlow,
   type Edge,
   type Node,
@@ -239,13 +247,10 @@ export function GraphView() {
           }}
           onPaneClick={() => setSelectedId(null)}
         >
-          <Background color="#f0f0ee" gap={16} />
+          {/* 简约化（2026-08-29）：移除点阵 Background 与 MiniMap。
+              React Flow 官方 --xy-background-color-default 即 transparent；
+              MiniMap 是第二份缩略视图，与「单一焦点」冲突。 */}
           <Controls showInteractive={false} />
-          <MiniMap
-            nodeStrokeWidth={3}
-            zoomable
-            pannable
-          />
         </ReactFlow>
       </div>
 

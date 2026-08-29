@@ -1,26 +1,26 @@
 /**
- * TutorPanel（M4-D）：Context-aware Tutor 面板。
+ * TutorPanel（M4-D + B7.1-R）：Context-aware Tutor 面板。
  *
  * ADR-013/016 约束：
  *   - Knowledge tool，not chatbot
  *   - 禁止：气泡、头像、打字动画、魔法按钮
  *   - 允许：context panel、structured answer、action suggestion
+ *
+ * B7.1-R：改走 POST /chat（conversation_id 持久化 + extractor 触发）。
  */
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../lib/api";
 import { useUi } from "../../stores/ui";
+import { SuggestionList } from "../suggestions/SuggestionList";
+import { MemoryList } from "../memories/MemoryList";
 import "./TutorPanel.css";
 
 type TutorMode = "explain" | "hint" | "review";
 
-interface TutorAnswer {
+/** /chat 返回形状（B7.1-R：conversation_id 持久化） */
+interface ChatResponse {
+  conversation_id: number;
   answer: string;
-  metadata: {
-    mode: string;
-    concept: string | null;
-    mastery_effective: number | null;
-    provider: string;
-  };
 }
 
 interface ConceptContext {
@@ -115,16 +115,22 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
 
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<TutorMode>("explain");
-  const [answer, setAnswer] = useState<TutorAnswer | null>(null);
+  const [answer, setAnswer] = useState<ChatResponse | null>(null);
   const [context, setContext] = useState<TutorContextData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // B7.1-R：对话持久化（conversation_id 持续对话链）
+  const [conversationId, setConversationId] = useState<number | null>(null);
 
   // 笔记引用（P8-003D：用户显式选择，≤2 篇）
   const [selectedNotes, setSelectedNotes] = useState<TutorNoteRef[]>([]);
   const [noteSearch, setNoteSearch] = useState("");
   const [noteResults, setNoteResults] = useState<Array<{ note_id: number; title: string }>>([]);
   const [showNotePicker, setShowNotePicker] = useState(false);
+
+  // B7.1：对话后刷新 Extractor 产物面板（B3.2 概念建议 + B28 记忆）
+  const [extractionRefreshKey, setExtractionRefreshKey] = useState(0);
 
   /** 加载 concept context（有笔记引用时走 POST，携带 note_ids） */
   const loadContext = useCallback(async (cid: number, noteIds: number[] = []) => {
@@ -171,34 +177,37 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
     });
   }, []);
 
-  /** 提交问题 */
+  /** 提交问题（B7.1-R：改走 /chat，conversation_id 持久化 + extractor 触发） */
   const handleSubmit = useCallback(async () => {
-    if (!conceptId || !query.trim()) return;
+    if (!query.trim()) return;
     setLoading(true);
     setError("");
     try {
-      const data = await apiPost<TutorAnswer>("/tutor/test", {
-        concept_id: conceptId,
+      const body: Record<string, unknown> = {
         query: query.trim(),
         mode,
-      });
+      };
+      // concept_id 可选：有则传，无则不传（/chat 支持 concept_id=None）
+      if (conceptId != null) body.concept_id = conceptId;
+      // note_ids 透传（P8-003D，≤2 篇）
+      const noteIds = selectedNotes.map((n) => n.note_id);
+      if (noteIds.length > 0) body.note_ids = noteIds;
+      // conversation_id 持续对话链
+      if (conversationId != null) body.conversation_id = conversationId;
+
+      const data = await apiPost<ChatResponse>("/chat", body);
       setAnswer(data);
+      setConversationId(data.conversation_id); // 持久化，下轮自动续接
+      // B7.1：对话后刷新 Extractor 产物（可能新增概念建议与记忆）
+      setExtractionRefreshKey((k) => k + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [conceptId, query, mode]);
+  }, [conceptId, query, mode, selectedNotes, conversationId]);
 
-  /** 无 concept 选中 */
-  if (conceptId == null) {
-    return (
-      <div className="tutor-panel">
-        <div className="tutor-header">Tutor</div>
-        <div className="tutor-empty">Select a concept to start</div>
-      </div>
-    );
-  }
+  // B7.1-R：移除 conceptId==null 早退，表单始终可见（/chat 支持无 concept 对话）
 
   return (
     <div className="tutor-panel">
@@ -356,6 +365,12 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
           <div className="tutor-answer">{answer.answer}</div>
         </div>
       )}
+
+      {/* B3.2: AI Concept Suggestions */}
+      <SuggestionList refreshKey={extractionRefreshKey} />
+
+      {/* B28: AI Memories — Extractor 自动写入记忆的可见/可改/可删兜底 */}
+      <MemoryList refreshKey={extractionRefreshKey} />
     </div>
   );
 }

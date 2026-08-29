@@ -1,0 +1,160 @@
+/* MemoryList（B28）—— AI 记忆管理面样式。
+   ADR-013 合规：无装饰、无渐变、无阴影，与 SuggestionList 同构。 */
+
+.memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.memory-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+}
+
+.memory-count {
+  font-size: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.memory-loading {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 4px 0;
+}
+
+.memory-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.memory-item {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memory-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.memory-kind {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.memory-importance {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.memory-content {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.memory-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.memory-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.memory-textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+.memory-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.memory-edit-btn,
+.memory-delete-btn,
+.memory-save-btn,
+.memory-cancel-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-secondary);
+  padding: 4px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: color 150ms, border-color 150ms;
+}
+
+.memory-edit-btn:hover,
+.memory-cancel-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.memory-delete-btn:hover {
+  color: var(--err);
+  border-color: var(--err);
+}
+
+.memory-save-btn {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+  transition: background 150ms;
+}
+
+.memory-save-btn:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+.memory-save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.memory-error {
+  font-size: 11px;
+  color: var(--err);
+  line-height: 1.4;
+}

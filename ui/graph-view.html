@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识图谱 · 简约规范 — Open Learning OS</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg-soft); color: var(--text);
+    font-family: var(--font); -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(255,255,255,.72); backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  header .wrap { height: var(--nav-h); display: flex; align-items: center; gap: 16px; }
+  .brand { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  .brand i { color: var(--brand); font-style: normal; }
+  header nav { margin-left: auto; display: flex; gap: 20px; font-size: 13px; }
+  header nav a { color: var(--text-2); text-decoration: none; }
+  header nav a:hover { color: var(--text); }
+
+  .hero { padding: 64px 0 32px; }
+  .eyebrow {
+    display: inline-block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--brand); margin-bottom: 14px;
+  }
+  h1 { font-size: 40px; line-height: 1.15; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 600; }
+  h1 em { font-style: normal; color: var(--brand); }
+  .lede { font-size: 16px; color: var(--text-2); max-width: 640px; line-height: 1.7; margin: 0; }
+
+  h2 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 6px; }
+  .sub { font-size: 13px; color: var(--text-2); margin: 0 0 22px; }
+  section { padding: 40px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .panel {
+    border: 1px solid var(--border); border-radius: var(--r-lg);
+    background: var(--surface); overflow: hidden;
+  }
+  .panel-head { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .panel-head b { font-size: 14px; font-weight: 600; }
+  .panel-head span { display: block; font-size: 12px; color: var(--text-2); margin-top: 3px; }
+  .panel svg { display: block; width: 100%; height: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; color: var(--text-2); font-weight: 500; }
+  td code { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .swatch {
+    display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+    margin-right: 6px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.08);
+  }
+
+  .note {
+    background: var(--brand-soft); border: 1px solid var(--brand-line);
+    border-radius: var(--r-md); padding: 14px 16px; font-size: 13px; line-height: 1.7;
+  }
+  .note b { color: var(--brand-deep); }
+  ul { margin: 10px 0 0; padding-left: 20px; font-size: 13px; color: var(--text-2); line-height: 1.8; }
+
+  footer { border-top: 1px solid var(--border); padding: 28px 0 48px; font-size: 12px; color: var(--text-2); }
+  footer a { color: var(--text-2); }
+
+  @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } h1 { font-size: 30px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">Open Learning <i>OS.</i></div>
+    <nav>
+      <a href="./index.html">总览</a>
+      <a href="./UI_DESIGN.md">设计系统</a>
+      <a href="./README.md">目录</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <span class="eyebrow">Design System v1</span>
+  <h1>知识图谱：<em>去掉色相噪音</em><br>只留两个中性层级</h1>
+  <p class="lede">
+    旧版把同一个维度（关系类型）同时用颜色、线宽、虚线三个通道编码，
+    9 种颜色里还混入了粉红与绿色。现收敛为两级中性灰，橙色只在 hover 时出现——
+    它是全站唯一的强调色，不该被稀释。
+  </p>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>前后对照</h2>
+    <p class="sub">同一份数据，同一套布局。区别只在视觉编码的通道数量。</p>
+
+    <div class="compare">
+      <!-- 简约版 -->
+      <div class="panel">
+        <div class="panel-head">
+          <b>简约版 · 现在</b>
+          <span>2 级中性灰 + hover 品牌橙 · Concept 带 mastery 环</span>
+        </div>
+        <svg viewBox="0 0 400 320" role="img" aria-label="简约版知识图谱示意图">
+          <path d="M200 160 C170 190,100 190,60 196" fill="none" stroke="#a3a3a3" stroke-width="1.5"/>
+          <path d="M200 160 C186 205,156 220,136 234" fill="none" stroke="#e5e5e5" stroke-width="1"/>
+          <path d="M200 160 C214 205,244 220,264 234" fill="none" stroke="#FF6B35" stroke-width="2"/>
+          <path d="M200 160 C230 190,300 190,340 196" fill="none" stroke="#e5e5e5" stroke-width="1"/>
+
+          <rect x="15" y="196" width="90" height="30" rx="4" fill="#fff" stroke="#E5E5E5"/>
+          <text x="60" y="215" text-anchor="middle" font-size="11" fill="#171717">梯度下降</text>
+
+          <rect x="91" y="234" width="90" height="30" rx="4" fill="#fff" stroke="#E5E5E5"/>
+          <text x="136" y="253" text-anchor="middle" font-size="11" fill="#171717">优化器对比</text>
+
+          <rect x="219" y="234" width="90" height="30" rx="4" fill="#fff" stroke="#E5E5E5"/>
+          <text x="264" y="253" text-anchor="middle" font-size="11" fill="#171717">学习率调度</text>
+
+          <rect x="295" y="196" width="90" height="30" rx="4" fill="#fff" stroke="#E5E5E5"/>
+          <text x="340" y="215" text-anchor="middle" font-size="11" fill="#171717">反向传播</text>
+
+          <circle cx="200" cy="120" r="44" fill="none" stroke="#ECECEC" stroke-width="2"/>
+          <circle cx="200" cy="120" r="44" fill="none" stroke="#FF6B35" stroke-width="2"
+                  stroke-linecap="round" stroke-dasharray="171.4 276.5"
+                  transform="rotate(-90 200 120)"/>
+          <circle cx="200" cy="120" r="40" fill="#F5F5F5" stroke="#ECECEC" stroke-width="1.5"/>
+          <text x="200" y="118" text-anchor="middle" font-size="12" font-weight="500" fill="#171717">梯度下降</text>
+          <text x="200" y="132" text-anchor="middle" font-size="10" fill="#737373">62%</text>
+
+          <rect x="228" y="188" width="62" height="17" rx="4" fill="#fff" stroke="#E5E5E5"/>
+          <text x="259" y="200" text-anchor="middle" font-size="10" fill="#737373">related</text>
+        </svg>
+      </div>
+
+      <!-- 旧版 -->
+      <div class="panel">
+        <div class="panel-head">
+          <b>旧版 · 改造前</b>
+          <span>9 种色相 × 3 通道 · Concept 绿边 · hover 蓝环</span>
+        </div>
+        <svg viewBox="0 0 400 320" role="img" aria-label="旧版知识图谱示意图">
+          <path d="M200 160 C170 190,100 190,60 196" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M200 160 C186 205,156 220,136 234" fill="none" stroke="#c4c0b8" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <path d="M200 160 C214 205,244 220,264 234" fill="none" stroke="#b08080" stroke-width="1.5" stroke-dasharray="2 2"/>
+          <path d="M200 160 C230 190,300 190,340 196" fill="none" stroke="#4a7a4a" stroke-width="2"/>
+
+          <rect x="15" y="196" width="90" height="30" rx="4" fill="#fff" stroke="#ddd"/>
+          <text x="60" y="215" text-anchor="middle" font-size="11" fill="#171717">梯度下降</text>
+
+          <rect x="91" y="234" width="90" height="30" rx="4" fill="#fff" stroke="#ddd"/>
+          <text x="136" y="253" text-anchor="middle" font-size="11" fill="#171717">优化器对比</text>
+
+          <rect x="219" y="234" width="90" height="30" rx="4" fill="#fff" stroke="#ddd"/>
+          <text x="264" y="253" text-anchor="middle" font-size="11" fill="#171717">学习率调度</text>
+
+          <rect x="295" y="196" width="90" height="30" rx="4" fill="#fff" stroke="#ddd"/>
+          <text x="340" y="215" text-anchor="middle" font-size="11" fill="#171717">反向传播</text>
+
+          <circle cx="200" cy="120" r="43" fill="none" stroke="#5B9DD9" stroke-width="3" opacity=".55"/>
+          <circle cx="200" cy="120" r="40" fill="#F7F7F7" stroke="#4a9" stroke-width="1.5"/>
+          <text x="200" y="125" text-anchor="middle" font-size="12" fill="#171717">梯度下降</text>
+
+          <rect x="228" y="188" width="62" height="17" rx="4" fill="#fff" stroke="#ddd"/>
+          <text x="259" y="200" text-anchor="middle" font-size="10" fill="#888">related</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>规范</h2>
+    <p class="sub">数值取自 Obsidian Graph View 与 React Flow 官方默认，非自拟。</p>
+    <table>
+      <thead>
+        <tr><th style="width:22%">元素</th><th style="width:34%">规范</th><th>出处</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>普通关系边</td>
+          <td><span class="swatch" style="background:#e5e5e5"></span><code>#e5e5e5 · 1px · 实线</code></td>
+          <td>React Flow 默认 <code>#b1b1b7 / 1px</code>，不按类型分色</td>
+        </tr>
+        <tr>
+          <td>依赖类边</td>
+          <td><span class="swatch" style="background:#a3a3a3"></span><code>#a3a3a3 · 1.5px · 实线</code><br>
+              <span style="color:var(--text-2)">仅 <code>prerequisite</code> / <code>requires</code></span></td>
+          <td>保留 ADR-023 未禁止的「语义分级」，但只用一个通道</td>
+        </tr>
+        <tr>
+          <td>hover 边</td>
+          <td><span class="swatch" style="background:#FF6B35"></span><code>var(--brand) · 2px</code></td>
+          <td>橙色 = 注意力指针：只服务交互焦点与 mastery 进度，<b>不用于静态分类</b></td>
+        </tr>
+        <tr>
+          <td>Concept 节点</td>
+          <td>圆形 80px · 中性描边 · mastery 环（轨道 <code>--border</code> / 进度 <code>--brand</code>，2px）</td>
+          <td>ADR-023 视觉编码「Concept = 圆形 + mastery 环」——
+              Graph 中 mastery 的<b>唯一</b>视觉出口（2026-08-29 裁决）</td>
+        </tr>
+        <tr>
+          <td>Note 节点</td>
+          <td>方形 4px 圆角 · 白底 · 中性描边</td>
+          <td>ADR-023「Note = 方形」，形状即语义</td>
+        </tr>
+        <tr>
+          <td>hover 节点</td>
+          <td><code>0 1px 4px 1px rgba(0,0,0,.08)</code></td>
+          <td>React Flow 默认；旧版蓝环 <code>rgba(91,157,217,.25)</code> 已移除</td>
+        </tr>
+        <tr>
+          <td>选中节点</td>
+          <td><code>0 0 0 1.5px var(--brand)</code></td>
+          <td>React Flow 默认 0.5px；适度加重以保证可见</td>
+        </tr>
+        <tr>
+          <td>画布背景</td>
+          <td>纯白，无点阵</td>
+          <td>RF 默认 <code>--xy-background-color-default: transparent</code></td>
+        </tr>
+        <tr>
+          <td>边标签</td>
+          <td>默认隐藏，hover 才显示</td>
+          <td>ADR-023 冻结条款，未改动</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>已移除的噪音</h2>
+    <p class="sub">这些元素都曾是「花哨」的来源，且没有一条属于 ADR-023 的冻结范围。</p>
+    <table>
+      <thead><tr><th style="width:30%">项</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>9 种边色</td><td>含 <code>#b08080</code> 粉红（contrasts_with）、<code>#4a7a4a</code> 绿（implements），与橙白体系冲突</td></tr>
+        <tr><td>3 种虚线</td><td>与颜色、线宽叠加，同一维度被 3 个通道重复编码</td></tr>
+        <tr><td>hover 蓝环</td><td><code>rgba(91,157,217,.25)</code> —— 橙白体系之外的第三个色相</td></tr>
+        <tr><td>Concept 绿边</td><td><code>--ok #4a9</code>，与 mastery 环职责重复</td></tr>
+        <tr><td>点阵背景</td><td><code>#f0f0ee / gap 16</code>，与「白空间优先」相悖</td></tr>
+        <tr><td>MiniMap</td><td>第二份缩略视图，与「单一焦点」原则冲突</td></tr>
+        <tr><td>tooltip 5 层</td><td>标题（与节点标签重复）+ 状态词 + 进度条 + 百分比 → 精简为 2 层</td></tr>
+        <tr><td>死代码</td><td><code>global.css</code> 中 5 条 <code>.gedge.*</code> 规则无任何组件引用</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="note">
+      <b>ADR-023 冲突已裁决（2026-08-29）。</b>
+      原文档有两处对 Graph 与 mastery 的说法不一致，无法同时成立：
+      <ul>
+        <li><b>视觉编码</b>条款写「Concept = 圆形 + mastery 环」。</li>
+        <li><b>数据流边界</b>表 Graph 列却标注 mastery「❌（仅 tooltip）」，
+            且「禁止」条款写「mastery 视觉投射」。</li>
+      </ul>
+      <b>裁决：取视觉编码条款</b>——保留 mastery 环，并明确它是 Graph 中 mastery 的<b>唯一</b>视觉出口，
+      禁止尺寸 / 填充色 / 排序 / 动画等其他投射。ADR-023 已同步修订：「禁止」条款补上唯一例外，
+      新增「编码通道预算」横切约束。本次未放宽任何冻结边界。
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Open Learning OS · Design System v1 · 2026-08-29 ·
+    <a href="./index.html">返回总览</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -170,6 +170,7 @@ function UniverseCanvas() {
   const [fixed, setFixed] = useState<Map<number, { x: number; y: number }>>(() => loadFixed());
   const { setViewport } = useReactFlow();
   const openNote = useUi((s) => s.openNote);
+  const openTutorForConcept = useUi((s) => s.openTutorForConcept);
 
   const load = useCallback(async () => {
     try {
@@ -552,6 +553,9 @@ function UniverseCanvas() {
 
             <button className="inspector-btn" onClick={() => openNote(selected.id)}>
               Open Notes
+            </button>
+            <button className="inspector-btn" onClick={() => openTutorForConcept(selected.id)}>
+              Ask Tutor
             </button>
           </div>
         )}

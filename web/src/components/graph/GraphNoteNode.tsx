@@ -9,7 +9,10 @@
  * 设计约束：
  *   - 方形卡片，document 风格
  *   - 标题文字截断
- *   - hover 显示 domain（如有）
+ *   - hover 仅显示 node 上看不到的信息（domain）
+ *
+ * 简约化（2026-08-29）：tooltip 由 3 层精简为 1 层 ——
+ * 标题与节点标签重复，类型已由方形表达，两者都不该再占一层。
  */
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useState } from "react";
@@ -36,11 +39,9 @@ export function GraphNoteNode({ data }: NodeProps) {
         <span className="gnode-icon">📄</span>
         <span className="gnode-label">{d.label}</span>
 
-        {hovered && (
+        {hovered && d.domain && (
           <div className="gnode-tooltip">
-            <div className="gnode-tooltip-title">{d.label}</div>
-            {d.domain && <div className="gnode-tooltip-domain">{d.domain}</div>}
-            <div className="gnode-tooltip-type">Note</div>
+            <div className="gnode-tooltip-domain">{d.domain}</div>
           </div>
         )}
       </div>
