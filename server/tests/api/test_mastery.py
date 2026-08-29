@@ -150,6 +150,45 @@ def test_review_history(client: TestClient) -> None:
     assert history[0]["concept_id"] == cid
 
 
+def test_review_stats(client: TestClient) -> None:
+    """B13：复习历史分析端点（准确率/连对/按概念归因）。"""
+    cid = _create_concept(client, "StatsTest")
+    for _ in range(4):
+        client.post(f"/api/v1/review/{cid}/answer", json={"quality": 5})
+    r = client.get("/api/v1/review/stats")
+    assert r.status_code == 200
+    stats = r.json()["stats"]
+    assert stats["total_reviews"] >= 4
+    assert stats["correct"] >= 4
+    assert stats["wrong"] == 0
+    assert stats["accuracy"] == round(
+        stats["correct"] / stats["total_reviews"], 4)
+    assert stats["current_streak"] == stats["correct"]  # 全对 → 连对=正确数
+    assert any(bc["concept_id"] == cid and bc["count"] >= 4
+               for bc in stats["by_concept"])
+
+
+def test_review_stats_wrong_resets_streak(client: TestClient) -> None:
+    """最近一次答错 → 当前连对归零（streak 语义 = 从最新往回连续答对）。"""
+    cid = _create_concept(client, "StatsWrong")
+    client.post(f"/api/v1/review/{cid}/answer", json={"quality": 5})
+    client.post(f"/api/v1/review/{cid}/answer", json={"quality": 1})
+    r = client.get("/api/v1/review/stats")
+    stats = r.json()["stats"]
+    assert stats["wrong"] >= 1
+    assert stats["current_streak"] == 0
+
+
+def test_review_stats_empty(client: TestClient) -> None:
+    """空库：统计不炸，准确率 0。"""
+    r = client.get("/api/v1/review/stats")
+    assert r.status_code == 200
+    stats = r.json()["stats"]
+    assert stats["total_reviews"] == 0
+    assert stats["accuracy"] == 0.0
+    assert stats["current_streak"] == 0
+
+
 def test_review_priority_wrong_boost(client: TestClient) -> None:
     """错答概念应排在正答概念前面。"""
     c1 = _create_concept(client, "PriorityA")

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ..core import mastery as M
 from ..core.mastery import get_effective_now
 from ..core.review_scheduler import sm2_schedule
+from ..core.review_stats import review_stats
 from ..db import connect
 
 router = APIRouter(prefix="/api/v1", tags=["mastery"])
@@ -193,6 +194,16 @@ def review_history(limit: int = 20) -> dict:
             (limit,),
         ).fetchall()
         return {"history": [dict(r) for r in rows]}
+    finally:
+        conn.close()
+
+
+@router.get("/review/stats")
+def review_stats_endpoint() -> dict:
+    """复习历史分析（B13）：准确率 / 当前连对 / 按概念归因。"""
+    conn = connect()
+    try:
+        return {"stats": review_stats(conn)}
     finally:
         conn.close()
 

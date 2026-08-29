@@ -71,3 +71,19 @@ export interface MistakeStats {
     unresolved: number;
   }>;
 }
+
+/** B13 复习历史分析契约。 */
+export interface ReviewStats {
+  total_reviews: number;
+  correct: number;
+  wrong: number;
+  accuracy: number;
+  current_streak: number;
+  by_concept: Array<{
+    concept_id: number;
+    title: string;
+    count: number;
+    correct: number;
+    wrong: number;
+  }>;
+}
