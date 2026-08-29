@@ -4,9 +4,8 @@ ADR-003 唯一协议：POST {base_url}/v1/chat/completions（非流式 complete�
 api_key 只存在于实例内部，绝不进入 context / export（守护测试在库）。
 本地 Ollama 无 key：空 api_key 时不发送 Authorization 头。
 
-B2-A：stream() 目前为**非流式回退**（一次性 yield complete() 结果），
-真实 SSE 解析（``stream: true`` + 逐条 ``data:`` 帧解析）留待 B2-B 落此——接口形状已定，
-以免 Router 契约后续返工。
+B2-B：stream() 为真实 SSE 流式解析（``stream: true`` + 逐条 ``data:`` 帧），
+stdlib 实现零新依赖；增量拼装恒等于整段回答。
 """
 from __future__ import annotations
 
@@ -78,9 +77,54 @@ class OpenAICompatProvider:
             raise ProviderError("LLM 响应缺少 choices[0].message.content") from exc
 
     def stream(self, prompt: TutorPrompt) -> Iterator[str]:
-        """B2-A 非流式回退：一次性 yield 整段回答（接口形状已定）。
+        """B2-B：真实 SSE 流式解析（``stream: true`` + 逐条 ``data:`` 帧）。
 
-        语义仍满足 ``"".join(stream(prompt)) == complete(prompt)``。
-        真实 SSE 增量解析（``stream: true``）留待 B2-B 覆盖此方法。
+        stdlib 实现，无新依赖（ADR-003）。逐行读取响应，解析 OpenAI-compatible
+        ``data: {...}`` 帧，取 ``choices[0].delta.content``（空增量跳过），
+        遇 ``data: [DONE]`` 收尾。与 complete() 一致：增量拼装恒等于整段回答。
+
+        错误映射与 complete() 同源：HTTP 错误 → ProviderError；网络/超时 → ProviderTimeout。
         """
-        yield self.complete(prompt)
+        payload = json.dumps({
+            "model": self.model,
+            "messages": _to_openai_messages(prompt),
+            "stream": True,
+        }).encode("utf-8")
+
+        headers = {"Content-Type": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
+        req = urllib.request.Request(
+            _endpoint(self._base_url), data=payload, headers=headers,
+            method="POST",
+        )
+        try:
+            resp = urllib.request.urlopen(req, timeout=self._timeout)
+        except urllib.error.HTTPError as exc:
+            raise ProviderError(f"LLM 服务返回错误（HTTP {exc.code}）") from exc
+        except (urllib.error.URLError, socket.timeout, TimeoutError) as exc:
+            raise ProviderTimeout(f"LLM 服务连接失败：{exc}") from exc
+
+        with resp:
+            try:
+                for raw_line in resp:
+                    line = raw_line.decode("utf-8").strip()
+                    if not line or not line.startswith("data:"):
+                        continue
+                    data_str = line[len("data:"):].strip()
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        frame = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue  # 跳过损坏帧，不中断流
+                    try:
+                        delta = frame["choices"][0]["delta"]
+                    except (KeyError, IndexError, TypeError):
+                        continue
+                    content = delta.get("content")
+                    if content:
+                        yield content
+            except (urllib.error.URLError, socket.timeout, TimeoutError) as exc:
+                raise ProviderTimeout(f"LLM 流式中断：{exc}") from exc

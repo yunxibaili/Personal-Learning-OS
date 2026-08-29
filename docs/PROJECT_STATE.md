@@ -169,7 +169,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 | Context 系统 | `core/tutor_context.py` → `build_tutor_context(conn, concept_id)`，白名单式：concept / mastery / mistakes / related / review / recent_events；**禁止** vault 全文、settings、api_key、历史聊天、raw markdown |
 | Prompt 系统 | `core/ai/tutor.py` → `build_prompt()`（M4-B 冻结）；分段截断 + 双重敏感过滤 |
 | Token 控制 | `core/ai/constants.py`：`CHARS_PER_TOKEN=4`、SYSTEM 2000 / CONTEXT 10000 / QUERY 2000 字符上限 |
-| 流式输出 | **B2-A 已实现**（2026-08-30）。`stream()` + `/chat` SSE `StreamingResponse`；`MockProvider.stream()` 确定性分块；`openai_compat` 真 SSE 解析留 **B2-B**。`complete(prompt)->str` 一次性非流式仍为默认向后兼容路径 |
+| 流式输出 | **已实现**（2026-08-30）。B2-A：`stream()` 协议 + `/chat` SSE `StreamingResponse`；B2-B：`OpenAICompatProvider.stream()` 真实 SSE 解析（stdlib，零新依赖）。`complete(prompt)->str` 一次性非流式仍为默认向后兼容路径 |
 | 编排框架 | 无 LangChain / LlamaIndex（永久禁止），管线全手写 |
 
 ### 2.5 Storage
@@ -448,7 +448,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | # | 项 | 现状 |
 |---|---|---|
 | B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat 非流式 + factory）；B1b 真实凭据冒烟押后 |
-| B2 | 流式输出（SSE / StreamingResponse） | ✅ B2-A 已实现（2026-08-30：Provider `stream()` + `/chat` SSE 骨架 + `event:done`；**B2-B openai_compat 真 SSE 解析未做**） |
+| B2 | 流式输出（SSE / StreamingResponse） | ✅ 已实现（2026-08-30：B2-A `stream()` + `/chat` SSE 骨架 + `event:done`；B2-B openai_compat 真实 SSE 解析） |
 | B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（2026-08-29：memories+概念桩，范围收窄 v1；B3 核心闭环） |
 | B4 | 自动链接建议（auto-link） | 未实现 |
 | B5 | AI 概念提取 | 未实现 |

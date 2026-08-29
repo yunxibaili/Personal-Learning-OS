@@ -44,8 +44,9 @@
    `/chat` 请求体增 `stream: bool`（默认 false，非流式向后兼容）；
    `stream=true` 返回 SSE。完成度：
    - `MockProvider.stream()`：确定性字符分块（不 sleep），拼装恒等于 `complete()`。
-   - `OpenAICompatProvider.stream()`：**B2-A 暂为非流式回退**（一次性 yield `complete()` 结果），
-     真 SSE 解析（`stream: true` + 逐条 `data:` 帧解析）留 **B2-B** 覆盖此方法。
+   - `OpenAICompatProvider.stream()`：**B2-B 已实现真实 SSE 解析**（`stream: true` +
+     逐条 `data:` 帧解析，取 `choices[0].delta.content`，遇 `data: [DONE]` 收尾），
+     stdlib 实现零新依赖，错误映射与 `complete()` 同源。
    - Router：`/chat` SSE `StreamingResponse`，`event: done` 携 `conversation_id`，
      `event: error` 携错误码；assistant 消息落库与 extractor 置于 `try/finally`（客户端断开不丢消息）。
 

@@ -98,24 +98,76 @@ class TestRequestConstruction:
         OpenAICompatProvider(base_url="http://x", api_key="", model="m").complete(_prompt())
         assert "authorization" not in captured["headers"]
 
-    def test_stream_falls_back_to_complete(self, monkeypatch):
-        """B2-A：stream() 非流式回退 = 一次性 yield complete() 结果（拼装不变）。"""
-        captured = {"stream": None}
+    def test_stream_requests_stream_true_and_yields_deltas(self, monkeypatch):
+        """B2-B：stream() 发 stream:true，解析 data 帧，取 delta.content 增量。"""
+        body = (
+            'data: {"id":"1","choices":[{"delta":{"role":"assistant"}}]}\n\n'
+            'data: {"id":"1","choices":[{"delta":{"content":"特征"}}]}\n\n'
+            'data: {"id":"1","choices":[{"delta":{"content":"值"}}]}\n\n'
+            'data: [DONE]\n\n'
+        ).encode("utf-8")
+        captured = {}
 
         def fake_urlopen(req, timeout=None):
             captured["stream"] = json.loads(req.data.decode("utf-8"))["stream"]
-            return _FakeResponse(json.dumps({
-                "choices": [{"message": {"content": "流式回退文本"}}]
-            }).encode("utf-8"))
+            return _FakeResponse(body)
 
         monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
         provider = OpenAICompatProvider(base_url="http://127.0.0.1:11434",
                                         api_key="sk-test", model="m")
         chunks = list(provider.stream(_prompt()))
-        assert chunks == ["流式回退文本"]
-        assert "".join(chunks) == provider.complete(_prompt())
-        # B2-A 回退仍走非流式请求（stream:false）；真 SSE 解析留 B2-B
-        assert captured["stream"] is False
+        assert captured["stream"] is True
+        assert chunks == ["特征", "值"]
+        assert "".join(chunks) == "特征值"
+
+    def test_stream_skips_metadata_and_bad_frames(self, monkeypatch):
+        """role delta、非 JSON 帧、缺 delta 帧都应被跳过，流不中断。"""
+        body = (
+            b'data: {"id":"1","choices":[{"delta":{"role":"assistant"}}]}\n\n'
+            b'data: this-is-not-json\n\n'
+            b'data: {"id":"1","choices":[]}\n\n'
+            b'data: {"id":"1","choices":[{"delta":{}}]}\n\n'
+            b'data: {"id":"1","choices":[{"delta":{"content":"hi"}}]}\n\n'
+            b'data: [DONE]\n\n'
+        )
+
+        def fake_urlopen(req, timeout=None):
+            return _FakeResponse(body)
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        provider = OpenAICompatProvider(base_url="http://x", api_key="", model="m")
+        assert list(provider.stream(_prompt())) == ["hi"]
+
+    def test_stream_without_done_ends_at_eof(self, monkeypatch):
+        """无 [DONE] 帧也应照常产出，直到响应结束（稳）。"""
+        body = (
+            b'data: {"id":"1","choices":[{"delta":{"content":"a"}}]}\n\n'
+            b'data: {"id":"1","choices":[{"delta":{"content":"b"}}]}\n\n'
+        )
+
+        def fake_urlopen(req, timeout=None):
+            return _FakeResponse(body)
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        provider = OpenAICompatProvider(base_url="http://x", api_key="", model="m")
+        assert list(provider.stream(_prompt())) == ["a", "b"]
+
+    def test_stream_http_error_maps_provider_error(self, monkeypatch):
+        def fake_urlopen(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests",
+                                         io.BytesIO(b"{}"), io.BytesIO(b""))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        with pytest.raises(ProviderError):
+            list(OpenAICompatProvider(base_url="http://x", api_key="k",
+                                      model="m").stream(_prompt()))
+
+    def test_stream_network_error_maps_timeout(self, monkeypatch):
+        def fake_urlopen(req, timeout=None):
+            raise urllib.error.URLError("connection refused")
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        with pytest.raises(ProviderTimeout):
+            list(OpenAICompatProvider(base_url="http://x", api_key="sk-real-shape",
+                                      model="m").stream(_prompt()))
 
 
 # ── 错误映射 ────────────────────────────────────────────────────────
