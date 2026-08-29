@@ -11,16 +11,17 @@
 
 ## 当前任务
 
-**B4 自动链接建议**（自动链接）
+**B5 AI 概念提取**（回合后 LLM 提取概念进知识库）
 
 ## 近期完成
 
-- **B12 错题本 API** ✅（/mistakes 查询/统计/已解决/删除）
-- **B2-B openai_compat 真 SSE** ✅（stdlib 帧解析）
-- **B13 review 历史分析** ✅（/review/stats）
-- **B17 增量 reindex** ✅（changed_paths）
-- **B18 大纲反解析** ✅（/mindmaps/{id}/outline）
-- **B21/B22/B24 技术债** ✅（now_iso 去重 · eventlog 日志 · device 缓存+损坏备份）
+- **B12 错题本 API** ✅
+- **B2-B openai_compat 真 SSE** ✅
+- **B13 review 历史分析** ✅
+- **B17 增量 reindex** ✅
+- **B18 大纲反解析** ✅
+- **B21/B22/B24 技术债** ✅
+- **B4 自动链接建议** ✅（确定性内容重叠）
 
 ### 范围（收窄定案，v1 只做两类产出）
 

@@ -21,7 +21,8 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 - B17 增量 reindex：`reindex_vault(changed_paths=...)` 增量 upsert+删除（含 `_safe_vault_file` 越界守卫）；`POST /admin/reindex` body `changed_paths`（6 tests）。
 - B18 大纲反解析：`core/mindmap.build_outline`/`get_map_outline` + `GET /mindmaps/{id}/outline`（4 tests）。
 - B21/22/24：`core/timeutil.now_iso` 去重 + 删 review_scheduler 死码；mastery eventlog 失败加日志；`load_or_create_device` 进程内缓存 + 损坏备份 `.corrupt`（3 tests）。
-- 验证：pytest **681 passed** · tsc PASS · vitest 23 · vite build PASS。
+- B4 自动链接建议：`core/autolink.tokenize/content_overlap/suggest_note_links` + `GET /notes/{id}/link-suggestions`（确定性内容重叠，只建议不写库；11 tests）。
+- 验证：pytest **692 passed** · tsc PASS · vitest 23 · vite build PASS。
 
 B8.1 Memory Context Integration 完成（importance × recency 复合排序 + 确定性 tie-breaker + 端到端验证，563→569 passed）。
 

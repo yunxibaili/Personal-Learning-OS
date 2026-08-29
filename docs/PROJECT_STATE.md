@@ -156,7 +156,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 |---|---|
 | 服务框架 | Python 3.12 + FastAPI 0.115 + uvicorn，仅绑 `127.0.0.1`（`$env:PORT` 可覆盖） |
 | 数据库 | SQLite（标准库 `sqlite3` 直写 SQL）+ FTS5；**无 ORM**（`AGENTS.md` §2.2 永久禁止） |
-| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 51 端点；错误统一 `{error:{code,message}}` |
+| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 52 端点；错误统一 `{error:{code,message}}` |
 | 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层 |
 | 图查询 | 递归 CTE（`local_graph`），不引图数据库 |
 | 代码规模 | `server/app` Python ≈ 6,119 行 |
@@ -394,11 +394,11 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §7 API Overview
 
-统一前缀 `/api/v1`，**18 APIRouter / 51 端点**。
+统一前缀 `/api/v1`，**18 APIRouter / 52 端点**。
 
 | 类别 | 前缀 | 端点 |
 |---|---|---|
-| Notes | `/api/v1/notes` | `GET /notes` · `POST /notes`@201 · `GET /notes/{id}` · `PATCH /notes/{id}` · `DELETE /notes/{id}` |
+| Notes | `/api/v1/notes` | `GET /notes` · `POST /notes`@201 · `GET /notes/{id}` · `PATCH /notes/{id}` · `DELETE /notes/{id}` · `GET /notes/{id}/link-suggestions`（B4） |
 | Concepts | `/api/v1/concepts` | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts`@201 · `PATCH /concepts/{id}`（**无 DELETE**，ADR-023） |
 | Links | `/api/v1/notes` | `GET /notes/{id}/backlinks` |
 | Graph | `/api/v1/graph` | `GET /graph`（root_type / root_id / depth 1~3，递归 CTE，只读） |
@@ -451,7 +451,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat 非流式 + factory）；B1b 真实凭据冒烟押后 |
 | B2 | 流式输出（SSE / StreamingResponse） | ✅ 已实现（2026-08-30：B2-A `stream()` + `/chat` SSE 骨架 + `event:done`；B2-B openai_compat 真实 SSE 解析） |
 | B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（2026-08-29：memories+概念桩，范围收窄 v1；B3 核心闭环） |
-| B4 | 自动链接建议（auto-link） | 未实现 |
+| B4 | 自动链接建议（auto-link） | ✅ 已实现（2026-08-30：`GET /notes/{id}/link-suggestions`，确定性内容重叠，只建议不写库） |
 | B5 | AI 概念提取 | 未实现 |
 | B6 | AI 生成思维导图 | 未实现 |
 | B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（2026-08-29：CRUD + POST /chat 非流式，快照落库） |
@@ -502,7 +502,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **681 passed**（56.65s） |
+| `pytest -q` | **692 passed**（~57s） |
 | `npx vitest run` | **23 passed**（3 files） |
 | `tsc --noEmit` | **PASS** |
 | `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |
