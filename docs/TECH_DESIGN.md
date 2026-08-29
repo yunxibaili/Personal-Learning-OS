@@ -487,11 +487,11 @@ quality ≥ 3：interval = prev_interval × ease_factor
 
 ## §6 AI Tutor（core/tutor.py + core/llm.py）
 
-> **实现状态（2026-08-28）** 本节大部分是**设计意图**，实际落地约 1/3：
+> **实现状态（2026-08-29 更新）** 本节大部分是**设计意图**，实际落地约 1/2：
 >
 > | 节 | 内容 | 状态 |
 > |---|---|---|
-> | 6.1 | LLM Adapter（OpenAI-compatible HTTP） | ❌ 未实现。仅 `MockProvider`，零 HTTP 调用 → `TASKS.md` B1 |
+> | 6.1 | LLM Adapter（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat + settings factory，非流式）；SSE 流式未实现 → B2 |
 > | 6.2 | 记忆感知上下文管线 | ⚠️ 部分实现。①②④ 未做，③ 前置链未做；白名单 6 类已冻结 |
 > | 6.2 ⑥ | 流式回答 | ❌ 未实现 → B2 |
 > | 6.3 | Extractor（回合后二次调用） | ❌ 未实现 → B3 |

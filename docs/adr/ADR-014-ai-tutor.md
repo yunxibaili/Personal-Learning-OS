@@ -198,3 +198,21 @@ AGENTS §16 已有前端规则。本 ADR 补充后端 AI 规则：
 - Context Builder 是唯一提示词组装点
 - 每次 AI 调用产出 context_json 快照
 - 敏感过滤在 Builder 内集中执行
+
+---
+
+## 附录 §2.3.1：LLM 输出 = Action Suggestion 追认（2026-08-29）
+
+§2.3「LLM 永不能写数据库」与 B3 Extractor（LLM 输出落库）的唯一自洽解读，
+自 B3 起为本 ADR 的正式解释：
+
+**LLM 输出一律视为 Action Suggestion（本文 §2.3 已允许的形态）；一切落库
+动作由确定式代码执行**——代码校验 LLM 输出的结构/枚举/范围后，以自身名义
+调用既有 core 写路径（update_mastery / create_concept / memories 写入）。
+LLM 从未持有任何写能力，校验失败的建议被丢弃（静默），不影响主对话。
+
+## 附录 §2.6.1：fast_model 对齐（2026-08-29）
+
+§2.6 未列 `llm.fast_model`，而 ADR-003/TECH_DESIGN §6.1 均有——本附录补齐：
+`llm.fast_model`（可空，空则回退 `llm.model`）用于 extractor 等辅助调用。
+实现于 `core/ai/config.py LLMConfig.fast_model`（B3 前置）。

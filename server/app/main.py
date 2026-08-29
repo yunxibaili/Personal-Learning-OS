@@ -67,8 +67,19 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     def on_validation_error(_req, exc: RequestValidationError) -> JSONResponse:
+        # include_input=False（2026-08-29 修）：pydantic 默认把触发校验失败的
+        # **原始输入值**放进 errors() 的 input 字段。任何端点、任何字段——
+        # 只要值类型/长度不合规，该值就会被原样回显进 400 响应体，
+        # 构成唯一未被过滤、也未被守护测试覆盖的敏感值泄漏面
+        # （实测：note_ids=["sk-xxx"] → 响应体回显 sk-xxx）。
+        # FastAPI 0.141 的 errors() 不支持 include_input 参数——手工剥离：
+        # input（原始输入值）与 url 均可能携带用户敏感数据，不进响应体
+        errs = [
+            {k: v for k, v in e.items() if k not in ("input", "url")}
+            for e in exc.errors()[:3]
+        ]
         return JSONResponse(status_code=400, content={
-            "error": {"code": "invalid_body", "message": str(exc.errors()[:3])}
+            "error": {"code": "invalid_body", "message": str(errs)}
         })
 
     @app.exception_handler(StarletteHTTPException)

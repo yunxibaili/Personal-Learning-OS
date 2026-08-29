@@ -7,25 +7,21 @@
 
 纯标准库（zipfile），读侧不触碰任何写入路径。
 
-settings 过滤规则（P1 修正：三规则并集，强于任何单一来源）：
-  - 键名含 "api_key" 子串（拦 llm_api_key）
-  - 键名精确命中 core/ai/constants.SENSITIVE_FIELD_NAMES（拦 token/password）
-  - 值以 SENSITIVE_CONTENT_PREFIXES 开头（拦 sk-/Bearer/ghp_/xoxb- 值）
-注意与 routers/settings 的区别：那里是**掩码**（值变 ****** 保留键），
-这里是**整体排除**（导出包不该有不完整凭据占位）。
+settings 过滤规则：复用 core/ai/constants.is_sensitive_setting（三规则并集），
+**与 routers/settings 判定同源**（2026-08-29 修：此前两处规则不同步，
+settings 端点明文返回 password/token/sk- 值）。
+唯一区别是消费语义：
+  - 这里：命中 → 整体排除（导出包不该有不完整凭据占位）
+  - 那里：命中 → 掩码为 ******（保留键，前端需知道配置项存在）
 """
 from __future__ import annotations
 
-import re
 import zipfile
 from io import BytesIO
 from pathlib import Path
 
 from ..db import connect, workspace_root
-from .ai.constants import SENSITIVE_CONTENT_PREFIXES, SENSITIVE_FIELD_NAMES
-
-# 子串规则（拦 llm_api_key 等组合命名）
-SENSITIVE_SETTING_TOKEN = "api_key"
+from .ai.constants import is_sensitive_setting
 
 # 目录白名单（相对 workspace）；entrylogs 单列以便未来差异化处理
 EXPORT_DIRS = ("vault", "attachments", "mind_maps", "metadata/eventlogs")
@@ -51,28 +47,13 @@ def _collect_files(workspace: Path) -> dict[str, bytes]:
     return files
 
 
-def _is_sensitive_setting(key: str, value: str) -> bool:
-    """三规则并集：子串 ∪ 命名段命中 ∪ 值前缀（P1：互补单一规则的盲区）。
-
-    命名段匹配：settings 键多为复合命名（llm.token / db.password），
-    按 . _ - 切段后任一段命中 SENSITIVE_FIELD_NAMES 即视为敏感。
-    """
-    k = key.lower()
-    if SENSITIVE_SETTING_TOKEN in k:
-        return True
-    segments = re.split(r"[._-]", k)
-    if any(seg in SENSITIVE_FIELD_NAMES for seg in segments):
-        return True
-    return any(value.startswith(prefix) for prefix in SENSITIVE_CONTENT_PREFIXES)
-
-
 def _collect_settings_sanitized(conn) -> dict[str, str]:
     """settings 导出：命中敏感规则的条目整体排除（非掩码——掩码值无导出价值）。"""
     rows = conn.execute("SELECT key, value FROM settings").fetchall()
     return {
         r["key"]: r["value"]
         for r in rows
-        if not _is_sensitive_setting(r["key"], r["value"])
+        if not is_sensitive_setting(r["key"], r["value"])
     }
 
 

@@ -1,22 +1,27 @@
 """settings KV API：GET /api/v1/settings · PUT /api/v1/settings。
 
-api_key 类键读取时脱敏为 "******"；错误统一 {error:{code,message}}。
+敏感键读取时脱敏为 "******"；错误统一 {error:{code,message}}。
+
+敏感判定**复用** core/ai/constants.is_sensitive_setting（三规则并集），
+与 core/export 同源——2026-08-29 修：此前本模块只用「键名含 api_key 子串」
+单一规则，导致 llm.password / llm.token / 值为 sk- 的任意键明文返回，
+而同一次导出会把它们过滤掉（两条防线规则不一致）。
 """
 from __future__ import annotations
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from ..core.ai.constants import is_sensitive_setting
 from ..db import get_all_settings, put_settings
 
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
-MASK_SUFFIX = "api_key"
 MASKED = "******"
 
 
 def _mask(key: str, value: str) -> str:
-    if MASK_SUFFIX in key and value:
+    if value and is_sensitive_setting(key, value):
         return MASKED
     return value
 

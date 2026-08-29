@@ -25,13 +25,15 @@ class LLMConfig:
     base_url: str = ""
     api_key: str = ""
     model: str = DEFAULT_MODEL
+    fast_model: str = ""  # extractor 等辅助调用用便宜模型；空 = 回退 model（ADR-003）
 
     def __repr__(self) -> str:  # api_key 永不出现在任何字符串化输出
+        tail = f"fast_model={self.fast_model!r}"
         return (f"LLMConfig(provider={self.provider!r}, base_url={self.base_url!r}, "
-                f"model={self.model!r}, api_key=***set***)"
+                f"model={self.model!r}, {tail}, api_key=***set***)"
                 if self.api_key else
                 f"LLMConfig(provider={self.provider!r}, base_url={self.base_url!r}, "
-                f"model={self.model!r}, api_key=)")
+                f"model={self.model!r}, {tail}, api_key=)")
 
 
 def load_llm_config(conn) -> LLMConfig:
@@ -43,6 +45,7 @@ def load_llm_config(conn) -> LLMConfig:
         base_url=kv.get("llm.base_url", ""),
         api_key=kv.get("llm.api_key", ""),
         model=kv.get("llm.model", DEFAULT_MODEL) or DEFAULT_MODEL,
+        fast_model=kv.get("llm.fast_model", ""),
     )
 
 

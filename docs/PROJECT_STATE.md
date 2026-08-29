@@ -448,7 +448,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | # | 项 | 现状 |
 |---|---|---|
-| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | `providers/` 仅 `base.py` + `mock.py`，零 HTTP 调用 |
+| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat 非流式 + factory）；B1b 真实凭据冒烟押后 |
 | B2 | 流式输出（SSE / StreamingResponse） | 未实现 |
 | B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | 未实现；`memories` 表因之零生产者 |
 | B4 | 自动链接建议（auto-link） | 未实现 |
@@ -463,7 +463,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | # | 项 | 现状 |
 |---|---|---|
-| B11 | **T-EXPORT 数据全量导出** | 未实现。README 标注为「首次公开发布前必须」（数据不锁死红线） |
+| B11 | **T-EXPORT 数据全量导出** | ✅ 已实现（GET /api/v1/export，2026-08-29） |
 | B12 | 错题本 API（`mistakes` 已有生产者） | 无查询 / 更新 / 统计 API |
 | B13 | Review 历史分析 | `GET /review/history` 存在，无分析能力 |
 | B14 | Study Session | 未实现 |
