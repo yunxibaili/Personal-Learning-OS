@@ -3,26 +3,25 @@
 > 人类全景状态见 `docs/PROJECT_STATE.md`（唯一状态来源）；本文件是 AI 会话增量快照。
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
-> 上次更新：2026-08-30 · Branch：feature/backend-first ·
-> Clean：**no**——B2-A（流式输出 SSE 骨架）实现与测试已完成，待提交与文档登记
+> 上次更新：2026-08-30 · Branch：main ·
+> Clean：**no**——B12/B2-B/B13/B17/B18/B21/B22/B24 后端闭环批已完成并提交，待文档登记头部同步
 
 ---
 
 ## 当前里程碑
 
-M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → P8-003D Eventlog Producer ✅ → **P8-003D-CodeReview P0 修复 ✅** → **B2-A 流式输出（SSE）骨架 ✅**
+M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → P8-003D Eventlog Producer ✅ → **P8-003D-CodeReview P0 修复 ✅** → **B2-A 流式输出（SSE）骨架 ✅** → **后端闭环批 B12/B2-B/B13/B17/B18/B21/B22/B24 ✅**
 
 ## Last Completed
 
-**B2-A 流式输出（SSE）后端骨架** 完成（未提交）：`LLMProvider` 协议协议加 `stream()`；
-`MockProvider.stream()` 确定性字符分块（不 sleep，拼装恒等于 complete）；
-`OpenAICompatProvider.stream()` 非流式回退（真 SSE 解析留 B2-B）；
-`TutorService.ask_stream()`（同为无 DB/无直连网络）；
-`POST /api/v1/chat` 请求体加 `stream: bool`（默认 false 向后兼容），`stream=true` 返回
-`text/event-stream`；SSE 帧契约 `data:{text}` ×N → `event:done{conversation_id}` /
-`event:error{code,message}`；assistant 落库 + B3 extractor 均进 `try/finally`（客户端断开不丢消息）。
-ADR-003 附录 §A 追认 B1a 非流式偏离 + B2 恢复流式契约。守护先行 +19 项 · pytest 632→651。
-**遗留**：前端零接线（ScheduleList/现有 TutorPanel 未切流式，按 §0 规则二）；openai_compat 真 SSE 解析（B2-B）留待后续。
+**后端闭环批（2026-08-30，均已提交 main）**：
+- B12 错题本 API：`GET /api/v1/mistakes`（resolved/concept_id 过滤+分页）· `GET /mistakes/stats` · `GET/PATCH(mistake resolved)/DELETE /{id}`；`core/mistakes.py`（10 tests）。
+- B2-B OpenAICompatProvider 真 SSE：`stream()` 实现 `stream:true` + 逐条 `data:` 帧解析（取 `choices[0].delta.content`，`[DONE]` 收尾），stdlib 零新依赖（6 tests）。
+- B13 Review 历史分析：`GET /review/stats`（total/correct/wrong/accuracy/current_streak/by_concept），`core/review_stats.py`（3 tests）。
+- B17 增量 reindex：`reindex_vault(changed_paths=...)` 增量 upsert+删除（含 `_safe_vault_file` 越界守卫）；`POST /admin/reindex` body `changed_paths`（6 tests）。
+- B18 大纲反解析：`core/mindmap.build_outline`/`get_map_outline` + `GET /mindmaps/{id}/outline`（4 tests）。
+- B21/22/24：`core/timeutil.now_iso` 去重 + 删 review_scheduler 死码；mastery eventlog 失败加日志；`load_or_create_device` 进程内缓存 + 损坏备份 `.corrupt`（3 tests）。
+- 验证：pytest **681 passed** · tsc PASS · vitest 23 · vite build PASS。
 
 B8.1 Memory Context Integration 完成（importance × recency 复合排序 + 确定性 tie-breaker + 端到端验证，563→569 passed）。
 
@@ -142,13 +141,12 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 > B9 = 中文 FTS 分词、B10 = 本地 LLM 实测**冲突**；Memory CRUD 已按新编号
 > **B28** 落盘，下述列表已重写。
 
-- **B2-A 流式输出（SSE）后端骨架** ✅（2026-08-30）
+- **B2-A 流式输出（SSE）骨架 + B2-B openai_compat 真 SSE** ✅（2026-08-30）
   - 交付：Provider `stream()` · Mock 确定性分块 · `/chat` SSE `StreamingResponse` ·
-    `event:done`/`event:error` · try/finally 落库 · ADR-003 附录 §A
-  - 前置①（ADR-003 附录 B1a 偏离追认）✅ · 前置②（接口形状先定）✅ · 前置③（断开不丢消息）✅
-- **B2-B OpenAICompatProvider 真 SSE 解析** ← 下一项（`stream: true` + 逐条 `data:` 帧解析覆盖 `stream()`）
-- **B4 自动链接建议 · B5 AI 概念提取 · B6 AI 生成思维导图**
-- **B9 中文 FTS 分词（ADR-011 未解决）· B10 本地 LLM（Ollama）实测**
+    `event:done`/`event:error` · try/finally 落库 · ADR-003 附录 §A · openai_compat SSE 解析
+- **B4 自动链接建议 · B5 AI 概念提取 · B6 AI 生成思维导图** ← 剩余 AI 自动链路
+- **B1b 真实 Provider 凭据冒烟**（需外部凭据，无法本地验证）
+- **B9 中文 FTS 分词（ADR-011 未解决）· B10 本地 LLM（Ollama）实测**（需本地 Ollama）
 - **Memory Agent（智能记忆管理——沿用旧编号 B10 的实质内容，未排期）**
 
 **不属于 Next Up**：P8-FE-001 Visual Language Polish 与一切前端任务

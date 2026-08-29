@@ -1,24 +1,26 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-30 · 路线：前端冻结，后端优先 · B2-A（流式 SSE 骨架）完成
+> 上次更新：2026-08-30 · 后端闭环批完成（B12/B2-B/B13/B17/B18/B21/B22/B24，pytest 681）
 
 ---
 
 ## Task ID
 
-**B2-A 流式输出（SSE）后端骨架** ✅（651 passed）
+**后端闭环批**（2026-08-30 · 681 passed）
 
 ## 当前任务
 
-**B2-B OpenAICompatProvider 真 SSE 解析**（`stream: true` + 逐条 `data:` 帧解析，覆盖 `stream()`）
+**B4 自动链接建议**（自动链接）
 
 ## 近期完成
 
-**B2-A 流式输出（SSE）后端骨架** ✅（2026-08-30 · pytest 632→651）——
-Provider `stream()` 协议 · Mock 确定性分块 · `/chat` SSE `StreamingResponse` ·
-`event:done`/`event:error` · try/finally 落库 + extractor · ADR-003 附录 §A ·
-`shared/types/tutor.ts` `TutorStreamFrame`。前端零改动（仅类型契约同步）。
+- **B12 错题本 API** ✅（/mistakes 查询/统计/已解决/删除）
+- **B2-B openai_compat 真 SSE** ✅（stdlib 帧解析）
+- **B13 review 历史分析** ✅（/review/stats）
+- **B17 增量 reindex** ✅（changed_paths）
+- **B18 大纲反解析** ✅（/mindmaps/{id}/outline）
+- **B21/B22/B24 技术债** ✅（now_iso 去重 · eventlog 日志 · device 缓存+损坏备份）
 
 ### 范围（收窄定案，v1 只做两类产出）
 

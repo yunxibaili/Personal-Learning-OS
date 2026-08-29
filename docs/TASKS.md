@@ -412,6 +412,23 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
   ③ 路由 `response_model=None` 规避 `dict|StreamingResponse` 契约冲突（同 T-M0 已知项）。
 - 下一项：**B2-B OpenAICompatProvider 真 SSE 解析**。
 
+### T-BBC 后端闭环批（B12/B2-B/B13/B17/B18/B21/B22/B24）完成（2026-08-30）
+- **做了什么**：逐项闭合 backend backlog——错题本 API、真实 SSE、复习统计、增量 reindex、
+  大纲反解析、三项技术债。全部带守护测试，逐项 commit 到 main。
+- **改动文件**：`server/app/core/{mistakes,review_stats,timeutil,reindex,mindmap,sync/device,ai/providers/openai_compat}.py` ·
+  `server/app/routers/{mistakes,mastery,notes,mindmap}.py` · `shared/types/mastery.ts` ·
+  `server/tests/{api/{test_mistakes,test_mastery,test_mindmap}.py, unit/{test_openai_provider,test_reindex,test_discovery}.py}` ·
+  `docs/PROJECT_STATE.md` · `docs/ai/{CURRENT_STATE,ACTIVE_TASK}.md`
+- **测试了什么**：
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `pytest -q` | 全绿 | **681 passed**（651→681，+30） |
+  | `npx tsc --noEmit` | PASS | PASS |
+  | `npx vitest run` | 23 passed | 23 passed |
+  | `npx vite build --outDir dist-verify` | PASS | PASS |
+- **结果与遗留**：B12/B2-B/B13/B17/B18/B21/B22/B24 闭环。遗留：B14/B15/B16/B19/B20/B23/B25/B26 未做；
+  B1b（真实凭据冒烟）/B9（中文 FTS）/B10（Ollama 实测）需外部依赖。B4/B5/B6（AI 自动链路）为下一优先。
+
 ### T-DOC-001 多端架构修订 + UpMark 联动挂起（2026-08-26）
 - **做了什么**：产品定位升级为 Local-first 多端（Tauri 桌面 + RN Android + LAN Sync）；
   新增 ADR-005/006 与 integration-upmark.md；TECH_DESIGN §1/§2/§4.2/§5.4/§9/§10 更新；
