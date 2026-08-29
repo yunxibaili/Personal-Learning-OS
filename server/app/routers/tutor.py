@@ -86,10 +86,10 @@ class TutorTestRequest(BaseModel):
 
 @router.post("/test")
 def tutor_smoke_test(body: TutorTestRequest) -> dict:
-    """临时端点：验证 Context → Prompt → Provider → Response 全链路。
+    """Smoke：验证 Context → Prompt → Provider → Response 全链路（用配置的 provider）。
 
-    使用 MockProvider，不调用真实 LLM。
-    M4-D 完成后此端点可保留为集成测试入口。
+    若 settings 已配 openai_compat（base_url/key/model），此端点即为**一次真实补全**、
+    token 成本极低——用于真实接入验证；默认 mock 则零成本。
     """
     conn = connect()
     try:

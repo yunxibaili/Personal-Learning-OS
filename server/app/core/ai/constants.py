@@ -17,6 +17,9 @@ CONTEXT_CHAR_LIMIT = 10000  # ≈ 2500 tokens
 QUERY_CHAR_LIMIT = 2000     # ≈ 500 tokens
 MEMORIES_CHAR_BUDGET = 2000  # ≈ 500 tokens（B8-R2 方案 C：memories 段独立预算）
 
+# 单次补全 token 预算（控制 LLM 成本；config `llm.max_tokens` 可覆盖）
+MAX_COMPLETION_TOKENS = 2048
+
 # ── 安全过滤 ──────────────────────────────────────────────────────
 
 # 字段名黑名单（精确匹配，小写）

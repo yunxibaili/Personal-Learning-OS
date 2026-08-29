@@ -229,3 +229,137 @@ class TestProviderFactory:
                       "llm.api_key": "sk-leak-check"})
         cfg = load_llm_config(core_conn)
         assert "sk-leak-check" not in repr(cfg) and "sk-leak-check" not in str(cfg)
+
+# ── B1 加固：重试 / max_tokens / JSON 模式 / 错误分类（全 mock，零真实 token）──
+
+class TestHardening:
+    def _fail_then_succeed(self, monkeypatch, fail_times, status=None):
+        import app.core.ai.providers.openai_compat as oc
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(req)
+            if len(calls) <= fail_times:
+                if status:
+                    raise urllib.error.HTTPError(req.full_url, status, "transient",
+                                                 io.BytesIO(b""), io.BytesIO(b""))
+                raise urllib.error.URLError("connection refused")
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "ok"}}]
+            }).encode("utf-8"))
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        monkeypatch.setattr(oc.time, "sleep", lambda s: None)  # 退避置 0，测试不睡
+        return calls
+
+    def test_retries_transient_connection_then_succeeds(self, monkeypatch):
+        calls = self._fail_then_succeed(monkeypatch, fail_times=2)
+        provider = OpenAICompatProvider(base_url="http://x", api_key="", model="m")
+        assert provider.complete(_prompt()) == "ok"
+        assert len(calls) == 3  # 2 次失败（退避重试）+ 1 次成功
+
+    def test_retries_transient_http_503(self, monkeypatch):
+        calls = self._fail_then_succeed(monkeypatch, fail_times=1, status=503)
+        assert OpenAICompatProvider(
+            base_url="http://x", api_key="", model="m").complete(_prompt()) == "ok"
+        assert len(calls) == 2
+
+    def test_retry_exhausted_raises(self, monkeypatch):
+        def fake_urlopen(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 503, "down",
+                                         io.BytesIO(b""), io.BytesIO(b""))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        import app.core.ai.providers.openai_compat as oc
+        monkeypatch.setattr(oc.time, "sleep", lambda s: None)
+        with pytest.raises(ProviderError):
+            OpenAICompatProvider(base_url="http://x", api_key="", model="m").complete(_prompt())
+
+    def test_auth_error_401_maps_provider_error(self, monkeypatch):
+        def fake_urlopen(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 401, "unauthorized",
+                                         io.BytesIO(b"{}"), io.BytesIO(b"denied"))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        with pytest.raises(ProviderError) as exc_info:
+            OpenAICompatProvider(base_url="http://x", api_key="bad-key",
+                                 model="m").complete(_prompt())
+        assert "sk-bad" not in str(exc_info.value)
+        assert "api key" in str(exc_info.value).lower() or "认证" in str(exc_info.value)
+
+    def test_max_tokens_in_payload(self, monkeypatch):
+        captured = {}
+
+        def fake_urlopen(req, timeout=None):
+            captured["body"] = json.loads(req.data.decode("utf-8"))
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "ok"}}]
+            }).encode("utf-8"))
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        OpenAICompatProvider(base_url="http://x", api_key="", model="m",
+                             max_tokens=512).complete(_prompt())
+        assert captured["body"]["max_tokens"] == 512
+        assert captured["body"]["stream"] is False
+
+    def test_extractor_mode_uses_json_response_format(self, monkeypatch):
+        captured = {}
+
+        def fake_urlopen(req, timeout=None):
+            captured["body"] = json.loads(req.data.decode("utf-8"))
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "{}"}}]
+            }).encode("utf-8"))
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        ep = _prompt()
+        ep["metadata"]["mode"] = "extractor"
+        OpenAICompatProvider(base_url="http://x", api_key="", model="m").complete(ep)
+        assert captured["body"]["response_format"] == {"type": "json_object"}
+
+    def test_non_extractor_omits_json_format(self, monkeypatch):
+        captured = {}
+
+        def fake_urlopen(req, timeout=None):
+            captured["body"] = json.loads(req.data.decode("utf-8"))
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "ok"}}]
+            }).encode("utf-8"))
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        OpenAICompatProvider(base_url="http://x", api_key="", model="m").complete(_prompt())
+        assert "response_format" not in captured["body"]
+
+    def test_config_loads_max_tokens(self, core_conn):
+        from app.db import put_settings
+        put_settings({"llm.provider": "openai_compat",
+                      "llm.base_url": "http://127.0.0.1:11434",
+                      "llm.max_tokens": "1024"})
+        cfg = load_llm_config(core_conn)
+        assert cfg.max_tokens == 1024
+        provider = create_provider(cfg)
+        assert isinstance(provider, OpenAICompatProvider)
+        assert provider._max_tokens == 1024
+
+    def test_unknown_max_tokens_falls_back_default(self, core_conn):
+        from app.db import put_settings
+        put_settings({"llm.max_tokens": "not-a-number"})
+        cfg = load_llm_config(core_conn)
+        assert cfg.max_tokens == 2048
+
+    def test_stream_also_uses_retry_connection(self, monkeypatch):
+        """流式同样在连接建立阶段重试（且不因 sleep 卡住）。"""
+        import app.core.ai.providers.openai_compat as oc
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(req)
+            if len(calls) < 2:
+                raise urllib.error.URLError("refused")
+            return _FakeResponse(
+                'data: {"id":"1","choices":[{"delta":{"content":"hi"}}]}\n\n'
+                'data: [DONE]\n\n'.encode("utf-8"))
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        monkeypatch.setattr(oc.time, "sleep", lambda s: None)
+        assert list(OpenAICompatProvider(
+            base_url="http://x", api_key="", model="m").stream(_prompt())) == ["hi"]
+        assert len(calls) == 2
