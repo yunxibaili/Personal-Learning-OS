@@ -135,3 +135,47 @@ def test_batch_empty_list(client: TestClient) -> None:
     r = client.post("/api/v1/notes/batch", json={"notes": []})
     assert r.status_code == 200
     assert r.json() == {"created": 0, "results": []}
+
+# ── B19 外部格式导入 ────────────────────────────────────────────────
+
+def test_import_directory_to_vault(client, tmp_path) -> None:
+    """导入本地目录：保留相对结构 + 索引可搜 + 重复跳过。"""
+    source = tmp_path / "obsidian_export"
+    (source / "sub").mkdir(parents=True)
+    (source / "NoteA.md").write_text("# NoteA\n\ncontent with keyword", encoding="utf-8")
+    (source / "sub" / "NoteB.md").write_text("# NoteB\n\nsecond note", encoding="utf-8")
+
+    r = client.post("/api/v1/notes/import", json={"source": str(source)})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["imported"] == 2
+    statuses = {f["rel"]: f["status"] for f in body["files"]}
+    assert statuses["NoteA.md"] == "imported"
+    assert statuses["sub/NoteB.md"] == "imported"
+
+    # 已入索引（vault 相对路径为 imported/...）
+    from app.core.knowledge import connect as _connect
+    _conn = _connect()
+    rows = _conn.execute("SELECT path, title FROM notes ORDER BY path").fetchall()
+    _conn.close()
+    assert any(r["path"] == "imported/NoteA.md" for r in rows)
+
+    # 重复导入 → 跳过
+    r2 = client.post("/api/v1/notes/import", json={"source": str(source),
+                                                   "prefix": "imported"})
+    assert r2.json()["imported"] == 0
+    assert r2.json()["skipped"] == 2
+
+
+def test_import_single_file(client, tmp_path) -> None:
+    f = tmp_path / "solo.md"
+    f.write_text("# Solo\n\nstandalone", encoding="utf-8")
+    r = client.post("/api/v1/notes/import", json={"source": str(f), "prefix": "inbox"})
+    assert r.json()["imported"] == 1
+    assert r.json()["files"][0]["status"] == "imported"
+
+
+def test_import_missing_source(client) -> None:
+    r = client.post("/api/v1/notes/import", json={"source": "Z:/definitely/absent"})
+    assert r.status_code == 200
+    assert "error" in r.json()

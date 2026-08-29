@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from pathlib import Path
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -16,6 +17,7 @@ from pydantic import BaseModel
 
 from ..core import knowledge as K
 from ..core.autolink import suggest_note_links
+from ..core.importer import import_markdown
 from ..core.reindex import reindex_vault
 from ..db import connect, workspace_root
 
@@ -151,6 +153,24 @@ def batch_create_notes(body: NoteBatchBody) -> dict:
     finally:
         conn.close()
     return {"created": created, "results": results}
+
+
+class ImportBody(BaseModel):
+    source: str  # 本地绝对路径（Obsidian/Notion/Markdown 目录或单文件）
+    prefix: str = "imported"  # 导入到 vault 下的相对前缀
+
+
+@router.post("/import")
+def import_notes(body: ImportBody) -> dict:
+    """外部格式导入（B19）：本地 .md 目录/文件 → vault（保留相对结构）。
+
+    重复篇跳过（不覆盖）；逐篇独立，部分成功不阻断。
+    """
+    conn = connect()
+    try:
+        return import_markdown(conn, Path(body.source), body.prefix)
+    finally:
+        conn.close()
 
 
 @router.get("/{note_id}")
