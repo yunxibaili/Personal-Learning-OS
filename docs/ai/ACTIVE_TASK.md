@@ -11,7 +11,59 @@
 
 ## 当前任务
 
-**B3 Extractor spec 草案**（等确认后开工）——见下
+**B3 Extractor spec v2（已按团队审核 REVISE 意见全部修正）**——待复核后开工
+
+### 范围（收窄定案，v1 只做两类产出）
+
+| 产出 | 处置 |
+|---|---|
+| memories | ✅ 做（唯一真零生产者表） |
+| concept_suggestions | ✅ 做（复用 concepts 表：origin=ai_suggested + status=unconfirmed 即待确认队列，不新建表） |
+| learning_events | 经 mastery.update_mastery(source='ai_extractor') 落——绝不裸 INSERT（C2：否则 eventlog 双写缺失→同步后事件消失） |
+| mistakes | ❌ 不做（mastery.py:160 已是唯一生产者） |
+| note_links | ❌ 不做（links.origin 枚举三处不一致，独立 micro-task 先统一） |
+
+### 架构（修正 C1/C5）
+
+1. `core/conversations.py` 新增 `update_message_context(message_id, extractor: dict)`
+   ——extractor 结果写进本轮 assistant 消息 context_json 的 `extractor` 键
+   （重放/重试覆盖同键 = 天然幂等）
+2. **memories 落库是真写路径**（不止快照）：`core/memories.py` 新增
+   `upsert_memory(...)` 应用层校验（表零 CHECK 不动 migration）：
+   kind ∈ {fact, preference, goal, mistake_pattern} · importance/confidence ∈ [0,1]
+   · 去重 = content 归一化前 50 字符相同视为重复，跳过
+3. concept 建议：`ensure_entity_by_title` 后 origin 恒为 ai_suggested、
+   status=unconfirmed（C4：origin='accepted' 非法，已从 spec 与
+   TECH_DESIGN:546 删除）；Accept → 只改 status；Ignore → 删除 unconfirmed 桩
+4. learning_events 全部走 `mastery.update_mastery(source='ai_extractor')`（C2）
+5. 事务边界（裁决 3）：挂载 /chat 内 provider 调用后、落消息前，同请求同事务；
+   超时上限 **30s**（裁决 2），超时静默跳过
+6. **I5 假绿关闭**：FakeExtractorProvider 注入固定合法 JSON，强制覆盖
+   「解析成功 → memories 落库 → 概念桩 → 快照含 extractor 键」全路径
+
+### 裁决记录（5 项，2026-08-29）
+
+1. Ignore = 删除 unconfirmed 桩（不引入 rejected 枚举）；补 VALID_STATUS 常量
+2. extractor 超时 30s
+3. memories.last_used_at：写入时=created_at；B8 接入时命中更新
+4. origin='accepted' 删除 ✅
+5. ADR-014 附录 §2.3.1 追认 ✅（本轮已落盘）
+
+### 依赖前置（本轮已处理）
+
+- fast_model 债清偿：LLMConfig.fast_model + ADR-014 附录 §2.6.1
+- 工作区脏状态修复完成（scrub 剥离重写 + settings/export 共享判定）——524 passed
+- 文档真值修正：PROJECT_STATE B1/B11 行 · TECH_DESIGN §6.1 状态表 · §6.3:546
+
+### 守护测试清单（实现前先写红）
+
+1. FakeExtractorProvider 全路径：memories 行存在 + 非法 kind/importance 拒绝
+   + 前缀去重
+2. concept 桩：ai_suggested/unconfirmed；Accept→active；Ignore→删除
+3. update_mastery 链：eventlog 双写存在
+4. assistant 快照含 extractor 键（重放幂等）
+5. 非法 JSON → 静默跳过，answer 不受影响
+6. api_key 不进 extractor 输出与落库（真实形态 key）
 
 ## 近期完成
 
