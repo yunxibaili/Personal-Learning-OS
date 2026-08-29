@@ -12,10 +12,6 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-
-
 def sm2_schedule(
     quality: int,
     ease_factor: float = 2.5,

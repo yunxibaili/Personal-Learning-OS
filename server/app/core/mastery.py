@@ -21,6 +21,7 @@ effective_now = effective × exp(-days_since_last_review / tau)
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
 import uuid
@@ -29,6 +30,9 @@ from pathlib import Path
 
 from ..db import connect, workspace_root
 from .sync.device import load_or_create_device
+from .timeutil import now_iso as _now_iso
+
+logger = logging.getLogger(__name__)
 
 # 四维权重（冻结常量，M3 评审批准）
 DIMENSION_WEIGHTS = {
@@ -81,10 +85,6 @@ def _write_eventlog(
         f.write(event_line)
         f.flush()
         os.fsync(f.fileno())
-
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def compute_effective(dimensions: dict[str, float]) -> float:
@@ -175,8 +175,9 @@ def update_mastery(
             device_id=device.device_id,
             created_at=now,
         )
-    except OSError:
-        pass  # 文件写入失败不阻断学习事件记录（SQLite 已写入）
+    except OSError as exc:
+        # B22：不再静默降级——文件写入失败不阻断学习事件（SQLite 已写入），但要可观测
+        logger.warning("eventlog write skipped for concept %s: %s", concept_id, exc)
 
     m = get_or_create_mastery(conn, concept_id)
     dims = json.loads(m["dimensions"])

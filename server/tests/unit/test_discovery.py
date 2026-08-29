@@ -88,6 +88,35 @@ class TestDeviceInfo:
         device = load_or_create_device(ws)
         assert device.device_id  # 新建了一个
 
+    def test_corrupt_file_backed_up_not_overwritten(self, tmp_path):
+        """B24：损坏的 devices.json 应备份为 .corrupt，而非被静默覆盖。"""
+        from app.core.sync.device import load_or_create_device
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "metadata").mkdir()
+        (ws / "metadata" / "devices.json").write_text("corrupt!")
+
+        device = load_or_create_device(ws)
+        backups = list((ws / "metadata").glob("devices.json.corrupt-*"))
+        assert len(backups) == 1
+        assert backups[0].read_text(encoding="utf-8") == "corrupt!"
+        assert (ws / "metadata" / "devices.json").exists()
+        assert device.device_id
+
+    def test_memory_cache_stable_within_process(self, tmp_path, monkeypatch):
+        """B24：进程内缓存——同一 workspace 二次加载不再重读/重生成。"""
+        from app.core.sync import device as dev
+        ws = tmp_path / "workspace"
+        ws.mkdir()
+        (ws / "metadata").mkdir()
+
+        dev._CACHE.clear()
+        d1 = dev.load_or_create_device(ws)
+        # 删除磁盘文件，仍应返回缓存中的同一身份（不会重新生成）
+        (ws / "metadata" / "devices.json").unlink()
+        d2 = dev.load_or_create_device(ws)
+        assert d1.device_id == d2.device_id
+
 
 # ── Protocol 测试 ────────────────────────────────────────────
 
