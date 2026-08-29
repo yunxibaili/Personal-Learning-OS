@@ -11,6 +11,14 @@ export interface NoteSummary {
   updated_at: string;
 }
 
+/** B4 自动链接建议契约。 */
+export interface LinkSuggestion {
+  source_note_id: number;
+  target_note_id: number;
+  target_title: string;
+  score: number;
+}
+
 export interface NoteDetail extends NoteSummary {
   content_md: string;
 }

@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ..core import knowledge as K
+from ..core.autolink import suggest_note_links
 from ..core.reindex import reindex_vault
 from ..db import connect, workspace_root
 
@@ -205,6 +206,26 @@ def delete_note(note_id: int) -> dict:
     finally:
         conn.close()
     return {"ok": True}
+
+
+# ── B4 自动链接建议（确定性内容重叠）───────────────────────────────
+
+@router.get("/{note_id}/link-suggestions")
+def note_link_suggestions(
+    note_id: int,
+    limit: int = 5,
+    min_score: float = 0.0,
+) -> dict:
+    """为指定笔记建议 related 链接候选（不写库，需用户确认）。"""
+    conn = connect()
+    try:
+        if conn.execute("SELECT 1 FROM notes WHERE id=?", (note_id,)).fetchone() is None:
+            return _err(404, "note_not_found", f"note {note_id} not found")
+        suggestions = suggest_note_links(
+            conn, note_id, limit=limit, min_score=min_score)
+    finally:
+        conn.close()
+    return {"note_id": note_id, "suggestions": suggestions}
 
 
 # ── Admin: Vault Reindex（P8-003C）────────────────────────────────────
