@@ -43,3 +43,31 @@ export interface AnswerResponse {
   ease_factor: number;
   interval: number;
 }
+
+/** B12 错题本契约（mistakes 表消费面）。 */
+export interface Mistake {
+  id: number;
+  concept_id: number;
+  concept_title: string | null;
+  concept_status: string | null;
+  description: string;
+  resolved: boolean;
+  occurred_at: string;
+}
+
+export interface MistakeListResponse {
+  mistakes: Mistake[];
+  total?: number;
+}
+
+export interface MistakeStats {
+  total: number;
+  unresolved: number;
+  resolved: number;
+  by_concept: Array<{
+    concept_id: number;
+    title: string;
+    count: number;
+    unresolved: number;
+  }>;
+}
