@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 from ..core import mastery as M
 from ..core.mastery import get_effective_now
-from ..core.review_scheduler import sm2_schedule
 from ..core.review_stats import review_stats
 from ..db import connect
 
@@ -116,52 +115,12 @@ def submit_answer(concept_id: int, body: AnswerSubmit) -> dict:
     try:
         if conn.execute("SELECT 1 FROM concepts WHERE id=?", (concept_id,)).fetchone() is None:
             return _err(404, "http_404", "概念不存在")
-
-        m = M.get_or_create_mastery(conn, concept_id)
-
-        # SM-2 排期
-        schedule = sm2_schedule(
-            quality=body.quality,
-            ease_factor=m["ease_factor"],
-            interval=m["interval"],
-            review_count=m["review_count"],
-        )
-
-        # 更新掌握度（回答事件）
-        event_type = "answer_correct" if body.quality >= 3 else "answer_wrong"
-        detail = json.dumps({"quality": body.quality})
-        updated = M.update_mastery(conn, concept_id, event_type, source="review", detail=detail)
-
-        # 更新排期
-        now = M._now_iso()
-        conn.execute(
-            "UPDATE concept_mastery SET "
-            "ease_factor=?, interval=?, next_review=?, review_count=?, updated_at=? "
-            "WHERE concept_id=?",
-            (schedule["ease_factor"], schedule["interval"],
-             schedule["next_review"], schedule["review_count"], now, concept_id),
-        )
-
-        # 更新 review_queue
-        result = "correct" if body.quality >= 3 else "wrong"
-        # 错答时提升优先级（0.8），正答保持默认（0.5）
-        new_priority = 0.8 if result == "wrong" else 0.5
-        conn.execute(
-            "INSERT INTO review_queue (concept_id, due_at, priority, status, last_result) "
-            "VALUES (?, ?, ?, 'pending', ?) "
-            "ON CONFLICT(concept_id) DO UPDATE SET "
-            "due_at=excluded.due_at, priority=excluded.priority, "
-            "status='pending', last_result=excluded.last_result, "
-            "updated_at=?",
-            (concept_id, schedule["next_review"], new_priority, result, now),
-        )
-
-        conn.commit()
+        result = M.submit_review_answer(conn, concept_id, body.quality)
         return {
-            "mastery": _format_mastery(updated, conn=conn),
-            "next_review": schedule["next_review"],
-            "ease_factor": schedule["ease_factor"],
-            "interval": schedule["interval"],
+            "mastery": _format_mastery(result["mastery"], conn=conn),
+            "next_review": result["next_review"],
+            "ease_factor": result["ease_factor"],
+            "interval": result["interval"],
         }
     finally:
         conn.close()

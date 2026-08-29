@@ -13,8 +13,9 @@ effective_now = effective × exp(-days_since_last_review / tau)
 （P8-003B：Ebbinghaus 时间衰减，tau=14 天半衰期）
 
 事件日志（P8-003D / ADR-020）：
-  写入 learning_events 表的同一事务内，追加一行 JSON 到
-  metadata/eventlogs/<yyyy-mm>.jsonl，作为跨端同步真相源。
+  learning_events 写入 SQLite 之后，紧接追加一行 JSON 到
+  metadata/eventlogs/<yyyy-mm>.jsonl —— 注意与 SQLite **不是**同一原子事务
+  （文件写失败会回滚 SQLite 事务吗？不会。故为「尽力而为」的追加，B23 措辞更正）。
 
 纯逻辑层：不 import FastAPI，可被 pytest 直接测试。
 """
@@ -29,6 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..db import connect, workspace_root
+from .review_scheduler import sm2_schedule
 from .sync.device import load_or_create_device
 from .timeutil import now_iso as _now_iso
 
@@ -161,7 +163,8 @@ def update_mastery(
             (concept_id, desc),
         )
 
-    # 追加到 eventlog 文件（ADR-020：同事务上下文，跨端同步真相源）
+    # 追加到 eventlog 文件（ADR-020：learning_events 之后的尽力而为追加；
+    # 与 SQLite 非同一原子事务——文件失败不阻断学习事件，B23）
     try:
         device = load_or_create_device(workspace_root())
         _write_eventlog(
@@ -293,6 +296,58 @@ def get_effective_now(conn, concept_id: int, *, now: datetime | None = None) -> 
         now = datetime.now(timezone.utc)
     days = max(0.0, (now - last_seen).total_seconds() / 86400)
     return decay_effective(base, days)
+
+
+def submit_review_answer(conn, concept_id: int, quality: int) -> dict:
+    """复习答题：SM-2 排期 + 掌握度更新 + review_queue upsert（B20 下沉）。
+
+    原实现位于 routers/mastery.py（业务逻辑留在了 Router 层）；本函数把
+    SM-2 排期 / 事件更新 / 队列维护聚合到 Core，Router 只做校验与序列化。
+
+    返回：{mastery, next_review, ease_factor, interval}（mastery 为更新后的行）。
+    调用方负责 conn 生命周期；本函数在成功时 commit。
+    """
+    m = get_or_create_mastery(conn, concept_id)
+
+    schedule = sm2_schedule(
+        quality=quality,
+        ease_factor=m["ease_factor"],
+        interval=m["interval"],
+        review_count=m["review_count"],
+    )
+
+    event_type = "answer_correct" if quality >= 3 else "answer_wrong"
+    detail = json.dumps({"quality": quality})
+    updated = update_mastery(conn, concept_id, event_type, source="review", detail=detail)
+
+    now = _now_iso()
+    conn.execute(
+        "UPDATE concept_mastery SET "
+        "ease_factor=?, interval=?, next_review=?, review_count=?, updated_at=? "
+        "WHERE concept_id=?",
+        (schedule["ease_factor"], schedule["interval"],
+         schedule["next_review"], schedule["review_count"], now, concept_id),
+    )
+
+    result = "correct" if quality >= 3 else "wrong"
+    new_priority = 0.8 if result == "wrong" else 0.5
+    conn.execute(
+        "INSERT INTO review_queue (concept_id, due_at, priority, status, last_result) "
+        "VALUES (?, ?, ?, 'pending', ?) "
+        "ON CONFLICT(concept_id) DO UPDATE SET "
+        "due_at=excluded.due_at, priority=excluded.priority, "
+        "status='pending', last_result=excluded.last_result, "
+        "updated_at=?",
+        (concept_id, schedule["next_review"], new_priority, result, now),
+    )
+
+    conn.commit()
+    return {
+        "mastery": updated,
+        "next_review": schedule["next_review"],
+        "ease_factor": schedule["ease_factor"],
+        "interval": schedule["interval"],
+    }
 
 
 def ensure_concept_learning_state(conn, concept_id: int) -> None:

@@ -93,3 +93,45 @@ def test_get_missing_note_404_shape(client: TestClient) -> None:
     r = client.get("/api/v1/notes/99999")
     assert r.status_code == 404
     assert r.json()["error"]["code"] == "http_404"
+
+# ── B15 批量导入 ──────────────────────────────────────────────────
+
+def test_batch_create_many(client: TestClient) -> None:
+    r = client.post("/api/v1/notes/batch", json={
+        "notes": [
+            {"title": "BatchA", "content_md": "content A"},
+            {"title": "BatchB", "content_md": "content B"},
+            {"title": "BatchC", "content_md": "content C"},
+        ]
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert body["created"] == 3
+    statuses = [x["status"] for x in body["results"]]
+    assert statuses == ["ok", "ok", "ok"]
+    assert all(x["note_id"] for x in body["results"])
+
+
+def test_batch_partial_duplicate_and_invalid(client: TestClient) -> None:
+    """部分成功不阻断：合法创建、重复跳过、空标题返回状态。"""
+    _create(client, "ExistsNote", "x")
+    r = client.post("/api/v1/notes/batch", json={
+        "notes": [
+            {"title": "Fresh1", "content_md": "a"},
+            {"title": "ExistsNote", "content_md": "dup"},
+            {"title": "   ", "content_md": "empty"},
+        ]
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert body["created"] == 1
+    by_title = {x["title"]: x["status"] for x in body["results"]}
+    assert by_title["Fresh1"] == "ok"
+    assert by_title["ExistsNote"] == "duplicate_title"
+    assert by_title["   "] in ("empty_title",)
+
+
+def test_batch_empty_list(client: TestClient) -> None:
+    r = client.post("/api/v1/notes/batch", json={"notes": []})
+    assert r.status_code == 200
+    assert r.json() == {"created": 0, "results": []}

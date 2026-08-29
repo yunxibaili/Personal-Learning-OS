@@ -66,51 +66,91 @@ def list_notes() -> dict:
         conn.close()
 
 
-@router.post("", status_code=201)
-def create_note(body: NoteCreate) -> dict:
+def _create_note_vault(conn, title: str, content_md: str) -> tuple[str, int | None]:
+    """写 vault 文件 + 更新 SQLite 索引（单篇）。返回 (status, note_id|None)。
+
+    供单篇 create_note 与批量导入（B15）共用，避免重复。
+    status：ok | empty_title | duplicate_title | bad_attachment_path | io_error
+    """
     try:
-        title = K.sanitize_title(body.title)
+        title = K.sanitize_title(title)
     except ValueError:
-        return _err(400, "empty_title", "标题不能为空")
+        return ("empty_title", None)
     rel_path = f"{title}.md"
+    if conn.execute("SELECT 1 FROM notes WHERE path=?", (rel_path,)).fetchone():
+        return ("duplicate_title", None)
+    target = K.resolve_vault_file(rel_path)
+    if target.exists():  # 文件在但索引缺失——视为冲突，提示而非覆盖
+        return ("duplicate_title", None)
+    if K.has_forbidden_media_path(content_md):
+        return ("bad_attachment_path", None)
 
-    conn = connect()
+    cur = conn.execute(
+        "INSERT INTO notes (path, title, tags_json, content_hash) "
+        "VALUES (?, ?, '[]', '')",
+        (rel_path, title),
+    )
+    note_id = cur.lastrowid
     try:
-        if conn.execute("SELECT 1 FROM notes WHERE path=?", (rel_path,)).fetchone():
-            return _err(409, "duplicate_title", f"已存在同名笔记：{title}")
-        target = K.resolve_vault_file(rel_path)
-        if target.exists():  # 文件在但索引缺失——视为冲突，提示而非覆盖
-            return _err(409, "duplicate_title", f"vault 中已存在 {rel_path}")
-        if K.has_forbidden_media_path(body.content_md):
-            return _err(400, "bad_attachment_path",
-                        "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
-
-        cur = conn.execute(
-            "INSERT INTO notes (path, title, tags_json, content_hash) "
-            "VALUES (?, ?, '[]', '')",
-            (rel_path, title),
-        )
-        note_id = cur.lastrowid
-        K.atomic_write_file(target, K.compose_file([], body.content_md))
+        K.atomic_write_file(target, K.compose_file([], content_md))
         mtime = time.time()
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
                             tags=[], body=body_text, mtime=mtime)
         K.promote_stub_to_note(conn, note_id, title)
-        link_stats = K.rebuild_note_links(conn, note_id, body_text)
+        K.rebuild_note_links(conn, note_id, body_text)
         conn.commit()
+    except OSError:
+        conn.rollback()
+        return ("io_error", None)
+    return ("ok", note_id)
+
+
+@router.post("", status_code=201)
+def create_note(body: NoteCreate) -> dict:
+    conn = connect()
+    try:
+        status, note_id = _create_note_vault(conn, body.title, body.content_md)
+        if status == "empty_title":
+            return _err(400, "empty_title", "标题不能为空")
+        if status == "duplicate_title":
+            return _err(409, "duplicate_title", f"已存在同名笔记：{body.title}")
+        if status == "bad_attachment_path":
+            return _err(400, "bad_attachment_path",
+                        "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
+        if status == "io_error":
+            return _err(500, "io_error", "写入失败")
         row = K.get_note_row(conn, note_id)
-    except OSError as exc:
-        conn.rollback()
-        return _err(500, "io_error", f"写入失败: {exc}")
-    except Exception:
-        conn.rollback()
-        raise
     finally:
         conn.close()
 
-    _, body_text = K.read_note_file(rel_path)
+    _, body_text = K.read_note_file(row["path"])
     return _detail(row, body_text)
+
+
+class NoteBatchBody(BaseModel):
+    notes: list[NoteCreate]
+
+
+@router.post("/batch")
+def batch_create_notes(body: NoteBatchBody) -> dict:
+    """批量导入笔记（B15）：逐篇创建，部分成功不阻断整体。
+
+    每篇状态：ok / empty_title / duplicate_title / bad_attachment_path / io_error
+    """
+    conn = connect()
+    results = []
+    created = 0
+    try:
+        for item in body.notes:
+            status, note_id = _create_note_vault(conn, item.title, item.content_md)
+            if status == "ok":
+                created += 1
+            results.append({"title": item.title, "status": status,
+                            "note_id": note_id if status == "ok" else None})
+    finally:
+        conn.close()
+    return {"created": created, "results": results}
 
 
 @router.get("/{note_id}")
