@@ -448,7 +448,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | # | 项 | 现状 |
 |---|---|---|
-| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现（openai_compat 非流式 + factory）；B1b 真实凭据冒烟押后 |
+| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现 + 自 2026-08-30 加固（重试退避 / `max_tokens` / extractor JSON 模式 / 错误分类，全 mock 测）；B1b 真实凭据冒烟走 `POST /tutor/test`（一次调用，token 极低） |
 | B2 | 流式输出（SSE / StreamingResponse） | ✅ 已实现（2026-08-30：B2-A `stream()` + `/chat` SSE 骨架 + `event:done`；B2-B openai_compat 真实 SSE 解析） |
 | B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（2026-08-29：memories+概念桩，范围收窄 v1；B3 核心闭环） |
 | B4 | 自动链接建议（auto-link） | ✅ 已实现（2026-08-30：`GET /notes/{id}/link-suggestions`，确定性内容重叠，只建议不写库） |
