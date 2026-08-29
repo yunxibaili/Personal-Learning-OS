@@ -21,6 +21,7 @@ __pycache__/
 # Node
 node_modules/
 dist/
+dist-verify/
 
 # 构建与测试产物
 coverage/
