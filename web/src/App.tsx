@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ToastProvider } from "./components/ui";
+import { ComponentGallery } from "./dev/ComponentGallery";
 import { useUi, type ViewKey } from "./stores/ui";
 import { DashboardView } from "./views/DashboardView";
 import { GraphView } from "./views/GraphView";
@@ -54,6 +56,11 @@ export default function App() {
     () => typeof window !== "undefined" && window.location.hash === "#planet",
   );
 
+  // Phase 1 组件 Gallery（dev-only 活文档）
+  const [showGallery] = useState(
+    () => typeof window !== "undefined" && window.location.hash === "#gallery",
+  );
+
   if (showPreview) {
     return (
       <div className="app">
@@ -74,7 +81,16 @@ export default function App() {
     );
   }
 
+  if (showGallery && import.meta.env.DEV) {
+    return (
+      <ToastProvider>
+        <ComponentGallery />
+      </ToastProvider>
+    );
+  }
+
   return (
+    <ToastProvider>
     <div className="app">
       <nav className="tabbar">
         {TABS.map((t) => (
@@ -91,5 +107,6 @@ export default function App() {
         <ActiveView />
       </main>
     </div>
+    </ToastProvider>
   );
 }

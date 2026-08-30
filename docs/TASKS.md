@@ -433,12 +433,32 @@ Forbidden：改数据库 / Core / API / 同步逻辑
 
 ### Phase 1 — 基础组件层（`web/src/components/ui/`）
 
-- [ ] P1：Button · Input · Tag · Badge · Skeleton · Toast · Progress
+- [x] P1：Button · Input · Tag · Badge · Skeleton · Toast · Progress ✅（2026-08-30，
+      见下方报告）
 - [ ] P2：Select · Modal · Tooltip · SegmentedControl · Tabs · Switch
 - [ ] P3：Textarea · Checkbox · Avatar
-- [ ] 每个组件内置五态：variant / size / disabled / loading / error
-- [ ] 触摸目标 ≥44×44，间距 ≥8px
-- [ ] dev-only gallery（`#gallery`）作为活文档
+- [x] 每个组件内置五态：variant / size / disabled / loading / error（相关态全覆盖）
+- [x] 触摸目标 ≥44×44（md/lg），间距 ≥8px
+- [x] dev-only gallery（`#gallery` + `import.meta.env.DEV` 双重门控）作为活文档
+
+#### P1 组件完成报告（2026-08-30 ✅）
+
+**新增**：`web/src/components/ui/`（primitives.tsx · Toast.tsx · index.ts）·
+`web/src/dev/ComponentGallery.tsx` · `src/vite-env.d.ts`（补 vite/client 类型）·
+global.css「P1 基础组件」区（约 170 行，全令牌驱动零裸值）。
+
+**要点**：Toast 为 Provider+useToast 模式（App 根部挂载；未包裹时 useToast 返回空实现不崩溃）·
+Progress 色调随值自动（≥0.7 ok / ≥0.4 brand / 其余 err，与 Dashboard barColor 一致）·
+Tag 可移除 · Skeleton 三形态且 reduced-motion 下静止（依赖 Phase 0 归零块）。
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| `#gallery` 浏览器实检 | 组件五态可见无崩溃 | PASS（截图逐区核对） |
+| Toast 交互实检 | 点击后弹出右下角 | PASS（role=status 可见） |
 
 ### Phase 2 — AppShell 笔记优先三栏
 
