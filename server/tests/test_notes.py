@@ -179,3 +179,33 @@ def test_import_missing_source(client) -> None:
     r = client.post("/api/v1/notes/import", json={"source": "Z:/definitely/absent"})
     assert r.status_code == 200
     assert "error" in r.json()
+
+# ── B9 中文检索增强（bigram 回退，不引 jieba）───────────────────────
+
+def test_cjk_search_finds_phrase(client: TestClient) -> None:
+    """中文连词（unicode61 单字切分检索不到）经 bigram 回退仍可命中。"""
+    client.post("/api/v1/notes", json={
+        "title": "注意力机制", "content_md": "注意力机制是深度学习的核心"})
+    client.post("/api/v1/notes", json={
+        "title": "无关", "content_md": "今天天气不错"})
+    r = client.get("/api/v1/search", params={"q": "注意力机制"})
+    assert r.status_code == 200
+    res = r.json()["results"]
+    assert any(x["title"] == "注意力机制" for x in res)
+    # 无关笔记不应作为高分结果出现在前面
+    titles = [x["title"] for x in res]
+    assert "注意力机制" in titles
+
+
+def test_cjk_search_scores_relevant_higher(client: TestClient) -> None:
+    """与查询词重叠度越高的笔记排在越前。"""
+    client.post("/api/v1/notes", json={
+        "title": "强相关", "content_md": "梯度下降 学习率 优化"})
+    client.post("/api/v1/notes", json={
+        "title": "弱相关", "content_md": "梯度"})
+    r = client.get("/api/v1/search", params={"q": "梯度下降学习率"})
+    res = r.json()["results"]
+    titles = [x["title"] for x in res]
+    if "强相关" in titles and "弱相关" in titles:
+        assert titles.index("强相关") < titles.index("弱相关")
+    assert any(x.get("method") == "cjk_bigram" for x in res)

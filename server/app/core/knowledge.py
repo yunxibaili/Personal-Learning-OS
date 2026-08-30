@@ -156,10 +156,47 @@ def sanitize_fts_query(q: str) -> str:
     return f'"{escaped}"'
 
 
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+
+
+def _has_cjk(q: str) -> bool:
+    return bool(_CJK_RE.search(q or ""))
+
+
+def _cjk_search(conn, q: str, limit: int) -> list[dict]:
+    """B9：CJK 查询 → 基于字符 bigram 重叠的内容匹配（不引 jieba，ADR-011 边界内）。
+
+    unicode61 对中文按单字切分，短语 `"注意力机制"` 检索不到；此处用 bigram
+    词元重叠度对正文排序，弥补 FTS 对中文的薄弱。复用 autolink.tokenize。
+    """
+    from .autolink import content_overlap, tokenize
+
+    q_tokens = tokenize(q)
+    if not q_tokens:
+        return []
+    rows = conn.execute(
+        "SELECT n.id AS note_id, n.title AS title, f.body "
+        "FROM notes n LEFT JOIN notes_fts f ON f.note_id = n.id"
+    ).fetchall()
+    scored: list[tuple[float, dict]] = []
+    for r in rows:
+        score = content_overlap(q_tokens, tokenize(r["body"] or r["title"] or ""))
+        if score > 0:
+            scored.append((score, {
+                "note_id": r["note_id"], "title": r["title"],
+                "score": score, "method": "cjk_bigram",
+            }))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [item for _, item in scored[:limit]]
+
+
 def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
     safe_q = sanitize_fts_query(q)
     if not safe_q:
         return []
+    # 中文查询：FTS（unicode61 单字切分）命中率低，优先走 bigram 重叠扫描
+    if _has_cjk(q):
+        return _cjk_search(conn, q, limit)
     # FTS5 default tokenizer 大小写敏感；用 LOWER 做大小写无关匹配
     rows = conn.execute(
         """
