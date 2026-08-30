@@ -9,6 +9,7 @@ ADR-019 冻结：
 """
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from ..db import connect
@@ -480,3 +481,45 @@ def get_map_outline(map_id: int, conn=None) -> str | None:
     finally:
         if close:
             conn.close()
+
+
+# ── B6 AI 生成导图（LLM → 建议结构，不自动写库，ADR-019）────────────
+
+MINDMAP_SUGGEST_PROMPT = """Generate a mind-map tree for the topic below.
+
+Output ONLY valid JSON:
+{{
+  "topic": "<topic>",
+  "root": {{
+    "label": "<topic>",
+    "children": [
+      {{"label": "<branch>", "children": [{{"label": "<leaf>", "children": []}}]}}
+    ]
+  }}
+}}
+
+Rules: 3-6 top branches, depth ≤ 3, labels concise. Only the given topic, nothing invented.
+
+Topic: {topic}"""
+
+
+def suggest_structure(provider, topic: str, max_chars: int = 4000) -> dict | None:
+    """LLM 生成导图结构建议（不写库）。返回 {"topic", "root"}；失败返回 None。"""
+    prompt = {
+        "system": "You generate mind-map trees as JSON.",
+        "messages": [{"role": "user",
+                      "content": MINDMAP_SUGGEST_PROMPT.format(topic=(topic or "")[:max_chars])}],
+        "metadata": {"context_version": "1", "mode": "mindmap", "truncated": False},
+    }
+    try:
+        text = provider.complete(prompt).strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
+        data = json.loads(text)
+    except Exception:  # noqa: BLE001 — 生成失败仅返回 None，不阻断
+        return None
+    root = data.get("root")
+    if not isinstance(root, dict) or "label" not in root:
+        return None
+    return {"topic": data.get("topic") or topic, "root": root}

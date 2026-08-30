@@ -30,6 +30,8 @@ from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
+from ..core.ai.config import load_llm_config
+from ..core.ai.extractor import new_extractor_provider
 from ..core.mindmap import (
     add_edge,
     add_node,
@@ -44,10 +46,12 @@ from ..core.mindmap import (
     import_map,
     list_maps,
     search_concepts,
+    suggest_structure,
     unbind_concept,
     update_node_label,
     update_node_position,
 )
+from ..db import connect
 
 router = APIRouter(prefix="/api/v1/mindmaps", tags=["mindmap"])
 
@@ -235,3 +239,20 @@ def api_import_map(body: dict) -> dict:
     if result is None:
         raise HTTPException(400, "invalid exchange format")
     return result
+
+
+class MindmapSuggestBody(BaseModel):
+    topic: str
+    note_id: int | None = None
+
+
+@router.post("/suggest")
+def suggest_mindmap(body: MindmapSuggestBody) -> dict:
+    """B6：LLM 生成导图结构建议（不自动写库——需用户确认后建图，ADR-019）。"""
+    conn = connect()
+    try:
+        provider = new_extractor_provider(load_llm_config(conn))
+    finally:
+        conn.close()
+    suggestion = suggest_structure(provider, body.topic)
+    return {"suggestion": suggestion}
