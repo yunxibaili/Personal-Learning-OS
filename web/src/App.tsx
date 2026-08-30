@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { ToastProvider } from "./components/ui";
+import { AppShell } from "./components/shell/AppShell";
+import { ContextRail } from "./components/shell/ContextRail";
 import { ComponentGallery } from "./dev/ComponentGallery";
-import { useUi, type ViewKey } from "./stores/ui";
-import { DashboardView } from "./views/DashboardView";
+import { useUi } from "./stores/ui";
 import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
 import { TutorPanel } from "./components/tutor/TutorPanel";
@@ -12,21 +13,21 @@ import { ReviewSessionView } from "./views/ReviewSessionView";
 import { UniverseInteractionPreview } from "./components/universe/prototype/UniverseInteractionPreview";
 import KnowledgePlanet from "./components/universe/prototype/KnowledgePlanet";
 
-const TABS: Array<{ key: ViewKey; label: string }> = [
-  { key: "notes", label: "笔记" },
-  { key: "graph", label: "图谱" },
-  { key: "universe", label: "Universe" },
-  { key: "mindmap", label: "导图" },
-  { key: "tutor", label: "AI Tutor" },
-  { key: "review", label: "复习" },
-  { key: "dashboard", label: "仪表盘" },
-];
-
 function ActiveView() {
   const activeView = useUi((s) => s.activeView);
+  const activeNoteId = useUi((s) => s.activeNoteId);
+
+  if (activeView === "notes") {
+    // Phase 2 笔记工作区：列表+编辑器（NoteEditor 内聚）+ 右栏上下文 320
+    return (
+      <div className="workspace">
+        <NoteEditorView />
+        <ContextRail activeNoteId={activeNoteId} />
+      </div>
+    );
+  }
+  // 浮层态：顶栏「← 返回笔记」回去（取消平级 tab，裁决 A）
   switch (activeView) {
-    case "notes":
-      return <NoteEditorView />;
     case "graph":
       return <GraphView />;
     case "universe":
@@ -37,15 +38,10 @@ function ActiveView() {
       return <TutorPanel />;
     case "review":
       return <ReviewSessionView />;
-    case "dashboard":
-      return <DashboardView />;
   }
 }
 
 export default function App() {
-  const setActiveView = useUi((s) => s.setActiveView);
-  const activeView = useUi((s) => s.activeView);
-
   // P8-001C-Preview 临时入口：URL hash "#preview" 渲染交互原型（不触碰 ui store）
   const [showPreview] = useState(
     () => typeof window !== "undefined" && window.location.hash === "#preview",
@@ -91,22 +87,9 @@ export default function App() {
 
   return (
     <ToastProvider>
-    <div className="app">
-      <nav className="tabbar">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            className={activeView === t.key ? "active" : ""}
-            onClick={() => setActiveView(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main className="content">
+      <AppShell>
         <ActiveView />
-      </main>
-    </div>
+      </AppShell>
     </ToastProvider>
   );
 }

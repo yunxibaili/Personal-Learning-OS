@@ -7,8 +7,7 @@ export type ViewKey =
   | "universe"
   | "mindmap"
   | "tutor"
-  | "review"
-  | "dashboard";
+  | "review";
 
 interface UiState {
   activeView: ViewKey;
@@ -16,6 +15,9 @@ interface UiState {
   focusNoteId: number | null;
   /** 跨视图跳转：图谱/Universe 点击概念节点 → Tutor 视图聚焦该概念（P8-003D） */
   focusConceptId: number | null;
+  /** 当前打开的笔记 id（Phase 2：右栏上下文数据源，NoteEditor 回写） */
+  activeNoteId: number | null;
+  setActiveNoteId: (id: number | null) => void;
   setActiveView: (v: ViewKey) => void;
   openNote: (id: number) => void;
   clearFocus: () => void;
@@ -27,6 +29,8 @@ export const useUi = create<UiState>((set) => ({
   activeView: "notes",
   focusNoteId: null,
   focusConceptId: null,
+  activeNoteId: null,
+  setActiveNoteId: (id) => set({ activeNoteId: id }),
   setActiveView: (v) => set({ activeView: v }),
   openNote: (id) => set({ activeView: "notes", focusNoteId: id }),
   clearFocus: () => set({ focusNoteId: null }),

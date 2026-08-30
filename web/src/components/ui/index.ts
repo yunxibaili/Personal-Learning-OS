@@ -11,6 +11,7 @@ export {
   Skeleton,
   Progress,
 } from "./primitives";
+export { ProgressRing, FadeInUp, CountUp, WaveLink } from "../motion";
 export { Select } from "./Select";
 export { Textarea, Checkbox, Avatar } from "./basics";
 export { Modal, Tooltip, SegmentedControl, Tabs, Switch } from "./controls";

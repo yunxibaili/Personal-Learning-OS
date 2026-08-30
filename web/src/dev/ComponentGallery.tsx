@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Button, Input, Tag, Badge, Skeleton, Progress, useToast,
   Select, Modal, Tooltip, SegmentedControl, Tabs, Switch,
-  Textarea, Checkbox, Avatar,
+  Textarea, Checkbox, Avatar, ProgressRing, FadeInUp, CountUp, WaveLink,
 } from "../components/ui";
 
 /**
@@ -123,11 +123,28 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h3>Toast</h3>
+        <h3>Toast（ui: spring 入场 + 图标 + 副文本）</h3>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button onClick={() => toast.push("已保存到 vault", "ok")}>成功 Toast</Button>
-          <Button onClick={() => toast.push("同步失败，将自动重试", "err")}>错误 Toast</Button>
-          <Button onClick={() => toast.push("普通提示", "neutral")}>中性 Toast</Button>
+          <Button variant="primary" onClick={() => toast.push("复习完成", "ok", "下一张卡片已就绪")}>成功 Toast</Button>
+          <Button onClick={() => toast.push("同步失败", "err", "将自动重试")}>错误 Toast</Button>
+          <Button onClick={() => toast.push("AI Tutor 已读取你的掌握度", "brand", "5 个薄弱概念已纳入讲解")}>品牌 Toast</Button>
+        </div>
+      </div>
+
+      <div>
+        <h3>动效基元（ui: FadeInUp / CountUp / ProgressRing / WaveLink）</h3>
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
+          <FadeInUp>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "18px 22px" }}>
+              <CountUp target={1247} />
+              <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 6 }}>已学习概念</div>
+            </div>
+          </FadeInUp>
+          <ProgressRing value={0.72} size={120} label="综合掌握度 72%" />
+          <div style={{ display: "grid", gap: 8 }}>
+            <WaveLink href="#gallery">普通链接（hover 波浪下划线）</WaveLink>
+            <WaveLink hl href="#gallery">双链高亮链接</WaveLink>
+          </div>
         </div>
       </div>
     </section>

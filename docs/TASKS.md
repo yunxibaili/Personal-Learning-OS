@@ -472,15 +472,27 @@ Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1
 - Segmented「滑块移动 250ms」与 Tabs「下划线从左展开」暂为切换态直切——动效属 Phase 4 收口
 - Toast 时长 4s（spec）但堆叠上限未做（低频场景，Phase 4 一并处理）
 
-### Phase 2 — AppShell 笔记优先三栏
+### Phase 2 — AppShell 笔记优先三栏 ✅（2026-08-30）
 
-- [ ] `shell/AppShell.tsx`：移除 7 个平级 tab
-- [ ] 三栏栅格：列表 240 / 编辑器 680 / 上下文 320
-- [ ] 响应式塌缩（container query）：≤1080 收右栏 → ≤780 收左栏 → ≤560 单栏
-- [ ] TopBar：搜索 + 复习徽章（有才亮）+ 同步状态
-- [ ] 右栏标签：大纲 · 反链 · 关联 · 掌握度
-- [ ] 删除 `views/DashboardView.tsx`（裁决 A；`ui/bento-dashboard.html` 一并作废）
-- [ ] `stores/ui.ts` 的 `ViewKey` 收窄为 `note` + `graph`/`review`/`mindmap` 浮层态
+- [x] `shell/AppShell.tsx`：移除 7 个平级 tab（App.tsx 重写，tabbar 删除）
+- [x] 三栏栅格：列表 240 + 编辑器（NoteEditor 内聚）/ 上下文 320（右栏自取数据，经
+      `ui.activeNoteId` 与编辑器解耦）
+- [x] 响应式塌缩（container query）：≤1080 收右栏 → ≤780 收左栏列表 → ≤560 隐藏同步态
+- [x] TopBar：品牌点 · 全局搜索（防抖 + 结果下拉 + 点击跳转）· 复习徽章（`/home`
+      review_due，有才亮，实检「复习 1」点亮）· 同步状态（`/sync/status` 冲突数）
+- [x] 右栏标签：大纲（Markdown 标题实时解析）/ 反链（backlinks API + 计数徽章）/
+      关联（图谱/星系/导图/Tutor 入口）/ 掌握度（薄弱概念 + Progress）
+- [x] 删除 `views/DashboardView.tsx`（裁决 A；SyncStatusPanel 随之退场，冲突数由 TopBar 呈现）
+- [x] `stores/ui.ts`：ViewKey 删 `dashboard`；新增 `activeNoteId`；
+      graph/universe/mindmap/tutor/review 为浮层态（顶栏「← 返回笔记」）
+
+**实检**（vite proxy + 真实后端）：三栏 ✓ · 大纲随笔记实时解析 ✓ · 关联→图谱浮层 +
+返回 ✓ · 复习徽章点亮 ✓ · 1000px 视口右栏按塌缩链隐藏 ✓
+
+**测试**：`tsc` PASS · `vitest` 23 passed · `vite build` PASS
+
+**遗留（Phase 3）**：编辑器工具栏仍含 全文搜索/知识雷达（硬约束要求移出——NoteEditor
+重做时处理）；行宽 680/17px 阅读版式；保存态下沉元信息行。
 
 ### Phase 3 — 视图重做
 

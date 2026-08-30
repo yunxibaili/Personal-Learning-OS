@@ -37,6 +37,7 @@ export function NoteEditorView() {
   const editorRef = useRef<Editor | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusNoteId = useUi((s) => s.focusNoteId);
+  const setActiveNoteId = useUi((s) => s.setActiveNoteId);
 
   const refreshList = useCallback(async () => {
     const data = await apiGet<NoteListResponse>("/notes");
@@ -50,6 +51,7 @@ export function NoteEditorView() {
 
   const openNote = useCallback(async (id: number) => {
     setActiveId(id);
+    setActiveNoteId(id);
     setSaveState("idle");
     setError("");
     try {
@@ -146,6 +148,7 @@ export function NoteEditorView() {
     if (activeId == null || !window.confirm("删除当前笔记？文件将一并删除。")) return;
     await apiDelete<OkResponse>(`/notes/${activeId}`);
     setActiveId(null);
+    setActiveNoteId(null);
     setDetail(null);
     await refreshList();
   }, [activeId, refreshList]);

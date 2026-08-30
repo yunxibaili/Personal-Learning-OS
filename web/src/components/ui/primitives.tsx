@@ -1,42 +1,43 @@
-import { useState } from "react";
+import { useId } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
-type Size = "sm" | "md" | "lg";
+/**
+ * 基础组件（FE-001 Phase 1）——结构/类名逐字移植自 ui/motion-primitives.html。
+ * ui/ 无规范页的组件（Badge/Progress 条）以令牌化最小实现补充，来源已标注。
+ */
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
-  loading?: boolean;
-}
+type BtnVariant = "primary" | "secondary" | "ghost" | "danger";
 
-/** 基础按钮（P1）：variant/size/disabled/loading 五态内建（FE-001 Phase 1）。 */
+/** 按钮（ui: .btn / .btn-primary 渐变 + glow） */
 export function Button({
   variant = "secondary",
-  size = "md",
+  size,
   loading = false,
   disabled,
   className,
   children,
   ...rest
-}: ButtonProps) {
-  const cls = [
-    "ui-btn",
-    `ui-btn--${variant}`,
-    `ui-btn--${size}`,
-    loading ? "ui-btn--loading" : "",
-    className ?? "",
-  ]
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: BtnVariant;
+  size?: "sm" | "lg";
+  loading?: boolean;
+}) {
+  const variantCls =
+    variant === "primary" ? "btn-primary"
+    : variant === "ghost" ? "btn-ghost"
+    : variant === "danger" ? "btn-danger"
+    : "";
+  const cls = ["btn", variantCls, size ? `btn--${size}` : "", className ?? ""]
     .filter(Boolean)
     .join(" ");
   return (
     <button className={cls} disabled={disabled || loading} {...rest}>
-      {loading && <span className="ui-btn__spinner" aria-hidden="true" />}
+      {loading && <span className="btn__spinner" aria-hidden="true" />}
       {children}
     </button>
   );
 }
 
-/** 基础输入框（P1）：label/error/hint/disabled。 */
+/** 输入框（ui: .inp 包裹结构，focus-within 橙描边 + 3px 外发光） */
 export function Input({
   label,
   error,
@@ -49,17 +50,14 @@ export function Input({
   error?: string;
   hint?: string;
 }) {
-  const autoId = useState(() => `ui-input-${Math.random().toString(36).slice(2, 8)}`)[0];
+  const autoId = useId();
   const inputId = id ?? autoId;
   return (
     <div className={`ui-field ${error ? "ui-field--error" : ""} ${className ?? ""}`}>
       {label && <label className="ui-field__label" htmlFor={inputId}>{label}</label>}
-      <input
-        id={inputId}
-        className="ui-input"
-        aria-invalid={error ? true : undefined}
-        {...rest}
-      />
+      <div className={`inp ${error ? "inp--error" : ""}`}>
+        <input id={inputId} aria-invalid={error ? true : undefined} {...rest} />
+      </div>
       {error ? (
         <p className="ui-field__msg ui-field__msg--error" role="alert">{error}</p>
       ) : hint ? (
@@ -71,7 +69,7 @@ export function Input({
 
 type Tone = "neutral" | "brand" | "ok" | "warn" | "err" | "ink";
 
-/** 标签（P1）：可选移除按钮。 */
+/** 标签（ui: app-shell .editor .chip） */
 export function Tag({
   tone = "neutral",
   onRemove,
@@ -81,16 +79,12 @@ export function Tag({
   onRemove?: () => void;
   children: React.ReactNode;
 }) {
+  const toneCls = tone === "neutral" ? "" : tone;
   return (
-    <span className={`ui-tag ui-tag--${tone}`}>
+    <span className={`chip ${toneCls}`.trim()}>
       {children}
       {onRemove && (
-        <button
-          type="button"
-          className="ui-tag__remove"
-          aria-label="移除"
-          onClick={onRemove}
-        >
+        <button type="button" className="chip__remove" aria-label="移除" onClick={onRemove}>
           ×
         </button>
       )}
@@ -98,18 +92,12 @@ export function Tag({
   );
 }
 
-/** 徽章（P1）：计数/状态小胶囊。 */
-export function Badge({
-  tone = "neutral",
-  children,
-}: {
-  tone?: Tone;
-  children: React.ReactNode;
-}) {
+/** 徽章（ui/ 无独立规范页：bento badge-row 语义，token 化最小实现） */
+export function Badge({ tone = "neutral", children }: { tone?: Tone; children: React.ReactNode }) {
   return <span className={`ui-badge ui-badge--${tone}`}>{children}</span>;
 }
 
-/** 骨架屏（P1）：text/rect/circle 三形态，reduced-motion 下静止。 */
+/** 骨架屏（ui: .skel，1.4s linear shimmer） */
 export function Skeleton({
   variant = "text",
   width,
@@ -120,12 +108,12 @@ export function Skeleton({
   height?: number | string;
 }) {
   const style: React.CSSProperties = { width, height };
-  if (variant === "text") style.height ??= "1em";
-  if (variant === "circle") style.width ??= style.height ?? 32;
-  return <span className={`ui-skeleton ui-skeleton--${variant}`} style={style} aria-hidden="true" />;
+  if (variant === "text") style.height ??= 12;
+  if (variant === "circle") style.width ??= style.height ?? 36;
+  return <span className="skel" style={style} aria-hidden="true" />;
 }
 
-/** 进度条（P1）：value ∈ [0,1]，色调随掌握度区间（与 Dashboard 一致）。 */
+/** 进度条（ui/ 无独立规范页：token 化实现，色调随值自动） */
 export function Progress({
   value,
   tone,
@@ -137,7 +125,6 @@ export function Progress({
 }) {
   const pct = Math.max(0, Math.min(1, value));
   const auto: Tone = pct >= 0.7 ? "ok" : pct >= 0.4 ? "brand" : "err";
-  const t = tone ?? auto;
   return (
     <div
       className="ui-progress"
@@ -147,7 +134,8 @@ export function Progress({
       aria-valuenow={Math.round(pct * 100)}
       aria-label={label}
     >
-      <div className={`ui-progress__bar ui-progress__bar--${t}`} style={{ width: `${pct * 100}%` }} />
+      <div className={`ui-progress__bar ui-progress__bar--${tone ?? auto}`}
+           style={{ width: `${pct * 100}%` }} />
     </div>
   );
 }

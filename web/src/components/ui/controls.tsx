@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 /** 模态框（P2）：Esc 关闭 · 遮罩点击关闭 · 焦点移入对话框。 */
 export function Modal({
@@ -69,7 +69,7 @@ interface SegmentedOption<T extends string> {
   label: string;
 }
 
-/** 分段控制（P2）：单选切换，radio 语义。 */
+/** 分段控制（ui: motion-primitives .seg + .pill 滑块，.35s --ease）。 */
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -81,15 +81,29 @@ export function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
   ariaLabel?: string;
 }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const idx = options.findIndex((o) => o.value === value);
+    const btn = wrap.querySelectorAll("button")[idx];
+    if (btn) setPill({ left: btn.offsetLeft, width: btn.offsetWidth });
+  }, [value, options]);
+
   return (
-    <div className="ui-segmented" role="radiogroup" aria-label={ariaLabel}>
+    <div ref={wrapRef} className="seg" role="radiogroup" aria-label={ariaLabel}>
+      {pill && (
+        <span className="pill" style={{ left: pill.left, width: pill.width }} aria-hidden="true" />
+      )}
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
           role="radio"
           aria-checked={value === o.value}
-          className={`ui-segmented__item ${value === o.value ? "ui-segmented__item--active" : ""}`}
+          className={value === o.value ? "active" : ""}
           onClick={() => onChange(o.value)}
         >
           {o.label}
