@@ -11,7 +11,11 @@
 
 ## 当前任务
 
-**B10 本地 LLM（Ollama）实测**——代码路径已就绪；需本机装 Ollama 后验证
+**前端阶段已开启，FE-001 已解冻**（2026-08-30 项目所有者显式宣布，见 PROJECT_STATE §0
+与 TASKS.md Phase 0–4）。P8-003 Home 冲突已裁定 = **方案 B**：HomeView 撤销，
+`/api/v1/home` 保留供 Phase 2 右栏复用。下一步：Phase 0 令牌归一 → Phase 1 基础组件。
+
+**B10 本地 LLM（Ollama）实测 ✅**（2026-08-30：qwen3-14b 端到端，think 剥离修复见 §9.1）
 
 ## 近期完成
 

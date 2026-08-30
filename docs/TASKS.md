@@ -24,8 +24,9 @@
 5. ✅ pairing + manifest（M7-008 Sync HTTP 层闭合）
 6. ✅ event_id/event_uuid 术语统一（migration 009 + 代码+文档同步）
 ── §9 后端 backlog 已全部清零 ──
-── 前端解冻后 ──
-/home 聚合端点（D1）· P8-003 Home · FE-001（无限期冻结，需显式宣布）
+── 前端阶段（2026-08-30 项目所有者宣布进入）──
+7. ✅ /home 聚合端点（D1）+ P8-003 Home 最小接线 · pytest 826 · vitest 23 · tsc/build PASS
+· FE-001（无限期冻结，需显式宣布解冻）
 ```
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
@@ -166,6 +167,36 @@ P8-003E Tutor Review Bridge     ✅（context 注入 mastery/mistakes/review/mem
         ↓
 Home / UI Polish
 ```
+
+### P8-003 Home + /home 聚合端点（D1）（2026-08-30 ✅）
+
+前端阶段首个任务（项目所有者 2026-08-30 宣布进入前端阶段）。§0 边界遵守：
+最小接线（调用得通、结果可见），零视觉打磨（FE-001 仍冻结）。
+
+**设计决策**：
+- D1 聚合范围（v1 最小集）：recent_notes(5) + weak_concepts(5) + review_due 计数
+  ——对应 TECH_DESIGN §10 backlog「GET /api/v1/home」行
+- D2 零新表零 migration，纯读现有表
+- D3 weak_concepts 复用 `get_weak_concepts`（effective>0 才算薄弱）
+- D4 Home 为默认视图（首 tab），DashboardView 保留不动（Sync 面板/星球/时间线仍在此）
+
+**新增/修改**：
+- `server/app/core/home.py`（聚合读模型，纯 core）· `server/app/routers/home.py` · main.py 注册
+- `shared/types/home.ts`（契约）· `web/src/views/HomeView.tsx`
+- `web/src/stores/ui.ts`（ViewKey+"home"，默认视图 home）· `ui.test.ts` · `App.tsx`（首 tab 接线）
+
+**测试**：
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `pytest tests/api/test_home.py -q` | 4 passed | 4 passed |
+| `pytest -q` | 全绿 | 826 passed |
+| `npx tsc --noEmit` | PASS | PASS |
+| `npx vitest run` | 23 passed | 23 passed |
+| `npx vite build` | PASS | PASS |
+| 真实服务冒烟 `GET /home` | 三段聚合数据 | PASS（notes/weak/review_due=1） |
+
+**遗留**：HomeView 跳转（openNote/openTutorForConcept）与视觉呈现属下一轮（FE-001 解冻后）；
+B10 文档状态与 §9 闭环记录见 PROJECT_STATE §9.1。
 
 ### P8-001C Knowledge Planet（用户直接需求，2026-08-27 首版落地 ✅）
 
@@ -354,22 +385,118 @@ ADR-020 闭合：update_mastery() 同事务追加 JSONL 写入，跨端同步真
 1. 让 Universe 有东西看 → 2. 让节点关系有意义 → 3. 让首页像产品 →
 4. 最后统一视觉语言。顺序反过来就是"漂亮的空壳"。
 
-### P8-FE-001 Visual Language Polish（范围冻结，到点开工）
+### P8-FE-001 Visual Language Polish（✅ 2026-08-30 解冻）
+
+> **2026-08-30 项目所有者显式宣布「解冻前端任务」**，见 `PROJECT_STATE.md` §0。
+> 配色与 Universe 方向按同日裁决更新（原「纸张感四色」方案**不采用**）。
 
 Allowed：CSS · 组件结构调整 · 动画/间距/字体层级 · 颜色系统 · 空状态 · 页面转场
 Forbidden：改数据库 / Core / API / 同步逻辑
 
-颜色方向参考 MiMo 的克制感（非复制）：
+**2026-08-30 裁决后的方向**（取代原表格）：
 
 | 元素 | 方向 |
 |---|---|
-| 背景 | `#FAFAF7` 纸张感（弃纯白）· 主文字 `#1C1C1C` · 辅助文字 `#8A8A8A` |
-| Concept 状态色 | 低饱和四色：正常=淡灰蓝 · 薄弱=淡琥珀 · 新概念=淡绿 · 重点=淡紫灰 |
-| Universe | "知识地图"而非"星空宇宙"：浅背景+微阴影+轻边框+hover 提升；禁发光/粒子/旋转/3D |
+| 背景 / 表面 | `--bg-soft #F5F5F5` + `--surface #FFFFFF`——**沿用 `ui/tokens.css` v1** |
+| 品牌色 | `--brand #FF6B35` 唯一暖色；概念状态**不引入四色**，由形状（Note 方 / Concept 圆）与 mastery 环承载 |
+| 双链 | `--hl #FBF1CF` 底 + `--ink #35618F` 字，hover 加深底色、**不加下划线** |
+| 字号 | 阅读正文 17px / 1.75；UI 文字 13–14px |
+| Universe | 改为**星系**：主笔记=星球（点阵地球，`home-hero.html` 移植）· 副笔记=卫星；视觉守白空间线稿 |
 
-⚠️ 执行前置条件：ADR-013 冻结了白橙主题与背景变量——配色切换需在开工时
-以最小 ADR 附录形式过审（只改 CSS 变量值与允许色列表，不动布局纪律）。
-触发提醒点：**P8-001B 完成后由用户宣布进入纯前端阶段**。
+⚠️ 原「ADR-013 配色过审」要求作废：本裁决沿用既有 `ui/tokens.css` v1，不引入新配色，
+故无需 ADR 附录。
+
+---
+
+## 前端阶段任务（Phase 0–4 · 2026-08-30 解冻后重排）
+
+> 范围：仅前端（`web/`），不动后端。组件分配与布局详见 `ui/UI_DESIGN.md`。
+> 排序沿用既有铁律「先内容结构，后视觉语言」——故先令牌、后组件、再布局、最后动效。
+
+### Phase 0 — 令牌归一 + 全局基线
+
+- [ ] 镜像 `ui/tokens.css` → `web/src/styles/tokens.css`（逐值对齐，禁分叉）
+- [ ] 清除 `web/src/global.css` 约 60 处裸值（`#ff8a00` / `#ddd` / `#888` / `rgba(179,86,77,...)` 等）
+- [ ] 旧令牌名映射（保留别名一个版本后删除）
+- [ ] 字体栈：MiSans 本地 woff2 子集，**不引 CDN**（本地优先）
+- [ ] 全局基线：`html lang="zh-CN"` · `*:focus-visible` 焦点环 · `prefers-reduced-motion` 全局块
+- [ ] 验收：`tsc --noEmit` + `vitest` + `vite build` 全绿，逐页截图无视觉崩溃
+
+### Phase 1 — 基础组件层（`web/src/components/ui/`）
+
+- [ ] P1：Button · Input · Tag · Badge · Skeleton · Toast · Progress
+- [ ] P2：Select · Modal · Tooltip · SegmentedControl · Tabs · Switch
+- [ ] P3：Textarea · Checkbox · Avatar
+- [ ] 每个组件内置五态：variant / size / disabled / loading / error
+- [ ] 触摸目标 ≥44×44，间距 ≥8px
+- [ ] dev-only gallery（`#gallery`）作为活文档
+
+### Phase 2 — AppShell 笔记优先三栏
+
+- [ ] `shell/AppShell.tsx`：移除 7 个平级 tab
+- [ ] 三栏栅格：列表 240 / 编辑器 680 / 上下文 320
+- [ ] 响应式塌缩（container query）：≤1080 收右栏 → ≤780 收左栏 → ≤560 单栏
+- [ ] TopBar：搜索 + 复习徽章（有才亮）+ 同步状态
+- [ ] 右栏标签：大纲 · 反链 · 关联 · 掌握度
+- [ ] 删除 `views/DashboardView.tsx`（裁决 A；`ui/bento-dashboard.html` 一并作废）
+- [ ] `stores/ui.ts` 的 `ViewKey` 收窄为 `note` + `graph`/`review`/`mindmap` 浮层态
+
+### Phase 3 — 视图重做
+
+| 顺序 | 视图 | 说明 |
+|---|---|---|
+| 1 | NoteEditor | 三栏重构；搜索/雷达移出工具栏；行宽 680；保存态下沉元信息行 |
+| 2 | Review | 专注卡 + 键盘驱动（1–4 打分 / Space 翻面 / Esc 退出） |
+| 3 | Graph | 改动最小——令牌替换 + 触摸目标放大 + a11y（规范见 `ui/graph-view.html`） |
+| 4 | Tutor | 改为右栏抽屉；流式输出配 Skeleton + 停止按钮 |
+| 5 | 星系 | 地球移植自 `home-hero.html`；双形态（全屏轮换 / 右栏单颗） |
+
+### Phase 4 — 动效基元 + a11y + 性能收口
+
+- [ ] 动效基元：`FadeInUp` · `CountUp` · `Skeleton` · `Toast` · `ProgressRing` · `WaveUnderline`
+      （来源 `ui/motion-primitives.html`）
+- [ ] a11y：对比度（正文 ≥4.5:1 / UI ≥3:1）· 焦点可见 · 键盘可达 · 语义 landmark
+- [ ] 性能：30fps 限帧 / dpr 上限 / 离屏暂停 / LCP<2.5s / CLS<0.1
+- [ ] 清理 `App.tsx` 的 `#preview` / `#planet` 原型入口
+
+### 前端阶段不做（待独立立项）
+
+- **本地知识库 + RAG**：属后端 AI 层。建议先用已落地的 **FTS5 + CJK bigram**（B9）跑通关键词检索，
+  embedding 等概念数 >2000 再补（依 `PROJECT_BRIEF` §6.2 触发条件）
+- **联网搜索**：降级为「知识库找不到时的兜底」，非常规路径。模型设置页 UI 可随 Phase 3 做，
+  但开关背后的能力待后端阶段
+
+---
+
+### ⚠️ 待决冲突：P8-003 Home vs 裁决 A（需项目所有者裁定）
+
+**现状**（2026-08-30 已实现，未提交）：
+
+| 文件 | 改动 |
+|---|---|
+| `web/src/views/HomeView.tsx` | 新建 65 行，三个 `dash-section` 区块（今日待复习 / 最近笔记 / 掌握度薄弱） |
+| `web/src/stores/ui.ts` | `ViewKey` 加 `"home"`；默认视图 `notes` → `home`；`openNote` 改为跳 `home` |
+| `web/src/App.tsx` | 新增 `case "home"`；`TABS` 首位加「首页」（现共 **8 个 tab**） |
+| `server/app/core/home.py` + `routers/home.py` + `shared/types/home.ts` | 新增 `/api/v1/home` 聚合端点（D1） |
+
+**冲突点**：Home 是按 **2026-08-27 路线决议**（「Dashboard 升级为 Learning OS Home」）实现的；
+而 **2026-08-30 裁决 A** 改为「笔记优先 · 取消平级 tab · 打开即笔记工作区 · 删除仪表盘」。
+两者互斥——一个要「首页作默认入口」，一个要「笔记工作区作默认入口」。
+
+**三个选项**：
+
+| 选项 | 含义 | 代价 |
+|---|---|---|
+| A. 保留 Home，修订裁决 | 首页作默认入口；裁决 A 的「笔记优先」降级 | 与 `ui/README.md`、`ui/UI_DESIGN.md` §8 的冲突持续存在 |
+| B. 按裁决 A 改造 Home | Home 降为笔记工作区的一部分（复习徽章 + 右栏），不占独立 tab | P8-003 的前端部分需改造 |
+| C. 保留但降为次级入口 | 默认视图改回 `notes`；Home 保留为 tab 但不默认 | 折中，但仍有 8 个 tab，违反「取消平级 tab」 |
+
+**当前处置**：✅ **已裁定 = 方案 B**（2026-08-30 项目所有者选定）——按裁决 A 改造：
+Home 取消独立 tab、不作默认视图；其三段聚合数据（待复习/最近笔记/薄弱概念）并入
+笔记工作区的 TopBar 复习徽章与右栏（Phase 2/3 落地）。**已执行**：`HomeView.tsx` 删除、
+`ui.ts`/`App.tsx`/`ui.test.ts` 的 home 接线回退（默认视图回归 notes，tab 恢复 7 个）；
+`/api/v1/home` 端点 + `shared/types/home.ts` 契约**保留**（Phase 2 右栏复用）。
+Phase 2 解除暂缓。
 
 ## 路线决议（2026-08-27 用户裁定）：M8 Mobile 延后
 
