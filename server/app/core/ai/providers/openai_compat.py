@@ -17,6 +17,7 @@ B2-B：stream() 为真实 SSE 流式解析（``stream: true`` + 逐条 ``data:``
 from __future__ import annotations
 
 import json
+import re
 import socket
 import time
 import urllib.error
@@ -33,6 +34,23 @@ _RETRY_DELAYS = (0.5, 1.0)
 # 瞬时错误码：429（限流）+ 5xx（服务端瞬时）——重试后仍失败才报错
 _TRANSIENT_HTTP = frozenset({429, 500, 502, 503, 504})
 _AUTH_HTTP = frozenset({401, 403})
+
+# ── 思考型模型剥离（B10 实测发现）──────────────────────────────────
+# qwen3/DeepSeek-R1 等思考模型经 OpenAI 兼容端点把推理文本内联进 content。
+# Ollama 实测两种形态：a) "<think>…</think>正文" b) "推理…</think>正文"（开标记缺失）。
+_THINK_PAIR_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+_THINK_CLOSE = "</think>"
+# 流式缓冲上限：未见 </think> 时最多缓冲这么多字符，超限按非思考输出放行。
+# 权衡：太小会让思考模型泄漏推理段，太大会让非思考模型（DeepSeek-chat）失去流式。
+_THINK_BUFFER_LIMIT = 1024
+
+
+def _strip_think(text: str) -> str:
+    """剥除 content 中的推理段（非流式）。"""
+    out = _THINK_PAIR_RE.sub("", text)
+    if _THINK_CLOSE in out:
+        out = out.split(_THINK_CLOSE)[-1].lstrip()
+    return out
 
 
 def _endpoint(base_url: str) -> str:
@@ -58,6 +76,17 @@ def _is_extractor(prompt: TutorPrompt) -> bool:
     return metadata.get("mode") == "extractor"
 
 
+# 思考型模型名提示（小写匹配）：qwen3 系列 / DeepSeek-R1 / 显式 thinking 后缀。
+# 命中才启用流式缓冲剥离——非思考模型（deepseek-chat 等）保持逐增量透传，
+# 不为其付出"缓冲到确认无 </think>"的流式延迟（B10 权衡，见 _THINK_BUFFER_LIMIT）。
+_THINKING_MODEL_HINTS = ("qwen3", "r1", "think")
+
+
+def _is_thinking_model(model: str) -> bool:
+    name = (model or "").lower()
+    return any(h in name for h in _THINKING_MODEL_HINTS)
+
+
 class OpenAICompatProvider:
     """OpenAI-compatible HTTP Provider（stdlib urllib）。"""
 
@@ -68,6 +97,7 @@ class OpenAICompatProvider:
         self.model = model
         self._timeout = timeout
         self._max_tokens = max_tokens
+        self._think_mode = _is_thinking_model(model)
 
     # ── 请求构造 ──────────────────────────────────────────────────
     def _payload(self, prompt: TutorPrompt, stream: bool) -> bytes:
@@ -125,7 +155,7 @@ class OpenAICompatProvider:
             except json.JSONDecodeError as exc:
                 raise ProviderError("LLM 响应不是合法 JSON") from exc
         try:
-            return data["choices"][0]["message"]["content"]
+            return _strip_think(data["choices"][0]["message"]["content"])
         except (KeyError, IndexError, TypeError) as exc:
             raise ProviderError("LLM 响应缺少 choices[0].message.content") from exc
 
@@ -135,9 +165,16 @@ class OpenAICompatProvider:
 
         逐行读取响应，解析 OpenAI-compatible ``data: {...}`` 帧，
         取 ``choices[0].delta.content``（空增量跳过），遇 ``data: [DONE]`` 收尾。
+
+        思考剥离：delta.reasoning 字段（新版 Ollama 分离式）直接丢弃；
+        内联式（qwen3 经 Ollama）在确认越过 ``</think>`` 前缓冲不下发——
+        见 _THINK_BUFFER_LIMIT 的权衡说明。
         """
         resp = self._request(self._payload(prompt, True), True)
         with resp:
+            buf = ""
+            past_think = False
+            pending_lstrip = False
             try:
                 for raw_line in resp:
                     line = raw_line.decode("utf-8").strip()
@@ -154,8 +191,43 @@ class OpenAICompatProvider:
                         delta = frame["choices"][0]["delta"]
                     except (KeyError, IndexError, TypeError):
                         continue
+                    if delta.get("reasoning"):
+                        continue  # 分离式推理字段：整段丢弃
                     content = delta.get("content")
-                    if content:
+                    if not content:
+                        continue
+                    if past_think:
+                        if pending_lstrip:
+                            content = content.lstrip()  # </think> 后的首个增量去前导空白
+                            if not content:
+                                continue
+                            pending_lstrip = False
                         yield content
+                        continue
+                    if not self._think_mode:
+                        yield content  # 非思考模型：逐增量透传（原契约不变）
+                        continue
+                    buf += content
+                    buf = _THINK_PAIR_RE.sub("", buf)
+                    if _THINK_CLOSE in buf:
+                        rest = buf.split(_THINK_CLOSE, 1)[1].lstrip()
+                        if rest:
+                            yield rest
+                        buf = ""
+                        past_think = True
+                        pending_lstrip = True  # 正文前导空白可能已随 close 下发
+                        continue
+                    if (not buf.lstrip().startswith("<think>")
+                            and len(buf) > _THINK_BUFFER_LIMIT):
+                        yield buf  # 非思考输出误判：不会出现 </think>，按普通输出放行
+                        buf = ""
+                        past_think = True
+                        continue
             except (urllib.error.URLError, socket.timeout, TimeoutError) as exc:
                 raise ProviderTimeout(f"LLM 流式中断：{exc}") from exc
+            if buf:  # 流结束仍未见 </think>：剥一遍后兜底下发
+                tail = _strip_think(buf)
+                if tail.startswith("<think>"):
+                    tail = tail[len("<think>"):].lstrip()
+                if tail:
+                    yield tail

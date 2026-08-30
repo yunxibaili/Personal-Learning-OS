@@ -363,3 +363,73 @@ class TestHardening:
         assert list(OpenAICompatProvider(
             base_url="http://x", api_key="", model="m").stream(_prompt())) == ["hi"]
         assert len(calls) == 2
+
+
+# ── 思考剥离（B10：qwen3 经 Ollama 实测）────────────────────────────
+
+class TestThinkStripping:
+    """qwen3 等思考模型把推理内联进 content（Ollama 实测两种形态）。"""
+
+    def _provider(self):
+        return OpenAICompatProvider(base_url="http://x", api_key="", model="qwen3")
+
+    def test_complete_strips_full_think_pair(self, monkeypatch):
+        def fake_urlopen(req, timeout=None):
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "<think>推理中…</think>答：特征值。"}}]
+            }).encode("utf-8"))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        assert self._provider().complete(_prompt()) == "答：特征值。"
+
+    def test_complete_strips_ollama_prefix_form(self, monkeypatch):
+        """Ollama 实测形态：开标记缺失，推理文本 + </think> + 正文。"""
+        def fake_urlopen(req, timeout=None):
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "生涩的术语。</think>\n\n特征值是缩放比例。"}}]
+            }).encode("utf-8"))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        assert self._provider().complete(_prompt()) == "特征值是缩放比例。"
+
+    def test_complete_normal_output_untouched(self, monkeypatch):
+        def fake_urlopen(req, timeout=None):
+            return _FakeResponse(json.dumps({
+                "choices": [{"message": {"content": "答：特征值是…"}}]
+            }).encode("utf-8"))
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        assert self._provider().complete(_prompt()) == "答：特征值是…"
+
+    def _stream_lines(self, chunks: list[str]) -> bytes:
+        frames = "".join(
+            'data: {"choices":[{"delta":{"content":%s}}]}\n\n' % json.dumps(c)
+            for c in chunks)
+        return (frames + "data: [DONE]\n\n").encode("utf-8")
+
+    def test_stream_suppresses_inline_thinking(self, monkeypatch):
+        """跨增量 </think>：确认前缓冲不下发，之后正常流式。"""
+        monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None:
+                            _FakeResponse(self._stream_lines(
+                                ["推理", "片段</", "think>", "\n\n答", "案正文"])))
+        assert list(self._provider().stream(_prompt())) == ["答", "案正文"]
+
+    def test_stream_drops_reasoning_field(self, monkeypatch):
+        """分离式推理字段（新版 Ollama）整段丢弃。"""
+        monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None:
+                            _FakeResponse(
+                                'data: {"choices":[{"delta":{"reasoning":"思考"}}]}\n\n'
+                                'data: {"choices":[{"delta":{"content":"答"}}]}\n\n'
+                                'data: [DONE]\n\n'.encode("utf-8")))
+        assert list(self._provider().stream(_prompt())) == ["答"]
+
+    def test_stream_non_thinking_model_flushes_at_limit(self, monkeypatch):
+        """非思考模型：无 </think>，超 _THINK_BUFFER_LIMIT 即放行缓冲。"""
+        import app.core.ai.providers.openai_compat as oc
+        monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None:
+                            _FakeResponse(self._stream_lines(["x" * 600, "y" * 600, "end"])))
+        out = list(self._provider().stream(_prompt()))
+        assert "".join(out) == "x" * 600 + "y" * 600 + "end"
+
+    def test_stream_unterminated_think_at_eof(self, monkeypatch):
+        """max_tokens 截断思考：EOF 兜底剥除开标记。"""
+        monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=None:
+                            _FakeResponse(self._stream_lines(["<think>", "推理中断"])))
+        assert list(self._provider().stream(_prompt())) == ["推理中断"]
