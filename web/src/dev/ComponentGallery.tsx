@@ -1,6 +1,9 @@
 import { useState } from "react";
 
-import { Button, Input, Tag, Badge, Skeleton, Progress, useToast } from "../components/ui";
+import {
+  Button, Input, Tag, Badge, Skeleton, Progress, useToast,
+  Select, Modal, Tooltip, SegmentedControl, Tabs, Switch,
+} from "../components/ui";
 
 /**
  * P1 组件活文档（dev-only，#gallery hash 入口）。
@@ -10,6 +13,11 @@ export function ComponentGallery() {
   const toast = useToast();
   const [input, setInput] = useState("");
   const [tags, setTags] = useState(["特征值", "线性代数"]);
+  const [sel, setSel] = useState("a");
+  const [modal, setModal] = useState(false);
+  const [seg, setSeg] = useState<"day" | "week">("day");
+  const [tab, setTab] = useState<"outline" | "links">("outline");
+  const [sw, setSw] = useState(true);
 
   return (
     <section style={{ maxWidth: 720, margin: "0 auto", padding: 24, display: "grid", gap: 32 }}>
@@ -66,6 +74,35 @@ export function ComponentGallery() {
             <Skeleton variant="text" width={200} />
             <Skeleton variant="rect" width={120} height={64} />
           </div>
+        </div>
+      </div>
+
+      <div>
+        <h3>Select / Switch / Segmented / Tabs / Tooltip</h3>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <Select label="领域" value={sel} onChange={(e) => setSel(e.target.value)}
+                  options={[{ value: "a", label: "数学" }, { value: "b", label: "编程" }]} />
+          <Select label="带错误" error="必选" options={[{ value: "", label: "请选择" }]} />
+          <Switch checked={sw} onChange={setSw} label="自动同步" />
+          <SegmentedControl ariaLabel="时间范围" value={seg} onChange={setSeg}
+                            options={[{ value: "day", label: "今天" }, { value: "week", label: "本周" }]} />
+          <Tooltip content="提示文案">
+            <Button variant="ghost">hover 我</Button>
+          </Tooltip>
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <Tabs value={tab} onChange={setTab}
+                tabs={[{ key: "outline", label: "大纲" }, { key: "links", label: "反链" }]} />
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <Button variant="secondary" onClick={() => setModal(true)}>打开 Modal</Button>
+          <Modal open={modal} title="确认删除" onClose={() => setModal(false)}
+                 footer={<>
+                   <Button variant="ghost" onClick={() => setModal(false)}>取消</Button>
+                   <Button variant="danger" onClick={() => { setModal(false); toast.push("已删除", "err"); }}>删除</Button>
+                 </>}>
+            删除后该笔记将从 vault 移除，此操作不可撤销。
+          </Modal>
         </div>
       </div>
 

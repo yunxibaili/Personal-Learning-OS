@@ -435,7 +435,9 @@ Forbidden：改数据库 / Core / API / 同步逻辑
 
 - [x] P1：Button · Input · Tag · Badge · Skeleton · Toast · Progress ✅（2026-08-30，
       见下方报告）
-- [ ] P2：Select · Modal · Tooltip · SegmentedControl · Tabs · Switch
+- [x] P2：Select · Modal · Tooltip · SegmentedControl · Tabs · Switch ✅（2026-08-30：
+      Modal Esc/遮罩关闭实检通过 · Switch 切换实检通过 · 全令牌驱动，
+      与 P1 同批提交）
 - [ ] P3：Textarea · Checkbox · Avatar
 - [x] 每个组件内置五态：variant / size / disabled / loading / error（相关态全覆盖）
 - [x] 触摸目标 ≥44×44（md/lg），间距 ≥8px
