@@ -28,6 +28,7 @@ from .routers.notes import router as notes_router
 from .routers.notes import admin_router as admin_router
 from .routers.search import router as search_router
 from .routers.settings import router as settings_router
+from .routers.study import router as study_router
 from .routers.suggest import router as suggest_router
 from .routers.sync import router as sync_router
 from .routers.tutor import router as tutor_router
@@ -67,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(conversations_router)
     app.include_router(memories_router)
     app.include_router(mistakes_router)
+    app.include_router(study_router)
     app.include_router(admin_router)
 
     @app.exception_handler(RequestValidationError)
