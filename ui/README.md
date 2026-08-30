@@ -11,6 +11,7 @@
 |---|---|---|
 | `UI_DESIGN.md` | **设计系统技术文档**（原则/色板/字阶/间距/圆角/阴影/动效/栅格/组件清单/a11y/性能契约/与 web/src 映射/开源参考） | 单一设计来源 |
 | `tokens.css` | **设计令牌**（CSS 自定义属性，MiMo 橙白体系；与 `web/src/global.css` 互为镜像） | `UI_DESIGN.md` |
+| `ui-preview.html` | **裁决后全交互原型**（笔记工作区/组件画廊/知识地图/复习专注/星系/导师批注/知识库 8 章节，2026-08-30 自 workbuddy 评审稿收编入项目） | Phase 2/3 实现目标 |
 | `index.html` | **总览入口**（gallery：色板/字阶/间距 + 页面与组件导航） | 本目录全部示例 |
 | `graph-view.html` | **知识图谱规范页**（前后对照 + 规范表 9 条 + 已移除噪音 8 项 + ADR-023 裁决记录） | `web/src/components/graph/` · ADR-023 |
 | `note-workspace.html` | **笔记工作区（建议主界面）**：三栏（列表 / 编辑器 / 上下文），680px 行宽，可视化降为右栏标签 | `web/src/views/NoteEditor.tsx` |

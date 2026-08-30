@@ -2,25 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
 import { useUi } from "../stores/ui";
-import {
-  ApiError,
-  apiDelete,
-  apiGet,
-  apiPatch,
-  apiPost,
-  apiUpload,
-} from "../lib/api";
+import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiUpload } from "../lib/api";
 import type {
   NoteDetail,
   NoteDetailResponse,
   NoteListResponse,
   NoteSummary,
   OkResponse,
-  SearchResponse,
 } from "@shared/types/note";
-import type { BacklinkItem } from "@shared/types/graph";
 import { TiptapEditor } from "../components/editor/TiptapEditor";
-import { KnowledgeRadar } from "../components/KnowledgeRadar";
 
 /** M1 知识库核心：列表 + TipTap 编辑（Markdown 进出）+ 防抖自动保存 + 附件上传。 */
 export function NoteEditorView() {
@@ -29,11 +19,6 @@ export function NoteEditorView() {
   const [detail, setDetail] = useState<NoteDetail | null>(null);
   const [error, setError] = useState<string>("");
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
-  const [backlinks, setBacklinks] = useState<BacklinkItem[]>([]);
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<{ note_id: number; title: string }[] | null>(null);
-  const [showRadar, setShowRadar] = useState(false);
-  const [radarQuery, setRadarQuery] = useState("");
   const editorRef = useRef<Editor | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusNoteId = useUi((s) => s.focusNoteId);
@@ -57,10 +42,6 @@ export function NoteEditorView() {
     try {
       const data = await apiGet<NoteDetailResponse>(`/notes/${id}`);
       setDetail(data.note);
-      const bl = await apiGet<{ backlinks: BacklinkItem[] }>(
-        `/notes/${id}/backlinks`,
-      );
-      setBacklinks(bl.backlinks);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     }
@@ -74,86 +55,32 @@ export function NoteEditorView() {
     }
   }, [focusNoteId, openNote]);
 
-  // Ctrl+Shift+K 切换 Knowledge Radar
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "K") {
-        e.preventDefault();
-        setShowRadar((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  // 提取当前段落/选文作为 radar 查询词
-  const extractRadarQuery = useCallback(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    const { from, to } = editor.state.selection;
-    const selected = editor.state.doc.textBetween(from, to, " ").trim();
-    if (selected) {
-      setRadarQuery(selected);
-      return;
-    }
-    // 取光标所在段落
-    const $from = editor.state.selection.$from;
-    const start = $from.start();
-    const end = $from.end();
-    const text = editor.state.doc.textBetween(start, end, " ").trim();
-    setRadarQuery(text.slice(0, 100));
-  }, []);
-
-  // 编辑器内容变化时提取查询词（仅 radar 开启时）
-  const onRadarContentChange = useCallback(() => {
-    if (showRadar) extractRadarQuery();
-  }, [showRadar, extractRadarQuery]);
-
-  useEffect(() => {
-    if (showRadar) extractRadarQuery();
-  }, [showRadar, extractRadarQuery]);
-
-  const runSearch = useCallback(async () => {
-    const query = q.trim();
-    if (!query) {
-      setResults(null);
-      return;
-    }
-    try {
-      const d = await apiGet<SearchResponse>(
-        `/search?q=${encodeURIComponent(query)}`,
-      );
-      setResults(d.results);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : String(e));
-    }
-  }, [q]);
-
   const createNote = useCallback(async () => {
-    const title = window.prompt("新笔记标题：");
-    if (!title?.trim()) return;
     try {
       const data = await apiPost<NoteDetailResponse>("/notes", {
-        title: title.trim(),
-        content_md: `# ${title.trim()}\n\n`,
+        title: `未命名笔记 ${new Date().toLocaleTimeString("zh-CN")}`,
+        content_md: "",
       });
       await refreshList();
       await openNote(data.note.id);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     }
-  }, [openNote, refreshList]);
+  }, [refreshList, openNote]);
 
   const deleteActive = useCallback(async () => {
-    if (activeId == null || !window.confirm("删除当前笔记？文件将一并删除。")) return;
-    await apiDelete<OkResponse>(`/notes/${activeId}`);
-    setActiveId(null);
-    setActiveNoteId(null);
-    setDetail(null);
-    await refreshList();
+    if (activeId == null) return;
+    try {
+      await apiDelete<OkResponse>(`/notes/${activeId}`);
+      setActiveId(null);
+      setActiveNoteId(null);
+      setDetail(null);
+      void refreshList();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
+    }
   }, [activeId, refreshList]);
 
-  // 防抖自动保存：Markdown 序列化后 PATCH，绝不落 TipTap JSON
   const scheduleSave = useCallback(
     (markdown: string) => {
       if (activeId == null) return;
@@ -229,19 +156,19 @@ export function NoteEditorView() {
       <div className="editor-pane">
         {error && <div className="error-banner">{error}</div>}
         {detail ? (
-          <>
-            <div className="editor-toolbar">
-              <span className="save-state">
-                {saveState === "saved" ? "已保存" : saveState === "dirty" ? "保存中…" : ""}
+          <div className="editor-reading">
+            {/* 元信息行：保存态极小字下沉（编辑器硬约束 3）——写作时不该看见它 */}
+            <div className="editor-meta">
+              <span className={`editor-meta__save editor-meta__save--${saveState}`}>
+                {saveState === "saved" ? "● 已保存" : saveState === "dirty" ? "● 保存中…" : ""}
               </span>
-              <input
-                className="searchbox"
-                value={q}
-                placeholder="全文搜索（回车）"
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && void runSearch()}
-              />
-              <button onClick={() => void runSearch()}>搜索</button>
+              <span>{detail.title}</span>
+              <span>{detail.content_md.length.toLocaleString("zh-CN")} 字</span>
+              <span>更新于 {detail.updated_at.slice(11, 16)}</span>
+            </div>
+
+            {/* 工具栏只放格式控件（硬约束 2）——搜索在 TopBar，雷达在右栏 */}
+            <div className="editor-toolbar">
               <input
                 ref={imageInput}
                 type="file"
@@ -254,49 +181,15 @@ export function NoteEditorView() {
                 }}
               />
               <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
-              <button
-                className={showRadar ? "radar-active" : ""}
-                onClick={() => { setShowRadar((v) => !v); }}
-              >
-                {showRadar ? "⚡" : "○"} 知识雷达
-              </button>
             </div>
-            {results !== null && (
-              <ul className="search-results">
-                {results.length === 0 && <li className="muted">无结果</li>}
-                {results.map((s) => (
-                  <li key={s.note_id}>
-                    <button onClick={() => { void openNote(s.note_id); setResults(null); }}>
-                      {s.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+
             <TiptapEditor
               key={detail.id}
               initialMarkdown={detail.content_md}
-              onChange={(md) => { scheduleSave(md); onRadarContentChange(); }}
+              onChange={scheduleSave}
               onReady={onEditorReady}
             />
-            {showRadar && (
-              <KnowledgeRadar
-                query={radarQuery}
-                noteId={activeId}
-                onOpenNote={(id) => void openNote(id)}
-              />
-            )}
-            {backlinks.length > 0 && (
-              <div className="backlinks">
-                反链（{backlinks.length}）：
-                {backlinks.map((b) => (
-                  <button key={b.note_id} onClick={() => void openNote(b.note_id)}>
-                    {b.title}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
+          </div>
         ) : (
           <p className="empty-hint">← 选择或新建一篇笔记</p>
         )}

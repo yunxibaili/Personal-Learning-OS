@@ -167,11 +167,26 @@ body {
 }
 .empty-hint { color: var(--text-secondary); }
 
-/* TipTap 编辑区 */
+/* TipTap 编辑区——Phase 3 阅读版式（编辑器硬约束 1：680 行宽居中 / 17px / 1.75）*/
+.editor-reading {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 96px 16px 96px;
+  width: 100%;
+}
+.editor-meta {
+  display: flex; align-items: center; gap: var(--sp-3);
+  font-size: var(--fs-xs); color: var(--text-3);
+  margin-bottom: var(--sp-2);
+  font-variant-numeric: tabular-nums;
+}
+.editor-meta__save--saved { color: var(--ok); }
+.editor-meta__save--dirty { color: var(--warn); }
 .tiptap .ProseMirror {
   outline: none;
-  min-height: calc(100vh - 160px);
-  line-height: 1.7;
+  min-height: calc(100vh - 260px);
+  font-size: 17px;          /* 阅读正文双尺度（frontend-impl-spec §3.4） */
+  line-height: 1.75;
 }
 .tiptap .ProseMirror h2 { border-bottom: 1px solid var(--border); padding-bottom: 4px; }
 .tiptap pre {

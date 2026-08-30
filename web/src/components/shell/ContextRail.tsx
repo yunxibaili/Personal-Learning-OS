@@ -3,17 +3,19 @@ import { useEffect, useState } from "react";
 import { apiGet } from "../../lib/api";
 import { useUi } from "../../stores/ui";
 import { Badge, Progress } from "../ui";
+import { KnowledgeRadar } from "../KnowledgeRadar";
 import type { BacklinkItem } from "@shared/types/graph";
 import type { NoteDetailResponse } from "@shared/types/note";
 import type { HomeResponse } from "@shared/types/home";
 
-type RailTab = "outline" | "backlinks" | "related" | "mastery";
+type RailTab = "outline" | "backlinks" | "related" | "mastery" | "radar";
 
 const TABS: Array<{ key: RailTab; label: string }> = [
   { key: "outline", label: "大纲" },
   { key: "backlinks", label: "反链" },
   { key: "related", label: "关联" },
   { key: "mastery", label: "掌握度" },
+  { key: "radar", label: "雷达" },
 ];
 
 interface Heading {
@@ -110,6 +112,18 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
                 {b.title ?? `笔记 ${b.note_id}`}
               </button>
             ))
+          )
+        )}
+
+        {tab === "radar" && (
+          activeNoteId == null ? (
+            <p className="ctx-rail__muted">打开一篇笔记后显示雷达推荐</p>
+          ) : (
+            <KnowledgeRadar
+              query={outline[0]?.text ?? ""}  /* 上下文匹配词 = 笔记首标题，确定性可复算 */
+              noteId={activeNoteId}
+              onOpenNote={(id) => openNote(id)}
+            />
           )
         )}
 
