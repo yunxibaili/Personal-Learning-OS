@@ -450,7 +450,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | # | 项 | 现状 |
 |---|---|---|
-| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现 + 加固（重试/`max_tokens`/JSON 模式）；B1b 真实凭据冒烟走 `POST /tutor/test`（一次调用，需外部凭据） |
+| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现 + 加固（重试/`max_tokens`/JSON 模式）；**B1b 真实凭据冒烟已实测通过**（2026-08-30：DeepSeek 端到端，最小 token；key 用后即删、未入库/文档） |
 | B2 | 流式输出（SSE / StreamingResponse） | ✅ 已实现（B2-A `stream()` + `/chat` SSE；B2-B openai_compat 真实 SSE 解析） |
 | B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（memories+概念桩） |
 | B4 | 自动链接建议（auto-link） | ✅ 已实现（`GET /notes/{id}/link-suggestions`，确定性内容重叠） |

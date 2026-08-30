@@ -11,13 +11,12 @@
 
 ## 当前任务
 
-**外部依赖项收尾**：B1b 真实凭据冒烟 / B10 Ollama 实测（均需环境，代码路径已就绪，不阻塞前端）
+**B10 本地 LLM（Ollama）实测**——代码路径已就绪；需本机装 Ollama 后验证
 
 ## 近期完成
 
-- **B14 Study Session** ✅ · **B16 Vault 自动监听** ✅（stdlib 轮询）
-- **B5 AI 概念提取** ✅ · **B6 AI 导图建议** ✅（均 mock 测，零 token）
-- **Memory Agent** ✅（/memories/maintenance）· **B9 中文检索增强** ✅（bigram 回退）
+- **B1b 真实凭据冒烟 ✅**（2026-08-30 实测通过：DeepSeek 端到端，key 用后即删）
+- **§9 后端闭环**：B5/B6/B9/B14/B16/Memory Agent 已收口（pytest 730）
 
 ### 范围（收窄定案，v1 只做两类产出）
 
