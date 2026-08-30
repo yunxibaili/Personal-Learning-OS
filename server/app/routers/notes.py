@@ -19,6 +19,7 @@ from ..core import knowledge as K
 from ..core.autolink import suggest_note_links
 from ..core.importer import import_markdown
 from ..core.reindex import reindex_vault
+from ..core.vault_watcher import VaultWatcher, current_watcher, set_watcher
 from ..db import connect, workspace_root
 
 router = APIRouter(prefix="/api/v1/notes", tags=["notes"])
@@ -320,3 +321,35 @@ def admin_reindex(body: ReindexBody | None = None, prune: bool = False) -> dict:
     finally:
         conn.close()
     return {"stats": stats}
+
+
+# ── Admin: Vault Watcher（B16）────────────────────────────────────────
+
+@admin_router.post("/watcher/start")
+def watcher_start() -> dict:
+    """启动 vault 自动监听（stdlib 轮询，变化即增量 reindex）。"""
+    vault = workspace_root() / "vault"
+    w = current_watcher()
+    if w is None or str(w.vault) != str(vault.resolve()):
+        if w is not None and w.running:
+            w.stop()
+        w = VaultWatcher(vault)
+        set_watcher(w)
+    w.start()
+    return {"running": w.running, "interval": w.interval}
+
+
+@admin_router.post("/watcher/stop")
+def watcher_stop() -> dict:
+    w = current_watcher()
+    if w is not None:
+        w.stop()
+    return {"running": False}
+
+
+@admin_router.get("/watcher/status")
+def watcher_status() -> dict:
+    w = current_watcher()
+    return {"running": w.running if w else False,
+            "interval": w.interval if w else None,
+            "last_poll_count": w.last_poll_count if w else 0}
