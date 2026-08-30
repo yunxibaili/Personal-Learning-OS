@@ -30,6 +30,7 @@ from ..core.memories import (
     delete_memory,
     get_memory,
     list_memories,
+    memory_maintenance,
     update_memory,
 )
 from ..db import connect
@@ -63,6 +64,20 @@ def list_memories_api(
         raise HTTPException(
             status_code=400, detail=f"{e.field} must be one of {sorted(VALID_KINDS)}"
         )
+    finally:
+        conn.close()
+
+
+@router.get("/maintenance")
+def memory_maintenance_api() -> dict:
+    """Memory Agent 维护视图：按 value（importance×新近度）排序 + 保留建议。
+
+    只建议不删除（删除仍走 DELETE /memories/{id}）。
+    注意：须定义在 /memories/{memory_id} 之前，避免被 {id} 捕获。
+    """
+    conn = connect()
+    try:
+        return memory_maintenance(conn)
     finally:
         conn.close()
 

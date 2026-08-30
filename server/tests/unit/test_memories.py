@@ -118,3 +118,57 @@ class TestSensitiveContent:
         mid = upsert_memory(core_conn, kind="mistake_pattern",
                             content="曾把 Bearer token 当普通字符串泄漏在笔记里")
         assert mid > 0
+
+# ── Memory Agent（B10 实质：记忆维护）───────────────────────────────
+
+class TestMemoryMaintenance:
+    def test_ranks_by_importance_and_recency(self, core_conn):
+        from app.core.memories import upsert_memory, memory_maintenance
+        conn = core_conn
+        upsert_memory(conn, kind="fact", content="high value fact",
+                      importance=0.9, confidence=0.9)
+        upsert_memory(conn, kind="goal", content="low value goal",
+                      importance=0.2, confidence=0.5)
+        res = memory_maintenance(conn)
+        items = res["items"]
+        assert len(items) == 2
+        # 高 importance 排前
+        assert items[0]["content"] == "high value fact"
+        assert items[0]["value"] >= items[1]["value"]
+
+    def test_stale_flagged(self, core_conn):
+        from app.core.memories import upsert_memory, memory_maintenance
+        from datetime import datetime, timedelta, timezone
+        conn = core_conn
+        upsert_memory(conn, kind="fact", content="old memory",
+                      importance=0.1, confidence=0.5)
+        # 手动把 last_used_at 改成很久以前
+        old = (datetime.now(timezone.utc) - timedelta(days=400)).isoformat()
+        conn.execute("UPDATE memories SET last_used_at=? WHERE content='old memory'",
+                     (old,))
+        conn.commit()
+        res = memory_maintenance(conn)
+        assert res["summary"]["stale"] >= 1
+        assert res["items"][0]["retention"] == "stale"
+
+    def test_maintenance_api(self, client):
+        from app.core.memories import upsert_memory
+        client.put("/api/v1/settings", json={"settings": {"llm.provider": "mock"}})
+        # 直接经 core 注入一条记忆（避免依赖 extractor）
+        import sqlite3
+        from app.db import connect
+        conn = connect()
+        upsert_memory(conn, kind="fact", content="api test memory",
+                      importance=0.5, confidence=0.5)
+        conn.close()
+        r = client.get("/api/v1/memories/maintenance")
+        assert r.status_code == 200
+        body = r.json()
+        assert "summary" in body
+        assert body["summary"]["total"] >= 1
+        assert any("api test memory" in m["content"] for m in body["items"])
+
+    def test_maintenance_route_not_shadowed_by_id(self, client):
+        """/maintenance 不被 /{memory_id} 拦截（路由顺序守护）。"""
+        r = client.get("/api/v1/memories/maintenance")
+        assert r.status_code == 200

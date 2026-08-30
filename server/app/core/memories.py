@@ -28,6 +28,8 @@ memories 表的生产者（TABLE_AUDIT (b)→(a)）与唯一读写口。
 from __future__ import annotations
 
 import json
+import math
+from datetime import datetime, timezone
 
 # 校验常量（冻结）
 VALID_KINDS = frozenset({"fact", "preference", "goal", "mistake_pattern"})
@@ -290,6 +292,56 @@ def get_memory(conn, memory_id: int) -> dict | None:
         f"SELECT {_MEMORY_COLUMNS} FROM memories WHERE id = ?", (memory_id,)
     ).fetchone()
     return _row_to_memory(row) if row else None
+
+
+def memory_maintenance(conn, *, decay_tau: float = 30.0,
+                       now: datetime | None = None) -> dict:
+    """记忆维护视图（Memory Agent，旧-B10 实质）：按价值排序 + 保留建议。
+
+    价值 = importance × exp(-days_since_used / tau)（未用越久越贬值）；
+    retention：keep（≥0.5）/ review（≥0.25）/ stale（<0.25）。
+
+    只给出**建议**，不删除——记忆删除仍走 /api/v1/memories/{id} DELETE（用户操纵）。
+    """
+    rows = conn.execute(
+        f"SELECT {_MEMORY_COLUMNS} FROM memories ORDER BY id").fetchall()
+    if now is None:
+        now = datetime.now(timezone.utc)
+
+    items = []
+    for r in rows:
+        d = _row_to_memory(r)
+        last = d.get("last_used_at") or d.get("created_at") or ""
+        days = _days_since(last, now)
+        decay = math.exp(-days / decay_tau) if days > 0 else 1.0
+        value = round(d["importance"] * decay, 4)
+        d["value"] = value
+        d["days_since_used"] = round(days, 2)
+        d["retention"] = "keep" if value >= 0.5 else ("review" if value >= 0.25 else "stale")
+        items.append(d)
+
+    items.sort(key=lambda m: m["value"], reverse=True)
+
+    def _count(label: str) -> int:
+        return sum(1 for m in items if m["retention"] == label)
+
+    return {
+        "summary": {"total": len(items),
+                    "keep": _count("keep"), "review": _count("review"),
+                    "stale": _count("stale")},
+        "items": items,
+    }
+
+
+def _days_since(iso: str, now: datetime) -> float:
+    """自 iso 时间起的整天数（无时间信息按 UTC 解释；解析失败返回 0）。"""
+    try:
+        dt = datetime.fromisoformat(iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return max(0.0, (now - dt).total_seconds() / 86400)
+    except (ValueError, TypeError):
+        return 0.0
 
 
 def update_memory(
