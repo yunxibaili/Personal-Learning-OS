@@ -1,17 +1,14 @@
 /* Personal Learning OS — 全局样式（唯一样式来源，M3b 前不引入任何 CSS 框架） */
+/* Phase 0 旧令牌别名：指向 styles/tokens.css 新令牌；保留一个版本后删除 */
 :root {
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F7F7F7;
-  --bg-tertiary: #F0F0F0;
-  --bg-alt: #F0F0F0;
-  --text-primary: #1A1A1A;
-  --text-secondary: #666666;
-  --text-tertiary: #A3A3A3;
-  --brand: #FF8A00;
-  --brand-hover: #FF9D2E;
-  --border: #E5E5E5;
-  --ok: #22C55E;
-  --err: #EF4444;
+  --bg-primary: var(--bg);
+  --bg-secondary: var(--surface-2);
+  --bg-tertiary: var(--surface-3);
+  --bg-alt: var(--surface-3);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --text-tertiary: var(--text-3);
+  --brand-hover: var(--brand-2);
 }
 
 * { box-sizing: border-box; }
@@ -22,10 +19,29 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
-  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+}
+
+/* Phase 0 全局基线：焦点可见（a11y） */
+*:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Phase 0 全局基线：减弱动效（前庭安全；tokens.css 已归零 --dur-*） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .app {
@@ -142,9 +158,9 @@ body {
 }
 .save-state { color: var(--ok); font-size: 12px; margin-right: auto; }
 .error-banner {
-  border: 1px solid #b3564d;
-  background: rgba(179, 86, 77, 0.15);
-  color: #e08c85;
+  border: 1px solid var(--err);
+  background: var(--err-soft);
+  color: var(--err);
   padding: 8px 10px;
   border-radius: 6px;
   margin-bottom: 8px;
@@ -234,7 +250,7 @@ body {
   border-color: var(--border, #ddd);
   background: var(--bg-primary, #fff);
 }
-.gnode.selected { box-shadow: 0 0 0 1.5px var(--brand, #ff8a00); }
+.gnode.selected { box-shadow: 0 0 0 1.5px var(--brand, var(--brand)); }
 .gnode.unconf { border-style: dashed; opacity: 0.65; }
 /* hover 由蓝色环改为中性投影（React Flow 官方 --xy-node-boxshadow-hover-default） */
 .gnode:hover { box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08); }
@@ -249,7 +265,7 @@ body {
   transform: rotate(-90deg);
 }
 .gnode-ring-track { fill: none; stroke: var(--border, #ddd); stroke-width: 2; }
-.gnode-ring-value { fill: none; stroke: var(--brand, #ff8a00); stroke-width: 2; stroke-linecap: round; }
+.gnode-ring-value { fill: none; stroke: var(--brand, var(--brand)); stroke-width: 2; stroke-linecap: round; }
 
 /* Graph node tooltip */
 .gnode-tooltip {
@@ -265,8 +281,8 @@ body {
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.gnode-tooltip-mastery { font-weight: 600; color: var(--text-primary, #171717); }
-.gnode-tooltip-domain { color: var(--text-secondary, #888); font-size: 10px; }
+.gnode-tooltip-mastery { font-weight: 600; color: var(--text-primary, var(--text)); }
+.gnode-tooltip-domain { color: var(--text-secondary, var(--text-2)); font-size: 10px; }
 
 /* 边样式已收敛为两级中性灰 + hover 品牌橙，见 GraphEdge.tsx。
    旧的 9 种按 relation 分色规则未被任何组件引用，属死代码，已移除。 */
@@ -276,7 +292,7 @@ body {
   border-radius: 4px;
   padding: 1px 5px;
   font-size: 10px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--text-2));
   pointer-events: none;
 }
 
@@ -288,15 +304,15 @@ body {
   overflow: hidden;
 }
 .graph-layer-toggle button {
-  border: none; background: var(--bg-secondary, #f7f7f7);
-  color: var(--text-secondary, #888);
+  border: none; background: var(--bg-secondary, var(--surface-2));
+  color: var(--text-secondary, var(--text-2));
   padding: 3px 10px; font-size: 11px; cursor: pointer;
   border-right: 1px solid var(--border, #ddd);
 }
 .graph-layer-toggle button:last-child { border-right: none; }
 .graph-layer-toggle button.active {
-  background: var(--brand, #ff8a00);
-  color: #fff;
+  background: var(--brand, var(--brand));
+  color: var(--text-inv);
 }
 
 /* Graph Inspector */
@@ -317,21 +333,21 @@ body {
 .graph-inspector-header strong { flex: 1; }
 .graph-inspector-header button {
   border: none; background: none; cursor: pointer;
-  color: var(--text-secondary, #888); font-size: 14px;
+  color: var(--text-secondary, var(--text-2)); font-size: 14px;
 }
 .graph-inspector-type { font-size: 14px; }
 .graph-inspector-type.concept { color: var(--ok, #4a9); }
-.graph-inspector-type.note { color: var(--text-secondary, #888); }
-.graph-inspector-domain { color: var(--text-secondary, #888); font-size: 11px; margin-bottom: 4px; }
+.graph-inspector-type.note { color: var(--text-secondary, var(--text-2)); }
+.graph-inspector-domain { color: var(--text-secondary, var(--text-2)); font-size: 11px; margin-bottom: 4px; }
 .graph-inspector-mastery { font-size: 11px; margin-bottom: 4px; }
 .graph-inspector-actions { display: flex; gap: 6px; margin-top: 8px; }
 .graph-inspector-actions button {
   border: 1px solid var(--border, #ddd);
-  background: var(--bg-secondary, #f7f7f7);
+  background: var(--bg-secondary, var(--surface-2));
   color: var(--text-primary);
   padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
 }
-.graph-inspector-actions button:hover { background: var(--brand, #ff8a00); color: #fff; }
+.graph-inspector-actions button:hover { background: var(--brand, var(--brand)); color: var(--text-inv); }
 
 .searchbox {
   width: 220px;
@@ -378,7 +394,7 @@ body {
 /* ---- M3.5 Knowledge Radar ---- */
 .radar-active {
   border-color: var(--brand);
-  background: rgba(91, 157, 217, 0.1);
+  background: var(--ink-soft);
 }
 
 .knowledge-radar {
@@ -434,7 +450,7 @@ body {
   text-align: left;
 }
 .radar-match:hover {
-  background: rgba(91, 157, 217, 0.1);
+  background: var(--ink-soft);
   border-color: var(--brand);
 }
 
@@ -531,9 +547,9 @@ body {
 .review-start-btn {
   margin-top: 16px;
   padding: 10px 28px;
-  border: 1px solid var(--brand, #ff8a00);
-  background: var(--brand, #ff8a00);
-  color: #fff;
+  border: 1px solid var(--brand, var(--brand));
+  background: var(--brand, var(--brand));
+  color: var(--text-inv);
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
@@ -548,17 +564,17 @@ body {
   gap: 10px;
   margin-bottom: 20px;
   font-size: 12px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--text-2));
 }
 .review-progress-bar {
   flex: 1;
   height: 4px;
-  background: #eee;
+  background: var(--surface-3);
   border-radius: 2px;
 }
 .review-progress-fill {
   height: 100%;
-  background: var(--brand, #ff8a00);
+  background: var(--brand, var(--brand));
   border-radius: 2px;
   transition: width 0.3s ease;
 }
@@ -589,7 +605,7 @@ body {
 }
 .review-mastery-label {
   font-size: 11px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--text-2));
 }
 .review-mastery-value {
   font-size: 14px;
@@ -616,19 +632,19 @@ body {
   transition: border-color 0.15s, background 0.15s;
 }
 .review-quality-btn:hover {
-  border-color: var(--brand, #ff8a00);
-  background: var(--bg-secondary, #f7f7f7);
+  border-color: var(--brand, var(--brand));
+  background: var(--bg-secondary, var(--surface-2));
 }
 .review-quality-icon { font-size: 24px; }
 .review-quality-label { font-size: 13px; font-weight: 500; }
-.review-quality-desc { font-size: 10px; color: var(--text-secondary, #888); }
+.review-quality-desc { font-size: 10px; color: var(--text-secondary, var(--text-2)); }
 
 /* Feedback */
 .review-feedback {
   margin-top: 16px;
   padding: 12px;
   border-radius: 8px;
-  background: var(--bg-secondary, #f7f7f7);
+  background: var(--bg-secondary, var(--surface-2));
 }
 .review-feedback-change {
   font-size: 14px;
@@ -636,7 +652,7 @@ body {
 }
 .review-feedback-next {
   font-size: 12px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--text-2));
 }
 
 /* Continue button */
@@ -645,9 +661,9 @@ body {
   width: 100%;
   margin-top: 16px;
   padding: 10px;
-  border: 1px solid var(--brand, #ff8a00);
-  background: var(--brand, #ff8a00);
-  color: #fff;
+  border: 1px solid var(--brand, var(--brand));
+  background: var(--brand, var(--brand));
+  color: var(--text-inv);
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
@@ -657,13 +673,13 @@ body {
 .review-submitting {
   text-align: center;
   padding: 16px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--text-2));
 }
 .review-remaining {
   text-align: center;
   margin-top: 16px;
   font-size: 12px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, var(--text-2));
 }
 
 .mastery-row {
@@ -1036,9 +1052,9 @@ body {
 }
 
 .universe-error {
-  border: 1px solid #b3564d;
-  background: rgba(179, 86, 77, 0.15);
-  color: #e08c85;
+  border: 1px solid var(--err);
+  background: var(--err-soft);
+  color: var(--err);
   padding: 10px 14px;
   border-radius: 6px;
   font-size: 13px;
@@ -1133,7 +1149,7 @@ body {
 
 .weak-slider {
   width: 120px;
-  accent-color: #ff8a00;
+  accent-color: var(--brand);
 }
 
 .weak-value {
@@ -1382,8 +1398,8 @@ body {
   right: -4px;
   width: 14px;
   height: 14px;
-  background: #ff8a00;
-  color: #fff;
+  background: var(--brand);
+  color: var(--text-inv);
   font-size: 9px;
   font-weight: 700;
   border-radius: 50%;
@@ -1513,9 +1529,9 @@ body {
 }
 
 .mindmap-btn-unbind {
-  border: 1px solid #b3564d;
-  background: rgba(179, 86, 77, 0.1);
-  color: #e08c85;
+  border: 1px solid var(--err);
+  background: var(--err-soft);
+  color: var(--err);
   padding: 3px 8px;
   border-radius: 4px;
   cursor: pointer;
@@ -1524,7 +1540,7 @@ body {
 }
 
 .mindmap-btn-unbind:hover {
-  background: rgba(179, 86, 77, 0.2);
+  background: var(--err-soft);
 }
 
 /* ── Sync Status Panel（M7-005，低打扰基础设施）──────────── */
@@ -1534,7 +1550,7 @@ body {
 .sync-compare { display: flex; gap: 12px; margin: 8px 0; }
 .sync-side { flex: 1; min-width: 0; }
 .sync-side pre {
-  font-size: 11px; background: var(--bg-alt, #f6f6f6); border: 1px solid var(--border);
+  font-size: 11px; background: var(--bg-alt, var(--surface-2)); border: 1px solid var(--border);
   border-radius: 4px; padding: 6px 8px; max-height: 180px; overflow: auto;
   white-space: pre-wrap; word-break: break-all; margin: 4px 0 0;
 }
@@ -1556,7 +1572,7 @@ body {
 /* weak 状态外圈（虚线，基于 mastery 推导） */
 .node-weak-ring {
   position: absolute;
-  border: 2px dashed #e67300;
+  border: 2px dashed var(--brand-deep);
   border-radius: 50%;
   opacity: 0.7;
   pointer-events: none;
@@ -1603,7 +1619,7 @@ body {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
-.planet-label { font-size: 13px; font-weight: 600; color: #f0f0f0; letter-spacing: 0.02em; }
+.planet-label { font-size: 13px; font-weight: 600; color: var(--surface-3); letter-spacing: 0.02em; }
 .planet-sub { font-size: 10px; color: #a8aab5; }
 
 /* 微弱呼吸动画（8-12s，scale 1.00↔1.02） */
@@ -1653,7 +1669,7 @@ body {
   display: flex; align-items: center; gap: 6px; font-size: 12px;
   color: var(--text-primary); cursor: pointer; padding: 2px 4px; border-radius: 4px;
 }
-.inspector-neighbor:hover { background: var(--bg-alt, #f6f6f6); }
+.inspector-neighbor:hover { background: var(--bg-alt, var(--surface-2)); }
 .neighbor-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .inspector-btn {
   border: 1px solid var(--border); background: var(--bg-secondary);
@@ -1681,7 +1697,7 @@ body {
 }
 .planet-ring {
   position: absolute; left: 50%; top: 50%;
-  border: 1px dashed rgba(180, 175, 168, 0.4);
+  border: 1px dashed var(--border);
   border-radius: 50%; pointer-events: none;
 }
 .planet-sat {
@@ -1702,14 +1718,14 @@ body {
 .planet-sat-label {
   position: absolute; top: 12px; left: 50%;
   transform: translateX(-50%);
-  white-space: nowrap; font-size: 11px; color: var(--muted, #8a8a8a);
+  white-space: nowrap; font-size: 11px; color: var(--muted, var(--text-2));
   opacity: 0; transition: opacity 0.15s; pointer-events: none;
 }
 .planet-sat:hover .planet-sat-label { opacity: 1; }
 .planet-hint {
   position: absolute; bottom: 0.6rem; left: 50%;
   transform: translateX(-50%);
-  font-size: 11px; color: var(--muted, #8a8a8a);
+  font-size: 11px; color: var(--muted, var(--text-2));
 }
 .planet-selected {
   display: flex; justify-content: space-between; align-items: center;

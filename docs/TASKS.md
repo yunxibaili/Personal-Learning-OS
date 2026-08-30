@@ -413,14 +413,23 @@ Forbidden：改数据库 / Core / API / 同步逻辑
 > 范围：仅前端（`web/`），不动后端。组件分配与布局详见 `ui/UI_DESIGN.md`。
 > 排序沿用既有铁律「先内容结构，后视觉语言」——故先令牌、后组件、再布局、最后动效。
 
-### Phase 0 — 令牌归一 + 全局基线
+### Phase 0 — 令牌归一 + 全局基线 ✅（2026-08-30）
 
-- [ ] 镜像 `ui/tokens.css` → `web/src/styles/tokens.css`（逐值对齐，禁分叉）
-- [ ] 清除 `web/src/global.css` 约 60 处裸值（`#ff8a00` / `#ddd` / `#888` / `rgba(179,86,77,...)` 等）
-- [ ] 旧令牌名映射（保留别名一个版本后删除）
-- [ ] 字体栈：MiSans 本地 woff2 子集，**不引 CDN**（本地优先）
-- [ ] 全局基线：`html lang="zh-CN"` · `*:focus-visible` 焦点环 · `prefers-reduced-motion` 全局块
-- [ ] 验收：`tsc --noEmit` + `vitest` + `vite build` 全绿，逐页截图无视觉崩溃
+- [x] 镜像 `ui/tokens.css` → `web/src/styles/tokens.css`（逐值复制；main.tsx 先于 global.css 导入）
+- [x] 清除 `global.css` 裸值 54 处 → 令牌（#ff8a00→--brand · #888/#8a8a8a→--text-2 ·
+      #b3564d/rgba(179,86,77,*)→--err/--err-soft · #e08c85→--err · rgba(91,157,217,.1)→--ink-soft ·
+      color:#fff→--text-inv 等）
+- [x] 旧令牌别名块（--bg-primary/--text-secondary/--brand-hover 等 → 新令牌，保留一版本后删）
+- [~] 字体栈：body 已接 `var(--font)`（MiSans 本地安装即生效）；**woff2 子集待补**——
+      仓库无 MiSans 字体文件，需用户提供后再做 @font-face（不引 CDN）
+- [x] 全局基线：`*:focus-visible` 品牌焦点环 · `prefers-reduced-motion` 全局动效归零块
+      （`html lang="zh-CN"` 既有即满足）
+- [x] 验收：`tsc --noEmit` PASS · `vitest` 23 passed · `vite build` PASS ·
+      浏览器实检 笔记/仪表盘/ Tutor 三视图无视觉崩溃（新品牌橙 #FF6B35 全局生效）
+
+**遗留**：① planet 暗色三值（#3a3f52/#23262e/#a8aab5）保留——P8-001C 视觉，Phase 3 星系重做时处置；
+② rgba(0,0,0,*) 阴影未映射 --shadow-*（值不一一对应，避免视觉漂移，Phase 4 动效收口时统一）；
+③ MiSans woff2 子集（见上）。
 
 ### Phase 1 — 基础组件层（`web/src/components/ui/`）
 
