@@ -461,7 +461,16 @@ Tag 可移除 · Skeleton 三形态且 reduced-motion 下静止（依赖 Phase 0
 | `npx vitest run` | 23 passed | 23 passed |
 | `npx vite build` | PASS | PASS |
 | `#gallery` 浏览器实检 | 组件五态可见无崩溃 | PASS（截图逐区核对） |
-| Toast 交互实检 | 点击后弹出右下角 | PASS（role=status 可见） |
+| Toast 交互实检 | 点击后弹出 | PASS（role=status 可见） |
+
+**UI_DESIGN.md §7 对齐审查（2026-08-30，实检后修正）**：
+Toast 右上角/4s ✓ · Input/Select/Textarea focus 橙描边+外发光 ✓ · Avatar 32/40/56 ✓ ·
+Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1.2s ✓。
+
+**刻意偏差与延后**（对照 UI_DESIGN §7）：
+- Select 用原生 `<select>` 而非自绘——键盘/无障碍基线优先，自绘下拉留 Phase 4 评估
+- Segmented「滑块移动 250ms」与 Tabs「下划线从左展开」暂为切换态直切——动效属 Phase 4 收口
+- Toast 时长 4s（spec）但堆叠上限未做（低频场景，Phase 4 一并处理）
 
 ### Phase 2 — AppShell 笔记优先三栏
 

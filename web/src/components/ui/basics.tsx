@@ -74,7 +74,7 @@ export function Avatar({
 }: {
   src?: string;
   title: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg";  // UI_DESIGN §7.1：32/40/56
 }) {
   const cls = `ui-avatar ui-avatar--${size}`;
   if (src) {

@@ -20,7 +20,7 @@ interface ToastApi {
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
-const DEFAULT_DURATION = 3200;
+const DEFAULT_DURATION = 4000;  // UI_DESIGN §7.1：4s 自动消失
 
 /** Toast 供应商（P1）：应用根部挂一次，业务用 useToast().push(message, tone)。 */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
