@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   Button, Input, Tag, Badge, Skeleton, Progress, useToast,
   Select, Modal, Tooltip, SegmentedControl, Tabs, Switch,
+  Textarea, Checkbox, Avatar,
 } from "../components/ui";
 
 /**
@@ -18,6 +19,7 @@ export function ComponentGallery() {
   const [seg, setSeg] = useState<"day" | "week">("day");
   const [tab, setTab] = useState<"outline" | "links">("outline");
   const [sw, setSw] = useState(true);
+  const [cb, setCb] = useState(false);
 
   return (
     <section style={{ maxWidth: 720, margin: "0 auto", padding: 24, display: "grid", gap: 32 }}>
@@ -103,6 +105,20 @@ export function ComponentGallery() {
                  </>}>
             删除后该笔记将从 vault 移除，此操作不可撤销。
           </Modal>
+        </div>
+      </div>
+
+      <div>
+        <h3>Textarea / Checkbox / Avatar</h3>
+        <div style={{ display: "grid", gap: 12, maxWidth: 420 }}>
+          <Textarea label="摘要" placeholder="一句话摘要" rows={3} />
+          <Checkbox checked={cb} onChange={setCb} label="同时加入复习队列" />
+          <Checkbox checked={false} onChange={() => undefined} disabled label="禁用态" />
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <Avatar title="特征值" size="sm" />
+            <Avatar title="特征值" />
+            <Avatar title="特征值" size="lg" />
+          </div>
         </div>
       </div>
 

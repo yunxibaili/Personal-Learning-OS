@@ -431,14 +431,15 @@ Forbidden：改数据库 / Core / API / 同步逻辑
 ② rgba(0,0,0,*) 阴影未映射 --shadow-*（值不一一对应，避免视觉漂移，Phase 4 动效收口时统一）；
 ③ MiSans woff2 子集（见上）。
 
-### Phase 1 — 基础组件层（`web/src/components/ui/`）
+### Phase 1 — 基础组件层（`web/src/components/ui/`）✅ 完成（2026-08-30）
 
 - [x] P1：Button · Input · Tag · Badge · Skeleton · Toast · Progress ✅（2026-08-30，
       见下方报告）
 - [x] P2：Select · Modal · Tooltip · SegmentedControl · Tabs · Switch ✅（2026-08-30：
       Modal Esc/遮罩关闭实检通过 · Switch 切换实检通过 · 全令牌驱动，
       与 P1 同批提交）
-- [ ] P3：Textarea · Checkbox · Avatar
+- [x] P3：Textarea · Checkbox · Avatar ✅（2026-08-30：Checkbox 勾选/禁用态实检通过，
+      Avatar 首字回退三尺寸实检通过，与 P2 同批验证）
 - [x] 每个组件内置五态：variant / size / disabled / loading / error（相关态全覆盖）
 - [x] 触摸目标 ≥44×44（md/lg），间距 ≥8px
 - [x] dev-only gallery（`#gallery` + `import.meta.env.DEV` 双重门控）作为活文档

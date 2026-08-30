@@ -2020,3 +2020,52 @@ body {
 .ui-switch input:checked + .ui-switch__track .ui-switch__thumb { transform: translateX(18px); }
 .ui-switch input:focus-visible + .ui-switch__track { outline: 2px solid var(--brand); outline-offset: 2px; }
 .ui-switch__label { font-size: var(--fs-sm); color: var(--text-2); }
+
+/* ---- P3：Textarea / Checkbox / Avatar ---- */
+.ui-textarea {
+  min-height: 88px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  resize: vertical;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.ui-textarea:focus { outline: none; border-color: var(--brand); }
+.ui-textarea:disabled { background: var(--surface-2); cursor: not-allowed; }
+.ui-field--error .ui-textarea { border-color: var(--err); }
+
+.ui-checkbox { display: inline-flex; align-items: center; gap: var(--sp-2); cursor: pointer; }
+.ui-checkbox--disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-checkbox input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ui-checkbox__box {
+  width: 20px; height: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-inv);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.ui-checkbox__mark { width: 12px; height: 10px; opacity: 0; transition: opacity var(--dur-fast) var(--ease); }
+.ui-checkbox input:checked + .ui-checkbox__box { background: var(--brand); border-color: var(--brand); }
+.ui-checkbox input:checked + .ui-checkbox__box .ui-checkbox__mark { opacity: 1; }
+.ui-checkbox input:focus-visible + .ui-checkbox__box { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ui-checkbox__label { font-size: var(--fs-sm); color: var(--text-2); }
+
+.ui-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-weight: var(--fw-sb);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.ui-avatar--sm { width: 24px; height: 24px; font-size: var(--fs-xs); }
+.ui-avatar--md { width: 32px; height: 32px; font-size: var(--fs-sm); }
+.ui-avatar--lg { width: 48px; height: 48px; font-size: var(--fs-lg); }
