@@ -184,4 +184,9 @@ def _format_mastery(row, *, conn=None) -> dict:
     }
     if conn is not None:
         result["effective_now"] = get_effective_now(conn, d["concept_id"])
+        if not result["title"]:  # detail 路径未 join concepts，此处补齐
+            row = conn.execute(
+                "SELECT title FROM concepts WHERE id=?", (d["concept_id"],)
+            ).fetchone()
+            result["title"] = row["title"] if row else None
     return result

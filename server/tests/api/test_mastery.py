@@ -189,6 +189,42 @@ def test_review_stats_empty(client: TestClient) -> None:
     assert stats["current_streak"] == 0
 
 
+def test_mastery_detail_includes_title(client: TestClient) -> None:
+    """回归保护：detail 路径的 mastery 行来自 concept_mastery（无 title 列）。
+
+    未补齐时 title 恒为 None —— 前端拿到「无标题的掌握度条目」。
+    本用例锁死 GET/PATCH 路径都会回带概念标题。
+    """
+    cid = _create_concept(client, "TitleProbe")
+    r = client.get(f"/api/v1/mastery/{cid}")
+    assert r.status_code == 200
+    assert r.json()["mastery"]["title"] == "TitleProbe"
+
+
+def test_mastery_event_and_answer_include_title(client: TestClient) -> None:
+    """同一缺陷在另外两条路径上同样存在，一并锁死。"""
+    cid = _create_concept(client, "TitleProbe2")
+
+    r = client.post("/api/v1/events", json={
+        "concept_id": cid, "event_type": "explain"})
+    assert r.status_code == 201
+    assert r.json()["mastery"]["title"] == "TitleProbe2"
+
+    r = client.post(f"/api/v1/review/{cid}/answer", json={"quality": 4})
+    assert r.status_code == 200
+    assert r.json()["mastery"]["title"] == "TitleProbe2"
+
+
+def test_mastery_detail_has_effective_now(client: TestClient) -> None:
+    """detail 路径同时需带衰减后掌握度（P8-003B）。"""
+    cid = _create_concept(client, "DecayProbe")
+    client.post("/api/v1/events", json={
+        "concept_id": cid, "event_type": "answer_correct"})
+    m = client.get(f"/api/v1/mastery/{cid}").json()["mastery"]
+    assert "effective_now" in m
+    assert 0.0 <= m["effective_now"] <= 1.0
+
+
 def test_review_priority_wrong_boost(client: TestClient) -> None:
     """错答概念应排在正答概念前面。"""
     c1 = _create_concept(client, "PriorityA")
