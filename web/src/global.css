@@ -2244,3 +2244,53 @@ body {
 @container (max-width: 560px) {
   .topbar__sync { display: none; }
 }
+
+/* ---- Phase 3 ② 复习专注卡：键盘驱动（ui-preview 复习专注）---- */
+.review-kbd-hint { margin: 0 0 8px; font-size: var(--fs-xs); color: var(--text-3); }
+.review-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px;
+  margin-right: 6px;
+  border: 1px solid var(--border-strong); border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  font-size: var(--fs-xs); color: var(--text-2);
+  font-family: var(--mono);
+}
+.review-session {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 96px 24px 96px;   /* 上下留白 96（编辑器同款呼吸） */
+  width: 100%;
+}
+
+/* ---- Phase 3 ③ 图谱：触摸目标 + a11y（graph-view.html，改动最小）---- */
+.graph-toolbar button,
+.graph-toolbar select {
+  min-height: 44px;
+}
+.graph-toolbar input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--brand);
+}
+
+/* ---- Phase 3 ④ Tutor 右栏抽屉 ---- */
+.tutor-drawer-overlay {
+  position: fixed; inset: 0;
+  background: color-mix(in srgb, var(--text) 30%, transparent);
+  z-index: var(--z-overlay);
+  display: flex; justify-content: flex-end;
+}
+.tutor-drawer {
+  width: min(560px, 100%);
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-4);
+  overflow-y: auto;
+  animation: drawer-in var(--dur) var(--ease);
+}
+@keyframes drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}

@@ -12,9 +12,10 @@
  *
  * 不修改后端、不新增 API、不引入新依赖。
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiGet, apiPost } from "../lib/api";
+import { useUi } from "../stores/ui";
 import type {
   AnswerResponse,
   ReviewItem,
@@ -45,6 +46,7 @@ function masteryColor(before: number, after: number): string {
 }
 
 export function ReviewSessionView() {
+  const submitAnswerRef = useRef<((q: number) => void) | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [queue, setQueue] = useState<ReviewItem[]>([]);
   const [index, setIndex] = useState(0);
@@ -58,8 +60,23 @@ export function ReviewSessionView() {
     () => (index < queue.length ? queue[index] : null),
     [queue, index],
   );
+  const setActiveView = useUi((s) => s.setActiveView);
 
   const remaining = queue.length - index;
+
+  // 键盘驱动（Phase 3 ②·spec：1–3 打分 / Space 翻面 / Esc 退出）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setActiveView("notes"); return; }
+      if (phase === "ready" || phase === "answering") {
+        if (e.key === "1") void submitAnswerRef.current?.(1);
+        if (e.key === "2") void submitAnswerRef.current?.(3);
+        if (e.key === "3") void submitAnswerRef.current?.(5);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, setActiveView]);
 
   const startSession = useCallback(async () => {
     setPhase("loading");
@@ -101,6 +118,7 @@ export function ReviewSessionView() {
       setPhase("ready");
     }
   }, [current]);
+  submitAnswerRef.current = (q: number) => void submitAnswer(q);
 
   const goNext = useCallback(() => {
     if (index + 1 >= queue.length) {
@@ -234,12 +252,14 @@ export function ReviewSessionView() {
           {/* 评分按钮 */}
           {phase === "ready" && (
             <div className="review-actions-main">
-              {QUALITY_OPTIONS.map((opt) => (
+              <p className="review-kbd-hint">按 1 / 2 / 3 评分 · Esc 退出</p>
+              {QUALITY_OPTIONS.map((opt, i) => (
                 <button
                   key={opt.quality}
                   className="review-quality-btn"
                   onClick={() => submitAnswer(opt.quality)}
                 >
+                  <kbd className="review-kbd">{i + 1}</kbd>
                   <span className="review-quality-icon">{opt.icon}</span>
                   <span className="review-quality-label">{opt.label}</span>
                   <span className="review-quality-desc">{opt.desc}</span>

@@ -499,9 +499,9 @@ Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1
 | 顺序 | 视图 | 说明 |
 |---|---|---|
 | 1 | NoteEditor | 三栏重构；搜索/雷达移出工具栏；行宽 680；保存态下沉元信息行 |
-| 2 | Review | 专注卡 + 键盘驱动（1–4 打分 / Space 翻面 / Esc 退出） |
-| 3 | Graph | 改动最小——令牌替换 + 触摸目标放大 + a11y（规范见 `ui/graph-view.html`） |
-| 4 | Tutor | 改为右栏抽屉；流式输出配 Skeleton + 停止按钮 |
+| 2 | Review | ✅ 专注卡居中（640/留白96）+ 键盘 1/2/3 评分（键位角标）· Esc 退出（2026-08-30 实检） |
+| 3 | Graph | ✅ 令牌已在 Phase 0 归一（裸值仅剩 var fallback）；工具栏触摸目标 ≥44px + checkbox accent（2026-08-30） |
+| 4 | Tutor | ✅ 右栏抽屉（560px + 遮罩 + 返回笔记，实检通过）；~~流式 Skeleton/停止按钮~~ **待 Phase 4**——当前 TutorPanel 为非流式 POST /chat，需先接 B2 SSE 流式才有「停止」语义 |
 | 5 | 星系 | 地球移植自 `home-hero.html`；双形态（全屏轮换 / 右栏单颗） |
 
 ### Phase 4 — 动效基元 + a11y + 性能收口

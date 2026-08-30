@@ -16,6 +16,27 @@ import KnowledgePlanet from "./components/universe/prototype/KnowledgePlanet";
 function ActiveView() {
   const activeView = useUi((s) => s.activeView);
   const activeNoteId = useUi((s) => s.activeNoteId);
+  const setActiveView = useUi((s) => s.setActiveView);
+
+  // Tutor = 右栏抽屉（Phase 3 ④）：遮罩点击返回笔记
+  if (activeView === "tutor") {
+    return (
+      <>
+        <div className="workspace">
+          <NoteEditorView />
+          <ContextRail activeNoteId={activeNoteId} />
+        </div>
+        <div
+          className="tutor-drawer-overlay"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveView("notes"); }}
+        >
+          <aside className="tutor-drawer" role="dialog" aria-label="AI Tutor">
+            <TutorPanel />
+          </aside>
+        </div>
+      </>
+    );
+  }
 
   if (activeView === "notes") {
     // Phase 2 笔记工作区：列表+编辑器（NoteEditor 内聚）+ 右栏上下文 320
@@ -34,8 +55,6 @@ function ActiveView() {
       return <KnowledgeUniverse />;
     case "mindmap":
       return <MindMapCanvas />;
-    case "tutor":
-      return <TutorPanel />;
     case "review":
       return <ReviewSessionView />;
   }
