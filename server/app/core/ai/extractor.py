@@ -30,6 +30,23 @@ logger = logging.getLogger(__name__)
 
 EXTRACTOR_TIMEOUT = 30  # 秒
 
+# B5：从单篇文本/笔记抽取概念（返回 concept_suggestions 结构，复用 _sanitize/_apply）
+CONCEPT_EXTRACT_PROMPT = """You extract key concepts from the text below.
+
+Output ONLY valid JSON with:
+{{
+  "concept_suggestions": [
+    {{"title": "concept name", "summary": "one-line description", "connects": []}}
+  ]
+}}
+
+Rules:
+- Only extract explicit, important concepts; do not invent.
+- If nothing to extract, return {{"concept_suggestions": []}}.
+
+Text:
+{text}"""
+
 EXTRACTOR_PROMPT = """You are a learning assistant extractor. Analyze the conversation and extract structured data.
 
 Output ONLY valid JSON with this exact structure:
@@ -152,6 +169,44 @@ def new_extractor_provider(config: LLMConfig) -> LLMProvider:
     """从 LLMConfig 创建 extractor 专用 provider（当前直接复用 create_provider）。"""
     from .config import create_provider
     return create_provider(config)
+
+
+def extract_note_concepts(conn, *, provider: LLMProvider, text: str,
+                          note_id: int | None = None) -> list[dict]:
+    """B5：从一段文本（如笔记正文）抽取概念 → 以 ai_suggested/unconfirmed 落地。
+
+    复用 B3 extractor 的 sanitize/apply 路径（同一结构化输出 → 同一落库逻辑）。
+    返回新创建的概念桩：[{title, summary, note_id}]。失败返回 []（不阻断）。
+    """
+    prompt_text = CONCEPT_EXTRACT_PROMPT.format(text=(text or "")[:4000])
+    tutor_prompt = {
+        "system": "You extract concepts as structured JSON.",
+        "messages": [{"role": "user", "content": prompt_text}],
+        "metadata": {"context_version": "1", "mode": "extractor", "truncated": False},
+    }
+    try:
+        response = provider.complete(tutor_prompt)
+        txt = response.strip()
+        if txt.startswith("```"):
+            lines = txt.split("\n")
+            txt = "\n".join(lines[1:-1]) if len(lines) > 2 else txt
+        data = json.loads(txt)
+        if not isinstance(data, dict):
+            return []
+        result = _sanitize_extractor_output({
+            "memories": [], "learning_events": [],
+            "concept_suggestions": data.get("concept_suggestions", []),
+        })
+        _apply_concept_suggestions(conn, result["concept_suggestions"])
+        return [
+            {"title": s["title"], "summary": s.get("summary", ""), "note_id": note_id}
+            for s in result["concept_suggestions"]
+        ]
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+        return []
+    except Exception:  # noqa: BLE001 — 静默跳过，不阻断（带日志）
+        logger.debug("note concept extraction failed", exc_info=True)
+        return []
 
 
 def _apply_memories(conn, memories: list[dict], concepts_json: str) -> int:

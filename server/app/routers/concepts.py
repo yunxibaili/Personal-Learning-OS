@@ -18,6 +18,8 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from ..core.ai.config import load_llm_config
+from ..core.ai.extractor import extract_note_concepts, new_extractor_provider
 from ..core.knowledge import cascade_drop_entity
 from ..core.concepts import (
     VALID_ORIGINS,
@@ -204,6 +206,25 @@ def patch_concept_api(concept_id: int, body: ConceptPatch) -> dict:
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
+
+
+class ConceptExtractBody(BaseModel):
+    text: str = Field(..., min_length=1)
+    note_id: int | None = None
+
+
+@router.post("/extract")
+def extract_concepts(body: ConceptExtractBody) -> dict:
+    """B5：从文本抽取概念 → 以 ai_suggested/unconfirmed 建议落库。"""
+    conn = connect()
+    try:
+        provider = new_extractor_provider(load_llm_config(conn))
+        suggestions = extract_note_concepts(
+            conn, provider=provider, text=body.text, note_id=body.note_id)
+        conn.commit()
+    finally:
+        conn.close()
+    return {"suggestions": suggestions}
 
 
 @router.delete("/{concept_id}")
