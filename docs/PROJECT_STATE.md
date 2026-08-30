@@ -156,10 +156,10 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 |---|---|
 | 服务框架 | Python 3.12 + FastAPI 0.115 + uvicorn，仅绑 `127.0.0.1`（`$env:PORT` 可覆盖） |
 | 数据库 | SQLite（标准库 `sqlite3` 直写 SQL）+ FTS5；**无 ORM**（`AGENTS.md` §2.2 永久禁止） |
-| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 64 端点；错误统一 `{error:{code,message}}` |
-| 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层 |
+| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；**20 APIRouter / 88 端点**（2026-08-30 实测自 OpenAPI schema）；错误统一 `{error:{code,message}}`；**参数校验亦映射 400 `invalid_body`**（非 FastAPI 默认 422，`main.py` 全局处理器） |
+| 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层；core 层零 fastapi 依赖（守护测试锁定） |
 | 图查询 | 递归 CTE（`local_graph`），不引图数据库 |
-| 代码规模 | `server/app` Python ≈ 6,119 行 |
+| 代码规模 | `server/app` Python ≈ 9,722 行（2026-08-30 实测） |
 
 ### 2.4 AI
 
@@ -212,7 +212,7 @@ cobe 0.6.5（WebGL 地球）· TipTap 3.30 · KaTeX 0.16
 标准库 `sqlite3` 直写 SQL（无 ORM）· 递归 CTE · Pydantic ·
 `atomic_write_file`（write → fsync → rename）
 
-**Database**：SQLite 3 + FTS5（默认 unicode61 分词）· migration runner（001~007）·
+**Database**：SQLite 3 + FTS5（默认 unicode61 分词，中文检索走 B9 bigram 回退）· migration runner（001~008）·
 无 ORM / 图数据库 / 向量数据库
 
 **AI**：`LLMProvider` Protocol + `MockProvider`（唯一实现）· 手写 `build_prompt()` ·
@@ -394,12 +394,12 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §7 API Overview
 
-统一前缀 `/api/v1`，**18 APIRouter / 64 端点**。
+统一前缀 `/api/v1`，**20 APIRouter / 88 端点**（2026-08-30 实测）。
 
 | 类别 | 前缀 | 端点 |
 |---|---|---|
 | Notes | `/api/v1/notes` | `GET /notes` · `POST /notes`@201 · `POST /notes/batch`（B15）· `POST /notes/import`（B19）· `GET /notes/{id}` · `PATCH /notes/{id}` · `DELETE /notes/{id}` · `GET /notes/{id}/link-suggestions`（B4） |
-| Concepts | `/api/v1/concepts` | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts`@201 · `POST /concepts/extract`（B5）· `PATCH /concepts/{id}`（**无 DELETE**，ADR-023） |
+| Concepts | `/api/v1/concepts` | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts`@201 · `POST /concepts/extract`（B5）· `PATCH /concepts/{id}` · `DELETE /concepts/{id}`（B7.2 **软删**：仅 ai_suggested/unconfirmed 桩 → status=ignored，已确认概念须走 archived，不物理删除） |
 | Links | `/api/v1/notes` | `GET /notes/{id}/backlinks` |
 | Graph | `/api/v1/graph` | `GET /graph`（root_type / root_id / depth 1~3，递归 CTE，只读） |
 | Universe | `/api/v1/universe` | `GET /universe` |
@@ -410,12 +410,13 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 | Memory | `/api/v1/memories` | `GET /memories` · `GET /memories/maintenance`（Agent）· `GET/PATCH/DELETE /memories/{id}` |
 | Study | `/api/v1/study` | `GET/POST /study/sessions` · `GET /study/sessions/{id}` · `GET /study/sessions/{id}/queue` · `POST /study/sessions/{id}/finish` · `DELETE /study/sessions/{id}`（B14） |
 | Tutor | `/api/v1/tutor` | `GET /tutor/context/{concept_id}` · `POST /tutor/context`（显式笔记引用）· `POST /tutor/test`（Smoke） |
-| Sync | `/api/v1/sync` | `GET /sync/status` · `POST /sync/resolve` · `GET /sync/files/{path}` · `POST /sync/receive`（强制经 SyncApply） |
+| Sync | `/api/v1/sync` | `GET /sync/status` · `POST /sync/resolve` · `GET /sync/files/{path}` · `POST /sync/receive`（强制经 SyncApply）· **`GET /sync/manifest`** · **`POST /sync/plan`** · **`GET /sync/discover`** · **`POST /sync/pair`** · **`GET /sync/peers`** · **`DELETE /sync/peers/{id}`**（M7-008） |
 | Search | `/api/v1` | `GET /search`（FTS5） |
 | Suggest | `/api/v1/knowledge` | `GET /knowledge/suggest`（FTS + concept LIKE + 图谱邻居） |
 | Settings | `/api/v1/settings` | `GET /settings` · `PUT /settings`（api_key 脱敏） |
 | Attachments | `/api/v1/attachments` | `POST /attachments` · `GET /attachments/{name}` |
-| Admin | `/api/v1/admin` | `POST /admin/reindex`（`prune` 参数；Sync 接收后自动触发） |
+| Admin | `/api/v1/admin` | `POST /admin/reindex`（`prune`/`changed_paths` 参数；Sync 接收后自动触发） · `POST /admin/watcher/{start,stop}` · `GET /admin/watcher/status`（B16） |
+| Conversations | `/api/v1` | `POST /chat`（SSE 流式，`stream=true`）· `GET/POST /conversations` · `GET /conversations/{id}/messages` · `DELETE /conversations/{id}` |
 
 ---
 
@@ -459,7 +460,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（CRUD + POST /chat） |
 | B8 | 用户记忆（`memories` 接入 tutor_context） | ✅ 已实现（B3 生产者 + 复合排序 + 敏感排除） |
 | B9 | 中文 FTS 分词优化 | ✅ 部分（2026-08-30：CJK bigram 检索回退，不引 jieba；FTS 自身仍 unicode61，ADR-011 边界） |
-| B10 | 本地 LLM（Ollama）实测验证 | 代码路径就绪（`openai_compat` 指 `http://127.0.0.1:11434/v1`），需本机 Ollama 实测 |
+| B10 | 本地 LLM（Ollama）实测验证 | ✅ 已实现（2026-08-30：qwen3-14b 端到端——`/tutor/test` 非流式 · `/chat` SSE 流式 · extractor 提取 memory/概念桩/learning_event → mastery 更新全通。附带修复：openai_compat 剥离思考型模型内联的 `<think>` 推理段（非流式 `_strip_think`；流式按模型名提示 qwen3/r1/think 缓冲，其余模型逐增量透传），`think:false` 实测不被 Ollama /v1 遵守） |
 | B28 | Memories 管理面 API | ✅ 已实现（GET/PATCH/DELETE + `/memories/maintenance`） |
 | — | Memory Agent（智能记忆管理） | ✅ 已实现（2026-08-30：`/memories/maintenance` 按 value=importance×新近度 排序 + 保留建议，只建议不删除） |
 
@@ -477,6 +478,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B18 | M2b 大纲反解析（`*.mindmap.json` → Markdown） | ✅ 已实现（2026-08-30：`get_map_outline`/`build_outline` + `GET /mindmaps/{id}/outline`） |
 | B19 | 外部格式导入（Obsidian / Notion / Markdown 目录） | ✅ 已实现（2026-08-30：`POST /notes/import`，保留相对结构、重复跳过、部分成功不阻断） |
 | B27 | M7-007 vault 冲突副本（`.conflict` 后缀隔离同步白名单） | 已实现 ✅（2026-08-29） |
+| B29 | M7-008 同步 HTTP 层：manifest exchange + pairing | ✅ 已实现（2026-08-30：`GET /sync/manifest` · `POST /sync/plan` · `GET /sync/discover` · `POST /sync/pair` · `GET /sync/peers` · `DELETE /sync/peers/{id}`；`core/sync/pairing.py` Layer 3 永不同步。闭合 Discover→Pair→Manifest→Diff→Transport→Apply→Reindex 全链路） |
 
 ### 9.3 已知技术债（审核已定位，未修）
 
@@ -501,11 +503,11 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 ## §10 Verification & Scale
 
-### 10.1 验证状态（2026-08-28 实测）
+### 10.1 验证状态（2026-08-30 实测）
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **730 passed**（70s） |
+| `pytest -q` | **815 passed**（M7-008 后；基线 730 + 新增 85，约 8.5 min） |
 | `npx vitest run` | **23 passed**（3 files） |
 | `tsc --noEmit` | **PASS** |
 | `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |
@@ -513,18 +515,23 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 > Windows 环境注意：跑 pytest 需绕过 safe-delete 守卫——
 > `cd server && CODEBUDDY_SAFE_DELETE_ENABLED=0 ./.venv/Scripts/python.exe -m pytest -q`
 > 前端构建需绕过 `web/dist` 清空守卫——`npx vite build --outDir dist-verify`
+>
+> ⚠️ 全量 pytest 实测 8.5 分钟（同步与 watcher 用例含真实 I/O 与超时等待），
+> 勿以「跑得久」误判为卡死。
 
-### 10.2 代码规模
+### 10.2 代码规模（2026-08-30 实测）
 
 | 项 | 数值 |
 |---|---|
 | git 追踪文件 | 222 |
 | 提交数 | 107（单分支 main + origin/main） |
-| 后端 Python | ≈ 6,119 行（`server/app`） |
+| 后端 Python | ≈ 9,722 行（`server/app`） |
 | 前端 TS/TSX | ≈ 6,432 行（`web/src` + `shared`） |
-| APIRouter / 端点 | 14 / 47 |
-| Migration | 7 |
+| APIRouter / 端点 | **20 / 88** |
+| Migration | **8** |
 | ADR | 23 |
+
+> 计数以 OpenAPI schema 实测为准，勿沿用旧值（曾长期写 14/47、migration 7）。
 
 ### 10.3 核心闭环完成度
 
@@ -534,10 +541,14 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | **组织** | wikilink → links 表 → 反链 / MindMap 绑定 | ✅ 已通 |
 | **理解** | 概念 → 图谱（Graph/Universe/Planet）可视化 | ✅ 已通 |
 | **复习** | SM-2 队列 → 答题 → mastery 更新 → 衰减 → 重排期 | ✅ 已通 |
-| **同步** | Scan → Diff → Transport → Apply → Workspace → Reindex | ✅ 已通（E2E 双进程字节级一致） |
-| **AI** | Context → Prompt → Provider → Response（流式 SSE，B2-A）→ UI | ⚠️ **半通**——流式链路已接通，但 Provider 仅 Mock（无真实 LLM）、无自动检索 |
+| **同步** | Discover → Pair → Manifest → Diff → Transport → Apply → Workspace → Reindex | ✅ 已通（M7-008 补齐 HTTP 层；E2E 双进程字节级一致） |
+| **AI** | Context → Prompt → Provider → Response（流式 SSE）→ UI | ✅ 已通（B1b 真实凭据冒烟实测通过：DeepSeek 端到端，最小 token，key 用后即删） |
 
-**尚未完成的闭环**：AI 真实闭环（B1–B8，B1a·B3·B7·B8·B2 已就位，剩真实 Provider 凭据冒烟 B1b · B4–B6 自动链路）· 桌面/移动分发闭环（M6/M8）。
+**后端闭环状态（2026-08-30）**：§9 全部条目已闭环（B10 于 2026-08-30 以本机
+Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外。
+
+**仍未闭环（非后端范围）**：桌面/移动分发闭环（M6/M8）· 前端视觉语言打磨
+（P8-FE-001，§0 政策下无限期冻结）。
 
 ---
 

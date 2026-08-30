@@ -78,11 +78,52 @@
   Phase 3.0 serve/receive 端点补齐 + Rule 1 收缰 · Phase 3.1 真实两进程字节级一致 ·
   Phase 3.2 宕机重试恢复 · pytest 390→397）完成报告：见 CURRENT_STATE
 - [x] M7-006.5 Sync Release Audit ✅（AST 边界终审 PASS · Truth Model/Recovery 证据归档 · T-EXPORT 预检）产出 docs/SYNC.md · docs/release/EXPORT_MANIFEST.md · docs/release/RELEASE_AUDIT_M7.md
-- [ ] M7-007 Vault Conflict Preservation（用户登记的待办）：apply.py vault 分支
-  增加 conflict copy · 更新 ADR-020 与 sync-model.md · 补恢复测试——
-  弥合「文档承诺 vault 双份保留 vs Apply 现为 LWW」的缺口（M7-003.5 发现；
-  E2E Case 中 vault 冲突项当前为显式 no-op，见 test_e2e_demo.py）
-- [ ] routers/sync HTTP 层（manifest exchange + pairing，随 Apply 之后的任务建立）
+- [x] **M7-007 Vault Conflict Preservation** ✅（2026-08-29 已实现，
+  2026-08-30 复核确认）：`apply.py`  vault 分支冲突时把本地版写入
+  `path + ".conflict"`（`.conflict` 不在 `vault/**/*.md` 白名单内，天然隔离同步）。
+  此前本行未勾选属文档滞后——代码侧早已闭环。
+- [x] **M7-008 Sync HTTP 层（manifest exchange + pairing）** ✅（2026-08-30）：
+  补齐两台设备在 API 层面协商「谁有什么」的能力，闭合
+  **Discover → Pair → Manifest → Diff → Transport → Apply → Reindex** 全链路。
+  详见下方 M7-008 任务区。
+
+## M7-008 Sync HTTP 层：Manifest Exchange + Pairing（2026-08-30 ✅）
+
+> 缺口来源：core 侧 scan/diff/transport/apply 早已齐备，但 **HTTP 层没有出口**——
+> 两台设备无法在 API 层面完成「谁有什么」的协商，端到端只能靠脚本直调 core。
+> 本任务把同步链路最后一段接线补上，不改任何冻结协议结构。
+
+**Core 层**（新建 `core/sync/pairing.py`）
+- `PeerDevice`（device_id/name/host/port/paired_at）· `add_peer`（幂等，同 id 更新不追加）·
+  `list_peers`（稳定序）· `get_peer` · `remove_peer`
+- 存于 `metadata/paired_devices.json`——**Layer 3 本地缓存，永不同步**
+  （已登记进 `manifest.SYNC_BLACKLIST`，并有测试端到端证明其不会进 manifest）
+- 健壮性：原子写入（tmp → replace）· 损坏文件先备份 `.corrupt-<ts>` 再重建 ·
+  脏条目跳过不拖垮整簿 · `MAX_PEERS=64` 上限
+- fail-closed 校验：device_id 形态 · host（IPv4 或 RFC1123 主机名）· port 1-65535 ·
+  **bool 显式挡掉**；非法入参不落盘
+
+**HTTP 层**（`routers/sync.py` 新增 6 端点）
+- `GET /sync/manifest` — 本地 Layer 1 清单（只读扫描）
+- `POST /sync/plan` — 收对端清单 → 返回 SyncPlan，**纯计算不落盘**
+  （写入仍唯一经 `/sync/receive` + SyncApply，Rule 1 未被绕过）
+- `GET /sync/discover` — UDP 广播发现（默认 1.5s、`max_retries=1`、超时上限 5s，
+  避免一次发现拖住同步链路；网卡不可广播时降级为空列表而非 500）
+- `POST /sync/pair` · `GET /sync/peers` · `DELETE /sync/peers/{id}`
+
+**实测修正（测试先行抓出的真实缺陷）**
+1. host 校验过松：`999.999.999.999` 被主机名正则（标签允许数字）判为合法——
+   配对成功但永远连不上。收紧为「纯数字点分串一律按 IPv4 严检」。
+2. `files=[]` 让 `Manifest.from_dict` 抛 `AttributeError`，逃逸成 **500**；
+   网络边界补 `AttributeError` 捕获 → 统一 400 `bad_manifest`。
+3. 参数校验在本项目被 `main.py` 全局处理器映射为 **400 `invalid_body`**（非 422）。
+
+**验证**：
+- `tests/unit/test_sync_pairing.py`（core 层 **45** 项）
+- `tests/api/test_sync_http.py`（HTTP **30** 项）
+- `tests/integration/sync/test_sync_closed_loop.py`（端到端闭环 **7** 项）
+- `tests/api/test_mastery.py` +3（mastery detail 缺 title 回归）
+- 全量 **pytest 815 passed**（基线 730 → +85），零失败。
 
 ## M7-Preview-001 Local Demo Preparation（进行中）
 
@@ -119,9 +160,9 @@ P8-003B Mastery Decay           ✅ 已完成（Ebbinghaus 时间衰减，2026-0
         ↓
 P8-003D Eventlog Producer      ✅（ADR-020 闭合：update_mastery → JSONL）
         ↓
-P8-003D Tutor Knowledge Base    🔥 下一步（RAG 层：question→concept→notes→context）
+P8-003D Tutor Knowledge Base    ✅（甲路线笔记引用 + 乙路线 auto_notes FTS 检索，见 PROJECT_STATE §9.1）
         ↓
-P8-003E Tutor Review Bridge     🔥（Tutor 读取 mastery + 错答历史）
+P8-003E Tutor Review Bridge     ✅（context 注入 mastery/mistakes/review/memories；chat 回合后 extractor → update_mastery，2026-08-30 验证）
         ↓
 Home / UI Polish
 ```

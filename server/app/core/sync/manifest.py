@@ -28,6 +28,9 @@ SYNC_PATTERNS = [
 SYNC_BLACKLIST = [
     "db",
     "metadata/devices.json",
+    # M7-008：配对登记簿属 Layer 3 本地缓存（「我认识谁」），不属事实源
+    "metadata/paired_devices.json",
+    "metadata/paired_devices.json.tmp",
 ]
 
 

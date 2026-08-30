@@ -4,15 +4,31 @@
 
 > AI 启动时必读第二份。每次 git commit 后同步更新。
 > 上次更新：2026-08-30 · Branch：main ·
-> Clean：**no**——B12/B2-B/B13/B17/B18/B21/B22/B24 后端闭环批已完成并提交，待文档登记头部同步
+> Clean：**no**——M7-008（Sync HTTP 层：manifest exchange + pairing）已完成，待提交与文档计数同步
 
 ---
 
 ## 当前里程碑
 
 M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C ✅ → Smoke ✅ → M4-D ✅ → M4.5 ✅ → M4-E ✅ → M3b-001 ✅ → M3b-002 ✅ → M3b-003 ✅ → M3b-004 ✅ → M2b-001 ✅ → M2b-002 ✅ → M2b-003 ✅ → ADR-020 ✅ → P2 Atomic Write ✅ → M7-001 Sync Engine Core ✅ → M7-001 Stabilization ✅ → M7-Nightly Audit ✅ → M7-001.5 Sync Simulation ✅ → ADR-022 ✅ → M7-002 LAN Discovery ✅ → M7-003 Sync Transport ✅ → M7-004 Sync Apply ✅ → M7-005 Conflict UI ✅ → M7-006 E2E LAN Demo ✅ → P8-001A Concept Foundation ✅ → P8-001B Knowledge Universe V2 ✅ → P8-001C Knowledge Planet ✅ → P8-004 Demo Cleanup ✅ → P8-002 Graph V2 ✅ → P8-003A Review Session MVP ✅ → P8-003C Vault Reindex ✅ → P8-003B Mastery Decay ✅ → P8-003D Eventlog Producer ✅ → **P8-003D-CodeReview P0 修复 ✅** → **B2-A 流式输出（SSE）骨架 ✅** → **后端闭环批 B12/B2-B/B13/B17/B18/B21/B22/B24 ✅**
+→ **M7-008 Sync HTTP 层（manifest exchange + pairing）✅**
 
 ## Last Completed
+
+**M7-008 Sync HTTP 闭环（2026-08-30）**：
+- 缺口：core 侧 scan/diff/transport/apply 齐备，但 HTTP 层无出口，两设备无法在 API 层协商。
+- Core：`core/sync/pairing.py`（PeerDevice + add/list/get/remove，存 `metadata/paired_devices.json`，
+  Layer 3 永不同步，已进 `SYNC_BLACKLIST` 并有测试证明不进 manifest）；原子写入 ·
+  损坏备份 `.corrupt` · 脏条目跳过 · `MAX_PEERS=64` · fail-closed 入参校验。
+- HTTP：`GET /sync/manifest` · `POST /sync/plan`（纯计算不落盘）· `GET /sync/discover` ·
+  `POST /sync/pair` · `GET /sync/peers` · `DELETE /sync/peers/{id}`。
+- 实测修出的真实缺陷：① host 校验放过 `999.999.999.999`（主机名正则允许数字标签）→
+  收紧为纯数字点分串严检 IPv4；② `files=[]` 抛 AttributeError 逃逸成 500 →
+  边界补捕获统一 400；③ 本项目参数校验映射 **400**（非 422）。
+- 端点数 82 → **88**；router 20 · migration 8 · 后端 ≈ 9,722 行。
+- 测试：新增 `tests/unit/test_sync_pairing.py`（45 项）+ `tests/api/test_sync_http.py`（30 项）+
+  `tests/integration/sync/test_sync_closed_loop.py`（端到端闭环 7 项）+
+  mastery detail title 回归 3 项。全量 **pytest 815 passed**（730 → +85），零失败。
 
 **后端闭环批（2026-08-30，均已提交 main）**：
 - B12 错题本 API：`GET /api/v1/mistakes`（resolved/concept_id 过滤+分页）· `GET /mistakes/stats` · `GET/PATCH(mistake resolved)/DELETE /{id}`；`core/mistakes.py`（10 tests）。
@@ -129,6 +145,8 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 | M7-005 | Conflict UI（SyncStatusPanel + /sync/status,/resolve，方案 a） | ✅ |
 | M7-006 | E2E LAN Demo（真实两进程全链路 + Recovery） | ✅ |
 | M7-006.5 | Sync Release Audit（稳定发布基线 PASS） | ✅ |
+| M7-007 | Vault Conflict Preservation（.conflict 副本隔离同步白名单） | ✅ |
+| M7-008 | Sync HTTP 层（manifest exchange + pairing） | ✅ |
 | M7-Preview-001 | Local Demo Preparation（seed_demo.py 已就位，等用户体验） | `[~]` |
 | P8-001A | Concept Foundation（/api/v1/concepts + origin 唯一来源 + ADR-023） | ✅ |
 | P8-001B | Knowledge Universe V2（Planet + force 聚类 + Inspector + drag 持久化） | ✅ |
@@ -202,7 +220,7 @@ M8 Mobile 延后（先 PC 完整化，路线决议见 TASKS §路线决议）。
 ## 测试命令
 
 ```
-pytest -q          → 730 passed
+pytest -q          → 815 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量
