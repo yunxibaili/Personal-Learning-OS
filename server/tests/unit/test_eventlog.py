@@ -181,28 +181,28 @@ def test_update_mastery_eventlog_multiple_events(core_conn, tmp_workspace: Path)
 # ── Integrity: SQLite ↔ eventlog 两端连通（P0-2 回归守护）───────────
 # 背景（TECH_DESIGN_REVIEW §6.7.6 N3）：本套件曾出现"管道测试盲区"——
 # 分别断言两端各有行，却从不断言两端标识符相等；回退 INSERT 中的
-# event_uuid 后测试依然全绿。以下四条断言来自 _verify_p0.py 第 7/8/11/12 项。
+# event_id 后测试依然全绿。以下四条断言来自 _verify_p0.py 第 7/8/11/12 项。
 
-def test_event_uuid_lands_in_both_stores(core_conn, tmp_workspace: Path) -> None:
-    """SQLite.event_uuid 与 eventlog.event_id 必须一一对应（两端连通）。"""
+def test_event_id_lands_in_both_stores(core_conn, tmp_workspace: Path) -> None:
+    """SQLite.event_id 与 eventlog.event_id 必须一一对应（两端连通）。"""
     cid = _create_concept(core_conn, "UuidIntegrity")
 
     update_mastery(conn=core_conn, concept_id=cid,
                    event_type="answer_correct", dimension="knowledge",
                    weight=1.0, source="manual")
 
-    db_uuids = [
-        r["event_uuid"]
+    db_ids = [
+        r["event_id"]
         for r in core_conn.execute(
-            "SELECT event_uuid FROM learning_events WHERE concept_id=?", (cid,)
+            "SELECT event_id FROM learning_events WHERE concept_id=?", (cid,)
         ).fetchall()
     ]
-    assert db_uuids and all(db_uuids), "event_uuid 存在 NULL 行"
+    assert db_ids and all(db_ids), "event_id 存在 NULL 行"
 
     jl_ids = [l["event_id"] for l in _read_eventlog_lines(tmp_workspace)]
     assert jl_ids, "eventlog 未生成"
-    assert sorted(db_uuids) == sorted(jl_ids), (
-        "SQLite 与 eventlog 的标识符不一致——event_uuid 落库链路已断"
+    assert sorted(db_ids) == sorted(jl_ids), (
+        "SQLite 与 eventlog 的标识符不一致——event_id 落库链路已断"
     )
 
 
@@ -248,20 +248,20 @@ def test_eventlog_never_contains_hostname(
         )
 
 
-def test_event_uuid_unique_index_enforced(core_conn) -> None:
-    """idx_events_uuid UNIQUE 索引必须真的生效（重复 uuid 被拒）。"""
+def test_event_id_unique_index_enforced(core_conn) -> None:
+    """idx_events_id UNIQUE 索引必须真的生效（重复 id 被拒）。"""
     cid = _create_concept(core_conn, "UniqueIndexTest")
     update_mastery(conn=core_conn, concept_id=cid,
                    event_type="explain", dimension="knowledge",
                    weight=1.0, source="manual")
     existing = core_conn.execute(
-        "SELECT event_uuid FROM learning_events LIMIT 1"
+        "SELECT event_id FROM learning_events LIMIT 1"
     ).fetchone()[0]
 
     with pytest.raises(sqlite3.IntegrityError):
         core_conn.execute(
             "INSERT INTO learning_events "
-            "(concept_id, event_type, dimension, weight, source, event_uuid) "
+            "(concept_id, event_type, dimension, weight, source, event_id) "
             "VALUES (?, 'explain', 'knowledge', 1.0, 'test', ?)",
             (cid, existing),
         )

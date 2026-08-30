@@ -275,7 +275,7 @@ Concept Binding（引用 concept，不改 mastery/event）· Export/Import（`.m
 **Learning Events**：追加式事件日志 · 事件类型 → 维度增量映射 · `source` 来源追踪 +
 `detail` 扩展列 · 学习时间线展示 · **P8-003D Eventlog Producer**：`update_mastery()` 写 SQLite 后
 追加一行到 `metadata/eventlogs/<yyyy-mm>.jsonl`（`f.write` + `flush` + `os.fsync`）·
- **`event_uuid` 落库**（migration 007 + UNIQUE 索引；历史行保持 NULL，按追加式约束不回填）·
+ **`event_id` 落库**（migration 007 + UNIQUE 索引；术语统一 migration 009；历史行保持 NULL，按追加式约束不回填）·
  **设备身份单一来源**（`core/sync/device.py` 的 `load_or_create_device()`，eventlog 与 M7 共用）
 
 **Weak Area**：`GET /mastery/weak/list`（`get_weak_concepts`，limit 10）· Universe / Graph 视觉标记
@@ -383,7 +383,9 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 | 004_learning | 重建 concept_mastery / learning_events / review_queue（M3） |
 | 005_events_quality | learning_events 增加 `detail` 列 |
 | 006_mindmap | mind_maps / mind_map_nodes / mind_map_edges（ADR-019） |
-| 007_event_uuid | learning_events 增加 `event_uuid` + UNIQUE 索引 |
+| 007_event_uuid | learning_events 增加 `event_id` + UNIQUE 索引 |
+| 008_study_sessions | study_sessions 表（B14） |
+| 009_event_id_rename | `event_uuid` → `event_id` 术语统一 |
 
 **延后建表（禁止提前创建）**：`blocks` · `embeddings`（RAG 立项且概念数 >2000）· `concept_demos`
 
@@ -495,8 +497,8 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 ### 9.4 已闭环的历史缺口（存档，勿重复排查）
 
 - ✅ `eventlogs/*.jsonl` 有生产者（`2c6b8d1`，路线甲）
-- ✅ 三项 P0：设备身份合并 / `event_uuid` 落库 / `notes.py` 连接泄漏（`cc9915d`）
-- ✅ `event_uuid` 回归守护（4 项测试，`8d0de31`；回退实验验证有效）
+- ✅ 三项 P0：设备身份合并 / `event_id` 落库 / `notes.py` 连接泄漏（`cc9915d`）
+- ✅ `event_id` 回归守护（4 项测试，`8d0de31`；回退实验验证有效）
 - ✅ `mistakes` 断链修复（`e3f76ff`，P8-003E）
 
 ---
@@ -586,7 +588,7 @@ Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外
 - `tutor_context.py` — M4-A 已完成，不改逻辑
 - `ai/tutor.py` — M4-B 已完成，只改 `constants.py` 调参
 - `ai/providers/` — M4-C 已完成，新 Provider 走 `providers/` 目录
-- **`learning_events` 历史行的 `event_uuid` 保持 NULL** — 按追加式约束不回填，
+- **`learning_events` 历史行的 `event_id` 保持 NULL** — 按追加式约束不回填，
   **不要"修复"这个 NULL**
 
 ---

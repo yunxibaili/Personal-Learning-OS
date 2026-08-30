@@ -65,13 +65,13 @@ P8-003D Tutor Knowledge Base 完成（甲路线：显式引用 · POST /tutor/co
 
 P8-003D-CodeReview P0 修复完成。
 P0-1：设备身份合并，删除 _get_device_id()，复用 core/sync/device.py 的 load_or_create_device()。
-P0-2：migration 007 补 event_uuid 列 + UNIQUE 索引 + INSERT 写入。
+P0-2：migration 007 补 event_id 列 + UNIQUE 索引 + INSERT 写入（migration 009 统一术语）。
   历史行保持 NULL，不做回填（learning-model.md:219 追加式约束禁止修改已写入的 learning_events 行）。
 P0-3：notes.py 连接泄漏修复（try 块内读取 row，finally 块关闭）。
 pytest 459 · tsc PASS · vite build PASS。
 
 遗留（见 docs/TECH_DESIGN_REVIEW.md §6.7.3）：
-- event_uuid 目前只写不读（同步去重走 jsonl 的 event_id，消费方待 M8）
+- event_id 已同步写入 SQLite 和 JSONL（术语统一 migration 009）
 - load_or_create_device() 无内存缓存，且 devices.json 解析失败时会静默生成新 device_id 并覆盖原文件
 - CURRENT_STATE 原写「UPDATE 回填」与实现不符，已更正
 

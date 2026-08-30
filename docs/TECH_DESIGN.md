@@ -241,9 +241,9 @@ CREATE TABLE learning_events (
     source        TEXT NOT NULL DEFAULT 'manual',
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     detail        TEXT,                     -- migration 005
-    event_uuid    TEXT                      -- migration 007，跨端幂等标识（UUID v4）
+    event_id      TEXT                      -- migration 007+009，跨端幂等标识（UUID v4）
 );
-CREATE UNIQUE INDEX idx_events_uuid ON learning_events(event_uuid);
+CREATE UNIQUE INDEX idx_events_id ON learning_events(event_id);
 
 -- 复习队列：SM-2 调度结果（可由 mastery + SM-2 重建）
 CREATE TABLE review_queue (
@@ -342,7 +342,7 @@ CREATE TABLE mind_map_edges (
 
 **Migration 历史**：001_init → 002_links_unify → 003_concept_status → 004_learning（重建
 concept_mastery / learning_events / review_queue）→ 005_events_quality（`detail` 列）→
-006_mindmap（三表）→ 007_event_uuid（`event_uuid` 列 + UNIQUE 索引）。
+006_mindmap（三表）→ 007_event_uuid（`event_id` 列 + UNIQUE 索引）→ 008_study_sessions → 009_event_id_rename（`event_uuid` → `event_id` 术语统一）。
 
 **新表规矩（自下一个 migration 生效）**：任何 migration 新增表，必须在同一提交中登记
 生产者位置（模块 / 函数 / 调用点）；无生产者的表不得合入。
@@ -470,7 +470,7 @@ quality ≥ 3：interval = prev_interval × ease_factor
 
 - `update_mastery()` 在 `learning_events` INSERT 成功后，追加一行 JSON 到
   `metadata/eventlogs/<yyyy-mm>.jsonl`（`f.write` + `flush` + `os.fsync`）
-- JSONL 字段：`event_id`（= `event_uuid`）· `concept_id` · `event_type` · `dimension` ·
+- JSONL 字段：`event_id` · `concept_id` · `event_type` · `dimension` ·
   `weight` · `source` · `detail` · `device_id` · `created_at`
 - `device_id` 由 `core/sync/device.py` 的 `load_or_create_device()` 提供（纯 UUID4，
   存 `metadata/devices.json`），**eventlog 与 M7 同步共用同一身份**

@@ -100,9 +100,7 @@ Layer 3: Local Cache（永不同步层）
    备份为 `<name>.local.json`（已存在的备份代表更早分叉点，永不覆盖）。
    备份不在同步白名单内（设备本地私有）
 
-术语约定：jsonl 同步契约的去重键统一叫 **`event_id`**；
-`event_uuid` 是 learning-model.md 预留的 DB 列名（尚未建列），
-两者如需统一归未来的 Data Model Terminology Cleanup 任务。
+术语约定：SQLite 列名与 JSONL 字段名统一为 **`event_id`**（migration 009 完成术语归一）。
 
 #### 分文件语义
 

@@ -19,11 +19,11 @@
 ```
 1. ✅ 审核收口四项（SYNC 矛盾统一 · ADR-020 附录化 · 残留清零 · 基线）
 2. ✅ T-EXPORT 导出脚本（B11 完成：GET /api/v1/export · 493 passed）
-3. M7-007 Vault Conflict Preservation ← 下一项（裁决 1/2 已按建议执行：入 §9 位次待最终编号；
-   ADR-020 修订 = 附录形式，见 adr/ADR-020 附录 §2.1.1）
-4. 9.1 AI 闭环（B1-B10）
-5. pairing + manifest（D4：CLI 驱动前置）
-6. event_id/event_uuid 术语统一
+3. ✅ M7-007 Vault Conflict Preservation（代码+文档均已闭环）
+4. ✅ 9.1 AI 闭环（B1-B10 全部 ✅）
+5. ✅ pairing + manifest（M7-008 Sync HTTP 层闭合）
+6. ✅ event_id/event_uuid 术语统一（migration 009 + 代码+文档同步）
+── §9 后端 backlog 已全部清零 ──
 ── 前端解冻后 ──
 /home 聚合端点（D1）· P8-003 Home · FE-001（无限期冻结，需显式宣布）
 ```

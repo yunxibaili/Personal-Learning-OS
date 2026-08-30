@@ -91,7 +91,7 @@ mastery         = 状态缓存
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | INTEGER PK | 本地自增主键 |
-| event_uuid | TEXT UNIQUE | 跨设备幂等标识（UUID v4，ADR-005 同步用） |
+| event_id | TEXT UNIQUE | 跨设备幂等标识（UUID v4，ADR-005 同步用） |
 | concept_id | INTEGER FK | 关联概念 |
 | event_type | TEXT | 事件类型（见下方枚举） |
 | dimension | TEXT | 目标维度（可选，见映射表） |
@@ -127,8 +127,8 @@ mastery         = 状态缓存
 **幂等设计**：
 
 - `id`：本地数据库主键，每设备独立自增
-- `event_uuid`：跨设备全局唯一，同步时用于幂等去重（ADR-005）
-- 设备 A 写入 event_uuid=xxx → 同步到设备 B → 设备 B 用 event_uuid 去重忽略
+- `event_id`：跨设备全局唯一，同步时用于幂等去重（ADR-005）
+- 设备 A 写入 event_id=xxx → 同步到设备 B → 设备 B 用 event_id 去重忽略
 
 ### 3.3 Concept Mastery（concept_mastery 行）
 
@@ -253,7 +253,7 @@ def ensure_concept_learning_state(conn, concept_id: int) -> None:
 | M4 AI Tutor | mastery + events + mistakes | 上下文感知讲解 |
 | M3b Knowledge Universe | mastery.effective | 节点亮度/颜色编码 |
 | M5 Review Loop | review_queue + mastery | 今日复习队列 |
-| M8 Mobile Sync | learning_events（event_uuid） | 事件日志跨端重放 |
+| M8 Mobile Sync | learning_events（event_id） | 事件日志跨端重放 |
 | T-EXPORT | 全部 | 数据导出 |
 
 ## 8. Forbidden Changes
@@ -263,7 +263,7 @@ def ensure_concept_learning_state(conn, concept_id: int) -> None:
 - 不得修改已写入的 learning_events 行（追加式）
 - 不得在 Router 层直接计算 mastery（必须经 Core）
 - 不得在 mastery 计算中直接调用 datetime.now()（必须显式传入 timestamp）
-- 不得删除 event_uuid 字段（多端同步依赖）
+- 不得删除 event_id 字段（多端同步依赖）
 
 ---
 

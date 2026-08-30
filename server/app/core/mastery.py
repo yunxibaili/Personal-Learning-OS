@@ -139,13 +139,13 @@ def update_mastery(
     返回更新后的 mastery 行。
     """
     # 写入事件
-    event_uuid = str(uuid.uuid4())
+    event_id = str(uuid.uuid4())
     now = _now_iso()
 
     conn.execute(
-        "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source, detail, event_uuid) "
+        "INSERT INTO learning_events (concept_id, event_type, dimension, weight, source, detail, event_id) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (concept_id, event_type, dimension, weight, source, detail, event_uuid),
+        (concept_id, event_type, dimension, weight, source, detail, event_id),
     )
 
     # 答错同步落 mistakes（P8-003E Review Bridge：修复建表以来零生产者的断链）
@@ -174,7 +174,7 @@ def update_mastery(
             weight=weight,
             source=source,
             detail=detail,
-            event_id=event_uuid,
+            event_id=event_id,
             device_id=device.device_id,
             created_at=now,
         )
