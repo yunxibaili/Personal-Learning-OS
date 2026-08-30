@@ -156,7 +156,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 |---|---|
 | 服务框架 | Python 3.12 + FastAPI 0.115 + uvicorn，仅绑 `127.0.0.1`（`$env:PORT` 可覆盖） |
 | 数据库 | SQLite（标准库 `sqlite3` 直写 SQL）+ FTS5；**无 ORM**（`AGENTS.md` §2.2 永久禁止） |
-| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 54 端点；错误统一 `{error:{code,message}}` |
+| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；18 APIRouter / 64 端点；错误统一 `{error:{code,message}}` |
 | 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层 |
 | 图查询 | 递归 CTE（`local_graph`），不引图数据库 |
 | 代码规模 | `server/app` Python ≈ 6,119 行 |
@@ -394,19 +394,21 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §7 API Overview
 
-统一前缀 `/api/v1`，**18 APIRouter / 54 端点**。
+统一前缀 `/api/v1`，**18 APIRouter / 64 端点**。
 
 | 类别 | 前缀 | 端点 |
 |---|---|---|
 | Notes | `/api/v1/notes` | `GET /notes` · `POST /notes`@201 · `POST /notes/batch`（B15）· `POST /notes/import`（B19）· `GET /notes/{id}` · `PATCH /notes/{id}` · `DELETE /notes/{id}` · `GET /notes/{id}/link-suggestions`（B4） |
-| Concepts | `/api/v1/concepts` | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts`@201 · `PATCH /concepts/{id}`（**无 DELETE**，ADR-023） |
+| Concepts | `/api/v1/concepts` | `GET /concepts`（domain/origin/status 过滤）· `GET /concepts/domains` · `GET /concepts/{id}`（含 mastery）· `POST /concepts`@201 · `POST /concepts/extract`（B5）· `PATCH /concepts/{id}`（**无 DELETE**，ADR-023） |
 | Links | `/api/v1/notes` | `GET /notes/{id}/backlinks` |
 | Graph | `/api/v1/graph` | `GET /graph`（root_type / root_id / depth 1~3，递归 CTE，只读） |
 | Universe | `/api/v1/universe` | `GET /universe` |
 | Mastery | `/api/v1` | `GET /mastery` · `GET /mastery/{id}` · `POST /events`@201 · `GET /mastery/weak/list` |
 | Review | `/api/v1` | `GET /review/today` · `POST /review/{id}/answer` · `GET /review/history` · `GET /review/stats`（B13） |
 | Mistakes | `/api/v1/mistakes` | `GET /mistakes` · `GET /mistakes/stats` · `GET /mistakes/{id}` · `PATCH /mistakes/{id}`（resolved）· `DELETE /mistakes/{id}`（B12） |
-| MindMap | `/api/v1/mindmaps` | `GET/POST/DELETE /mindmaps` · `/nodes` · `/nodes/{id}/bind` · `/edges` · `/concepts/search` · `/export` · `/import` · `GET /{id}/outline`（B18） |
+| MindMap | `/api/v1/mindmaps` | `GET/POST/DELETE /mindmaps` · `/nodes` · `/nodes/{id}/bind` · `/edges` · `/concepts/search` · `/export` · `/import` · `GET /{id}/outline`（B18）· `POST /suggest`（B6） |
+| Memory | `/api/v1/memories` | `GET /memories` · `GET /memories/maintenance`（Agent）· `GET/PATCH/DELETE /memories/{id}` |
+| Study | `/api/v1/study` | `GET/POST /study/sessions` · `GET /study/sessions/{id}` · `GET /study/sessions/{id}/queue` · `POST /study/sessions/{id}/finish` · `DELETE /study/sessions/{id}`（B14） |
 | Tutor | `/api/v1/tutor` | `GET /tutor/context/{concept_id}` · `POST /tutor/context`（显式笔记引用）· `POST /tutor/test`（Smoke） |
 | Sync | `/api/v1/sync` | `GET /sync/status` · `POST /sync/resolve` · `GET /sync/files/{path}` · `POST /sync/receive`（强制经 SyncApply） |
 | Search | `/api/v1` | `GET /search`（FTS5） |
@@ -448,17 +450,18 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | # | 项 | 现状 |
 |---|---|---|
-| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现 + 自 2026-08-30 加固（重试退避 / `max_tokens` / extractor JSON 模式 / 错误分类，全 mock 测）；B1b 真实凭据冒烟走 `POST /tutor/test`（一次调用，token 极低） |
-| B2 | 流式输出（SSE / StreamingResponse） | ✅ 已实现（2026-08-30：B2-A `stream()` + `/chat` SSE 骨架 + `event:done`；B2-B openai_compat 真实 SSE 解析） |
-| B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（2026-08-29：memories+概念桩，范围收窄 v1；B3 核心闭环） |
-| B4 | 自动链接建议（auto-link） | ✅ 已实现（2026-08-30：`GET /notes/{id}/link-suggestions`，确定性内容重叠，只建议不写库） |
-| B5 | AI 概念提取 | 未实现 |
-| B6 | AI 生成思维导图 | 未实现 |
-| B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（2026-08-29：CRUD + POST /chat 非流式，快照落库） |
-| B8 | 用户记忆（`memories` 接入 tutor_context） | ✅ 已实现（2026-08-29：B3 Extractor 为生产者；B8/B8.1 复合排序 + 敏感排除 + 命中刷新接入 tutor_context，ADR-014 附录 §2.5.1） |
-| B9 | 中文 FTS 分词优化 | unicode61 按字切分，长句检索受限（ADR-011 记录未解决） |
-| B10 | 本地 LLM（Ollama）实测验证 | 路径理论通，未验证 |
-| B28 | Memories 管理面 API（记忆可见 / 可改 / 可删） | ✅ 已实现（2026-08-29：`GET /api/v1/memories` 列表 + 详情 / `PATCH` 改写 / `DELETE` 硬删；B3 自动写入记忆的人工兜底，51 项测试） |
+| B1 | 真实 LLM Provider（OpenAI-compatible HTTP） | ✅ B1a 已实现 + 加固（重试/`max_tokens`/JSON 模式）；B1b 真实凭据冒烟走 `POST /tutor/test`（一次调用，需外部凭据） |
+| B2 | 流式输出（SSE / StreamingResponse） | ✅ 已实现（B2-A `stream()` + `/chat` SSE；B2-B openai_compat 真实 SSE 解析） |
+| B3 | Extractor（回合后二次 LLM 调用提取概念/记忆） | ✅ 已实现（memories+概念桩） |
+| B4 | 自动链接建议（auto-link） | ✅ 已实现（`GET /notes/{id}/link-suggestions`，确定性内容重叠） |
+| B5 | AI 概念提取 | ✅ 已实现（2026-08-30：`POST /concepts/extract`，LLM 抽取→ai_suggested/unconfirmed，mock 测） |
+| B6 | AI 生成思维导图 | ✅ 已实现（2026-08-30：`POST /mindmaps/suggest`，**只建议不自动写库**，ADR-019） |
+| B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（CRUD + POST /chat） |
+| B8 | 用户记忆（`memories` 接入 tutor_context） | ✅ 已实现（B3 生产者 + 复合排序 + 敏感排除） |
+| B9 | 中文 FTS 分词优化 | ✅ 部分（2026-08-30：CJK bigram 检索回退，不引 jieba；FTS 自身仍 unicode61，ADR-011 边界） |
+| B10 | 本地 LLM（Ollama）实测验证 | 代码路径就绪（`openai_compat` 指 `http://127.0.0.1:11434/v1`），需本机 Ollama 实测 |
+| B28 | Memories 管理面 API | ✅ 已实现（GET/PATCH/DELETE + `/memories/maintenance`） |
+| — | Memory Agent（智能记忆管理） | ✅ 已实现（2026-08-30：`/memories/maintenance` 按 value=importance×新近度 排序 + 保留建议，只建议不删除） |
 
 ### 9.2 数据与服务闭环
 
@@ -467,9 +470,9 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B11 | **T-EXPORT 数据全量导出** | ✅ 已实现（GET /api/v1/export，2026-08-29） |
 | B12 | 错题本 API（`mistakes` 已有生产者） | ✅ 已实现（2026-08-30：`GET/PATCH/DELETE /mistakes` + `/mistakes/stats`，含按概念归因） |
 | B13 | Review 历史分析 | ✅ 已实现（2026-08-30：`GET /review/stats` 准确率/当前连对/按概念归因） |
-| B14 | Study Session | 未实现 |
+| B14 | Study Session | ✅ 已实现（2026-08-30：migration 008 + `POST /study/sessions` CRUD + 队列 + finish，不改 mastery/review） |
 | B15 | 批量导入 | ✅ 已实现（2026-08-30：`POST /notes/batch`，逐篇部分成功不阻断） |
-| B16 | Vault 自动监听（文件系统 watcher） | 仅手动 `POST /admin/reindex` |
+| B16 | Vault 自动监听（文件系统 watcher） | ✅ 已实现（2026-08-30：stdlib 轮询 `vault_watcher` + `POST /admin/watcher/{start,stop}` + `GET /admin/watcher/status`） |
 | B17 | 增量 reindex（`changed_paths`） | ✅ 已实现（2026-08-30：`POST /admin/reindex` body `changed_paths` 增量 upsert+删除，含越界守卫） |
 | B18 | M2b 大纲反解析（`*.mindmap.json` → Markdown） | ✅ 已实现（2026-08-30：`get_map_outline`/`build_outline` + `GET /mindmaps/{id}/outline`） |
 | B19 | 外部格式导入（Obsidian / Notion / Markdown 目录） | ✅ 已实现（2026-08-30：`POST /notes/import`，保留相对结构、重复跳过、部分成功不阻断） |
@@ -502,7 +505,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **708 passed**（~65s） |
+| `pytest -q` | **730 passed**（70s） |
 | `npx vitest run` | **23 passed**（3 files） |
 | `tsc --noEmit` | **PASS** |
 | `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |

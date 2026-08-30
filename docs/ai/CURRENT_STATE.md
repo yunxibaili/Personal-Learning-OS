@@ -22,7 +22,8 @@ M5 ✅ → M4-Preflight ✅ → M4-A ✅ → M4-B ✅ → Gate 1 ✅ → M4-C �
 - B18 大纲反解析：`core/mindmap.build_outline`/`get_map_outline` + `GET /mindmaps/{id}/outline`（4 tests）。
 - B21/22/24：`core/timeutil.now_iso` 去重 + 删 review_scheduler 死码；mastery eventlog 失败加日志；`load_or_create_device` 进程内缓存 + 损坏备份 `.corrupt`（3 tests）。
 - B4 自动链接建议：`core/autolink.tokenize/content_overlap/suggest_note_links` + `GET /notes/{id}/link-suggestions`（确定性内容重叠，只建议不写库；11 tests）。
-- 验证：pytest **692 passed** · tsc PASS · vitest 23 · vite build PASS。
+- **§9 后端闭环收口（2026-08-30）**：B5 `/concepts/extract` · B6 `/mindmaps/suggest` · Memory Agent `/memories/maintenance` · B14 migration 008 + `/study/sessions` · B16 `vault_watcher` + `/admin/watcher/*` · B9 CJK bigram 检索回退——全部带守护测试。
+- 验证：pytest **730 passed** · tsc PASS · vitest 23 · vite build PASS。
 
 B8.1 Memory Context Integration 完成（importance × recency 复合排序 + 确定性 tie-breaker + 端到端验证，563→569 passed）。
 
@@ -145,10 +146,9 @@ Cobe WebGL 点阵地球（MiMo 风格）+ 4 条错倾轨道卫星（笔记驱动
 - **B2-A 流式输出（SSE）骨架 + B2-B openai_compat 真 SSE** ✅（2026-08-30）
   - 交付：Provider `stream()` · Mock 确定性分块 · `/chat` SSE `StreamingResponse` ·
     `event:done`/`event:error` · try/finally 落库 · ADR-003 附录 §A · openai_compat SSE 解析
-- **B4 自动链接建议 · B5 AI 概念提取 · B6 AI 生成思维导图** ← 剩余 AI 自动链路
-- **B1b 真实 Provider 凭据冒烟**（需外部凭据，无法本地验证）
-- **B9 中文 FTS 分词（ADR-011 未解决）· B10 本地 LLM（Ollama）实测**（需本地 Ollama）
-- **Memory Agent（智能记忆管理——沿用旧编号 B10 的实质内容，未排期）**
+- **B4 自动链接建议 ✅ · B5 AI 概念提取 ✅ · B6 AI 生成导图 ✅ · Memory Agent ✅**
+- **B14 Study Session ✅ · B16 Vault 自动监听 ✅ · B9 中文检索增强 ✅**
+- **剩余 = 外部依赖项**：B1b 真实凭据冒烟 · B10 Ollama 实测（代码路径已就绪，需环境，不阻塞前端）
 
 **不属于 Next Up**：P8-FE-001 Visual Language Polish 与一切前端任务
 ——`PROJECT_STATE.md §0` 后端优先政策下无限期冻结，解冻需所有者显式宣布。
@@ -202,7 +202,7 @@ M8 Mobile 延后（先 PC 完整化，路线决议见 TASKS §路线决议）。
 ## 测试命令
 
 ```
-pytest -q          → 651 passed
+pytest -q          → 730 passed
 npx vitest run     → 23 passed
 npx vite build     → pass
 .\scripts\test.ps1 → 全量

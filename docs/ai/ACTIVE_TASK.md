@@ -1,24 +1,23 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-30 · 后端闭环批完成（B12/B2-B/B13/B17/B18/B21/B22/B24，pytest 681）
+> 上次更新：2026-08-30 · **§9 后端全部闭环**（pytest 730）
 
 ---
 
 ## Task ID
 
-**后端闭环批**（2026-08-30 · 681 passed）
+**§9 后端闭环完成**（B5/B6/B9/B14/B16/Memory Agent 已收口 · pytest 730）
 
 ## 当前任务
 
-**B14 Study Session**（连续/计时学习会话）
+**外部依赖项收尾**：B1b 真实凭据冒烟 / B10 Ollama 实测（均需环境，代码路径已就绪，不阻塞前端）
 
 ## 近期完成
 
-- **B12 错题本 API** ✅ · **B2-B 真实 SSE** ✅ · **B13 review 历史分析** ✅
-- **B17 增量 reindex** ✅ · **B18 大纲反解析** ✅ · **B21/22/24 技术债** ✅
-- **B4 自动链接建议** ✅ · **B15 批量导入** ✅ · **B20/B23 技术债** ✅
-- **B19 外部导出导入** ✅（Obsidian/Notion 目录 → vault）
+- **B14 Study Session** ✅ · **B16 Vault 自动监听** ✅（stdlib 轮询）
+- **B5 AI 概念提取** ✅ · **B6 AI 导图建议** ✅（均 mock 测，零 token）
+- **Memory Agent** ✅（/memories/maintenance）· **B9 中文检索增强** ✅（bigram 回退）
 
 ### 范围（收窄定案，v1 只做两类产出）
 
