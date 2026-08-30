@@ -22,6 +22,7 @@ from .routers.conversations import router as conversations_router
 from .routers.export import router as export_router
 from .routers.concepts import router as concepts_router
 from .routers.graph import router as graph_router
+from .routers.home import router as home_router
 from .routers.links import router as links_router
 from .routers.mastery import router as mastery_router
 from .routers.notes import router as notes_router
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(suggest_router)
     app.include_router(mastery_router)
     app.include_router(graph_router)
+    app.include_router(home_router)
     app.include_router(tutor_router)
     app.include_router(universe_router)
     app.include_router(mindmap_router)
