@@ -1,198 +1,43 @@
 # Active Task
 
-> AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-31 · **P8-006 Tutor 三入口闭环完成**（tutorSeed/tutorReturnView · 三路径 headless 实测）
+> AI 工作记忆：当前正在做什么。权威源：`docs/PROJECT_STATE.md`（状态唯一来源）· `docs/TASKS.md`（任务与报告）。
+> 上次更新：2026-08-31 · HEAD `b1ce03b`（184 commits）· Gate：pytest **836** · vitest **28** · tsc PASS · build PASS · CI（`.github/workflows/ci.yml`）
 
 ---
 
 ## Task ID
 
-**P8-006 Tutor 三入口闭环 完成**（2026-08-31 · vitest 28 + tsc + build 全绿 · 三路径端到端实测）
+**（空 —— 当前无进行中任务）** 项目处于 P8 收尾阶段（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
+昨夜已闭环 P8-006 / P8-007，并修复 BUG-1～5 + CI/SECURITY；今日完成 B 项「文档状态回填」。
 
-## 当前任务
+## 最近完成（2026-08-31）
 
-**P8 收尾阶段**（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
+- **P8-006 Tutor 三入口闭环** ✅（tutorSeed + tutorReturnView + openTutor/closeTutor；三路径 headless 实测）
+- **P8-007 Tutor SSE 流式** ✅（`apiPostStream` 单状态源 `streamText`；Stop 中止保留；删 placeholders 死代码）
+- **BUG-1（P0 · 数据不锁死）** ✅ 导出新增 `concepts.json` 快照（概念+掌握度+SM-2+复习队列）→ import 暂存 → `reindex` 恢复（stub 升格 / 快照覆盖占位行 / eventlogs 去重回放）；守护测试 2；场景 C 概念/掌握度 1→1
+- **BUG-2** ✅ README 如实标注 Tutor 默认 MockProvider + OpenAI 兼容 / Ollama 配置说明
+- **BUG-3** ✅ 端点数 88→89（`app.openapi()` 实测 ×3 处）；README 进度表对齐现实（M2b/M3.5-B/M4/M5-M7）；基线头部改「以实测为准」
+- **BUG-4** ✅ 浮层视图/TutorPanel/编辑器全家桶按需分包；**主包 982kB→182kB（gzip 59k）**
+- **BUG-5** ✅ 新增 `.github/workflows/ci.yml`（backend pytest / frontend tsc+vitest+build）+ 根级 `SECURITY.md`（摘 AGENTS §19）
+- **验证**：场景 A 11/11 · 场景 B 8/8 · 场景 B+C 15/15（含 BUG-1 守护）· `pytest 836` · `vitest 28` · `tsc` · `build` 全绿
 
-**P8-006 交付**：
-- store：`tutorSeed`（一次性预填包，预填≠自动发送）+ `tutorReturnView` + `openTutor(seed)`
-  统一入口（`openTutorForConcept` 为兼容包装）+ `closeTutor()` 回来源视图
-- 三入口：① 右栏「关联」AI Tutor 带当前笔记+Explain ② Review feedback（quality≤2）
-  「向 Tutor 求提示」→ Hint ③ 掌握度弱项行「问 Tutor」→ Concept
-- App.tsx：tutor 态底层按 tutorReturnView 渲染——从 Review 进 → 关闭真回 Review
-- 完成报告：`TASKS.md`「P8-006」（含三路径实测记录与架构自检）
+## 候选方向（待所有者定序）
 
-**下一步候选**：P8 候选清单剩余项 · M6 Tauri · M9 Visual Engine（TECH_DESIGN §8.2–8.5
-规格已完备未开工）· 挂起区 P8-Mode-001（等所有者发起）。
+| 方向 | 说明 | 前置/风险 |
+|---|---|---|
+| **A. UI 视觉打磨**（FE-001 已解冻，用户反馈「UI 太劣质」） | 空态设计 · MiSans woff2 子集 · 层次/间距/质感 | 无需前置，需确认范围 |
+| **B. 文档状态回填** | ①ACTIVE_TASK/CURRENT_STATE（本文）②README 已对齐 | 已做（本次） |
+| **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
+| **D. M9 Visual Engine / M10** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
+| 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |
 
-## 近期完成
+## 待所有者决策
 
-- **P8 收尾政策入档**（2026-08-31）：解除前后端限制，端到端闭环+契约一致性为最高优先
-  （§0.1 + AGENTS §12）
-- **ADR-022 Appendix A**（2026-08-31）：Mode 载体 Dashboard→TopBar，语义不变；
-  P8-Mode-001 立项挂起
-- **P8-006 Tutor 三入口闭环** ✅（2026-08-31，见上）
+- 首版 git tag：**暂建议 `v0.1.0-rc.1`**，版本号与时机待定。
+- BUG-6（httpx2 迁移）：按定性留依赖审计专项，29 个测试文件、非本轮。
+- BUG-7（React Flow attribution）：@xyflow/react v12 为 **MIT**，「需 Pro 才能隐藏」为过时信息，无合规风险，是否显示属产品选择。
 
-**B10 本地 LLM（Ollama）实测 ✅**（2026-08-30：qwen3-14b 端到端，think 剥离修复见 §9.1）
+## 红线（不变）
 
-## 近期完成
-
-- **P8-006 Tutor 三入口闭环 ✅**（2026-08-31，见 Task ID 区；完成报告见 TASKS.md）
-- **P8 收尾政策 + ADR-022 附录 A**（2026-08-31）
-- **M3.5-B Full Omniscience ✅**（2026-08-31）
-  - memory 三字段接真实数据：mastery=`concept_mastery.effective`、
-    review_due=`review_queue`(pending)、last_mistake=`mistakes.description`
-  - 定位纪律：matches 命中 concept 优先 → 精确标题 → LIKE 唯一；**多候选不猜**返回 null
-  - 前端学习状态区真实渲染 + 雷达查询词升级为笔记标题优先
-  - 测试 `test_suggest_memory.py` 6 项全过；实检：造数据后 API/UI 全链路正确
-  - 已知边界：旧 concept 无学习状态行 → memory 全 null（正确行为，回填属独立任务）
-- **死代码清理 2283 行 + 文档纪律入档**（2026-08-31）
-  - 删 `universe/` `prototype/` `planet/` `lib/universe/`（已被 galaxy/ 取代，零引用）
-  - AGENTS §18 §2.1 入库边界 + §2.2 推送策略（每轮完成必 push）；
-    §7/§19 push 禁令作用域澄清（仅第三方 repo）；SESSION_PROTOCOL 补第 4 步 push
-- **Phase 4 动效 + a11y + 性能 ✅**（2026-08-31）
-  - 动效 6 基元核对：Phase 1 已落地，与 `ui/motion-primitives.html` 一致、CSS 齐备
-  - a11y 对比度：4 视图**全部 0 处不达标**
-    - `--text-3` `#A3A3A3`(2.52:1) → `#737373`(4.74:1)
-    - 新增 `--brand-text #C2410C`(5.18:1)；`--brand` 降级为仅图形/填充
-    - 修正 `UI_DESIGN.md` §2.2 笔误：旧写「3.6:1」，实测 2.84:1
-  - a11y 结构：skip-link + 各视图 `h1` + `header/main/aside` landmark
-  - 性能：**LCP 468ms**、**CLS 0.0003**（修前 0.0454）、离屏暂停生效、
-    dpr=3 屏实测钳到 1.50、reduced-motion 下星系静止
-  - 清理 `#preview`/`#planet` 原型入口与连带 import
-- **Phase 3 ⑤ 星系（多星球系统）✅**（2026-08-31）
-  - 层级来源 = 方案 A：从 wikilink 拓扑推断（项目所有者裁定）
-  - 13 项语义单测全过：覆盖出度阈值/单向不认/排他归属/嵌套收编/16 上限/概念排除等
-  - 双形态：全屏巡览 4s·可暂停·可手动点选 / 右栏单颗静止·dpr=1
-  - 公转 72s/圈、橙色仅 mastery 弧与选中态
-  - 顺带修掉 `GraphNode.refId` 契约违约（6 文件 22 处改 `ref_id`）
-
-### 范围（收窄定案，v1 只做两类产出）
-
-| 产出 | 处置 |
-|---|---|
-| memories | ✅ 做（唯一真零生产者表） |
-| concept_suggestions | ✅ 做（复用 concepts 表：origin=ai_suggested + status=unconfirmed 即待确认队列，不新建表） |
-| learning_events | 经 mastery.update_mastery(source='ai_extractor') 落——绝不裸 INSERT（C2：否则 eventlog 双写缺失→同步后事件消失） |
-| mistakes | ❌ 不做（mastery.py:160 已是唯一生产者） |
-| note_links | ❌ 不做（links.origin 枚举三处不一致，独立 micro-task 先统一） |
-
-### 架构（修正 C1/C5）
-
-1. `core/conversations.py` 新增 `update_message_context(message_id, extractor: dict)`
-   ——extractor 结果写进本轮 assistant 消息 context_json 的 `extractor` 键
-   （重放/重试覆盖同键 = 天然幂等）
-2. **memories 落库是真写路径**（不止快照）：`core/memories.py` 新增
-   `upsert_memory(...)` 应用层校验（表零 CHECK 不动 migration）：
-   kind ∈ {fact, preference, goal, mistake_pattern} · importance/confidence ∈ [0,1]
-   · 去重 = content 归一化前 50 字符相同视为重复，跳过
-3. concept 建议：`ensure_entity_by_title` 后 origin 恒为 ai_suggested、
-   status=unconfirmed（C4：origin='accepted' 非法，已从 spec 与
-   TECH_DESIGN:546 删除）；Accept → 只改 status；Ignore → 删除 unconfirmed 桩
-4. learning_events 全部走 `mastery.update_mastery(source='ai_extractor')`（C2）
-5. 事务边界（裁决 3）：挂载 /chat 内 provider 调用后、落消息前，同请求同事务；
-   超时上限 **30s**（裁决 2），超时静默跳过
-6. **I5 假绿关闭**：FakeExtractorProvider 注入固定合法 JSON，强制覆盖
-   「解析成功 → memories 落库 → 概念桩 → 快照含 extractor 键」全路径
-
-### 裁决记录（5 项，2026-08-29）
-
-1. Ignore = 删除 unconfirmed 桩（不引入 rejected 枚举）；补 VALID_STATUS 常量
-2. extractor 超时 30s
-3. memories.last_used_at：写入时=created_at；B8 接入时命中更新
-4. origin='accepted' 删除 ✅
-5. ADR-014 附录 §2.3.1 追认 ✅（本轮已落盘）
-
-### 依赖前置（本轮已处理）
-
-- fast_model 债清偿：LLMConfig.fast_model + ADR-014 附录 §2.6.1
-- 工作区脏状态修复完成（scrub 剥离重写 + settings/export 共享判定）——524 passed
-- 文档真值修正：PROJECT_STATE B1/B11 行 · TECH_DESIGN §6.1 状态表 · §6.3:546
-
-### 守护测试清单（实现前先写红）
-
-1. FakeExtractorProvider 全路径：memories 行存在 + 非法 kind/importance 拒绝
-   + 前缀去重
-2. concept 桩：ai_suggested/unconfirmed；Accept→active；Ignore→删除
-3. update_mastery 链：eventlog 双写存在
-4. assistant 快照含 extractor 键（重放幂等）
-5. 非法 JSON → 静默跳过，answer 不受影响
-6. api_key 不进 extractor 输出与落库（真实形态 key）
-
-## 近期完成
-
-**9.1/B1a OpenAICompatProvider** ✅（无凭据 · 盲区修复 · B1b 押后）
-
-## 近期完成
-
-**M7-007 Vault Conflict Preservation** ✅（B27 · 方案 a · P0 语义分化修复 · 498→507）
-
-## 上上任务
-
-**T-EXPORT（B11）** ✅ 完成（GET /api/v1/export · 493 passed）
-
-## 上一任务存档
-
-**P8-003E Tutor Review Bridge + Auto Notes**（纯后端）
-
-## 路线调整（D1-D5 已落盘 · 审核收口 2026-08-29 完成 · 两项裁决待确认）
-
-**审核收口（2026-08-29 已执行）**：
-- ✅ SYNC.md 三重矛盾统一（vault：实然 LWW，M7-007 目标态双份；mindmap 行对齐 CONFLICT_BACKUP）
-- ✅ ADR-020 §2.1 MindMap 行回改（追认 M7-004 CONFLICT_BACKUP，带修订标注）
-- ✅ 残留清零：3 处代码注释断链（core/__init__ · db.py · note.ts）+ README/PROJECT_BRIEF/PRODUCT_PRINCIPLES + ADR-017 自引——活文档旧路径 0 处
-- ✅ PROJECT_STATE 基线更新（2852866 / 108 commits）· README 焦点行更新
-
-**待项目所有者确认的两项裁决（建议已给出）**：
-- 裁决 1（M7-007 与 §9 归属）：建议**入 §9 给位次**（保持解冻条件单一来源）。
-  同时接受优先级 pushback：队列调整为 **T-EXPORT（B11，README 背书 + D2 批准 + 体量小）
-  先于 M7-007**；M7-007 的显式优先理由 = 修复 ADR-020 既成事实违反的安全网 +
-  E2E 显式 no-op 缺口，但不再抢占 T-EXPORT。
-- 裁决 2（ADR-020 修订方式）：建议 **ADR-020 内联修订 + 修订标注**（不开 ADR-024）。
-  理由：修订性质为追认既成事实 + 细化 Layer 1 冲突策略，三层真值模型本体不动；
-  先例 ADR-014 附录 §2.8.1；避免同主题双 ADR。MindMap 行已按此形式修订。
-
-**执行队列（更新版）**：
-```
-1. 审核收口四项                    ✅ 2026-08-29
-2. T-EXPORT 导出脚本（B11）        ← 下一项（裁决 2 不阻塞它）
-3. M7-007 Vault Conflict Preservation（等裁决 1/2 确认，含 ADR-020 内联修订）
-4. 9.1 AI 闭环（§9 自标最高优先）
-5. pairing + manifest（D4：CLI 驱动前置）
-6. 术语统一 micro-task
-```
-
-## P8-003E 范围（两项，零前端）
-
-### 1. Review Bridge：错答 → mistakes 断链修复
-- **发现**：全仓零处 `INSERT INTO mistakes`——mistakes 表自 M3 建表无生产者，
-  Tutor context.mistakes 永远为空（第三次"出口无入口"）
-- 修复：`update_mastery()` 在 `event_type == "answer_wrong"` 时同事务插入
-  mistakes 一行（description 含质量信息，append 型，每次答错一条）
-- 效果链：review 答错 → learning_event + mistakes → Tutor context.mistakes
-
-### 2. 乙路线 Auto Notes（ADR-014 附录 §2.8.1.2 已许可，触发条件已满足）
-- `tutor_context.py` 加 `_get_auto_notes(conn, concept_id, exclude_ids, limit)`：
-  以 concept title + aliases 查 notes_fts（复用 search_notes + sanitize_fts_query）
-- POST /tutor/context body 增 `"auto_notes": bool`（**默认 false**——隐私面扩大
-  必须显式开启，前端开关押后）
-- 显式引用优先：auto 只补 `2 - len(explicit)` 个名额，排除已引用 id
-- 反向断言调整：未引用**且未命中**的笔记不得出现
-
-## 测试（守护先行）
-
-- review 答错 → mistakes 行存在 → build_tutor_context().mistakes 非空（三跳连通）
-- answer_wrong 经 POST /events 手动提交同样落 mistakes（入口一致性）
-- auto_notes=true：concept 关联笔记被命中进 context；显式引用占位后 auto 只补缺；
-  无命中 → notes 仅含显式部分
-- auto_notes=false（默认）→ 行为与现状完全一致（回归）
-- 反向：命中集之外的笔记正文不出现
-
-## Forbidden
-
-不动前端（含 TutorPanel）· 不引向量库/jieba · 不改 ADR-011 ·
-不自动启动 M9 · 不动同步链（M7-007 单独任务）
-
-## Acceptance
-
-pytest 476+ 全绿 · build/vitest PASS（前端零改动应保持）· 文档同步
-（tutor-context.md / ADR-014 附录触发记录 / TECH_DESIGN §9 如涉及）· 单 commit
+Markdown Vault = 用户数据唯一事实源 · 四层调用链 · UI 不承担核心业务/图计算/SM-2/同步核心 ·
+无理由不新增依赖/表/Provider · 禁 XP/streak/徽章（ADR-022）· 禁自动发送 Tutor 提问（预填≠自动发送）。
