@@ -44,7 +44,7 @@
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[x]` 完成 | [T-M3](#t-m3-m3-learning-graph-完成2026-08-26) |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[x]` 完成（M3b-001~004） | 见 CURRENT_STATE |
 | M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[x]` 完成 | [T-M3.5A](#t-m35a-m35-a-knowledge-radar-mvp-完成2026-08-26) |
-| M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[ ]` | — |
+| M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[x]` 完成（2026-08-31） | 见下方 M3.5-B 拆解 |
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[x]` 完成（M4-A~E + Gate 1，ADR-014/015/016） | 见 CURRENT_STATE |
 | M5 | 复习闭环（队列/测验/时间线） | `[x]` 完成 | [T-M5](#t-m5-m5-复习闭环完成2026-08-27) |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
@@ -616,24 +616,49 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 - [x] 测试就位：pytest 目录 + 冒烟用例（migration 可跑、/api/v1/settings 读写往返）；vitest 占位
 - [x] 验收自查：对照 TECH_DESIGN §10 M0 标准逐条勾选，回填报告
 
-## M3.5-A 任务拆解（Knowledge Radar MVP）
+## M3.5-A 任务拆解（Knowledge Radar MVP · 2026-08-31 核实回填）
 
-- [ ] ADR-012 落盘（Context-Aware Knowledge Assistance Architecture）
-- [ ] Core: `suggest_for_context()` 函数（FTS匹配 + concept LIKE + graph邻居 + memory占位）
-- [ ] Router: `GET /api/v1/knowledge/suggest` 路由 + 参数校验
-- [ ] Types: `shared/types/suggest.ts` 契约类型
-- [ ] Frontend: `KnowledgeRadar.tsx` 组件（debounce + 三区域渲染 + 点击跳转）
-- [ ] Frontend: NoteEditor 集成（showRadar状态 + Ctrl+Shift+K + 段落提取）
-- [ ] Frontend: CSS 样式
-- [ ] Tests: `test_suggest.py`（空库/匹配/邻居/参数校验）
-- [ ] Docs: TECH_DESIGN §9/§10 + TASKS + CHANGELOG + REGISTRY + data-model INDEX
-- [ ] 验收：pytest全绿 + vitest通过 + build成功
+> 注：里程碑表早已标 `[x]`，但此清单未勾——2026-08-31 逐项核实后回填真实状态。
+
+- [x] ADR-012 落盘（Context-Aware Knowledge Assistance Architecture）
+- [x] Core: `suggest_for_context()` 函数（FTS匹配 + concept LIKE + graph邻居 + memory占位）
+- [x] Router: `GET /api/v1/knowledge/suggest` 路由 + 参数校验
+- [x] Types: `shared/types/suggest.ts` 契约类型
+- [x] Frontend: `KnowledgeRadar.tsx` 组件（debounce + 三区域渲染 + 点击跳转）
+- [ ] Frontend: NoteEditor 集成（~~showRadar状态 + Ctrl+Shift+K + 段落提取~~）
+      **未做**——雷达现挂右栏「雷达」标签，查询词 = 笔记标题（大纲首项兜底）。
+      编辑器内选中触发属增强，转入挂起区（见下）。
+- [x] Frontend: CSS 样式
+- [x] Tests: `test_suggest.py`（空库/匹配/邻居/参数校验，7 项）
+- [x] Docs: TECH_DESIGN §9/§10 + TASKS + CHANGELOG + REGISTRY + data-model INDEX
+- [x] 验收：pytest全绿 + vitest通过 + build成功
+
+## M3.5-B 任务拆解（Full Omniscience · ✅ 2026-08-31 完成）
+
+- [x] Core: `_resolve_concept_for_memory()`——查询词定位唯一 concept
+      （matches 命中 concept 优先 → 精确标题 → LIKE 唯一命中；多候选不猜，返回 None）
+- [x] Core: `_memory_for_concept()`——mastery(`concept_mastery.effective`) +
+      review_due(`review_queue` status=pending) + last_mistake(`mistakes.description` 最近一条)
+- [x] Core: `suggest_for_context()` memory 三字段接真实数据（原占位全 null）
+- [x] Tests: `test_suggest_memory.py` 6 项（真实数据/事件反映/到期/无concept全null/错题/latest-wins）
+- [x] Frontend: `KnowledgeRadar` 学习状态区真实渲染
+      （掌握度=橙条+百分比 · 复习=到期日/「今日到期」强调 · 错题=单行省略+title 悬浮；
+      全 null 时整区不渲染，不占版面）
+- [x] Frontend: 雷达查询词升级 = 笔记标题优先（原大纲首项在无标题笔记下恒为空）
+- [x] 验收：pytest 13（7+6）+ vitest 22 + build 全绿；
+      实检：真实库造数据后 API 返回 `{mastery:0.04, review_due:pending, last_mistake}`，
+      无头浏览器截图确认三行渲染正确、「今日到期」橙色强调生效
+
+> **已知边界**：M3 之前建库的旧 concept 无学习状态行（惰性初始化只在新 concept
+> 触达时发生），这些 concept 的 memory 返回全 null——**是正确行为**，不是 bug。
+> 旧数据回填如需要属独立小任务（遍历 concepts 调 `ensure_concept_learning_state`）。
 
 ## 挂起区（有明确触发条件，未排期）
 
 | 计划 | 触发条件 | 文档 |
 |---|---|---|
 | UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/adr/integration-upmark.md |
+| Radar 编辑器内触发（选中正文 → Ctrl+Shift+K → 段落提取为查询词） | 用户显式要求；M3.5-A 原计划的增强项，雷达现已挂右栏可用 | ADR-012 §5 Phase A |
 
 ## 完成报告
 

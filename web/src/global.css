@@ -526,6 +526,48 @@ body {
   font-style: italic;
 }
 
+/* M3.5-B 学习状态区（Knowledge Radar） */
+.radar-memory-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  min-height: 22px;
+}
+.radar-memory-k {
+  flex: 0 0 42px;
+  color: var(--text-3);
+}
+.radar-memory-v {
+  color: var(--text-2);
+  min-width: 0;
+  /* 错题摘要可能很长：单行省略，完整内容走 title 悬浮 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.radar-memory-due {
+  color: var(--brand-text); /* 到期 = 需要行动，用品牌文字色（5.18:1） */
+  font-weight: 500;
+}
+.radar-memory-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.radar-memory-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--brand); /* 图形填充，--brand 合法（非文本） */
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.radar-memory-mistake {
+  flex: 1;
+}
+
 /* ---- M3 Dashboard ---- */
 .dashboard-view {
   padding: 0 16px;

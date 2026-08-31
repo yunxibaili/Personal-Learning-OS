@@ -41,6 +41,7 @@ function parseOutline(md: string): Heading[] {
 export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
   const [tab, setTab] = useState<RailTab>("outline");
   const [outline, setOutline] = useState<Heading[]>([]);
+  const [noteTitle, setNoteTitle] = useState<string>("");
   const [backlinks, setBacklinks] = useState<BacklinkItem[]>([]);
   const [home, setHome] = useState<HomeResponse | null>(null);
   const openNote = useUi((s) => s.openNote);
@@ -49,13 +50,18 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
   useEffect(() => {
     if (activeNoteId == null) {
       setOutline([]);
+      setNoteTitle("");
       setBacklinks([]);
       return;
     }
     let alive = true;
     apiGet<NoteDetailResponse>(`/notes/${activeNoteId}`)
-      .then((d) => { if (alive) setOutline(parseOutline(d.note.content_md)); })
-      .catch(() => { if (alive) setOutline([]); });
+      .then((d) => {
+        if (!alive) return;
+        setOutline(parseOutline(d.note.content_md));
+        setNoteTitle(d.note.title);
+      })
+      .catch(() => { if (alive) { setOutline([]); setNoteTitle(""); } });
     apiGet<{ backlinks: BacklinkItem[] }>(`/notes/${activeNoteId}/backlinks`)
       .then((d) => { if (alive) setBacklinks(d.backlinks); })
       .catch(() => { if (alive) setBacklinks([]); });
@@ -122,7 +128,9 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
             <p className="ctx-rail__muted">打开一篇笔记后显示雷达推荐</p>
           ) : (
             <KnowledgeRadar
-              query={outline[0]?.text ?? ""}  /* 上下文匹配词 = 笔记首标题，确定性可复算 */
+              /* 查询词 = 笔记标题（确定性可复算；标题即笔记主题），
+                 大纲首项兜底（正文无标题层级时仍可用首节名） */
+              query={noteTitle || outline[0]?.text || ""}
               noteId={activeNoteId}
               onOpenNote={(id) => openNote(id)}
             />

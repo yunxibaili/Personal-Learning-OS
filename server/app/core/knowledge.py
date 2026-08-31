@@ -448,15 +448,82 @@ def backlinks_of_note(conn, note_id: int) -> list[dict]:
 
 # ---------- Knowledge Radar / Omniscience Mode（M3.5-A，ADR-012）----------
 
+def _resolve_concept_for_memory(conn, q: str, matches: list[dict]) -> int | None:
+    """为 memory 定位唯一 concept_id；无法确定则返回 None。
+
+    定位顺序（从强到弱，命中即止）：
+      1. matches 中 type=concept 的第一条——它已由 LIKE 匹配确认相关
+      2. 精确标题匹配（concepts.title = q）
+      3. LIKE 唯一命中——**多个候选中选不定就放弃**
+         （宁可返回 null，也不能把 A 的掌握度当成 B 的；这是学习数据的语义错误）
+    """
+    for m in matches:
+        if m.get("type") == "concept":
+            return int(m["id"])
+
+    row = conn.execute(
+        "SELECT id FROM concepts WHERE title = ?", (q,)
+    ).fetchone()
+    if row:
+        return int(row["id"])
+
+    rows = conn.execute(
+        "SELECT id FROM concepts WHERE LOWER(title) LIKE LOWER(?) LIMIT 2",
+        (f"%{q}%",),
+    ).fetchall()
+    if len(rows) == 1:
+        return int(rows[0]["id"])
+    return None
+
+
+def _memory_for_concept(conn, concept_id: int | None) -> dict:
+    """M3.5-B：从 mastery / review_queue / mistakes 取真实学习状态。
+
+    三字段独立取值，任一缺失即 None——不抛异常（suggest 是辅助能力，
+    查不到学习状态不该让整个雷达失败）。
+    """
+    empty = {"mastery": None, "review_due": None, "last_mistake": None}
+    if concept_id is None:
+        return empty
+
+    # 1. 掌握度：concept_mastery.effective（0~1）
+    mrow = conn.execute(
+        "SELECT effective FROM concept_mastery WHERE concept_id=?", (concept_id,)
+    ).fetchone()
+    mastery = float(mrow["effective"]) if mrow else None
+
+    # 2. 复习到期：仅取待办项（status='pending'）；已完成的没有"到期"语义
+    rrow = conn.execute(
+        "SELECT due_at FROM review_queue WHERE concept_id=? AND status='pending'",
+        (concept_id,),
+    ).fetchone()
+    review_due = rrow["due_at"] if rrow else None
+
+    # 3. 最近一次错题：mistakes.description（DDL 见 migrations/001_init.sql §68）
+    srow = conn.execute(
+        "SELECT description, occurred_at FROM mistakes "
+        "WHERE concept_id=? ORDER BY occurred_at DESC, id DESC LIMIT 1",
+        (concept_id,),
+    ).fetchone()
+    last_mistake = None
+    if srow:
+        last_mistake = (srow["description"] or "").strip() or None
+
+    return {"mastery": mastery, "review_due": review_due, "last_mistake": last_mistake}
+
+
 def suggest_for_context(
     conn, query: str, note_id: int | None = None, limit: int = 5
 ) -> dict:
-    """上下文感知知识建议：FTS匹配 + concept LIKE + 图谱邻居 + memory占位。
+    """上下文感知知识建议：FTS匹配 + concept LIKE + 图谱邻居 + 学习状态。
 
-    M3.5-A 阶段 memory 全部返回 null（等 M3 concept_mastery 表就绪后接入）。
+    M3.5-A：matches / related。
+    M3.5-B（本次）：memory 三字段接真实数据——掌握度 / 复习到期 / 最近错题。
+    定位不到唯一 concept 时 memory 全为 None（见 _resolve_concept_for_memory）。
     """
     if not query or not query.strip():
-        return {"matches": [], "related": [], "memory": {"mastery": None, "review_due": None, "last_mistake": None}}
+        return {"matches": [], "related": [],
+                "memory": {"mastery": None, "review_due": None, "last_mistake": None}}
 
     q = query.strip()
 
@@ -506,8 +573,9 @@ def suggest_for_context(
             if ql in t or t in ql:
                 related.append({"title": node["title"], "relation": "neighbor"})
 
-    # 4. Memory 占位（M3.5-B 接入真实数据）
-    memory = {"mastery": None, "review_due": None, "last_mistake": None}
+    # 4. Memory（M3.5-B：真实学习状态；定位不到唯一 concept 则全 None）
+    concept_id = _resolve_concept_for_memory(conn, q, matches)
+    memory = _memory_for_concept(conn, concept_id)
 
     return {"matches": matches[:MAX_SUGGEST_MATCHES], "related": related[:MAX_RELATED_CONCEPTS], "memory": memory}
 

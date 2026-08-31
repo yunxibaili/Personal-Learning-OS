@@ -51,6 +51,15 @@ export function KnowledgeRadar({ query, noteId, onOpenNote }: Props) {
 
   const matches = resp?.matches ?? [];
   const related = resp?.related ?? [];
+  const memory = resp?.memory ?? null;
+  // M3.5-B：任一字段有值才渲染「学习状态」区（CL 纪律：无数据不占版面）
+  const hasMemory =
+    memory != null &&
+    (memory.mastery != null || memory.review_due != null || memory.last_mistake != null);
+  // 复习到期判断：due_at <= now 即到期（本地时钟即可，本地优先无服务器对时问题）
+  const dueStr = memory?.review_due ?? null;
+  const dueDate = dueStr ? new Date(dueStr) : null;
+  const isDue = dueDate != null && !Number.isNaN(dueDate.getTime()) && dueDate.getTime() <= Date.now();
   const hasData = matches.length > 0 || related.length > 0;
 
   if (!query.trim()) {
@@ -100,12 +109,39 @@ export function KnowledgeRadar({ query, noteId, onOpenNote }: Props) {
         </div>
       )}
 
-      <div className="radar-section">
-        <div className="radar-section-title">学习状态</div>
-        <span className="radar-memory-null muted">
-          暂无数据（M3.5-B 接入）
-        </span>
-      </div>
+      {hasMemory && memory != null && (
+        <div className="radar-section">
+          <div className="radar-section-title">学习状态</div>
+          {memory.mastery != null && (
+            <div className="radar-memory-row">
+              <span className="radar-memory-k">掌握度</span>
+              <span className="radar-memory-bar" aria-hidden="true">
+                <span
+                  className="radar-memory-bar-fill"
+                  style={{ width: `${Math.round(memory.mastery * 100)}%` }}
+                />
+              </span>
+              <span className="radar-memory-v">{Math.round(memory.mastery * 100)}%</span>
+            </div>
+          )}
+          {dueStr != null && (
+            <div className="radar-memory-row">
+              <span className="radar-memory-k">复习</span>
+              <span className={`radar-memory-v ${isDue ? "radar-memory-due" : ""}`}>
+                {isDue ? "今日到期" : dueDate!.toLocaleDateString("zh-CN")}
+              </span>
+            </div>
+          )}
+          {memory.last_mistake != null && (
+            <div className="radar-memory-row">
+              <span className="radar-memory-k">错题</span>
+              <span className="radar-memory-v radar-memory-mistake" title={memory.last_mistake}>
+                {memory.last_mistake}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

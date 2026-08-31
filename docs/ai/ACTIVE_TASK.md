@@ -1,37 +1,46 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-31 · **Phase 4 完成**（动效核对 + a11y 对比度归零 + 性能实测 + 原型入口清理）
+> 上次更新：2026-08-31 · **M3.5-B 完成**（Radar 学习状态接真实数据）· 仓库已恢复推送
 
 ---
 
 ## Task ID
 
-**Phase 4 完成**（2026-08-31 · 4 视图对比度 0 处不达标 · LCP 468ms · CLS 0.0003）
+**M3.5-B Full Omniscience 完成**（2026-08-31 · pytest 13 + vitest 22 + build 全绿 · 端到端实检通过）
 
 ## 当前任务
 
-**前端阶段 Phase 0–4 全部完成**（2026-08-30 解冻 → 2026-08-31 收口）。
+**前端阶段 Phase 0–4 全部完成 + M3.5-B 后端增强完成**。
 
-| Phase | 内容 | 状态 |
-|---|---|---|
-| 0 | 令牌归一 + 全局基线 | ✅ |
-| 1 | 基础组件层 + 动效基元 | ✅ |
-| 2 | AppShell 笔记优先三栏 | ✅ |
-| 3 | 视图重做（编辑器/复习/图谱/Tutor/星系） | ✅ |
-| 4 | 动效核对 + a11y + 性能收口 + 清原型入口 | ✅ |
+**M3.5-B 交付**（ADR-012 Phase B）：
+- Core：`_resolve_concept_for_memory`（定位唯一 concept，多候选不猜）+
+  `_memory_for_concept`（mastery/review_due/last_mistake 真实数据）
+- `suggest_for_context` memory 三字段从占位改为真实学习状态
+- 前端：Radar 学习状态区真实渲染（掌握度橙条/到期强调/错题省略），
+  查询词升级 = 笔记标题优先（原大纲首项在无标题笔记下恒为空）
+- 已知边界：旧 concept 无学习状态行 → memory 全 null（正确行为，回填属独立任务）
 
-**待项目所有者决定**（我不自行处置）：
-1. **死代码删除**：`universe/`（KnowledgeUniverse + ConceptNode + PlanetNode，
-   旧星系实现）、`universe/prototype/`（5 文件）、`planet/`（1 文件）——
-   清掉 `#preview`/`#planet` 后已无人引用，共约 9 个文件
-2. **本地知识库 + RAG**（属后端 AI 层，见 TASKS.md「前端阶段不做」）
-3. `web/dist_verify/`、`web/dist_verify2/`（我的构建验证残留，未跟踪，可删）
+**下一步候选**（按技术档案）：
+1. M7-005 Conflict UI（M7 最后一块，拆解已在 TASKS.md）
+2. M6 Tauri 桌面打包（前置全就绪）
+3. 旧 concept 学习状态回填（遍历调 `ensure_concept_learning_state`，小任务）
+4. Radar 编辑器内触发（挂起区，需用户显式要求）
 
 **B10 本地 LLM（Ollama）实测 ✅**（2026-08-30：qwen3-14b 端到端，think 剥离修复见 §9.1）
 
 ## 近期完成
 
+- **M3.5-B Full Omniscience ✅**（2026-08-31）
+  - memory 三字段接真实数据：mastery=`concept_mastery.effective`、
+    review_due=`review_queue`(pending)、last_mistake=`mistakes.description`
+  - 定位纪律：matches 命中 concept 优先 → 精确标题 → LIKE 唯一；**多候选不猜**返回 null
+  - 前端学习状态区真实渲染 + 雷达查询词升级为笔记标题优先
+  - 测试 `test_suggest_memory.py` 6 项全过；实检：造数据后 API/UI 全链路正确
+- **死代码清理 2283 行 + 文档纪律入档**（2026-08-31）
+  - 删 `universe/` `prototype/` `planet/` `lib/universe/`（已被 galaxy/ 取代，零引用）
+  - AGENTS §18 §2.1 入库边界 + §2.2 推送策略（每轮完成必 push）；
+    §7/§19 push 禁令作用域澄清（仅第三方 repo）；SESSION_PROTOCOL 补第 4 步 push
 - **Phase 4 动效 + a11y + 性能 ✅**（2026-08-31）
   - 动效 6 基元核对：Phase 1 已落地，与 `ui/motion-primitives.html` 一致、CSS 齐备
   - a11y 对比度：4 视图**全部 0 处不达标**
