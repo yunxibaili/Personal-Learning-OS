@@ -595,6 +595,10 @@ Mobile 触发条件未变（ADR-006），但前置改为 P8 完成 + Mobile API 
 
 P8 PC Productization 候选范围（届时按 §12 八项清单逐项立项）：
 1. Knowledge Mode / Learning Mode 落地（ADR-022 从设计到实现；禁 XP/streak/等级）
+   → **2026-08-31 裁定**：ADR-022 的 UI 载体由 Dashboard 迁移至
+   TopBar / Workspace-level mode switch（附录 A，语义不变）。
+   实施单独立项 `P8-Mode-001`（附录 A §实施边界，触发 = 所有者显式发起），
+   本候选仅保留条目不排期。
 2. ~~Dashboard 升级为 Learning OS Home（Today / Review / Weak Areas / Recent / Universe 预览）~~
    **已作废（2026-08-30 裁决 A）**——取消平级 tab、删除仪表盘，打开应用即笔记工作区。
    Home 的聚合数据（待复习/最近笔记/薄弱概念）已改由 TopBar 复习徽章与右栏承载；
@@ -659,6 +663,7 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 |---|---|---|
 | UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/adr/integration-upmark.md |
 | Radar 编辑器内触发（选中正文 → Ctrl+Shift+K → 段落提取为查询词） | 用户显式要求；M3.5-A 原计划的增强项，雷达现已挂右栏可用 | ADR-012 §5 Phase A |
+| **P8-Mode-001** Knowledge/Learning Mode 实现（workspace_mode + TopBar Mode UI + Reminder） | 项目所有者显式立项；语义与载体已由 ADR-022 附录 A 冻结 | docs/adr/ADR-022-product-mode-boundary.md Appendix A |
 
 ## 完成报告
 
