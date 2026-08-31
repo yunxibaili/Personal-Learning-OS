@@ -3,9 +3,10 @@
 > **项目唯一状态来源**（Single Source of Truth for current state）。
 > 第一次接触项目、或 AI 会话启动时，从这里开始。
 >
-> 基线：2026-08-29 · HEAD `2852866` · Branch `main` · Commits 108
-> （基线 = 收录时的上一提交，必然滞后；以 `git rev-list --count HEAD` 实测为准） · License Apache-2.0
-> 验证：`pytest` **486 passed** · `vitest` 23 passed · `tsc --noEmit` PASS · `vite build` PASS
+> 基线：2026-08-31 · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
+> · License Apache-2.0
+> 验证：`pytest` / `vitest` / `tsc --noEmit` / `vite build` 以最近一次全量 Gate 实测为准
+> （2026-08-31 Gate：pytest 832+2 守护 · vitest 28 · tsc PASS · build PASS）
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，
 > 工程约束见根 `AGENTS.md`。
@@ -221,7 +222,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 |---|---|
 | 服务框架 | Python 3.12 + FastAPI 0.115 + uvicorn，仅绑 `127.0.0.1`（`$env:PORT` 可覆盖） |
 | 数据库 | SQLite（标准库 `sqlite3` 直写 SQL）+ FTS5；**无 ORM**（`AGENTS.md` §2.2 永久禁止） |
-| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；**20 APIRouter / 88 端点**（2026-08-30 实测自 OpenAPI schema）；错误统一 `{error:{code,message}}`；**参数校验亦映射 400 `invalid_body`**（非 FastAPI 默认 422，`main.py` 全局处理器） |
+| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；**20 APIRouter / 89 端点**（2026-08-31 实测自 `app.openapi()`）；错误统一 `{error:{code,message}}`；**参数校验亦映射 400 `invalid_body`**（非 FastAPI 默认 422，`main.py` 全局处理器） |
 | 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层；core 层零 fastapi 依赖（守护测试锁定） |
 | 图查询 | 递归 CTE（`local_graph`），不引图数据库 |
 | 代码规模 | `server/app` Python ≈ 9,722 行（2026-08-30 实测） |
@@ -466,7 +467,7 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §7 API Overview
 
-统一前缀 `/api/v1`，**20 APIRouter / 88 端点**（2026-08-30 实测）。
+统一前缀 `/api/v1`，**20 APIRouter / 89 端点**（2026-08-31 实测）。
 
 | 类别 | 前缀 | 端点 |
 |---|---|---|
@@ -608,7 +609,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | 提交数 | 107（单分支 main + origin/main） |
 | 后端 Python | ≈ 9,722 行（`server/app`） |
 | 前端 TS/TSX | ≈ 6,432 行（`web/src` + `shared`） |
-| APIRouter / 端点 | **20 / 88** |
+| APIRouter / 端点 | **20 / 89** | |
 | Migration | **8** |
 | ADR | 23 |
 

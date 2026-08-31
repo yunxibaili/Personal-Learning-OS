@@ -40,7 +40,7 @@ npm run dev
 
 ## 当前进度
 
-📋 任务看板与完成报告：[docs/TASKS.md](docs/TASKS.md) —— 当前焦点：**后端优先阶段**（前端冻结，见 PROJECT_STATE §0）· M7 同步系统完整 · P8 进行中
+📋 任务看板与完成报告：[docs/TASKS.md](docs/TASKS.md) —— 当前焦点：**RC 收尾**（端到端闭环已通 · UI 视觉打磨 · 开源准备）· M7 同步系统完整
 每个里程碑的验收标准见 [docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10。
 
 | 里程碑 | 状态 | 内容 |
@@ -48,9 +48,21 @@ npm run dev
 | M0 脚手架 | ✅ | FastAPI + React + migration runner + workspace |
 | M1 知识库核心 | ✅ | notes CRUD + TipTap + KaTeX + 附件 + FTS5 |
 | M2 双链·图谱 | ✅ | [[wikilink]] 解析 + 反链 API + 图谱读模型 + React Flow |
+| M2b 思维导图 | ✅ | React Flow 导图 · 节点 CRUD · 概念绑定 · 导入导出 roundtrip |
+| M3 Learning Graph | ✅ | 四维掌握度 + SM-2 复习 + 复习浮层（键盘驱动） |
 | M3.5-A 知识雷达 | ✅ | 全知领域 Phase A：上下文匹配 + 图谱邻居 + Radar 面板 |
-| M3 Learning Graph | 🔜 | 掌握度 / SM-2 / Dashboard |
-| M3.5-B 全知领域 | 🔜 | +掌握度 +复习建议 +错误历史（前置 M3） |
+| M3.5-B 全知领域 | ✅ | 掌握度联动 + 复习建议 + 错误历史 |
+| M4 AI Tutor | ✅ | 上下文感知 Tutor（三入口）· SSE 流式 + 停止 · 对话持久化 |
+| M5 同步基础（M7） | ✅ | Discover→Pair→Manifest→Diff→Transport→Apply→Reindex · E2E 双进程一致 |
+| 一键导出 | ✅ | 全量 zip（vault + 附件 + 导图 + 事件日志 + 概念/掌握度快照 · 脱敏 settings）；导出→重建概念/掌握度一致有守护测试 |
+| UI 视觉打磨 | 🔜 | 视觉语言打磨与空态设计（架构与性能契约已落地） |
+| 桌面/移动分发 | 🔜 | M6/M8 打包分发 |
+
+> **AI Tutor 说明**：Tutor 的接口契约与流式链路已就绪并有守护测试；默认
+> `MockProvider` 返回占位文本，**真实问答需配置 LLM**——支持任意
+> OpenAI 兼容 API（如 DeepSeek，设置页填 base_url + key），或本地
+> [Ollama](https://ollama.com)（`ollama pull qwen3` 后设置页 base_url 填
+> `http://127.0.0.1:11434/v1`）。
 
 ## 目录
 

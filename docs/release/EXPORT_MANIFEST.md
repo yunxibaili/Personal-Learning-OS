@@ -36,14 +36,19 @@
 
 ```
 vault/**(md + *.mindmap.json) + attachments/**
-+ metadata/eventlogs/*.jsonl      ← 学习状态真相（ADR-020 Layer 1）
++ metadata/eventlogs/*.jsonl      ← 学习事件真相（ADR-020 Layer 1）
++ concepts.json                   ← 概念+掌握度+SM-2 快照（BUG-1，2026-08-31）
++ settings.json                   ← settings 脱敏后
 ```
 
 明确**不随行**（各设备本地重建或本地私有，ADR-005/020）：
-db/learning-os.db · metadata/devices.json · settings（含 API key）· manifests。
+db/learning-os.db · metadata/devices.json · settings 中的 API key · manifests。
 
-恢复 = 新机解压 workspace + 启动应用（migration 自动建库、扫描自动重建 Layer 2）。
-该恢复路径已由 M7-004~006 的机制隐式保证，正式验证归 DATA_RECOVERY_TEST。
+恢复 = 新机解压 workspace + 启动应用（migration 自动建库、notes/import +
+admin/reindex 自动重建 Layer 2）。**BUG-1 修复（2026-08-31）**：reindex 现会
+消费 concepts.json 恢复概念与掌握度（含 SM-2 排期），并回放 eventlogs——
+「导出→重建后概念/掌握度一致」有守护测试锁定（test_export.py
+TestExportRebuildClosedLoop）；场景 B+C 脚本 15/15 全过。
 
 ## 4. 当前缺口（发布前必办）
 
