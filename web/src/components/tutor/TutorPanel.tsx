@@ -6,22 +6,18 @@
  *   - 禁止：气泡、头像、打字动画、魔法按钮
  *   - 允许：context panel、structured answer、action suggestion
  *
- * B7.1-R：改走 POST /chat（conversation_id 持久化 + extractor 触发）。
+ * B7.1-R：走 POST /chat（conversation_id 持久化 + extractor 触发）；
+ * B2：stream=true SSE 流式，增量渲染 + 用户可「停止」（AbortController）。
  */
-import { useCallback, useEffect, useState } from "react";
-import { apiGet, apiPost } from "../../lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { apiGet, apiPost, apiPostStream, ApiError } from "../../lib/api";
+import type { TutorStreamFrame } from "@shared/types/tutor";
 import { useUi } from "../../stores/ui";
 import { SuggestionList } from "../suggestions/SuggestionList";
 import { MemoryList } from "../memories/MemoryList";
 import "./TutorPanel.css";
 
 type TutorMode = "explain" | "hint" | "review";
-
-/** /chat 返回形状（B7.1-R：conversation_id 持久化） */
-interface ChatResponse {
-  conversation_id: number;
-  answer: string;
-}
 
 interface ConceptContext {
   id: number;
@@ -137,13 +133,18 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
 
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<TutorMode>("explain");
-  const [answer, setAnswer] = useState<ChatResponse | null>(null);
   const [context, setContext] = useState<TutorContextData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // B7.1-R：对话持久化（conversation_id 持续对话链）
   const [conversationId, setConversationId] = useState<number | null>(null);
+
+  // B2 前端接线：流式回答逐块渲染 + 用户可中止（「停止」语义依赖流式）。
+  // 流式期为增量全文；结束后保持非 null 即为定稿答案（单状态源，无双轨同步）；
+  // null = 本轮会话尚无回答。用户中止时保留已到部分（不丢字）。
+  const [streamText, setStreamText] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // 笔记引用（P8-003D：用户显式选择，≤2 篇）
   const [selectedNotes, setSelectedNotes] = useState<TutorNoteRef[]>([]);
@@ -199,15 +200,25 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
     });
   }, []);
 
-  /** 提交问题（B7.1-R：改走 /chat，conversation_id 持久化 + extractor 触发） */
+  /**
+   * 提交问题（B2 前端接线：走 /chat stream=true SSE 流式）。
+   * 增量即时渲染（ADR-016：逐字显示，非打字机动画/气泡）；
+   * event:done → conversation_id 续链 + extractor 产物刷新；
+   * event:error → 与非流式同款错误条；用户「停止」→ AbortError 静默收尾
+   * （后端 try/finally 已保证增量拼装落库，不丢消息）。
+   */
   const handleSubmit = useCallback(async () => {
     if (!query.trim()) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError("");
+    setStreamText(""); // 本轮新回答从空串开始（上一轮答案即刻被替换）
     try {
       const body: Record<string, unknown> = {
         query: query.trim(),
         mode,
+        stream: true,
       };
       // concept_id 可选：有则传，无则不传（/chat 支持 concept_id=None）
       if (conceptId != null) body.concept_id = conceptId;
@@ -217,17 +228,44 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
       // conversation_id 持续对话链
       if (conversationId != null) body.conversation_id = conversationId;
 
-      const data = await apiPost<ChatResponse>("/chat", body);
-      setAnswer(data);
-      setConversationId(data.conversation_id); // 持久化，下轮自动续接
+      await apiPostStream<TutorStreamFrame>("/chat", body, {
+        signal: controller.signal,
+        onFrame: (f) => {
+          if (f.event === "data" && typeof f.text === "string") {
+            setStreamText((t) => (t ?? "") + f.text);
+          } else if (f.event === "done") {
+            if (typeof f.conversation_id === "number") {
+              setConversationId(f.conversation_id);
+            }
+          } else if (f.event === "error") {
+            throw new ApiError(
+              typeof f.code === "string" ? f.code : "provider_error",
+              typeof f.message === "string" ? f.message : "流式中断",
+              200,
+            );
+          }
+        },
+      });
+      // 正常收尾：streamText 保持非 null，全文即定稿答案。
       // B7.1：对话后刷新 Extractor 产物（可能新增概念建议与记忆）
       setExtractionRefreshKey((k) => k + 1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (e instanceof DOMException && e.name === "AbortError") {
+        // 用户主动停止：后端 try/finally 仍会落库；streamText 保留已到部分
+      } else {
+        setError(e instanceof Error ? e.message : String(e));
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
+      // 不清 streamText：非 null 即答案（增量/定稿/中止保留，同一状态源）
     }
   }, [conceptId, query, mode, selectedNotes, conversationId]);
+
+  /** 停止当前流式回答（用户显式动作；后端落库由 try/finally 保证） */
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   // B7.1-R：移除 conceptId==null 早退，表单始终可见（/chat 支持无 concept 对话）
 
@@ -365,26 +403,33 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
             placeholder={MODE_DESCRIPTIONS[mode]}
             disabled={loading}
           />
-          <button
-            className="tutor-ask-btn"
-            onClick={() => void handleSubmit()}
-            disabled={loading || !query.trim()}
-          >
-            {loading ? "..." : "Ask"}
-          </button>
+          {loading ? (
+            <button className="tutor-ask-btn" onClick={handleStop}>
+              Stop
+            </button>
+          ) : (
+            <button
+              className="tutor-ask-btn"
+              onClick={() => void handleSubmit()}
+              disabled={!query.trim()}
+            >
+              Ask
+            </button>
+          )}
         </div>
       </div>
 
       {/* Error */}
       {error && <div className="tutor-error">{error}</div>}
 
-      {/* Answer */}
-      {answer && (
+      {/* Streaming answer（B2：流式期增量渲染，结束后同区定格为全文；
+          用户中止保留已到部分。ADR-016 合规：逐字显示非打字机动画，无气泡） */}
+      {streamText != null && (
         <div className="tutor-section">
           <div className="tutor-section-title">
             {MODE_LABELS[mode as TutorMode] ?? "Response"}
           </div>
-          <div className="tutor-answer">{answer.answer}</div>
+          <div className="tutor-answer">{streamText}</div>
         </div>
       )}
 
