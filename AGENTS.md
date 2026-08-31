@@ -301,6 +301,57 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 2. 是现在必须做的吗？
 3. 三个月后新人能看懂吗？
 
+### 端到端闭环协议（P8 收尾阶段 · 2026-08-31 项目所有者裁定）
+
+> 政策来源：`PROJECT_STATE.md` §0.1。自 P8 收尾阶段起，
+> **不再人为限制前后端修改范围，以「端到端闭环 + 契约一致性」为最高优先级**；
+> 「前端任务不改后端」的阶段性限制解除。
+
+**以真实代码为准**：开工前先读当前实现 / API / Shared Types / Core / Store / UI /
+测试 / ADR / TASKS / git history。文档 ≠ 代码时先核实；已实现的不重复实现，
+已废弃的不重新引入。
+
+**跨层修改规则**：允许按真实需要修改 Frontend / Shared Types / Router / Core /
+Migration / Tests / Documentation——**必须有真实原因，禁止借任务名义扩权**。
+典型合法场景（修真正的问题，而非为任务扩范围）：
+
+- A：API response 缺前端必需字段 → 改 Router/Core/Shared Type
+- B：后端行为语义错误 → 改后端 + 测试
+- C：Backend 返回 ≠ Shared Type 声明 → 统一契约
+- D：Core 已有能力但 Router 未暴露 → 补 Router
+- E：Router 已有但 Frontend 未接入 → 接 Frontend
+- F：schema 确实不足 → migration + Core + API + Types + Frontend + Tests 全链补齐
+
+**禁止的偷懒形态**：frontend workaround · duplicated state · 类型强转/`any` ·
+魔法字段 · 重复 API · 隐式 fallback · 与后端实际行为不符的 mock。
+**禁止**：为 PASS 测试改测试语义 · 自动发送 Tutor 提问（tutorSeed ≠ 自动提问）·
+重复实现已有 API/Core · 无理由新增表/依赖/Provider · 顺手实现未排期功能。
+
+**契约一致性（硬要求）**：endpoint · method · request body · response shape ·
+nullable · enum · ID 类型 · 时间格式 · 错误码 · loading/failure · 空数据 · 幂等——
+Backend 实际返回 = Shared Type 声明 = Frontend 消费，三层必须一致
+（`refId`/`ref_id` 事故与 M3.5-B 两次字段误判皆为前车之鉴）。
+
+**验证与回归**：跨层功能 pytest + vitest + `tsc --noEmit` + `vite build` 全绿；
+不能只验证自己改的文件。旧测试因设计变更失败：先判断过时 / 设计变更 / 真回归，
+**不许删测试了事**；设计确已变更则更新测试 + 文档 + 说明原因。
+
+**错误隔离与安全**：辅助 AI 功能（extractor 等）失败不得影响主 answer；
+api_key / token / secret 永不入 answer / snapshot / memory / prompt / 日志 / event。
+
+**验收输出**：完成后逐文件说明修改 · 数据流图（User Action → … → UI）·
+测试结果（pytest/vitest/tsc/build 各自数字）· 架构自检（ADR 是否违反 /
+API 一致 / Types 同步 / DB 变化 / 新依赖 / 跨层修改——逐项是或否+说明）·
+commit hash 与 working tree 状态。
+
+**未满足最终判断标准的项，明确标注：已完成 / 部分完成 / 未完成 / 后续任务——
+不许用「目前 MVP 足够」掩盖。**
+
+**核心哲学**：「不改后端」不是质量，「只改三个文件」不是质量。
+质量 = 功能正确 + 架构正确 + 数据一致 + API 一致 + 类型一致 + UI 一致 +
+测试完整 + 文档同步 + 未来可维护——目标是让整个系统真正一致，
+而不是一堆能分别通过测试的模块。
+
 ## 快速参考
 
 | 事项 | 约定 |

@@ -604,6 +604,25 @@ P8 PC Productization 候选范围（届时按 §12 八项清单逐项立项）�
    Home 的聚合数据（待复习/最近笔记/薄弱概念）已改由 TopBar 复习徽章与右栏承载；
    `/api/v1/home` 端点保留作右栏数据源（方案 B）。见上方「待决冲突：P8-003 Home vs 裁决 A」。
 3. Tutor 三入口闭环（Note→Explain · Review 错答→Hint · Universe 弱项→Tutor）
+   → **当前任务（P8-006）**。2026-08-31 调研结论：纯 Frontend 即可闭环
+   （后端 `/chat` 已支持 concept_id/note_ids/mode 含 hint；`/tutor/context`、
+   `/mastery/weak/list` 均已存在）。方案：`tutorSeed`（一次性预填包，
+   预填 ≠ 自动发送）+ `tutorReturnView`（从 Review 进入后返回 Review 而非 Notes）。
+   入口现状：① 右栏「关联」AI Tutor 按钮不带笔记上下文（半成品）；
+   ② Review feedback 阶段无 Tutor 入口（缺失，仅 quality≤2 显示）；
+   ③ Graph 概念「问 Tutor」已通（P8-003D），右栏掌握度弱项行缺入口。
+
+### P8 收尾阶段（2026-08-31 政策切换）
+
+> Phase 0–4 收口后进入收尾阶段。政策：**解除前后端修改范围限制，
+> 端到端闭环 + 契约一致性为最高优先级**——详见 `PROJECT_STATE.md` §0.1 与
+> `AGENTS.md` §12「端到端闭环协议」。跨层修改仍需真实原因，禁止借任务扩权。
+
+| 序 | 任务 | 状态 |
+|---|---|---|
+| P8-006 | **Tutor 三入口闭环**（tutorSeed + tutorReturnView；入口①笔记②错答 hint③弱项） | **进行中**（八项清单已过审，待实施） |
+| P8-007 | Tutor 三入口 E2E 验证（三路径各 ≥1 条自动化测试） | 随 P8-006 |
+| 挂起 | P8-Mode-001 Knowledge/Learning Mode（ADR-022 附录 A，等所有者发起） | 挂起区 |
 
 Mobile API Preparation 原则（提前冻结，防跑偏）：
 - **不新建 /api/v1/mobile|app 独立端点族**——现有 /api/v1（notes/mastery/review/
