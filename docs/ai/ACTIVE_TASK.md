@@ -1,28 +1,47 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-31 · **Phase 3 ⑤ 星系完成**（多星球系统 + 13 项语义单测 + 无头自检）
+> 上次更新：2026-08-31 · **Phase 4 完成**（动效核对 + a11y 对比度归零 + 性能实测 + 原型入口清理）
 
 ---
 
 ## Task ID
 
-**Phase 3 ⑤ 星系完成**（2026-08-31 · 13 项单测全过 · 无头实检 4 颗星球轮换正确）
+**Phase 4 完成**（2026-08-31 · 4 视图对比度 0 处不达标 · LCP 468ms · CLS 0.0003）
 
 ## 当前任务
 
-**前端阶段已开启，FE-001 已解冻**。Phase 0–3 已基本完成：
-- Phase 0 令牌归一 ✅
-- Phase 1 基础组件 ✅
-- Phase 2 AppShell 笔记优先三栏 ✅
-- Phase 3 视图重做 ① NoteEditor ② Review ③ Graph ④ Tutor ⑤ 星系 ✅
-  （顺带修掉 `refId→ref_id` 契约 bug，影响 GraphView）
-**下一步：Phase 4 — 动效基元 + a11y + 性能收口 + 清理 #preview/#planet 临时入口**。
+**前端阶段 Phase 0–4 全部完成**（2026-08-30 解冻 → 2026-08-31 收口）。
+
+| Phase | 内容 | 状态 |
+|---|---|---|
+| 0 | 令牌归一 + 全局基线 | ✅ |
+| 1 | 基础组件层 + 动效基元 | ✅ |
+| 2 | AppShell 笔记优先三栏 | ✅ |
+| 3 | 视图重做（编辑器/复习/图谱/Tutor/星系） | ✅ |
+| 4 | 动效核对 + a11y + 性能收口 + 清原型入口 | ✅ |
+
+**待项目所有者决定**（我不自行处置）：
+1. **死代码删除**：`universe/`（KnowledgeUniverse + ConceptNode + PlanetNode，
+   旧星系实现）、`universe/prototype/`（5 文件）、`planet/`（1 文件）——
+   清掉 `#preview`/`#planet` 后已无人引用，共约 9 个文件
+2. **本地知识库 + RAG**（属后端 AI 层，见 TASKS.md「前端阶段不做」）
+3. `web/dist_verify/`、`web/dist_verify2/`（我的构建验证残留，未跟踪，可删）
 
 **B10 本地 LLM（Ollama）实测 ✅**（2026-08-30：qwen3-14b 端到端，think 剥离修复见 §9.1）
 
 ## 近期完成
 
+- **Phase 4 动效 + a11y + 性能 ✅**（2026-08-31）
+  - 动效 6 基元核对：Phase 1 已落地，与 `ui/motion-primitives.html` 一致、CSS 齐备
+  - a11y 对比度：4 视图**全部 0 处不达标**
+    - `--text-3` `#A3A3A3`(2.52:1) → `#737373`(4.74:1)
+    - 新增 `--brand-text #C2410C`(5.18:1)；`--brand` 降级为仅图形/填充
+    - 修正 `UI_DESIGN.md` §2.2 笔误：旧写「3.6:1」，实测 2.84:1
+  - a11y 结构：skip-link + 各视图 `h1` + `header/main/aside` landmark
+  - 性能：**LCP 468ms**、**CLS 0.0003**（修前 0.0454）、离屏暂停生效、
+    dpr=3 屏实测钳到 1.50、reduced-motion 下星系静止
+  - 清理 `#preview`/`#planet` 原型入口与连带 import
 - **Phase 3 ⑤ 星系（多星球系统）✅**（2026-08-31）
   - 层级来源 = 方案 A：从 wikilink 拓扑推断（项目所有者裁定）
   - 13 项语义单测全过：覆盖出度阈值/单向不认/排他归属/嵌套收编/16 上限/概念排除等

@@ -653,11 +653,24 @@ export function GalaxyView() {
   const idx = planets.length ? cursor % planets.length : 0;
   const planet = planets[idx] ?? null;
 
-  if (loading) return <div className="galaxy-view"><span className="galaxy-caption__title">载入星系…</span></div>;
-  if (error) return <div className="galaxy-view"><span className="galaxy-caption__title">星系加载失败：{error}</span></div>;
+  if (loading)
+    return (
+      <div className="galaxy-view">
+        <h1 className="sr-only">知识星系</h1>
+        <span className="galaxy-caption__title">载入星系…</span>
+      </div>
+    );
+  if (error)
+    return (
+      <div className="galaxy-view">
+        <h1 className="sr-only">知识星系</h1>
+        <span className="galaxy-caption__title">星系加载失败：{error}</span>
+      </div>
+    );
   if (!planet)
     return (
       <div className="galaxy-view">
+        <h1 className="sr-only">知识星系</h1>
         <span className="galaxy-caption__title">还没有笔记——回工作区写第一篇</span>
         <span className="galaxy-caption__eyebrow">星球由 [[双链]] 生长：链出去 ≥2 篇的笔记会成为星球</span>
       </div>
@@ -665,6 +678,7 @@ export function GalaxyView() {
 
   return (
     <div className="galaxy-view">
+      <h1 className="sr-only">知识星系</h1>
       <GalaxyCanvas
         size={560}
         planet={planet}
@@ -739,8 +753,9 @@ export function GalaxyMini({ activeNoteId }: { activeNoteId: number | null }) {
     return host ?? planets[0];
   }, [planets, activeNoteId]);
 
-  if (!planet) return null;
-
+  // 注意：数据未到时**不要** return null——会造成 CLS
+  // （空态 0px → 数据到位 272px，实测把右栏下推 317px，CLS 0.045）。
+  // 始终渲染容器、预留固定高度，数据以淡入方式填入。
   return (
     <div className="ctx-galaxy">
       <GalaxyCanvas
@@ -751,8 +766,9 @@ export function GalaxyMini({ activeNoteId }: { activeNoteId: number | null }) {
         onSatelliteClick={onSatelliteClick}
       />
       <span className="ctx-galaxy__hint">
-        {planet.title} · 卫星 {planet.sats.length}
-        {planet.overflow ? ` (+${planet.overflow})` : ""}
+        {planet
+          ? `${planet.title} · 卫星 ${planet.sats.length}${planet.overflow ? ` (+${planet.overflow})` : ""}`
+          : "知识星系"}
       </span>
     </div>
   );

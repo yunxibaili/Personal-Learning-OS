@@ -136,7 +136,10 @@ export function NoteEditorView() {
   const imageInput = useRef<HTMLInputElement>(null);
 
   return (
-    <section className="notes-layout">
+    <section className="notes-layout" aria-labelledby="notes-layout-title">
+      <h1 id="notes-layout-title" className="sr-only">
+        笔记工作区
+      </h1>
       <aside className="note-list">
         <button className="primary" onClick={createNote}>＋ 新建</button>
         <button onClick={deleteActive} disabled={activeId == null}>删除</button>

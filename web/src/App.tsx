@@ -10,8 +10,6 @@ import { TutorPanel } from "./components/tutor/TutorPanel";
 import { GalaxyView } from "./components/galaxy/GalaxyCanvas";
 import { MindMapCanvas } from "./components/mindmap/MindMapCanvas";
 import { ReviewSessionView } from "./views/ReviewSessionView";
-import { UniverseInteractionPreview } from "./components/universe/prototype/UniverseInteractionPreview";
-import KnowledgePlanet from "./components/universe/prototype/KnowledgePlanet";
 
 function ActiveView() {
   const activeView = useUi((s) => s.activeView);
@@ -61,40 +59,10 @@ function ActiveView() {
 }
 
 export default function App() {
-  // P8-001C-Preview 临时入口：URL hash "#preview" 渲染交互原型（不触碰 ui store）
-  const [showPreview] = useState(
-    () => typeof window !== "undefined" && window.location.hash === "#preview",
-  );
-
-  // P8-001C Knowledge Planet 临时入口
-  const [showPlanet] = useState(
-    () => typeof window !== "undefined" && window.location.hash === "#planet",
-  );
-
-  // Phase 1 组件 Gallery（dev-only 活文档）
+  // Phase 1 组件 Gallery（dev-only 活文档）：仅 DEV 生效，生产构建里被 tree-shake
   const [showGallery] = useState(
     () => typeof window !== "undefined" && window.location.hash === "#gallery",
   );
-
-  if (showPreview) {
-    return (
-      <div className="app">
-        <main className="content">
-          <UniverseInteractionPreview />
-        </main>
-      </div>
-    );
-  }
-
-  if (showPlanet) {
-    return (
-      <div className="app">
-        <main className="content">
-          <KnowledgePlanet />
-        </main>
-      </div>
-    );
-  }
 
   if (showGallery && import.meta.env.DEV) {
     return (

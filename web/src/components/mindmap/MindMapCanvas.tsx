@@ -342,6 +342,7 @@ export function MindMapCanvas() {
 
   return (
     <div className="mindmap-container">
+      <h1 className="sr-only">思维导图</h1>
       {/* Sidebar: Map List */}
       <div className="mindmap-sidebar">
         <div className="mindmap-sidebar-title">Maps</div>

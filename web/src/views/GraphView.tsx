@@ -187,7 +187,10 @@ export function GraphView() {
   }, [selectedId, visible]);
 
   return (
-    <section className="graph-view">
+    <section className="graph-view" aria-labelledby="graph-view-title">
+      <h1 id="graph-view-title" className="sr-only">
+        知识图谱{root ? ` · ${rootLabel}` : ""}
+      </h1>
       <div className="graph-toolbar">
         <strong>图谱 · {rootLabel}</strong>
         {root && (

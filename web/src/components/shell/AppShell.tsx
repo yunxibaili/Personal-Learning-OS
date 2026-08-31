@@ -11,8 +11,14 @@ import { TopBar } from "./TopBar";
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
+      {/* a11y：键盘用户可直接跳过顶栏进入主区 */}
+      <a className="skip-link" href="#main-content">
+        跳到主内容
+      </a>
       <TopBar />
-      <main className="shell__content">{children}</main>
+      <main id="main-content" className="shell__content">
+        {children}
+      </main>
     </div>
   );
 }

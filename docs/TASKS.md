@@ -504,13 +504,32 @@ Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1
 | 4 | Tutor | ✅ 右栏抽屉（560px + 遮罩 + 返回笔记，实检通过）；~~流式 Skeleton/停止按钮~~ **待 Phase 4**——当前 TutorPanel 为非流式 POST /chat，需先接 B2 SSE 流式才有「停止」语义 |
 | 5 | 星系 | ✅ **多星球系统**（2026-08-31）：层级 = 从 wikilink 拓扑推断（方案 A）；出度≥2 为星球、与 hub 双向互链为卫星、互链排他归给严格更大者、被收编的 hub 降级；双形态（全屏巡览 4s·可暂停·可点选 / 右栏单颗静止·dpr=1）；公转 72s/圈；卫星上限 16 + 「…+N」；橙色只用于 mastery 弧与选中态；13 项语义单测全过；实检渲染：4 颗星球、Transformer 1 卫星（与真实图数据预演完全一致） |
 
-### Phase 4 — 动效基元 + a11y + 性能收口
+### Phase 4 — 动效基元 + a11y + 性能收口 ✅ 完成（2026-08-31）
 
-- [ ] 动效基元：`FadeInUp` · `CountUp` · `Skeleton` · `Toast` · `ProgressRing` · `WaveUnderline`
-      （来源 `ui/motion-primitives.html`）
-- [ ] a11y：对比度（正文 ≥4.5:1 / UI ≥3:1）· 焦点可见 · 键盘可达 · 语义 landmark
-- [ ] 性能：30fps 限帧 / dpr 上限 / 离屏暂停 / LCP<2.5s / CLS<0.1
-- [ ] 清理 `App.tsx` 的 `#preview` / `#planet` 原型入口
+- [x] 动效基元：`FadeInUp` · `CountUp` · `Skeleton` · `Toast` · `ProgressRing` · `WaveLink`
+      （来源 `ui/motion-primitives.html`）——Phase 1 已落地于 `components/motion/index.tsx`
+      + `ui/primitives.tsx` + `ui/Toast.tsx`，本次核对与资产一致、CSS 类齐备
+- [x] a11y：对比度 0 处不达标（4 视图实测）· 焦点可见（`*:focus-visible`）
+      · 键盘可达（skip-link）· 语义 landmark（`header/main/aside` + 各视图 `h1`）
+- [x] 性能：30fps 节流 · dpr≤1.5（dpr=3 屏实测钳到 1.50）· 离屏与隐藏暂停（实测静止）
+      · **LCP 468ms ✅** · **CLS 0.0003 ✅**（修复前 0.0454）
+- [x] 清理 `App.tsx` 的 `#preview` / `#planet` 原型入口（连带 import 一并移除）
+
+**a11y 修色（按改色铁律四步走：tokens → UI_DESIGN → global.css → build）**
+
+| 令牌 | 变更 | 白底比值 |
+|---|---|---|
+| `--text-3` | `#A3A3A3` → **`#737373`** | 2.52:1 → **4.74:1** |
+| `--brand-text`（新增） | `#C2410C`，供品牌色作文字/白字底用 | **5.18:1** |
+| `--brand` | 值不变，`#FF6B35`，**降级为仅图形/填充/描边** | 2.84:1（图形按 1.4.11 判 3:1，纯装饰可用；禁承载文本） |
+
+配套：`--brand` 当小字用的 11 处（激活 tab、eyebrow、chip.brand、主按钮底色、
+徽章、图谱 layer toggle …）改 `--brand-text`。
+**修正文档笔误**：`ui/UI_DESIGN.md` §2.2 旧写品牌橙「3.6:1」，实测 **2.84:1**——已改写为实测表格。
+
+**CLS 修复**：右栏 `GalaxyMini` 数据未到时 `return null`，到位后插入 272px
+canvas → 把右栏下推 317px（CLS 0.0454）。改为始终渲染 + `.ctx-galaxy`
+固定高度 `calc(272px + 44px)` + hint 单行省略 → CLS **0.0003**。
 
 #### Phase 3 ⑤ 顺带修掉的旧账
 
