@@ -144,8 +144,9 @@ Small and Maintainable Codebase。
         │  Frontend   React 18 + TypeScript + Vite       │
         │  Zustand(UI state) · React Flow(图渲染)         │
         │  TipTap(编辑) · KaTeX(数学) · Cobe(星球)         │
-        │  7 tab: Notes / Graph / Universe / MindMap /   │
-        │         Tutor / Review / Dashboard             │
+        │  笔记优先（裁决 A）：无平级 tab，主区=三栏笔记工作区│
+        │  浮层态：Graph / Universe(星系) / MindMap / Tutor /│
+        │          Review（顶栏「← 返回笔记」回去）          │
         │  ★ §0 后端优先政策下：仅最小接线，不做视觉★      │
         └──────┬─────────────────────────────────────────┘
                │  HTTP  REST  /api/v1
@@ -455,19 +456,28 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §8 Frontend Structure（§0 政策下仅供接线参考）
 
-### 8.1 View 清单（7 个 tab，`web/src/App.tsx`）
+### 8.1 View 清单（`web/src/App.tsx` · **2026-08-31 按裁决 A 更新为笔记优先**）
 
-| Tab | 组件 | 作用 |
+**主界面（默认）**：笔记工作区 = 三栏，列表 240 + 编辑器 680 + 右栏 320。
+**无平级 tab、无独立首页/Dashboard**（裁决 A）。
+
+| 视图 | 组件 | 说明 |
 |---|---|---|
-| 笔记 | `NoteEditorView` | TipTap 编辑器 + 笔记列表 + 反链 + FTS 搜索 + 附件上传 + Knowledge Radar |
-| 图谱 | `GraphView` | dagre 层级布局 · Concept/Note 双节点 · Layer Toggle · MiniMap · Floating Inspector |
-| Universe | `KnowledgeUniverse` | d3-force 域聚类 + 中央 Planet + 节点 hover/拖动 + Inspector + Focus 模式 |
-| 导图 | `MindMapCanvas` | React Flow 思维导图 · 节点 CRUD · Concept Binding · 导入导出 |
-| AI Tutor | `TutorPanel` | 多模式 AI 问答 + 上下文透视面板（当前 MockProvider） |
-| 复习 | `ReviewSessionView` | SM-2 复习会话状态机 |
-| 仪表盘 | `DashboardView` | Knowledge Planet（Cobe）+ Sync Status Panel + 今日复习 + 掌握度排行 + 学习时间线 |
+| **笔记工作区**（默认主界面） | `NoteEditorView` + `ContextRail` | TipTap 编辑器 + 笔记列表 + 反链 + FTS 搜索 + 附件上传 + 右栏（大纲/反链/关联/掌握度/雷达 + 迷你星系） |
+| 图谱（浮层） | `GraphView` | dagre 层级布局 · Concept/Note 双节点 · Layer Toggle · MiniMap · Floating Inspector |
+| Universe（浮层） | **`GalaxyView`**（`components/galaxy/`） | **多星球系统**：主笔记=星球、副笔记=卫星，层级从 `/graph` 边拓扑推断；全屏巡览 4s 可暂停 / 右栏单颗静止 |
+| 导图（浮层） | `MindMapCanvas` | React Flow 思维导图 · 节点 CRUD · Concept Binding · 导入导出 |
+| AI Tutor（右栏抽屉） | `TutorPanel` | 多模式 AI 问答 + 上下文透视面板（非流式 POST /chat，流式待接 B2 SSE） |
+| 复习（浮层） | `ReviewSessionView` | SM-2 复习会话状态机 · 键盘驱动 |
 
-隐藏入口（URL hash，不占 tab）：`#preview` → `UniverseInteractionPreview` · `#planet` → 原型版 KnowledgePlanet
+**已移除**：~~7 个平级 tab~~ · ~~`DashboardView` 仪表盘~~（裁决 A）·
+~~`KnowledgeUniverse`（d3-force 旧实现）~~（已被 `GalaxyView` 取代，代码待删）·
+~~`#preview` / `#planet` 原型入口~~（Phase 4 已清理）。
+
+保留的 dev 入口：`#gallery` → `dev/ComponentGallery.tsx`（组件活文档，仅 DEV 生效，
+生产构建被 tree-shake）。
+
+> 浮层态经右栏「关联」标签进入，顶栏「← 返回笔记」返回。
 
 ### 8.2 分层铁律
 

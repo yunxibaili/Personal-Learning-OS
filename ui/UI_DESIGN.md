@@ -315,14 +315,34 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 
 ## 11. 与 web/src 映射
 
-| 设计令牌 | web/src 现状 | 同步 |
+> **状态（2026-08-31 核实）**：Phase 0 令牌归一已完成，下表所有令牌**均已落地**，
+> `ui/tokens.css` 与 `web/src/styles/tokens.css` 逐行镜像。
+> `web/src/global.css` 顶部仅保留 Phase 0 旧令牌别名（`--bg-secondary` →
+> `--surface-2`、`--text-primary` → `--text` 等），计划一个版本后删除。
+
+| 设计令牌 | 值 | web/src 状态 |
 |---|---|---|
-| `--brand #FF6B35` | `global.css` 现 `--brand #FF8A00` | v1 切到 `#FF6B35`；旧 `#FF8A00` 仅作 `--brand-hover` 备份 |
-| `--bg-soft #F5F5F5` | `global.css` 现 `--bg-secondary #F7F7F7` | 切到 `#F5F5F5` |
-| `--border #ECECEC` | 现 `--border #E5E5E5` | 切到 `#ECECEC` |
-| `--text #171717` | 现 `--text-primary #1A1A1A` | 切到 `#171717` |
-| `--hl #FBF1CF` | 组件 HTML 已有，全局未声明 | 提升为全局令牌 |
-| `--ink #35618F` | 组件 HTML 已有 | 提升为全局辅色 |
+| `--brand` | `#FF6B35` | ✅ 已落地（`web/src/styles/tokens.css`），**仅图形/填充/描边** |
+| `--brand-text` | `#C2410C` | ✅ 已落地（Phase 4 新增；品牌色作文字/白字底用） |
+| `--text-3` | `#737373` | ✅ 已落地（Phase 4 由 `#A3A3A3` 提升对比度至 4.74:1） |
+| `--bg-soft` | `#F5F5F5` | ✅ 已落地 |
+| `--border` | `#ECECEC` | ✅ 已落地 |
+| `--text` | `#171717` | ✅ 已落地 |
+| `--hl` | `#FBF1CF` | ✅ 已提升为全局令牌 |
+| `--ink` | `#35618F` | ✅ 已提升为全局辅色 |
+
+| 组件 | web/src 位置 | 状态 |
+|---|---|---|
+| 基础组件（Button/Input/Tag/Badge/Skeleton/Toast/Progress…） | `components/ui/basics.tsx` · `primitives.tsx` · `Toast.tsx` | ✅ Phase 1 |
+| 复合组件（Select/Modal/Tooltip/SegmentedControl/Tabs/Switch） | `components/ui/controls.tsx` · `Select.tsx` | ✅ Phase 1 |
+| 动效基元（FadeInUp/CountUp/ProgressRing/WaveLink） | `components/motion/index.tsx` | ✅ Phase 1 |
+| AppShell 三栏（TopBar + ContextRail） | `components/shell/` | ✅ Phase 2 |
+| 星系（多星球系统） | `components/galaxy/GalaxyCanvas.tsx` | ✅ Phase 3 ⑤ |
+| 组件活文档 | `dev/ComponentGallery.tsx`（`#gallery`，dev-only） | ✅ Phase 1 |
+
+**作废**：`bento-dashboard.html`（裁决 A 删除仪表盘，§8）；
+`components/universe/` 旧星系与 `components/planet/` 已被 `components/galaxy/` 取代
+（代码待项目所有者决定是否删除）。
 
 > **同步纪律**：改 `tokens.css` → 改本文件 §0/§2/§3 → 改 `web/src/global.css` → 跑 `npm run build`。
 > 不允许 ui/ 内部与 web/ 颜色值漂移。
@@ -354,6 +374,7 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | v1 | 2026-08-29 | 初版。统一令牌到 MiMo 橙白体系；新增 5 个组件页（Home Hero / App Shell / Bento Dashboard / Spotlight / Marquee）+ 1 个动效基元页 + 总览导航页。`ui/README.md` 索引同步。 |
+| v1.1 | 2026-08-31 | **a11y 与一致性收口**：① §2.2 对比度改为**实测表**（原「品牌橙 3.6:1」为笔误，实测 2.84:1）；② 新增 `--brand-text #C2410C`（5.18:1）供品牌色作文字/白字底；`--brand` 降级为仅图形/填充；`--text-3` 由 `#A3A3A3`(2.52:1) 改为 `#737373`(4.74:1)；③ §11 映射表由「待同步」改为「已落地」真实状态，并补组件落地位置；④ §8 已按裁决 A 改写为笔记优先（原「六页面骨架」）。 |
 
 ---
 

@@ -2,6 +2,16 @@
 
 > 人类全景状态见 `docs/PROJECT_STATE.md`（唯一状态来源）；本文件是 AI 会话增量快照。
 
+> ⚠️ **本文件为历史快照，已严重过期（最后更新 2026-08-30，早于前端阶段 Phase 0–4）**。
+> 其中出现的 `DashboardView`、`KnowledgeUniverse`（d3-force 版）、`#preview`/`#planet`
+> 均已不存在：
+> - `DashboardView` —— 裁决 A 删除仪表盘（2026-08-30）
+> - `KnowledgeUniverse` —— 已被 `components/galaxy/GalaxyCanvas.tsx` 的多星球系统取代（2026-08-31）
+> - `#preview` / `#planet` 原型入口 —— Phase 4 已清理（2026-08-31）
+>
+> **查当前状态请读**：`docs/PROJECT_STATE.md`（唯一状态来源）· `docs/ai/ACTIVE_TASK.md`（当前任务）
+> · `docs/TASKS.md` 的「前端阶段任务 Phase 0–4」。本文件保留仅供追溯历史会话报告。
+
 > AI 启动时必读第二份。每次 git commit 后同步更新。
 > 上次更新：2026-08-30 · Branch：main ·
 > Clean：**no**——M7-008（Sync HTTP 层：manifest exchange + pairing）已完成，待提交与文档计数同步

@@ -595,7 +595,10 @@ Mobile 触发条件未变（ADR-006），但前置改为 P8 完成 + Mobile API 
 
 P8 PC Productization 候选范围（届时按 §12 八项清单逐项立项）：
 1. Knowledge Mode / Learning Mode 落地（ADR-022 从设计到实现；禁 XP/streak/等级）
-2. Dashboard 升级为 Learning OS Home（Today / Review / Weak Areas / Recent / Universe 预览）
+2. ~~Dashboard 升级为 Learning OS Home（Today / Review / Weak Areas / Recent / Universe 预览）~~
+   **已作废（2026-08-30 裁决 A）**——取消平级 tab、删除仪表盘，打开应用即笔记工作区。
+   Home 的聚合数据（待复习/最近笔记/薄弱概念）已改由 TopBar 复习徽章与右栏承载；
+   `/api/v1/home` 端点保留作右栏数据源（方案 B）。见上方「待决冲突：P8-003 Home vs 裁决 A」。
 3. Tutor 三入口闭环（Note→Explain · Review 错答→Hint · Universe 弱项→Tutor）
 
 Mobile API Preparation 原则（提前冻结，防跑偏）：
