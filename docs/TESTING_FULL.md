@@ -45,7 +45,8 @@
 ## 2. 一键 Gate 命令
 
 ```bash
-# 后端全量（目标：0 failed；2026-08-31 实测 832 passed）
+# 后端全量（目标：0 failed；2026-08-31 实测 836 passed——含 BUG-1 修复
+# 新增的 2 项 export→rebuild 守护测试）
 cd server && .venv/Scripts/python -m pytest -q
 
 # 前端类型 + 构建 + 单测
@@ -267,9 +268,14 @@ Gate 通过线：`pytest` 全绿 · `vitest` 全绿 · `tsc --noEmit` PASS · `v
 3. 导出 JSON → 删除导图 → 导入 → 画布一致。
 
 **场景 C：全量导出 → 重建 → 还原**
-1. `/export` 导出快照 → 记录文件。
-2. 清空 vault+DB，用 `notes/import` + 导出件重建。
+1. `/export` 导出快照 → 记录文件（zip 含 vault + attachments + mind_maps +
+   metadata/eventlogs + **concepts.json 概念/掌握度快照** + 脱敏 settings）。
+2. 清空 vault+DB，用 `notes/import` + 导出件重建（import 会自动暂存
+   concepts.json，随后 `admin/reindex` 恢复概念/掌握度并回放事件日志）。
 3. 核对：笔记数、链接、概念、掌握度、复习记录与快照一致（reindex 正确性）。
+   **自动化守护**：`tests/unit/test_export.py::TestExportRebuildClosedLoop`
+   （闭环一致性 + 二次 reindex 幂等）；脚本 `scripts/scenarios_bc_closed_loop.py`
+   场景 C 全步可复跑（2026-08-31 修复后 15/15）。
 
 **场景 D：离线与本地优先**
 1. 停掉后端 → 前端各视图错误态友好（错误条/空态），不白屏不崩溃。
