@@ -1,32 +1,44 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。权威源：`docs/PROJECT_STATE.md`（状态唯一来源）· `docs/TASKS.md`（任务与报告）。
-> 上次更新：2026-08-31 · HEAD `b1ce03b`（184 commits）· Gate：pytest **836** · vitest **28** · tsc PASS · build PASS · CI（`.github/workflows/ci.yml`）
+> 上次更新：2026-08-31 · HEAD `888ecd2`（186 commits）· Gate：pytest **836** · vitest **28** · tsc PASS · build PASS · CI 双绿
 
 ---
 
 ## Task ID
 
-**（空 —— 当前无进行中任务）** 项目处于 P8 收尾阶段（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
-昨夜已闭环 P8-006 / P8-007，并修复 BUG-1～5 + CI/SECURITY；今日完成 B 项「文档状态回填」。
+**P8-FE-001 UI 视觉打磨（进行中）** — 用户反馈「UI 太劣质」，FE-001 解冻（AGENTS §12 端到端闭环协议下的前端任务）。
+本日已闭环两轮（HEAD `907ff74` + `888ecd2`），剩余子项待评估/取舍。
 
-## 最近完成（2026-08-31）
+### 本轮（2026-08-31）已闭环
 
-- **P8-006 Tutor 三入口闭环** ✅（tutorSeed + tutorReturnView + openTutor/closeTutor；三路径 headless 实测）
-- **P8-007 Tutor SSE 流式** ✅（`apiPostStream` 单状态源 `streamText`；Stop 中止保留；删 placeholders 死代码）
-- **BUG-1（P0 · 数据不锁死）** ✅ 导出新增 `concepts.json` 快照（概念+掌握度+SM-2+复习队列）→ import 暂存 → `reindex` 恢复（stub 升格 / 快照覆盖占位行 / eventlogs 去重回放）；守护测试 2；场景 C 概念/掌握度 1→1
-- **BUG-2** ✅ README 如实标注 Tutor 默认 MockProvider + OpenAI 兼容 / Ollama 配置说明
-- **BUG-3** ✅ 端点数 88→89（`app.openapi()` 实测 ×3 处）；README 进度表对齐现实（M2b/M3.5-B/M4/M5-M7）；基线头部改「以实测为准」
-- **BUG-4** ✅ 浮层视图/TutorPanel/编辑器全家桶按需分包；**主包 982kB→182kB（gzip 59k）**
-- **BUG-5** ✅ 新增 `.github/workflows/ci.yml`（backend pytest / frontend tsc+vitest+build）+ 根级 `SECURITY.md`（摘 AGENTS §19）
-- **验证**：场景 A 11/11 · 场景 B 8/8 · 场景 B+C 15/15（含 BUG-1 守护）· `pytest 836` · `vitest 28` · `tsc` · `build` 全绿
+- **层次/背景** ✅  body 灰底（`--bg-soft`）+ 编辑器白纸面（`--surface`）+ 列表左内边距 12（与 `ui/app-shell.html` / `note-workspace.html` 对齐）
+- **状态色 a11y** ✅  `--ok`/`--warn`/`--err` 作文字全部不达标（最大 3.76:1）；新增 `--ok-text #15803D` (5.02) / `--warn-text #B45309` (5.02) / `--err-text #B91C1C` (6.47)；ui/tokens.css + web/styles/tokens.css + UI_DESIGN.md §2.2 同步更新；20 处 `color: var(--ok|--warn|--err)` 切到 `*-text`
+- **原生控件字体** ✅  button/input/select/textarea `font:inherit`（与设计资产对齐）；三个原生按钮（新建/删除/插图·PDF）从 13.33px → 14px
+- **空态与按钮层级** ✅  「← 选择或新建一篇笔记」单行小灰字 → 居中两行块（0 笔记：「开始你的第一篇笔记」+ CTA；>0 无选：「选一篇笔记开始」+ 提示）；删除按钮无选时隐藏（数据态=UI态），选中时用新 `.danger` 样式（透明边框 / `--text-3`，hover 才显 `--err-text`）
+
+**验证**：tsc · vitest 28 · vite build · 头戴无头 7 视图（empty/selected/rail×5/review）审计全绿；对比度/字号/层次/CLS 全部达标。
+
+### P8-FE-001 待评估（未动）
+
+- **MiSans woff2 子集加载**：UI_DESIGN §依赖策略明确「P8-FE-001 收口」；当前声明了字体栈但 0 文件加载 → 静默降级苹方/雅黑。下载/子集化/绑入是 ~50-100KB 工作，需工具链（fonttools/pyftsubset 或 cloud subset）；可选包体 + 设计意图兑现两全
+- **浮层视图视觉核验**（图谱/星系/导图/Tutor）：基线已采但未目视过；非缺陷性，按需
+- **微交互 150-250ms**（hover/active/focus）：当前零动效，符合 ADR-013 铁律，但 hover 反馈偏硬；可选精修
+
+### 候选方向（待所有者定序，仍照 P8 收尾政策）
+
+| 方向 | 说明 | 前置/风险 |
+|---|---|---|
+| A | UI 视觉打磨（**进行中**） | — |
+| C | M6 Tauri 桌面打包（唯一「未闭环」正式里程碑） | 重依赖（Rust 工具链） |
+| D | M9 Visual Engine / M10 AI 生成可视化（规格完备未开工） | 体量最大，与「先内容后视觉」铁律冲突 |
+| 挂起 | P8-Mode-001 · UpMark 联动 · Radar 编辑器内触发（等显式发起） | — |
 
 ## 候选方向（待所有者定序）
 
 | 方向 | 说明 | 前置/风险 |
 |---|---|---|
-| **A. UI 视觉打磨**（FE-001 已解冻，用户反馈「UI 太劣质」） | 空态设计 · MiSans woff2 子集 · 层次/间距/质感 | 无需前置，需确认范围 |
-| **B. 文档状态回填** | ①ACTIVE_TASK/CURRENT_STATE（本文）②README 已对齐 | 已做（本次） |
+| **A. UI 视觉打磨**（**进行中**） | 层次/状态色 a11y/按钮字体/空态已闭环；剩余 MiSans woff2 / 微交互可选精修 | 子集化工具链（pyftsubset） |
 | **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
 | **D. M9 Visual Engine / M10** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
 | 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |
