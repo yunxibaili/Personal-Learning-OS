@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiGet, apiPost } from "../lib/api";
 import { useUi } from "../stores/ui";
+import { Progress } from "../components/ui";
 import type {
   AnswerResponse,
   ReviewItem,
@@ -192,15 +193,17 @@ export function ReviewSessionView() {
     <section className="review-session">
       {error && <div className="error-banner">{error}</div>}
 
-      {/* 进度条 */}
+      {/* 进度条（改用组件库 Progress：与手写版视觉等价，但自带
+          role=progressbar + aria-valuemin/max/now 三件套） */}
       <div className="review-progress">
         <span>
           {index + 1} / {queue.length}
         </span>
         <div className="review-progress-bar">
-          <div
-            className="review-progress-fill"
-            style={{ width: `${((index + 1) / queue.length) * 100}%` }}
+          <Progress
+            value={(index + 1) / queue.length}
+            tone="brand"
+            label={`复习进度 ${index + 1}/${queue.length}`}
           />
         </div>
       </div>

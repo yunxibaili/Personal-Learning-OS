@@ -645,15 +645,8 @@ body {
 }
 .review-progress-bar {
   flex: 1;
-  height: 4px;
-  background: var(--surface-3);
-  border-radius: 2px;
-}
-.review-progress-fill {
-  height: 100%;
-  background: var(--brand, var(--brand));
-  border-radius: 2px;
-  transition: width 0.3s ease;
+  min-width: 0;
+  /* 内部为组件库 <Progress>（ui-progress），不重复实现填充 */
 }
 
 /* Main card */
@@ -1655,57 +1648,6 @@ body {
   pointer-events: none;
 }
 
-/* ── Central Planet ── */
-.planet {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  border-radius: 50%;
-}
-.planet:active { cursor: grabbing; }
-
-.planet-glow {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 138, 0, 0.35) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.planet-orbits { position: absolute; inset: 0; pointer-events: none; }
-.planet-orbit {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(120, 120, 120, 0.35);
-  border-radius: 50%;
-}
-
-.planet-core {
-  position: relative;
-  width: 100%; height: 100%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #3a3f52 0%, #23262e 65%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-}
-
-.planet-label { font-size: 13px; font-weight: 600; color: var(--surface-3); letter-spacing: 0.02em; }
-.planet-sub { font-size: 10px; color: #a8aab5; }
-
-/* 微弱呼吸动画（8-12s，scale 1.00↔1.02） */
-@keyframes planet-breath {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-.planet-breath { animation: planet-breath 10s ease-in-out infinite; }
-
 /* ── Floating Inspector（替代右侧大抽屉）──────────── */
 .universe-inspector {
   position: absolute;
@@ -1755,60 +1697,6 @@ body {
 }
 .inspector-btn:hover { filter: brightness(1.05); }
 
-/* ── Knowledge Planet（P8-001C，MiMo 克制感）──────────────── */
-.planet-panel { min-height: 380px; }
-.planet-scene {
-  position: relative; width: 100%; max-width: 560px; height: 420px;
-  margin: 0 auto; touch-action: none; cursor: grab;
-  contain: layout paint size;
-}
-.planet-scene:active { cursor: grabbing; }
-.planet-globe-wrap {
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px; height: 280px;
-}
-.planet-globe-wrap canvas {
-  width: 100%; height: 100%; display: block;
-  contain: layout paint size;
-}
-.planet-ring {
-  position: absolute; left: 50%; top: 50%;
-  border: 1px dashed var(--border);
-  border-radius: 50%; pointer-events: none;
-}
-.planet-sat {
-  position: absolute; left: 50%; top: 50%;
-  width: 0; height: 0;
-  transition: opacity 0.35s ease;
-}
-.planet-sat-dot {
-  position: absolute; border-radius: 50%;
-  transform: translate(-50%, -50%);
-  cursor: pointer; border: none; padding: 0;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-.planet-sat-dot:hover {
-  transform: translate(-50%, -50%) scale(1.8);
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
-}
-.planet-sat-label {
-  position: absolute; top: 12px; left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap; font-size: 11px; color: var(--muted, var(--text-2));
-  opacity: 0; transition: opacity 0.15s; pointer-events: none;
-}
-.planet-sat:hover .planet-sat-label { opacity: 1; }
-.planet-hint {
-  position: absolute; bottom: 0.6rem; left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px; color: var(--muted, var(--text-2));
-}
-.planet-selected {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 8px; padding: 8px 12px;
-  border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    FE-001 Phase 1 组件——逐字移植自 ui/motion-primitives.html
