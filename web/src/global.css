@@ -155,8 +155,17 @@ button, input, select, textarea {
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
+  /* 微交互 150ms（ADR-013）：只动 color/背景/边框/transform，禁 box-shadow 动画 */
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
+.note-list button:hover { background: var(--bg); }
+.note-list button:active { transform: translateY(1px); }
 .note-list button.primary { border-color: var(--brand); }
+.note-list button.primary:hover { background: var(--brand-soft); }
 .note-list button.danger {
   background: transparent;
   border-color: transparent;
@@ -165,6 +174,7 @@ button, input, select, textarea {
 .note-list button.danger:hover {
   color: var(--err-text);
   border-color: var(--err-text);
+  background: var(--err-soft);
 }
 
 .note-list ul { list-style: none; margin: 4px 0 0; padding: 0; }
@@ -176,6 +186,10 @@ button, input, select, textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* 列表是全场最高频交互：hover/选中给 150ms 过渡，避免生硬跳变 */
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 .note-list li:hover { color: var(--text-primary); background: var(--bg-secondary); }
 .note-list li.active { color: var(--text-primary); background: var(--bg-secondary); }
@@ -201,7 +215,14 @@ button, input, select, textarea {
   padding: 4px 12px;
   border-radius: 6px;
   cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
+.editor-toolbar button:hover { background: var(--bg); border-color: var(--text-3); }
+.editor-toolbar button:active { transform: translateY(1px); }
 .save-state { color: var(--ok-text); font-size: 12px; margin-right: auto; }
 .error-banner {
   border: 1px solid var(--err);
