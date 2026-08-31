@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **M3.5-B Full Omniscience**（ADR-012 Phase B，Knowledge Radar 学习状态真实化）：
+  `suggest_for_context` 的 memory 三字段从占位 null 接真实数据——
+  mastery（`concept_mastery.effective`）· review_due（`review_queue` status=pending）·
+  last_mistake（`mistakes.description` 最近一条）。新增 `_resolve_concept_for_memory()`
+  （matches 命中 concept 优先 → 精确标题 → LIKE 唯一命中；**多候选不猜，返回 None**——
+  宁可没有也不能把 A 的掌握度标到 B 头上）· `_memory_for_concept()`（三字段独立取值，
+  任一缺失即 null 不抛异常）· `KnowledgeRadar` 学习状态区真实渲染（掌握度橙条+百分比 ·
+  「今日到期」强调 · 错题单行省略+悬浮；全 null 整区不渲染不占版面）·
+  `test_suggest_memory.py` 6 项 · pytest 13（7+6）+ vitest 22 + build 全绿 ·
+  实检：真实库造数据 API 返回 mastery=0.361 + 到期 review_due，UI 三行渲染正确
+
+### Added
 - **B28 Memories 管理面 API**（AI 自动写入记忆的可见性兜底）：
   `GET /api/v1/memories`（列表 · kind 过滤 + 分页 · total 为过滤后总数）·
   `GET /api/v1/memories/{id}` · `PATCH`（部分改写，409 = 改写后前缀撞车）·
