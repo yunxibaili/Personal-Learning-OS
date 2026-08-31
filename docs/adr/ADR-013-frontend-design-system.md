@@ -233,6 +233,30 @@ Knowledge Universe：允许 Scientific Visualization。
 - Hero Section
 - Feature Card Grid
 
+### 2.12 Known Conflict — Gradient / Backdrop vs Design Assets（待裁决，2026-08-31）
+
+**状态**：所有者裁定「维持现状 + 记录」，未改代码，待显式裁决。
+
+§2.7 禁止 gradient / backdrop-filter / glassmorphism / glow，但项目设计资产
+`ui/*.html` 明确使用这些处理，且 `web/src/global.css` 已 1:1 移植：
+
+| 选择器 | 用法 | 来源资产 |
+|---|---|---|
+| `.btn-primary` | `linear-gradient(135deg,var(--brand),var(--brand-2))` + `box-shadow:var(--shadow-glow)` | `motion-primitives.html` |
+| `.avatar` / `.topbar__dot` | 品牌渐变 | `app-shell.html` |
+| `.topbar` | `backdrop-filter: saturate(180%) blur(12px)` 毛玻璃 | `app-shell.html` |
+| `.wavelink` | 品牌渐变下划线 | `motion-primitives.html` |
+| `.skel` | 灰渐变 shimmer | `motion-primitives.html` |
+
+同理 §2.6「动效 150-250ms」与设计资产内的 `.fade-target`(.6s) / `.skel`(1.4s) /
+`ProgressRing`(1.2s) / tab `left`(.35s) 也存在张力。
+
+**裁决路径（均未执行，需所有者显式发起）**：
+- A 修本 ADR：在 §2.7/§2.8 追加「设计系统豁免」，批准上述品牌处理为既有设计语言；
+- B 守严格版：从 `global.css` 与 `ui/*.html` 剥除全部 gradient/backdrop/glow 并将动效压到 250ms。
+
+当前为「ADR 与设计资产不一致」，非实现违规。
+
 ### 2.11 Dependency Policy
 
 保持：React + 纯 CSS + Zustand
