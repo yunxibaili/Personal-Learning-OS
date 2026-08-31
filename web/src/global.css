@@ -157,6 +157,15 @@ button, input, select, textarea {
   cursor: pointer;
 }
 .note-list button.primary { border-color: var(--brand); }
+.note-list button.danger {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-3);
+}
+.note-list button.danger:hover {
+  color: var(--err-text);
+  border-color: var(--err-text);
+}
 
 .note-list ul { list-style: none; margin: 4px 0 0; padding: 0; }
 .note-list li {
@@ -203,6 +212,39 @@ button, input, select, textarea {
   margin-bottom: 8px;
 }
 .empty-hint { color: var(--text-secondary); }
+
+/* 编辑器空态：未选笔记 / 没有笔记 两种。居中分层，CTA 仅在 0 笔记时出现。*/
+.editor-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+}
+.editor-empty__title {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.editor-empty__sub {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-3);
+}
+.editor-empty button.primary {
+  margin-top: 8px;
+  padding: 8px 18px;
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.editor-empty button.primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
 
 /* TipTap 编辑区——Phase 3 阅读版式（编辑器硬约束 1：680 行宽居中 / 17px / 1.75）*/
 .editor-reading {

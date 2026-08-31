@@ -155,7 +155,9 @@ export function NoteEditorView() {
       </h1>
       <aside className="note-list">
         <button className="primary" onClick={createNote}>＋ 新建</button>
-        <button onClick={deleteActive} disabled={activeId == null}>删除</button>
+        {activeId != null && (
+          <button className="danger" onClick={deleteActive}>删除</button>
+        )}
         <ul>
           {notes.map((n) => (
             <li
@@ -211,7 +213,20 @@ export function NoteEditorView() {
             </Suspense>
           </div>
         ) : (
-          <p className="empty-hint">← 选择或新建一篇笔记</p>
+          <div className="editor-empty">
+            {notes.length === 0 ? (
+              <>
+                <p className="editor-empty__title">开始你的第一篇笔记</p>
+                <p className="editor-empty__sub">点上方「＋ 新建」开始写。</p>
+                <button className="primary" onClick={createNote}>＋ 新建</button>
+              </>
+            ) : (
+              <>
+                <p className="editor-empty__title">选一篇笔记开始</p>
+                <p className="editor-empty__sub">从左侧选，或点「＋ 新建」开新的。</p>
+              </>
+            )}
+          </div>
         )}
       </div>
     </section>
