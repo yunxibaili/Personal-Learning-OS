@@ -2270,6 +2270,12 @@ body {
   to   { transform: translateX(0); }
 }
 
+/* 懒加载视图回退（BUG-4）：占位无内容，避免闪烁；浮层容器本身定高全屏，无 CLS */
+.lazy-view-fallback {
+  width: 100%;
+  height: 100vh;
+}
+
 /* ---- Phase 3 ⑤ 星系（全屏巡览形态）---- */
 .galaxy-view {
   display: flex; flex-direction: column; align-items: center; justify-content: center;

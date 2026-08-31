@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
 import { useUi } from "../stores/ui";
@@ -10,7 +10,13 @@ import type {
   NoteSummary,
   OkResponse,
 } from "@shared/types/note";
-import { TiptapEditor } from "../components/editor/TiptapEditor";
+
+// 编辑器（TipTap/ProseMirror/KaTeX 全家桶 ~800kB）按需加载（BUG-4 代码分割）：
+// 首帧先渲染「选择笔记」骨架与列表，选中之/后台预取后再挂编辑器。
+// 挂载即 warmup 预取 chunk：首个笔记打开前 chunk 多半已就绪，体感无延迟。
+const TiptapEditor = lazy(() =>
+  import("../components/editor/TiptapEditor").then((m) => ({ default: m.TiptapEditor })),
+);
 
 /** M1 知识库核心：列表 + TipTap 编辑（Markdown 进出）+ 防抖自动保存 + 附件上传。 */
 export function NoteEditorView() {
@@ -33,6 +39,13 @@ export function NoteEditorView() {
   useEffect(() => {
     refreshList().catch((e) => setError((e as ApiError).message));
   }, [refreshList]);
+
+  // 编辑器 chunk 预取（配合 lazy 分包）：视图挂载即后台拉取，
+  // 用户点开第一篇笔记前 chunk 基本已就绪——分割收益（首屏不含 800kB 编辑器）
+  // 与打开体感两全。
+  useEffect(() => {
+    void import("../components/editor/TiptapEditor");
+  }, []);
 
   const openNote = useCallback(async (id: number) => {
     setActiveId(id);
@@ -186,12 +199,16 @@ export function NoteEditorView() {
               <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
             </div>
 
-            <TiptapEditor
-              key={detail.id}
-              initialMarkdown={detail.content_md}
-              onChange={scheduleSave}
-              onReady={onEditorReady}
-            />
+            <Suspense
+                fallback={<div className="tutor-answer empty-hint">编辑器加载中…</div>}
+              >
+              <TiptapEditor
+                key={detail.id}
+                initialMarkdown={detail.content_md}
+                onChange={scheduleSave}
+                onReady={onEditorReady}
+              />
+            </Suspense>
           </div>
         ) : (
           <p className="empty-hint">← 选择或新建一篇笔记</p>

@@ -1,15 +1,33 @@
-import { useState } from "react";
+import { lazy, Suspense } from "react";
 import { ToastProvider } from "./components/ui";
 import { AppShell } from "./components/shell/AppShell";
 import { ContextRail } from "./components/shell/ContextRail";
-import { ComponentGallery } from "./dev/ComponentGallery";
 import { useUi } from "./stores/ui";
-import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
-import { TutorPanel } from "./components/tutor/TutorPanel";
-import { GalaxyView } from "./components/galaxy/GalaxyCanvas";
-import { MindMapCanvas } from "./components/mindmap/MindMapCanvas";
-import { ReviewSessionView } from "./views/ReviewSessionView";
+
+// 浮层视图按需加载（BUG-4 代码分割）：React Flow/dagre/cobe 等重组件只在
+// 首次进入对应视图时下载，主包回落到编辑器+骨架可用的体积。
+// 懒加载回退 = 空 div（浮层切换有 150ms 过渡，无 CLS：视图容器定高全屏）。
+const GraphView = lazy(() =>
+  import("./views/GraphView").then((m) => ({ default: m.GraphView })),
+);
+const GalaxyView = lazy(() =>
+  import("./components/galaxy/GalaxyCanvas").then((m) => ({ default: m.GalaxyView })),
+);
+const MindMapCanvas = lazy(() =>
+  import("./components/mindmap/MindMapCanvas").then((m) => ({ default: m.MindMapCanvas })),
+);
+const ReviewSessionView = lazy(() =>
+  import("./views/ReviewSessionView").then((m) => ({ default: m.ReviewSessionView })),
+);
+// TutorPanel 仅含 api/轻组件，但抽屉态低频，一并分包
+const TutorDrawer = lazy(() =>
+  import("./components/tutor/TutorDrawer").then((m) => ({ default: m.TutorDrawer })),
+);
+
+function LazyFallback() {
+  return <div className="lazy-view-fallback" aria-hidden="true" />;
+}
 
 function ActiveView() {
   const activeView = useUi((s) => s.activeView);
@@ -24,7 +42,13 @@ function ActiveView() {
     return (
       <>
         <div className="workspace">
-          {underlying === "review" ? <ReviewSessionView /> : <NoteEditorView />}
+          {underlying === "review" ? (
+            <Suspense fallback={<LazyFallback />}>
+              <ReviewSessionView />
+            </Suspense>
+          ) : (
+            <NoteEditorView />
+          )}
           {underlying !== "review" && <ContextRail activeNoteId={activeNoteId} />}
         </div>
         <div
@@ -32,7 +56,9 @@ function ActiveView() {
           onMouseDown={(e) => { if (e.target === e.currentTarget) closeTutor(); }}
         >
           <aside className="tutor-drawer" role="dialog" aria-label="AI Tutor">
-            <TutorPanel />
+            <Suspense fallback={<LazyFallback />}>
+              <TutorDrawer />
+            </Suspense>
           </aside>
         </div>
       </>
@@ -49,32 +75,17 @@ function ActiveView() {
     );
   }
   // 浮层态：顶栏「← 返回笔记」回去（取消平级 tab，裁决 A）
-  switch (activeView) {
-    case "graph":
-      return <GraphView />;
-    case "universe":
-      return <GalaxyView />;
-    case "mindmap":
-      return <MindMapCanvas />;
-    case "review":
-      return <ReviewSessionView />;
-  }
+  return (
+    <Suspense fallback={<LazyFallback />}>
+      {activeView === "graph" && <GraphView />}
+      {activeView === "universe" && <GalaxyView />}
+      {activeView === "mindmap" && <MindMapCanvas />}
+      {activeView === "review" && <ReviewSessionView />}
+    </Suspense>
+  );
 }
 
 export default function App() {
-  // Phase 1 组件 Gallery（dev-only 活文档）：仅 DEV 生效，生产构建里被 tree-shake
-  const [showGallery] = useState(
-    () => typeof window !== "undefined" && window.location.hash === "#gallery",
-  );
-
-  if (showGallery && import.meta.env.DEV) {
-    return (
-      <ToastProvider>
-        <ComponentGallery />
-      </ToastProvider>
-    );
-  }
-
   return (
     <ToastProvider>
       <AppShell>
