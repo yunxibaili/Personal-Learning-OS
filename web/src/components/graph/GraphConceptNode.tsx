@@ -20,7 +20,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useState } from "react";
 
 export interface GraphConceptData extends Record<string, unknown> {
-  refId: number;
+  ref_id: number;
   label: string;
   domain: string | null;
   mastery: number | null;

@@ -4,6 +4,7 @@ import { apiGet } from "../../lib/api";
 import { useUi } from "../../stores/ui";
 import { Badge, Progress } from "../ui";
 import { KnowledgeRadar } from "../KnowledgeRadar";
+import { GalaxyMini } from "../galaxy/GalaxyCanvas";
 import type { BacklinkItem } from "@shared/types/graph";
 import type { NoteDetailResponse } from "@shared/types/note";
 import type { HomeResponse } from "@shared/types/home";
@@ -68,6 +69,7 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
 
   return (
     <aside className="ctx-rail">
+      <GalaxyMini activeNoteId={activeNoteId} />
       <div className="ctx-rail__tabs" role="tablist">
         {TABS.map((t) => (
           <button

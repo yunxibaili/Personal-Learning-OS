@@ -502,7 +502,7 @@ Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1
 | 2 | Review | ✅ 专注卡居中（640/留白96）+ 键盘 1/2/3 评分（键位角标）· Esc 退出（2026-08-30 实检） |
 | 3 | Graph | ✅ 令牌已在 Phase 0 归一（裸值仅剩 var fallback）；工具栏触摸目标 ≥44px + checkbox accent（2026-08-30） |
 | 4 | Tutor | ✅ 右栏抽屉（560px + 遮罩 + 返回笔记，实检通过）；~~流式 Skeleton/停止按钮~~ **待 Phase 4**——当前 TutorPanel 为非流式 POST /chat，需先接 B2 SSE 流式才有「停止」语义 |
-| 5 | 星系 | 地球移植自 `home-hero.html`；双形态（全屏轮换 / 右栏单颗） |
+| 5 | 星系 | ✅ **多星球系统**（2026-08-31）：层级 = 从 wikilink 拓扑推断（方案 A）；出度≥2 为星球、与 hub 双向互链为卫星、互链排他归给严格更大者、被收编的 hub 降级；双形态（全屏巡览 4s·可暂停·可点选 / 右栏单颗静止·dpr=1）；公转 72s/圈；卫星上限 16 + 「…+N」；橙色只用于 mastery 弧与选中态；13 项语义单测全过；实检渲染：4 颗星球、Transformer 1 卫星（与真实图数据预演完全一致） |
 
 ### Phase 4 — 动效基元 + a11y + 性能收口
 
@@ -511,6 +511,12 @@ Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1
 - [ ] a11y：对比度（正文 ≥4.5:1 / UI ≥3:1）· 焦点可见 · 键盘可达 · 语义 landmark
 - [ ] 性能：30fps 限帧 / dpr 上限 / 离屏暂停 / LCP<2.5s / CLS<0.1
 - [ ] 清理 `App.tsx` 的 `#preview` / `#planet` 原型入口
+
+#### Phase 3 ⑤ 顺带修掉的旧账
+
+- 契约 bug：`shared/types/graph.ts` 的 `refId` 字段全项目唯一 camelCase 违约
+  （Python 契约权威产出 `ref_id`，pytest 已锁定）。导致 `GraphView` 与星系
+  拿到 undefined——2026-08-31 全量改 `ref_id`（6 文件 22 处）。
 
 ### 前端阶段不做（待独立立项）
 

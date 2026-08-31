@@ -18,7 +18,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useState } from "react";
 
 export interface GraphNoteData extends Record<string, unknown> {
-  refId: number;
+  ref_id: number;
   label: string;
   domain: string | null;
   selected?: boolean;

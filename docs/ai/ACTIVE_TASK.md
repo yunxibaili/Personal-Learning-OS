@@ -1,26 +1,34 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-30 · **§9 后端全部闭环**（pytest 730）
+> 上次更新：2026-08-31 · **Phase 3 ⑤ 星系完成**（多星球系统 + 13 项语义单测 + 无头自检）
 
 ---
 
 ## Task ID
 
-**§9 后端闭环完成**（B5/B6/B9/B14/B16/Memory Agent 已收口 · pytest 730）
+**Phase 3 ⑤ 星系完成**（2026-08-31 · 13 项单测全过 · 无头实检 4 颗星球轮换正确）
 
 ## 当前任务
 
-**前端阶段已开启，FE-001 已解冻**（2026-08-30 项目所有者显式宣布，见 PROJECT_STATE §0
-与 TASKS.md Phase 0–4）。P8-003 Home 冲突已裁定 = **方案 B**：HomeView 撤销，
-`/api/v1/home` 保留供 Phase 2 右栏复用。下一步：Phase 0 令牌归一 → Phase 1 基础组件。
+**前端阶段已开启，FE-001 已解冻**。Phase 0–3 已基本完成：
+- Phase 0 令牌归一 ✅
+- Phase 1 基础组件 ✅
+- Phase 2 AppShell 笔记优先三栏 ✅
+- Phase 3 视图重做 ① NoteEditor ② Review ③ Graph ④ Tutor ⑤ 星系 ✅
+  （顺带修掉 `refId→ref_id` 契约 bug，影响 GraphView）
+**下一步：Phase 4 — 动效基元 + a11y + 性能收口 + 清理 #preview/#planet 临时入口**。
 
 **B10 本地 LLM（Ollama）实测 ✅**（2026-08-30：qwen3-14b 端到端，think 剥离修复见 §9.1）
 
 ## 近期完成
 
-- **B1b 真实凭据冒烟 ✅**（2026-08-30 实测通过：DeepSeek 端到端，key 用后即删）
-- **§9 后端闭环**：B5/B6/B9/B14/B16/Memory Agent 已收口（pytest 730）
+- **Phase 3 ⑤ 星系（多星球系统）✅**（2026-08-31）
+  - 层级来源 = 方案 A：从 wikilink 拓扑推断（项目所有者裁定）
+  - 13 项语义单测全过：覆盖出度阈值/单向不认/排他归属/嵌套收编/16 上限/概念排除等
+  - 双形态：全屏巡览 4s·可暂停·可手动点选 / 右栏单颗静止·dpr=1
+  - 公转 72s/圈、橙色仅 mastery 弧与选中态
+  - 顺带修掉 `GraphNode.refId` 契约违约（6 文件 22 处改 `ref_id`）
 
 ### 范围（收窄定案，v1 只做两类产出）
 

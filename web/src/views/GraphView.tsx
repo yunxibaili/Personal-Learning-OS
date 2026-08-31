@@ -63,9 +63,9 @@ const nodeTypes: NodeTypes = {
 
 const edgeTypes = { graph: GraphEdgeComponent };
 
-function conceptMastery(refId: number, data: GraphResponse | null): number | null {
+function conceptMastery(ref_id: number, data: GraphResponse | null): number | null {
   if (!data) return null;
-  const node = data.nodes.find((n) => n.type === "concept" && n.refId === refId);
+  const node = data.nodes.find((n) => n.type === "concept" && n.ref_id === ref_id);
   return node?.learning?.mastery ?? null;
 }
 
@@ -153,10 +153,10 @@ export function GraphView() {
       .map((n) => {
         const src = visible.find((v: GraphNode) => v.id === n.id)!;
         const data: GraphConceptData | GraphNoteData = {
-          refId: src.refId,
+          ref_id: src.ref_id,
           label: src.title,
           domain: src.domain,
-          mastery: src.type === "concept" ? conceptMastery(src.refId, resp) : null,
+          mastery: src.type === "concept" ? conceptMastery(src.ref_id, resp) : null,
           selected: selectedId === n.id,
         };
         return {
@@ -243,7 +243,7 @@ export function GraphView() {
           }}
           onNodeDoubleClick={(_, node) => {
             const d = node.data as GraphConceptData | GraphNoteData;
-            setRoot({ type: node.type as EntityType, id: d.refId });
+            setRoot({ type: node.type as EntityType, id: d.ref_id });
           }}
           onPaneClick={() => setSelectedId(null)}
         >
@@ -267,21 +267,21 @@ export function GraphView() {
           {selectedNode.domain && (
             <div className="graph-inspector-domain">{selectedNode.domain}</div>
           )}
-          {selectedNode.type === "concept" && conceptMastery(selectedNode.refId, resp) !== null && (
+          {selectedNode.type === "concept" && conceptMastery(selectedNode.ref_id, resp) !== null && (
             <div className="graph-inspector-mastery">
-              Mastery: {Math.round((conceptMastery(selectedNode.refId, resp) ?? 0) * 100)}%
+              Mastery: {Math.round((conceptMastery(selectedNode.ref_id, resp) ?? 0) * 100)}%
             </div>
           )}
           <div className="graph-inspector-actions">
             {selectedNode.type === "note" && (
-              <button onClick={() => openNote(selectedNode.refId)}>打开笔记</button>
+              <button onClick={() => openNote(selectedNode.ref_id)}>打开笔记</button>
             )}
             {selectedNode.type === "concept" && (
-              <button onClick={() => openTutorForConcept(selectedNode.refId)}>
+              <button onClick={() => openTutorForConcept(selectedNode.ref_id)}>
                 问 Tutor
               </button>
             )}
-            <button onClick={() => setRoot({ type: selectedNode.type, id: selectedNode.refId })}>
+            <button onClick={() => setRoot({ type: selectedNode.type, id: selectedNode.ref_id })}>
               以此为根展开
             </button>
           </div>

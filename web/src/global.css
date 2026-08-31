@@ -2294,3 +2294,59 @@ body {
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
 }
+
+/* ---- Phase 3 ⑤ 星系（全屏巡览形态）---- */
+.galaxy-view {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-6);
+  width: 100%; height: 100%;
+  padding: var(--sp-8);
+}
+.galaxy-caption { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.galaxy-caption__eyebrow {
+  font-size: var(--fs-xs); color: var(--brand);
+  font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase;
+}
+.galaxy-caption__title {
+  font-size: var(--fs-2xl); font-weight: 700; color: var(--text);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ---- Phase 3 ⑤b 右栏常驻迷你星系（spec §3.3 右栏单颗形态）---- */
+.ctx-galaxy {
+  display: flex; flex-direction: column; align-items: center;
+  padding: var(--sp-3) var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.ctx-galaxy canvas { border-radius: var(--r-lg); }
+.ctx-galaxy__hint { font-size: var(--fs-xs); color: var(--text-3); padding: 4px 0 10px; }
+
+/* ---- Phase 3 ⑤c 全屏巡览控件（暂停 + 星球点选）---- */
+.galaxy-tour {
+  display: flex; align-items: center; gap: var(--sp-4);
+  flex-wrap: wrap; justify-content: center;
+}
+.galaxy-tour__btn {
+  min-height: 32px; padding: 0 var(--sp-4);
+  font-size: var(--fs-sm); color: var(--text-2);
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--r-pill); cursor: pointer;
+  transition: color .18s ease, border-color .18s ease;
+}
+.galaxy-tour__btn:hover { color: var(--brand); border-color: var(--brand); }
+.galaxy-tour__btn[aria-pressed="true"] { color: var(--brand); border-color: var(--brand); }
+
+.galaxy-tour__dots { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.galaxy-tour__dot {
+  width: 8px; height: 8px; padding: 0;
+  border-radius: 50%; border: 1px solid var(--border);
+  background: transparent; cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
+}
+.galaxy-tour__dot:hover { border-color: var(--brand); }
+.galaxy-tour__dot.is-active { background: var(--brand); border-color: var(--brand); transform: scale(1.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .galaxy-tour__btn, .galaxy-tour__dot { transition: none; }
+}

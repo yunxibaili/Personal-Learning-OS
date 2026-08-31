@@ -6,7 +6,12 @@ export interface GraphNode {
   /** 形如 "note-3" / "concept-7"，React Flow 唯一键 */
   id: string;
   type: EntityType;
-  refId: number;
+  /**
+   * 后端字段为 snake_case（`ref_id`），与本项目其余契约一致
+   * （`updated_at` / `source_note_id` / `review_due` …）。
+   * 曾误写为 camelCase `refId`，导致前端读到 undefined——2026-08-31 修正。
+   */
+  ref_id: number;
   title: string;
   domain: string | null;
   status: string | null;

@@ -7,7 +7,7 @@ import { useUi } from "./stores/ui";
 import { GraphView } from "./views/GraphView";
 import { NoteEditorView } from "./views/NoteEditor";
 import { TutorPanel } from "./components/tutor/TutorPanel";
-import { KnowledgeUniverse } from "./components/universe/KnowledgeUniverse";
+import { GalaxyView } from "./components/galaxy/GalaxyCanvas";
 import { MindMapCanvas } from "./components/mindmap/MindMapCanvas";
 import { ReviewSessionView } from "./views/ReviewSessionView";
 import { UniverseInteractionPreview } from "./components/universe/prototype/UniverseInteractionPreview";
@@ -52,7 +52,7 @@ function ActiveView() {
     case "graph":
       return <GraphView />;
     case "universe":
-      return <KnowledgeUniverse />;
+      return <GalaxyView />;
     case "mindmap":
       return <MindMapCanvas />;
     case "review":
