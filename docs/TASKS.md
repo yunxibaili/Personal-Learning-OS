@@ -491,17 +491,17 @@ Modal 遮罩 30% ✓ · 主按钮 hover 抬升+`--shadow-glow` ✓ · Skeleton 1
 
 **测试**：`tsc` PASS · `vitest` 23 passed · `vite build` PASS
 
-**遗留（Phase 3）**：编辑器工具栏仍含 全文搜索/知识雷达（硬约束要求移出——NoteEditor
-重做时处理）；行宽 680/17px 阅读版式；保存态下沉元信息行。
+**遗留（Phase 3）**：~~编辑器工具栏仍含 全文搜索/知识雷达~~ 等三项已全部销账（2026-08-31
+审计实检）：搜索→TopBar、雷达→右栏「雷达」标签、行宽 680 居中、保存态小字下沉元信息行。
 
 ### Phase 3 — 视图重做
 
 | 顺序 | 视图 | 说明 |
 |---|---|---|
-| 1 | NoteEditor | 三栏重构；搜索/雷达移出工具栏；行宽 680；保存态下沉元信息行 |
+| 1 | NoteEditor | ✅ 三栏重构；搜索/雷达移出工具栏（搜索→TopBar、雷达→右栏）；行宽 680；保存态下沉元信息行（2026-08-31 审计实检） |
 | 2 | Review | ✅ 专注卡居中（640/留白96）+ 键盘 1/2/3 评分（键位角标）· Esc 退出（2026-08-30 实检） |
 | 3 | Graph | ✅ 令牌已在 Phase 0 归一（裸值仅剩 var fallback）；工具栏触摸目标 ≥44px + checkbox accent（2026-08-30） |
-| 4 | Tutor | ✅ 右栏抽屉（560px + 遮罩 + 返回笔记，实检通过）；~~流式 Skeleton/停止按钮~~ **待 Phase 4**——当前 TutorPanel 为非流式 POST /chat，需先接 B2 SSE 流式才有「停止」语义 |
+| 4 | Tutor | ✅ 右栏抽屉（560px + 遮罩 + 返回笔记）；✅ **B2 SSE 流式已接**（2026-08-31）：`apiPostStream` 解析 `data:`/`event:done`/`event:error` 帧 → 增量渲染 + Stop 中止（AbortController，保留已到部分）；结束后全文定格（单状态源 streamText）；headless 实检：mock 8 帧流式→96 字全文保留→Ask 恢复 |
 | 5 | 星系 | ✅ **多星球系统**（2026-08-31）：层级 = 从 wikilink 拓扑推断（方案 A）；出度≥2 为星球、与 hub 双向互链为卫星、互链排他归给严格更大者、被收编的 hub 降级；双形态（全屏巡览 4s·可暂停·可点选 / 右栏单颗静止·dpr=1）；公转 72s/圈；卫星上限 16 + 「…+N」；橙色只用于 mastery 弧与选中态；13 项语义单测全过；实检渲染：4 颗星球、Transformer 1 卫星（与真实图数据预演完全一致） |
 
 ### Phase 4 — 动效基元 + a11y + 性能收口 ✅ 完成（2026-08-31）
@@ -648,9 +648,9 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 - [x] Router: `GET /api/v1/knowledge/suggest` 路由 + 参数校验
 - [x] Types: `shared/types/suggest.ts` 契约类型
 - [x] Frontend: `KnowledgeRadar.tsx` 组件（debounce + 三区域渲染 + 点击跳转）
-- [ ] Frontend: NoteEditor 集成（~~showRadar状态 + Ctrl+Shift+K + 段落提取~~）
-      **未做**——雷达现挂右栏「雷达」标签，查询词 = 笔记标题（大纲首项兜底）。
-      编辑器内选中触发属增强，转入挂起区（见下）。
+- [x] Frontend: NoteEditor 集成（~~showRadar状态 + Ctrl+Shift+K + 段落提取~~）
+      **已关闭（2026-08-31 裁定）**——雷达挂右栏「雷达」标签可用，查询词 = 笔记标题
+      （大纲首项兜底）；「编辑器内选中触发」属增强，维持挂起区待用户显式发起（见下）。
 - [x] Frontend: CSS 样式
 - [x] Tests: `test_suggest.py`（空库/匹配/邻居/参数校验，7 项）
 - [x] Docs: TECH_DESIGN §9/§10 + TASKS + CHANGELOG + REGISTRY + data-model INDEX
@@ -725,6 +725,42 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
   纯消费既有契约）· Shared Types 同步=是（无变化）· DB 变化=否 · 新依赖=否 ·
   跨层修改=否（审计后确认纯前端足够；excerpt 可选化为既有类型冗余修正，非契约变更）
 
+### P8-007 Tutor SSE 流式前端接线 + UI 审计销账 完成（2026-08-31）
+- **做了什么**：① `lib/api.ts` 新增 `apiPostStream<TFrame>`（唯一后端访问入口内的 SSE 通道：
+  POST + `text/event-stream`，按空行分帧解析 `data:`/`event:done`/`event:error`，
+  帧形状对齐 `shared/types/tutor.ts TutorStreamFrame`；HTTP 层错误仍走统一 ApiError，
+  AbortController 中止原样上抛）；② `TutorPanel.handleSubmit` 切 `stream=true` 流式：
+  增量渲染 `streamText`、`event:done` → conversation_id 续链 + extractor 刷新、
+  Stop 按钮（loading 态切换）经 AbortController 中止、**中止保留已到部分**；
+  ③ 修复接线过程中的双状态源缺陷：初版「streamText 定稿后置 null + answer 存空串」
+  导致流结束后答案区渲染空白、中止即丢全部已到文字——改为**单状态源**
+  （streamText 非 null 即答案：流式中增量/结束后定格/中止保留），headless 实检确认修复；
+  ④ UI 审计销账：删除死代码 `views/placeholders.tsx`（4 占位视图零引用，52 行）；
+  ⑤ 文档回填：TASKS Phase 3 NoteEditor/Tutor 销账、B2-A 遗留①销账、
+  M3.5 NoteEditor 集成项关闭、PROJECT_STATE §10/§2.4 状态更新、UI_DESIGN 评分键位校正。
+- **改动文件**：`web/src/lib/api.ts`（+apiPostStream）·
+  `web/src/components/tutor/TutorPanel.tsx`（流式 + 单状态源修复）·
+  `web/src/views/placeholders.tsx`（删除）· `docs/TASKS.md` · `docs/PROJECT_STATE.md` ·
+  `ui/UI_DESIGN.md`（评分键位 1–4→1/2/3 实况校正）
+- **端到端验证**（真实后端 + vite proxy + headless Chrome，`--no-proxy-server` 排除环境代理）：
+  - 契约帧验证：curl 直连 + 穿 proxy 双通，`data:{"text":...}` 帧与 TutorStreamFrame 一致
+    （qwen3-14b 实测逐块下发；qwen3 思考型首帧前上游缓冲 ~88s 属 B10 已知行为，非缺陷）
+  - UI 流式实检（MockProvider 确定性 8 帧）：完整路径（选笔记→关联→AI Tutor→提问）→
+    **流结束后 answer 区 96 字全文保留**（修复前恒为 0）、无错误条、Ask 按钮恢复
+  - 停止语义：后端 `try/finally` 保证中止时增量落库（B2-A 已锁），前端保留已到部分
+- **测试**：
+
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `npx tsc --noEmit` | PASS | PASS ✓ |
+  | `npx vitest run` | 全绿（28） | 28 passed ✓ |
+  | `pytest tests/unit/test_conversations.py tests/unit/test_llm_provider.py tests/unit/test_openai_provider.py -q` | 全绿 | 77 passed ✓ |
+  | headless E2E（流式→定稿→Ask 恢复） | PASS | PASS ✓（`final.len=96, err=null`） |
+
+- **架构自检**：ADR 违反=否（逐字显示非打字机动画，无气泡，ADR-016 §3 允许 streaming）·
+  API 一致=是（消费既有 B2 契约，零后端改动）· Shared Types 同步=是（TutorStreamFrame
+  原样消费）· DB 变化=否 · 新依赖=否 · 跨层修改=否（纯 Frontend 接线，AGENTS §12 场景 E）
+
 ### T-B2A B2-A 流式输出（SSE）后端骨架 完成（2026-08-30）
 - **做了什么**：`LLMProvider` 协议增 `stream()`（`"".join(stream)==complete` 契约）；
   `MockProvider.stream()` 确定性字符分块（不 sleep）；`OpenAICompatProvider.stream()` 非流式回退
@@ -744,10 +780,11 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
   | `npx tsc --noEmit` | PASS | PASS ✓ |
   | `npx vitest run` | 23 passed | 23 passed ✓ |
   | `npx vite build --outDir dist-verify` | PASS | PASS ✓ |
-- **结果与遗留**：B2-A 完成，AI 闭环流式骨架就位。遗留：① 前端零接线（TutorPanel 未切流式，
-  按 §0 规则二留待最小接线）；② `openai_compat` 真 SSE 解析（B2-B，`stream:true` + 逐条 `data:` 帧）；
-  ③ 路由 `response_model=None` 规避 `dict|StreamingResponse` 契约冲突（同 T-M0 已知项）。
-- 下一项：**B2-B OpenAICompatProvider 真 SSE 解析**。
+- **结果与遗留**：B2-A 完成，AI 闭环流式骨架就位。遗留：① ~~前端零接线~~ **已销账**
+  （2026-08-31：TutorPanel 切 `apiPostStream` 流式，headless 实检通过，见 P8-007 报告）；
+  ② `openai_compat` 真 SSE 解析（B2-B，✅ 已随 T-BBC 完成）；③ 路由 `response_model=None`
+  规避 `dict|StreamingResponse` 契约冲突（同 T-M0 已知项）。
+- 下一项：**B2-B OpenAICompatProvider 真 SSE 解析**（已完成）。
 
 ### T-BBC 后端闭环批（B12/B2-B/B13/B17/B18/B21/B22/B24）完成（2026-08-30）
 - **做了什么**：逐项闭合 backend backlog——错题本 API、真实 SSE、复习统计、增量 reindex、

@@ -505,7 +505,7 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 | 图谱（浮层） | `GraphView` | dagre 层级布局 · Concept/Note 双节点 · Layer Toggle · MiniMap · Floating Inspector |
 | Universe（浮层） | **`GalaxyView`**（`components/galaxy/`） | **多星球系统**：主笔记=星球、副笔记=卫星，层级从 `/graph` 边拓扑推断；全屏巡览 4s 可暂停 / 右栏单颗静止 |
 | 导图（浮层） | `MindMapCanvas` | React Flow 思维导图 · 节点 CRUD · Concept Binding · 导入导出 |
-| AI Tutor（右栏抽屉） | `TutorPanel` | 多模式 AI 问答 + 上下文透视面板（非流式 POST /chat，流式待接 B2 SSE） |
+| AI Tutor（右栏抽屉） | `TutorPanel` | 多模式 AI 问答 + 上下文透视面板（**SSE 流式** POST /chat stream=true：增量渲染 + Stop 中止，P8-007） |
 | 复习（浮层） | `ReviewSessionView` | SM-2 复习会话状态机 · 键盘驱动 |
 
 **已移除**：~~7 个平级 tab~~ · ~~`DashboardView` 仪表盘~~（裁决 A）·
@@ -623,13 +623,15 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | **理解** | 概念 → 图谱（Graph/Universe/Planet）可视化 | ✅ 已通 |
 | **复习** | SM-2 队列 → 答题 → mastery 更新 → 衰减 → 重排期 | ✅ 已通 |
 | **同步** | Discover → Pair → Manifest → Diff → Transport → Apply → Workspace → Reindex | ✅ 已通（M7-008 补齐 HTTP 层；E2E 双进程字节级一致） |
-| **AI** | Context → Prompt → Provider → Response（流式 SSE）→ UI | ✅ 已通（B1b 真实凭据冒烟实测通过：DeepSeek 端到端，最小 token，key 用后即删） |
+| **AI** | Context → Prompt → Provider → Response（流式 SSE）→ UI | ✅ 已通（后端 B1b/B2 实测；前端 P8-007 于 2026-08-31 接线：TutorPanel 流式渲染 + 停止，headless 实检通过） |
 
 **后端闭环状态（2026-08-30）**：§9 全部条目已闭环（B10 于 2026-08-30 以本机
 Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外。
 
-**仍未闭环（非后端范围）**：桌面/移动分发闭环（M6/M8）· 前端视觉语言打磨
-（P8-FE-001，§0 政策下无限期冻结）。
+**仍未闭环（非后端范围）**：桌面/移动分发闭环（M6/M8）。
+前端视觉打磨（P8-FE-001 冻结项）已于 2026-08-31 审计确认按 UI_DESIGN v1 落地
+（三栏架构/680 行宽/动效基元/性能契约/令牌零漂移全过），唯一遗留为 ADR-013 §2.12
+记录的「ADR 与设计资产」政策冲突（待所有者显式裁决，代码不动）。
 
 ---
 

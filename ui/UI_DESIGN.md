@@ -284,7 +284,7 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 |---|---|---|---|
 | **笔记工作区（默认主界面）** | 三栏：列表 240 + 编辑器 680 行宽居中 + 右栏 320（大纲/反链/关联/掌握度/雷达）；TopBar 64（搜索/复习徽章/同步） | 编辑器三条硬约束：工具栏只放格式控件 · 行宽 680 · 保存态极小字下沉元信息行 | `note-workspace.html` · `app-shell.html` · `ui-preview.html` |
 | **图谱（浮层）** | 全屏画布 + 左浮工具条 + 右浮 Inspector | 形状即语义（ADR-023） | `graph-view.html` |
-| **复习（浮层）** | 居中专注卡 + 键盘驱动（1–4 打分/Esc 退出） | ProgressRing | `motion-primitives.html` |
+| **复习（浮层）** | 居中专注卡 + 键盘驱动（1/2/3 三档打分 = SM-2 quality 1/3/5 · Esc 退出；2026-08-31 按实现实况校正，原拟 1–4） | ProgressRing | `motion-primitives.html` |
 | **星系（浮层）** | 双形态：全屏单颗 4s 轮换 / 右栏单颗静止 | 地球移植 `home-hero.html`，主笔记=星球 | `home-hero.html` |
 | **Tutor（浮层）** | 右栏抽屉 + 流式对话 | Skeleton + 停止按钮 | — |
 
