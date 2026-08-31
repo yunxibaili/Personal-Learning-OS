@@ -1,42 +1,50 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。
-> 上次更新：2026-08-31 · **M3.5-B 完成**（Radar 学习状态接真实数据）· 仓库已恢复推送
+> 上次更新：2026-08-31 · **P8-006 Tutor 三入口闭环完成**（tutorSeed/tutorReturnView · 三路径 headless 实测）
 
 ---
 
 ## Task ID
 
-**M3.5-B Full Omniscience 完成**（2026-08-31 · pytest 13 + vitest 22 + build 全绿 · 端到端实检通过）
+**P8-006 Tutor 三入口闭环 完成**（2026-08-31 · vitest 28 + tsc + build 全绿 · 三路径端到端实测）
 
 ## 当前任务
 
-**前端阶段 Phase 0–4 全部完成 + M3.5-B 后端增强完成**。
+**P8 收尾阶段**（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
 
-**M3.5-B 交付**（ADR-012 Phase B）：
-- Core：`_resolve_concept_for_memory`（定位唯一 concept，多候选不猜）+
-  `_memory_for_concept`（mastery/review_due/last_mistake 真实数据）
-- `suggest_for_context` memory 三字段从占位改为真实学习状态
-- 前端：Radar 学习状态区真实渲染（掌握度橙条/到期强调/错题省略），
-  查询词升级 = 笔记标题优先（原大纲首项在无标题笔记下恒为空）
-- 已知边界：旧 concept 无学习状态行 → memory 全 null（正确行为，回填属独立任务）
+**P8-006 交付**：
+- store：`tutorSeed`（一次性预填包，预填≠自动发送）+ `tutorReturnView` + `openTutor(seed)`
+  统一入口（`openTutorForConcept` 为兼容包装）+ `closeTutor()` 回来源视图
+- 三入口：① 右栏「关联」AI Tutor 带当前笔记+Explain ② Review feedback（quality≤2）
+  「向 Tutor 求提示」→ Hint ③ 掌握度弱项行「问 Tutor」→ Concept
+- App.tsx：tutor 态底层按 tutorReturnView 渲染——从 Review 进 → 关闭真回 Review
+- 完成报告：`TASKS.md`「P8-006」（含三路径实测记录与架构自检）
 
-**下一步候选**（按技术档案）：
-1. M7-005 Conflict UI（M7 最后一块，拆解已在 TASKS.md）
-2. M6 Tauri 桌面打包（前置全就绪）
-3. 旧 concept 学习状态回填（遍历调 `ensure_concept_learning_state`，小任务）
-4. Radar 编辑器内触发（挂起区，需用户显式要求）
+**下一步候选**：P8 候选清单剩余项 · M6 Tauri · M9 Visual Engine（TECH_DESIGN §8.2–8.5
+规格已完备未开工）· 挂起区 P8-Mode-001（等所有者发起）。
+
+## 近期完成
+
+- **P8 收尾政策入档**（2026-08-31）：解除前后端限制，端到端闭环+契约一致性为最高优先
+  （§0.1 + AGENTS §12）
+- **ADR-022 Appendix A**（2026-08-31）：Mode 载体 Dashboard→TopBar，语义不变；
+  P8-Mode-001 立项挂起
+- **P8-006 Tutor 三入口闭环** ✅（2026-08-31，见上）
 
 **B10 本地 LLM（Ollama）实测 ✅**（2026-08-30：qwen3-14b 端到端，think 剥离修复见 §9.1）
 
 ## 近期完成
 
+- **P8-006 Tutor 三入口闭环 ✅**（2026-08-31，见 Task ID 区；完成报告见 TASKS.md）
+- **P8 收尾政策 + ADR-022 附录 A**（2026-08-31）
 - **M3.5-B Full Omniscience ✅**（2026-08-31）
   - memory 三字段接真实数据：mastery=`concept_mastery.effective`、
     review_due=`review_queue`(pending)、last_mistake=`mistakes.description`
   - 定位纪律：matches 命中 concept 优先 → 精确标题 → LIKE 唯一；**多候选不猜**返回 null
   - 前端学习状态区真实渲染 + 雷达查询词升级为笔记标题优先
   - 测试 `test_suggest_memory.py` 6 项全过；实检：造数据后 API/UI 全链路正确
+  - 已知边界：旧 concept 无学习状态行 → memory 全 null（正确行为，回填属独立任务）
 - **死代码清理 2283 行 + 文档纪律入档**（2026-08-31）
   - 删 `universe/` `prototype/` `planet/` `lib/universe/`（已被 galaxy/ 取代，零引用）
   - AGENTS §18 §2.1 入库边界 + §2.2 推送策略（每轮完成必 push）；

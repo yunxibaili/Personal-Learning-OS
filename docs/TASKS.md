@@ -620,8 +620,8 @@ P8 PC Productization 候选范围（届时按 §12 八项清单逐项立项）�
 
 | 序 | 任务 | 状态 |
 |---|---|---|
-| P8-006 | **Tutor 三入口闭环**（tutorSeed + tutorReturnView；入口①笔记②错答 hint③弱项） | **进行中**（八项清单已过审，待实施） |
-| P8-007 | Tutor 三入口 E2E 验证（三路径各 ≥1 条自动化测试） | 随 P8-006 |
+| P8-006 | **Tutor 三入口闭环**（tutorSeed + tutorReturnView；入口①笔记②错答 hint③弱项） | **✅ 完成（2026-08-31）** |
+| P8-007 | Tutor 三入口 E2E 验证（三路径各 ≥1 条自动化测试） | ✅ store 6 项单测 + headless 三路径实测（见完成报告） |
 | 挂起 | P8-Mode-001 Knowledge/Learning Mode（ADR-022 附录 A，等所有者发起） | 挂起区 |
 
 Mobile API Preparation 原则（提前冻结，防跑偏）：
@@ -685,6 +685,45 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 | **P8-Mode-001** Knowledge/Learning Mode 实现（workspace_mode + TopBar Mode UI + Reminder） | 项目所有者显式立项；语义与载体已由 ADR-022 附录 A 冻结 | docs/adr/ADR-022-product-mode-boundary.md Appendix A |
 
 ## 完成报告
+
+### P8-006 Tutor 三入口闭环 完成（2026-08-31）
+- **做了什么**：store 新增 `tutorSeed`（一次性预填包：conceptId/noteIds/mode/query，
+  消费即清除；**预填 ≠ 自动发送**，守 ADR-022「你问，我答」）与 `tutorReturnView`
+  （进入 Tutor 前的视图快照）+ `openTutor(seed)` 统一入口（`openTutorForConcept`
+  改薄包装，P8-003D 调用方零改动）+ `closeTutor()`（回来源视图）。
+  三入口：① 右栏「关联」AI Tutor 携带当前笔记（`noteIds=[activeNote]` + explain，
+  按钮标注「引用「标题」」）；② Review feedback **仅 quality≤2** 显示「向 Tutor 求提示」
+  （seed 带 concept_id + hint）；③ 右栏掌握度弱项行「问 Tutor」（seed 带 concept_id）。
+  App.tsx tutor 态底层按 tutorReturnView 渲染——从 Review 进入后遮罩关闭**真回 Review**
+  （修真实状态流缺陷：原先一律 setActiveView("notes")）。
+  TutorPanel 挂载时消费 seed：预选 mode / 预填 concept / 直接设置笔记引用
+  （context 随之带 note_ids 重载）/ query 置输入框——**不自动提交**。
+- **改动文件**：`web/src/stores/ui.ts`（+tutorSeed/tutorReturnView/openTutor/closeTutor/
+  consumeTutorSeed）· `web/src/stores/ui.test.ts`（+6 项语义单测）·
+  `web/src/components/tutor/TutorPanel.tsx`（消费 seed；TutorNoteRef.excerpt 改可选——
+  该字段从未被渲染，纯类型冗余）· `web/src/components/shell/ContextRail.tsx`（入口①③）·
+  `web/src/views/ReviewSessionView.tsx`（入口②）· `web/src/App.tsx`（underlying 视图 +
+  closeTutor）· `web/src/global.css`（+2 按钮：文字式/描边/`--brand-text` 5.18:1/250ms，合规 ADR-013）
+- **端到端验证**（headless Chrome 实测真实数据流，截图核对）：
+  - 路径① 打开 Transformer → 关联 → AI Tutor：抽屉开、**Explain 预选、
+    笔记引用 chip「Transformer」出现、输入框为空**（预填≠自动提问）→ 用户输入提交成功
+  - 路径② 复习「学习率」按 1（答错）→ feedback 出现「向 Tutor 求提示（学习率）」
+    → 点击后抽屉 **Hint 预选 + Concept「学习率」** → 关闭遮罩 → **回到 Review**
+    （非 notes——tutorReturnView 生效）
+  - 路径③ 右栏掌握度弱项「梯度下降」→ 问 Tutor → 抽屉开、Concept=梯度下降、
+    context 面板完整（四维掌握度 + 最近错题「复习答错（quality=1）」）
+- **测试**：
+
+  | 命令 | 预期 | 实际 |
+  |---|---|---|
+  | `npx vitest run` | 全绿（22→28） | 28 passed ✓ |
+  | `npx tsc --noEmit` | PASS | PASS ✓ |
+  | `npx vite build --outDir dist_verify5` | PASS | PASS ✓ |
+  | `pytest tests/api/`（回归，零后端改动确认） | 全绿 | passed（见 CI 记录）✓ |
+
+- **架构自检**：ADR 违反=否（tutorSeed 语义经 ADR-022 校验）· API 一致=是（零后端改动，
+  纯消费既有契约）· Shared Types 同步=是（无变化）· DB 变化=否 · 新依赖=否 ·
+  跨层修改=否（审计后确认纯前端足够；excerpt 可选化为既有类型冗余修正，非契约变更）
 
 ### T-B2A B2-A 流式输出（SSE）后端骨架 完成（2026-08-30）
 - **做了什么**：`LLMProvider` 协议增 `stream()`（`"".join(stream)==complete` 契约）；

@@ -2287,12 +2287,37 @@ body {
 .ctx-link-item:hover { border-color: var(--border-strong); background: var(--surface-2); }
 .ctx-related { display: flex; flex-direction: column; gap: var(--sp-2); }
 .ctx-mastery-row {
-  display: grid; grid-template-columns: 1fr 80px 36px;
+  display: grid; grid-template-columns: 1fr 80px 36px auto;
   align-items: center; gap: var(--sp-2);
   font-size: var(--fs-sm); color: var(--text);
 }
 .ctx-mastery-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctx-mastery-pct { font-size: var(--fs-xs); color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
+/* P8-006 入口③：弱项行「问 Tutor」——纯文字小按钮（ADR-013：文字即 UI） */
+.ctx-mastery-tutor {
+  appearance: none; border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--brand-text); /* 品牌文字色 5.18:1（动作可发现性，非装饰） */
+  padding: 3px 8px; border-radius: var(--r-md);
+  font-size: var(--fs-xs); font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.ctx-mastery-tutor:hover { border-color: var(--brand-text); }
+
+/* P8-006 入口②：Review feedback「向 Tutor 求提示」——次级动作（主按钮是继续），
+   弱化描边样式区别于 review-continue-btn 的实底主按钮 */
+.review-tutor-btn {
+  display: block; width: 100%;
+  margin-top: var(--sp-3);
+  padding: 9px 10px;
+  appearance: none; border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--brand-text);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm); font-family: inherit; font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease-out);
+}
+.review-tutor-btn:hover { border-color: var(--brand-text); }
 
 /* ---- 响应式塌缩链（container query，规格 §3.1）---- */
 .shell__content { container-type: inline-size; }

@@ -61,6 +61,9 @@ export function ReviewSessionView() {
     [queue, index],
   );
   const setActiveView = useUi((s) => s.setActiveView);
+  const openTutor = useUi((s) => s.openTutor);
+  // P8-006：最近一次评分（feedback 阶段判断 quality≤2）
+  const [lastQuality, setLastQuality] = useState<number | null>(null);
 
   const remaining = queue.length - index;
 
@@ -103,6 +106,7 @@ export function ReviewSessionView() {
     if (!current) return;
     setPhase("answering");
     setError("");
+    setLastQuality(quality); // P8-006：feedback 按此决定是否提供 Tutor hint 入口
     try {
       setPrevEffective(current.effective ?? 0);
       const resp = await apiPost<AnswerResponse>(
@@ -246,6 +250,16 @@ export function ReviewSessionView() {
               <div className="review-feedback-next">
                 下次复习：{lastResult.interval} 天后
               </div>
+              {/* P8-006 入口②：Review 错答/模糊（quality≤2）→ Tutor Hint。
+                  seed 带 concept_id；关闭 Tutor 后经 tutorReturnView 回到本视图。 */}
+              {lastQuality != null && lastQuality <= 2 && current && (
+                <button
+                  className="review-tutor-btn"
+                  onClick={() => openTutor({ conceptId: current.concept_id, mode: "hint" })}
+                >
+                  向 Tutor 求提示（{current.title}）
+                </button>
+              )}
             </div>
           )}
 

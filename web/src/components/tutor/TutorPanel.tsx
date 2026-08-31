@@ -68,7 +68,8 @@ interface TutorContextData {
 interface TutorNoteRef {
   note_id: number;
   title: string;
-  excerpt: string;
+  /** 从未渲染（P8-006 起可选）；/chat 只透传 note_ids */
+  excerpt?: string;
 }
 
 interface Props {
@@ -112,6 +113,27 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
   useEffect(() => {
     if (conceptIdProp == null && focusConceptId != null) clearConceptFocus();
   }, [conceptIdProp, focusConceptId, clearConceptFocus]);
+
+  // P8-006：消费一次性 tutorSeed（预填 mode/query/concept/笔记引用）。
+  // 语义：seed 只减少重复输入，绝不触发自动提问（ADR-022「你问，我答」）。
+  const consumeTutorSeed = useUi((s) => s.consumeTutorSeed);
+  const [seedApplied, setSeedApplied] = useState(false);
+  useEffect(() => {
+    if (seedApplied) return;
+    const seed = consumeTutorSeed();
+    setSeedApplied(true);
+    if (!seed) return;
+    if (seed.mode) setMode(seed.mode);
+    if (seed.query) setQuery(seed.query);
+    // seed.noteIds → 直接作为已选笔记引用（有 title，面板可渲染 chip；
+    // context 随下方 useEffect 的 selectedNotes 依赖自动带上 note_ids 重载）
+    if (seed.noteIds && seed.noteIds.length > 0) setSelectedNotes(seed.noteIds);
+    if (seed.conceptId != null && focusConceptId == null && conceptIdProp == null) {
+      useUi.setState({ focusConceptId: seed.conceptId });
+    }
+    // 仅在挂载时消费一次；依赖刻意只含一次性标记
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seedApplied]);
 
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<TutorMode>("explain");

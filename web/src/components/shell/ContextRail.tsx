@@ -46,6 +46,7 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
   const [home, setHome] = useState<HomeResponse | null>(null);
   const openNote = useUi((s) => s.openNote);
   const setActiveView = useUi((s) => s.setActiveView);
+  const openTutor = useUi((s) => s.openTutor);
 
   useEffect(() => {
     if (activeNoteId == null) {
@@ -143,7 +144,19 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
             <button className="ctx-link-item" onClick={() => setActiveView("graph")}>知识图谱</button>
             <button className="ctx-link-item" onClick={() => setActiveView("universe")}>知识星系</button>
             <button className="ctx-link-item" onClick={() => setActiveView("mindmap")}>思维导图</button>
-            <button className="ctx-link-item" onClick={() => setActiveView("tutor")}>AI Tutor</button>
+            {/* P8-006 入口①：Note → Explain——携带当前笔记上下文（无打开笔记则不带） */}
+            <button
+              className="ctx-link-item"
+              onClick={() =>
+                openTutor(
+                  activeNoteId != null && noteTitle
+                    ? { noteIds: [{ note_id: activeNoteId, title: noteTitle }], mode: "explain" }
+                    : null,
+                )
+              }
+            >
+              AI Tutor{activeNoteId != null && noteTitle ? `（引用「${noteTitle}」）` : ""}
+            </button>
           </div>
         )}
 
@@ -161,6 +174,14 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
                   <span className="ctx-mastery-title">{w.title}</span>
                   <Progress value={w.effective} label={`${w.title} 掌握度`} />
                   <span className="ctx-mastery-pct">{Math.round(w.effective * 100)}%</span>
+                  {/* P8-006 入口③：Weak Concept → Tutor */}
+                  <button
+                    className="ctx-mastery-tutor"
+                    title={`就「${w.title}」问 Tutor`}
+                    onClick={() => openTutor({ conceptId: w.concept_id })}
+                  >
+                    问 Tutor
+                  </button>
                 </div>
               ))}
             </>

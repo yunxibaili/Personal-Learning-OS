@@ -14,19 +14,22 @@ import { ReviewSessionView } from "./views/ReviewSessionView";
 function ActiveView() {
   const activeView = useUi((s) => s.activeView);
   const activeNoteId = useUi((s) => s.activeNoteId);
-  const setActiveView = useUi((s) => s.setActiveView);
+  const closeTutor = useUi((s) => s.closeTutor);
+  // P8-006：进入 Tutor 前的视图——底层画它，关闭时才能真正「回去」
+  const tutorReturnView = useUi((s) => s.tutorReturnView);
 
-  // Tutor = 右栏抽屉（Phase 3 ④）：遮罩点击返回笔记
+  // Tutor = 右栏抽屉（Phase 3 ④）：遮罩点击返回来源视图（P8-006：从 Review 进 → 回 Review）
   if (activeView === "tutor") {
+    const underlying = tutorReturnView ?? "notes";
     return (
       <>
         <div className="workspace">
-          <NoteEditorView />
-          <ContextRail activeNoteId={activeNoteId} />
+          {underlying === "review" ? <ReviewSessionView /> : <NoteEditorView />}
+          {underlying !== "review" && <ContextRail activeNoteId={activeNoteId} />}
         </div>
         <div
           className="tutor-drawer-overlay"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setActiveView("notes"); }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) closeTutor(); }}
         >
           <aside className="tutor-drawer" role="dialog" aria-label="AI Tutor">
             <TutorPanel />
