@@ -133,7 +133,7 @@
 }
 
 .memory-delete-btn:hover {
-  color: var(--err);
+  color: var(--err-text);
   border-color: var(--err);
 }
 
@@ -155,6 +155,6 @@
 
 .memory-error {
   font-size: 11px;
-  color: var(--err);
+  color: var(--err-text);
   line-height: 1.4;
 }

@@ -19,11 +19,20 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg);
+  background: var(--bg-soft);   /* P8-FE-001 (2026-09-01): 页面底由 --bg 改为 --bg-soft，与 ui/app-shell.html 设计资产一致，建立"灰页面 + 白卡纸 + 白右栏"层次 */
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-base);
   line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* P8-FE-001 (2026-09-01): 原生表单元素字体继承（与 ui/app-shell.html 设计资产一致）
+   修：note-list 内 "＋ 新建/删除/插图·PDF" 三个原生 button 因浏览器默认 user-agent
+   样式不继承 body 字号而落到 13.3333px，小于项目 --fs-sm 13px 与设计意图。 */
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
 }
 
 /* Phase 0 全局基线：焦点可见（a11y） */
@@ -132,7 +141,7 @@ body {
 .note-list {
   width: 240px;
   border-right: 1px solid var(--border);
-  padding-right: 12px;
+  padding: 8px 12px 0 12px;   /* P8-FE-001 (2026-09-01): 列表左内边距 0 → 12，修复笔记标题/标签贴左边显得挤 */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -167,6 +176,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: var(--surface);   /* P8-FE-001 (2026-09-01): 编辑器作"白纸面"，与 --bg-soft 灰底形成层次（与 ui/note-workspace.html 设计资产一致） */
 }
 
 .editor-toolbar {
@@ -183,11 +193,11 @@ body {
   border-radius: 6px;
   cursor: pointer;
 }
-.save-state { color: var(--ok); font-size: 12px; margin-right: auto; }
+.save-state { color: var(--ok-text); font-size: 12px; margin-right: auto; }
 .error-banner {
   border: 1px solid var(--err);
   background: var(--err-soft);
-  color: var(--err);
+  color: var(--err-text);
   padding: 8px 10px;
   border-radius: 6px;
   margin-bottom: 8px;
@@ -207,8 +217,8 @@ body {
   margin-bottom: var(--sp-2);
   font-variant-numeric: tabular-nums;
 }
-.editor-meta__save--saved { color: var(--ok); }
-.editor-meta__save--dirty { color: var(--warn); }
+.editor-meta__save--saved { color: var(--ok-text); }
+.editor-meta__save--dirty { color: var(--warn-text); }
 .tiptap .ProseMirror {
   outline: none;
   min-height: calc(100vh - 260px);
@@ -586,7 +596,7 @@ body {
   flex: 1;
 }
 .review-due {
-  color: var(--err);
+  color: var(--err-text);
   font-size: 12px;
 }
 .review-actions {
@@ -1124,7 +1134,7 @@ body {
 .universe-error {
   border: 1px solid var(--err);
   background: var(--err-soft);
-  color: var(--err);
+  color: var(--err-text);
   padding: 10px 14px;
   border-radius: 6px;
   font-size: 13px;
@@ -1601,7 +1611,7 @@ body {
 .mindmap-btn-unbind {
   border: 1px solid var(--err);
   background: var(--err-soft);
-  color: var(--err);
+  color: var(--err-text);
   padding: 3px 8px;
   border-radius: 4px;
   cursor: pointer;
@@ -1723,7 +1733,7 @@ body {
 .btn-primary:hover:not(:disabled) { filter: brightness(0.96); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--text-2); }
 .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
-.btn-danger { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.btn-danger { background: var(--err-soft); border-color: var(--err-text); color: var(--err-text); }
 .btn-danger:hover:not(:disabled) { background: var(--err); color: var(--text-inv); }
 .btn--sm { min-height: 32px; padding: 5px 12px; font-size: var(--fs-sm); }
 .btn--lg { min-height: 48px; padding: 12px 24px; font-size: var(--fs-md); }
@@ -1746,11 +1756,11 @@ body {
 .inp:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,107,53,.15); }
 .inp input { border: none; outline: none; background: transparent; font-family: inherit; font-size: 14px; flex: 1; color: var(--text); min-width: 0; }
 .inp input::placeholder { color: var(--text-3); }
-.inp--error { border-color: var(--err); }
+.inp--error { border-color: var(--err-text); }
 .ui-field { display: flex; flex-direction: column; gap: 4px; }
 .ui-field__label { font-size: var(--fs-sm); color: var(--text-2); font-weight: 500; }
 .ui-field__msg { margin: 0; font-size: var(--fs-xs); color: var(--text-3); }
-.ui-field__msg--error { color: var(--err); }
+.ui-field__msg--error { color: var(--err-text); }
 .ui-textarea {
   padding: 8px 14px;
   border: 1px solid var(--border-strong); border-radius: var(--r-md);
@@ -1781,9 +1791,9 @@ body {
 }
 .chip.ink { background: var(--ink-soft); color: var(--ink); border-color: transparent; }
 .chip.brand { background: var(--brand-soft); color: var(--brand-text); border-color: transparent; }
-.chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
-.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
-.chip.err { background: var(--err-soft); color: var(--err); border-color: transparent; }
+.chip.ok { background: var(--ok-soft); color: var(--ok-text); border-color: transparent; }
+.chip.warn { background: var(--warn-soft); color: var(--warn-text); border-color: transparent; }
+.chip.err { background: var(--err-soft); color: var(--err-text); border-color: transparent; }
 .chip__remove {
   appearance: none; border: 0; background: none; padding: 0 2px;
   color: inherit; cursor: pointer; font-size: var(--fs-sm); line-height: 1;
@@ -1798,9 +1808,9 @@ body {
 }
 .ui-badge--neutral { background: var(--surface-3); color: var(--text-2); }
 .ui-badge--brand   { background: var(--brand-text); color: var(--text-inv); }
-.ui-badge--ok      { background: var(--ok-soft); color: var(--ok); }
-.ui-badge--warn    { background: var(--warn-soft); color: var(--warn); }
-.ui-badge--err     { background: var(--err-soft); color: var(--err); }
+.ui-badge--ok      { background: var(--ok-soft); color: var(--ok-text); }
+.ui-badge--warn    { background: var(--warn-soft); color: var(--warn-text); }
+.ui-badge--err     { background: var(--err-soft); color: var(--err-text); }
 .ui-badge--ink     { background: var(--ink-soft); color: var(--ink-deep); }
 
 /* ---- Avatar（ui: app-shell .topbar .avatar 渐变首字）---- */
@@ -1873,9 +1883,9 @@ body {
   width: 24px; height: 24px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px;
 }
-.toast.ok .ic    { background: var(--ok-soft); color: var(--ok); }
-.toast.err .ic   { background: var(--err-soft); color: var(--err); }
-.toast.warn .ic  { background: var(--warn-soft); color: var(--warn); }
+.toast.ok .ic    { background: var(--ok-soft); color: var(--ok-text); }
+.toast.err .ic   { background: var(--err-soft); color: var(--err-text); }
+.toast.warn .ic  { background: var(--warn-soft); color: var(--warn-text); }
 .toast.brand .ic { background: var(--brand-soft); color: var(--brand-text); }
 .toast .nm { font-size: 13.5px; font-weight: 500; }
 .toast .sub { font-size: 12px; color: var(--text-2); }
@@ -2126,7 +2136,7 @@ body {
   display: inline-flex; align-items: center; gap: 4px;
   white-space: nowrap;
 }
-.topbar__sync--conflict { color: var(--warn); font-weight: 500; }
+.topbar__sync--conflict { color: var(--warn-text); font-weight: 500; }
 
 /* 三栏工作区：NoteEditor 内含 列表 240 + 编辑器；右栏 320 由 AppShell 追加 */
 .workspace { display: flex; flex: 1; min-height: 0; width: 100%; }

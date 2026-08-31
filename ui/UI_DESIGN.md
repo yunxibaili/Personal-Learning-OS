@@ -62,8 +62,13 @@
 | 辅助 `--text-3 #737373` | `#FFFFFF` | 4.74:1 | AA ✅ |
 | 品牌文字 `--brand-text #C2410C` | `#FFFFFF` | 5.18:1 | AA ✅ |
 | `--text-inv #FFFFFF` | `--brand-text #C2410C` | 5.18:1 | AA ✅ |
+| 成功·文字 `--ok-text #15803D` | `#FFFFFF` | 5.02:1 | AA ✅ |
+| 警告·文字 `--warn-text #B45309` | `#FFFFFF` | 5.02:1 | AA ✅ |
+| 错误·文字 `--err-text #B91C1C` | `#FFFFFF` | 6.47:1 | AAA ✅ |
 | 双链高亮 `--hl #FBF1CF` 底 + `--ink #35618F` 字 | — | 8.1:1 | AAA |
 | ~~`--brand #FF6B35` 作文字~~ | `#FFFFFF` | 2.84:1 | ✘ 不足 AA |
+| ~~`--ok #22C55E` 作文字~~ | `#FFFFFF` | 2.28:1 | ✘ 不足 AA |
+| ~~`--warn #F59E0B` 作文字~~ | `#FFFFFF` | 2.15:1 | ✘ 不足 AA |
 | ~~`--text-3` 旧 `#A3A3A3`~~ | `#FFFFFF` | 2.52:1 | ✘ 不足 AA |
 
 **令牌分工（2026-08-31 定）**：
@@ -75,6 +80,9 @@
   激活标签、eyebrow、chip.brand、主按钮/徽章底色。
 - `--brand-deep #D8501F` 保留作按压态；在 `--brand-soft` 底上仅 3.74:1，
   **不可作正文**（复习徽章等小字改用 `--brand-text`）。
+- 状态色作文字一律用 `--ok-text / --warn-text / --err-text`（2026-08-31 补）：
+  原 `--ok / --warn / --err` 白底仅 2.28 / 2.15 / 3.76:1，**作 12–14px 小字不达 AA**。
+  原色保留作图形/填充（badge 底、icon 描边），文字态切换为 `*-text`。
 
 **规则**：禁止 <14px 字号使用 `--brand` 单色作正文；需配深底（按钮白字用
 `--brand-text` 作底）或 700 字重（≥18px 且此时仍需 ≥3:1，即用 `--brand-text` 更稳）。
