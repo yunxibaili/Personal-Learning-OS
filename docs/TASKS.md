@@ -26,7 +26,11 @@
 ── §9 后端 backlog 已全部清零 ──
 ── 前端阶段（2026-08-30 项目所有者宣布进入）──
 7. ✅ /home 聚合端点（D1）+ P8-003 Home 最小接线 · pytest 826 · vitest 23 · tsc/build PASS
-· FE-001（无限期冻结，需显式宣布解冻）
+· FE-001（UI 视觉打磨，2026-08-31 解冻：Round1-3 已推 907ff74/888ecd2/3182465）
+8. [~] T-NOTE-HIER 主/副笔记层级（ADR-024）——地基先行，UI 后置
+   P0-1 frontmatter round-trip → P0-2 显式 parent + 校验 → P0-3 resolve_hierarchy
+   → P0-4 graph/universe 统一消费 → P0-5 round-trip/rebuild 守护测试（P0 验收标准）
+   P1（独立 ADR，不在本任务）：稳定 note ID · 左侧嵌套树 UI
 ```
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
@@ -1258,3 +1262,53 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
   | `pytest -q` | 167 passed | 167 passed ✓ |
   | `npx vite build` | build pass | build pass ✓ |
 - **结果与遗留**：M2b-003 完成，M2b MindMap 里程碑全部完成，下一步 ADR-020 Sync Conflict Resolution
+
+---
+
+## T-NOTE-HIER 主/副笔记层级（ADR-024 · 2026-09-01 登记）
+
+### 背景与裁决来源
+
+用户提出「主笔记 / 副笔记」需求并明确「左边也要出现」。核查确认当前**无任何主/副
+关系字段**，星系的星球/卫星是从 wikilink 拓扑**推断**的假层级。经 GPT-5.5 Pro
+评审（存档 `Open Learning OS — 主副笔记层级决策征询（GPT）.md` §七）后裁决，
+落地为 **ADR-024**。
+
+**核心裁决**：child-side 单父 `parent`，事实源在 Markdown frontmatter。
+格式 `parent: "[[父笔记标题]]"`。零新表零 migration。
+
+### 五条铁规则（ADR-024 §2.2）
+
+1. 事实源在 Markdown，不在 SQLite
+2. 只在 child 写 `parent`，不持久化 `children`
+3. 严格单父（forest）；底层允许多级链，第一版 UI 只展示一层
+4. 显式 parent 为权威，wikilink 推断降为 legacy fallback
+5. `/graph`、`/universe`、review 统一经 `resolve_hierarchy()`，禁止各自推断
+
+### 执行计划（P0 最小闭环）
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| P0-1 | frontmatter round-trip：`parse_frontmatter ↕ compose_file` 保任意 key、真删除、稳定顺序 | `[ ]` 待办 |
+| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | `[ ]` 待办 |
+| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | `[ ]` 待办 |
+| P0-4 | `/graph`、`/universe` 统一消费 resolver | `[ ]` 待办 |
+| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | `[ ]` 待办 |
+
+**不在 P0**：左侧嵌套树 UI · 稳定 note ID（独立 ADR）· 星系视觉改造。
+
+### 失败语义（ADR-024 §2.3，不得偏离）
+
+| 情形 | 处理 |
+|---|---|
+| parent 不存在 | 保留原值 + 标记 `invalid`，**绝不自动删除** |
+| parent 自指 | 标记 `invalid`，不建立关系 |
+| 成环 A→B→A | 检出 cycle，环上节点标记 `invalid` |
+| 删 parent 文件 | child 不被静默删，降级 orphan |
+
+### 验收
+
+- `pytest` 全绿（含新增 12 项守护测试）
+- `npx tsc --noEmit` · `npx vitest run` · `npx vite build` 全绿
+- export → rebuild → query：parent 关系不丢
+- 与 links 派生冲突时，显式 parent 恒优先

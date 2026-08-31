@@ -630,9 +630,22 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外。
 
 **仍未闭环（非后端范围）**：桌面/移动分发闭环（M6/M8）。
-前端视觉打磨（P8-FE-001 冻结项）已于 2026-08-31 审计确认按 UI_DESIGN v1 落地
-（三栏架构/680 行宽/动效基元/性能契约/令牌零漂移全过），唯一遗留为 ADR-013 §2.12
-记录的「ADR 与设计资产」政策冲突（待所有者显式裁决，代码不动）。
+前端视觉打磨（P8-FE-001）已于 2026-08-31 解冻并完成 Round 1–3（`907ff74` /
+`888ecd2` / `3182465`）：层次（body 灰底 + 编辑器白纸面 + 列表内边距）· 状态色
+a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字体继承 ·
+空态文案 · 删除按钮数据态=UI态 · 150ms 微交互。**MiSans woff2 已裁定放弃**
+（授权红线：禁止衍生/子集化 + 可撤销许可），UI_DESIGN §依赖策略已如实改写，
+**FE-001 收尾**。唯一遗留为 ADR-013 §2.12 记录的「ADR 与设计资产」政策冲突
+（待所有者显式裁决，代码不动）。
+
+**当前任务（2026-09-01 起）**：**T-NOTE-HIER 主/副笔记层级**（ADR-024 已批准）。
+用户提出「主笔记 / 副笔记」并明确「左边也要出现」；核查确认当前无任何主/副关系
+字段（星系的星球/卫星是从 wikilink 拓扑推断的假层级）。经 GPT 评审裁决：
+child-side 单父 `parent: "[[父标题]]"`，事实源在 Markdown frontmatter，零新表零
+migration，`links(relation='parent')` 仅作派生索引。**地基先行**（frontmatter
+round-trip → 显式 parent + 校验 → 统一 `resolve_hierarchy()` → graph/universe
+统一消费 → 12 项守护测试）；左侧嵌套树 UI 与稳定 note ID（独立 ADR，P1）不在
+P0 范围。计划与验收见 `docs/TASKS.md` §T-NOTE-HIER。
 
 ---
 
@@ -648,6 +661,8 @@ Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外
 | Mastery 引擎 | M3 / `DATA_MODEL.md` |
 | SM-2 调度 | `review_scheduler.py`（可替换但需 ADR） |
 | Frontend Design | ADR-013 |
+| 笔记层级 / frontmatter parent | ADR-024 |
+| frontmatter 读写（round-trip） | ADR-024 §3（地基，改前必读） |
 | AI Tutor 边界 | ADR-014 |
 | Prompt Contract | M4-B / `DATA_MODEL.md` |
 | Multilingual | ADR-015 |

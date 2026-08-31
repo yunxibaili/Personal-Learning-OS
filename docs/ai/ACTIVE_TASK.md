@@ -1,14 +1,42 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。权威源：`docs/PROJECT_STATE.md`（状态唯一来源）· `docs/TASKS.md`（任务与报告）。
-> 上次更新：2026-08-31 · HEAD `888ecd2`（186 commits）· Gate：pytest **836** · vitest **28** · tsc PASS · build PASS · CI 双绿
+> 上次更新：2026-09-01 · HEAD `3182465`（190 commits）· Gate：pytest **836** · vitest **28** · tsc PASS · build PASS · CI 双绿
 
 ---
 
 ## Task ID
 
-**P8-FE-001 UI 视觉打磨（进行中）** — 用户反馈「UI 太劣质」，FE-001 解冻（AGENTS §12 端到端闭环协议下的前端任务）。
-本日已闭环两轮（HEAD `907ff74` + `888ecd2`），剩余子项待评估/取舍。
+**T-NOTE-HIER 主/副笔记层级（进行中 · ADR-024）** —— 用户提出「主笔记 / 副笔记」
+并明确「左边也要出现」。经 GPT-5.5 Pro 评审后裁决落地为 ADR-024。
+**地基先行**：先做 frontmatter round-trip + 显式 parent + 统一 resolver，UI 后置。
+
+### 核心裁决（ADR-024，不可协商）
+
+- **存储**：child-side 单父 `parent: "[[父笔记标题]]"`，事实源在 Markdown frontmatter。
+  零新表零 migration；`links(relation='parent')` 仅作派生索引（reindex 全量重算）。
+- **五条铁规则**：① 事实源在 Markdown ② 只写 child 的 `parent`、不持久化 `children`
+  ③ 严格单父（forest，底层允许多级链、UI 先展一层）④ 显式 parent 权威、wikilink
+  推断降为 legacy fallback ⑤ `/graph`、`/universe`、review 统一走 `resolve_hierarchy()`
+- **失败语义**：parent 不存在 → **保留原值 + 标记 invalid，绝不自动删除**；自指/成环
+  → 标记 invalid；删 parent 文件 → child 不静默删，降级 orphan。
+
+### 执行计划（P0 最小闭环）
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| P0-1 | frontmatter round-trip（保任意 key · 真删除 · 稳定顺序） | `[ ]` 待施工 |
+| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | `[ ]` 待施工 |
+| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | `[ ]` 待施工 |
+| P0-4 | `/graph`、`/universe` 统一消费 resolver | `[ ]` 待施工 |
+| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | `[ ]` 待施工 |
+
+**不在 P0**：左侧嵌套树 UI（用户原始诉求，地基后做）· 稳定 note ID（独立 ADR，P1）· 星系视觉改造。
+
+### 已知地基缺陷（P0-1 要修的雷）
+
+`core/knowledge.py::compose_file(tags, body)` **只回写 `tags`**，其余 frontmatter key
+在保存时静默丢弃。不先修这条，加任何字段都会再踩一次。
 
 ### 本轮（2026-08-31）已闭环
 
@@ -19,28 +47,28 @@
 
 **验证**：tsc · vitest 28 · vite build · 头戴无头 7 视图（empty/selected/rail×5/review）审计全绿；对比度/字号/层次/CLS 全部达标。
 
-### P8-FE-001 待评估（未动）
+- **微交互 150ms** ✅（`3182465`）`.note-list li` / `.note-list button` / `.editor-toolbar button`
+  加 `--dur-fast` + `--ease-out` 过渡；仅 color/背景/边框/transform，禁 box-shadow 动画；
+  全局 `prefers-reduced-motion` 兜底；焦点环已由 `*:focus-visible` 覆盖，未重复加
 
-- **MiSans woff2 子集加载**：UI_DESIGN §依赖策略明确「P8-FE-001 收口」；当前声明了字体栈但 0 文件加载 → 静默降级苹方/雅黑。下载/子集化/绑入是 ~50-100KB 工作，需工具链（fonttools/pyftsubset 或 cloud subset）；可选包体 + 设计意图兑现两全
-- **浮层视图视觉核验**（图谱/星系/导图/Tutor）：基线已采但未目视过；非缺陷性，按需
-- **微交互 150-250ms**（hover/active/focus）：当前零动效，符合 ADR-013 铁律，但 hover 反馈偏硬；可选精修
+### P8-FE-001 已裁决/收尾
 
-### 候选方向（待所有者定序，仍照 P8 收尾政策）
+- **MiSans woff2 → 用户裁定 C（维持现状）**：核授权后确认子集化方案**站不住**——
+  ① 猫啃网核验 MiSans「不允许修改或制作衍生版本」，子集化=衍生=禁止
+  ② woff2 嵌入属灰区，「请自行咨询作者」③ 官方协议是**可撤销**的全球版权许可
+  ④ 本机 `C:\Windows\Fonts\` 0 个 MiSans → 当前静默降级苹方/雅黑。
+  **UI_DESIGN.md §依赖策略已如实改写**：废弃 woff2 离线包、记录三条授权理由、
+  给出 OFL 备选路径（思源黑体 SC）。**FE-001 收尾。**
+- **浮层视图视觉核验**（图谱/星系/导图/Tutor）：基线已采未目视，非缺陷性，按需再做
+
+## 候选方向（待所有者定序，仍照 P8 收尾政策）
 
 | 方向 | 说明 | 前置/风险 |
 |---|---|---|
-| A | UI 视觉打磨（**进行中**） | — |
-| C | M6 Tauri 桌面打包（唯一「未闭环」正式里程碑） | 重依赖（Rust 工具链） |
-| D | M9 Visual Engine / M10 AI 生成可视化（规格完备未开工） | 体量最大，与「先内容后视觉」铁律冲突 |
-| 挂起 | P8-Mode-001 · UpMark 联动 · Radar 编辑器内触发（等显式发起） | — |
-
-## 候选方向（待所有者定序）
-
-| 方向 | 说明 | 前置/风险 |
-|---|---|---|
-| **A. UI 视觉打磨**（**进行中**） | 层次/状态色 a11y/按钮字体/空态已闭环；剩余 MiSans woff2 / 微交互可选精修 | 子集化工具链（pyftsubset） |
+| **A. UI 视觉打磨** | 层次 ✅ / 状态色 a11y ✅ / 按钮字体 ✅ / 空态 ✅ / 微交互 ✅；MiSans 已裁定 C 收尾 | **已收尾**（浮层目视按需） |
+| **B. 主/副笔记层级（T-NOTE-HIER）** | **进行中** — ADR-024 地基先行（P0-1~P0-5） | 无新表；rename 耦合待 P1 稳定 ID |
 | **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
-| **D. M9 Visual Engine / M10** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
+| **D. M9 Visual Engine / M10 AI 生成可视化** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
 | 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |
 
 ## 待所有者决策

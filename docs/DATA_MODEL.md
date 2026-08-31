@@ -31,6 +31,7 @@
 
 | 2026-08-28 | P8-003E：mistakes 断链修复（mastery.answer_wrong 同事务落库）· 乙路线 auto_notes（ADR-014 附录许可，默认关闭）| P8-003E |
 | 2026-08-28 | **空表盘点（D5）**：14 张活表三分定界，零死表；memories/conversations/messages 三张 (b) 缺生产者待补（设计在案），TABLE_AUDIT.md 为准；新表登记规矩生效 | TABLE_AUDIT.md |
+| 2026-09-01 | **ADR-024 主/副笔记层级**：`parent` 关系存于子笔记 frontmatter（Markdown 事实源），**零新表零 migration**；`links(relation='parent')` 仅作派生索引，reindex 时全量重算，不作第二事实源。前置地基 = frontmatter round-trip（`compose_file` 须保任意 key） | ADR-024 · ADR-001 |
 
 ## 延后建表（禁止提前创建）
 
