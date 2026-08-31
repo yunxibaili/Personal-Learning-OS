@@ -352,12 +352,17 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 
 | 模块 | 已实现 | 未实现 |
 |---|---|---|
-| **输入知识** | ✅ Note CRUD · Markdown vault · TipTap+KaTeX · 附件 · FTS5 · wikilink · 原子写 · Vault Reindex | ❌ 批量导入 · Vault 自动监听 · 外部格式导入 · 笔记模板 |
-| **组织知识** | ✅ 多态 links（9 种 relation）· 反链 API · MindMap CRUD · Concept Binding · 导入导出 | ❌ 大纲反解析（M2b 挂起）· AI 生成导图 |
-| **理解知识** | ✅ Universe · Graph V2 · Concept CRUD + origin · Knowledge Radar MVP · Knowledge Planet | ❌ AI 概念提取 · 自动链接建议（auto-link） |
-| **薄弱检测** | ✅ 四维掌握度 · effective 加权 · Ebbinghaus 衰减 · learning_events · Weak Area API | ❌ 错题本 UI（`mistakes` 已有生产者，无 API/UI）· AI 薄弱诊断 |
-| **复习** | ✅ SM-2 · Review Queue · Review Session · Mastery Decay · Review History API | ❌ 复习历史分析 · Study Session · 自定义卡组 |
-| **AI** | ✅ Context 构建 · Prompt 组装 · ProviderProtocol+Mock · TutorPanel · 显式笔记引用 | ❌ 真实 LLM Provider · 流式输出 · Extractor · 对话持久化 · 用户记忆 |
+| **输入知识** | ✅ Note CRUD · Markdown vault · TipTap+KaTeX · 附件 · FTS5+CJK bigram · wikilink · 原子写 · Vault Reindex（含增量 changed_paths）· **Vault 自动监听**（B16 watcher + /admin/watcher/*） | ❌ 批量导入 · 外部格式导入 · 笔记模板 |
+| **组织知识** | ✅ 多态 links（9 种 relation）· 反链 API · MindMap CRUD · Concept Binding · 导入导出 · **大纲反解析**（B18 build_outline + GET /mindmaps/{id}/outline） | ❌ AI 生成导图 |
+| **理解知识** | ✅ Universe（Galaxy 多星球系统）· Graph V2 · Concept CRUD + origin · Knowledge Radar（M3.5-A+B 学习状态真实数据）· **AI 概念提取**（B5 /concepts/extract）· **自动链接建议**（B4 link-suggestions） | — |
+| **薄弱检测** | ✅ 四维掌握度 · effective 加权 · Ebbinghaus 衰减 · learning_events · Weak Area API · **错题本 API**（B12：列表/改已解决/删/统计） | ❌ 错题本独立 UI（仅 Tutor 上下文透视中展示）· AI 薄弱诊断 |
+| **复习** | ✅ SM-2 · Review Queue · Review Session · Mastery Decay · **复习历史分析**（B13 /review/stats）· **Study Session**（B14 /study/sessions） | ❌ 自定义卡组 |
+| **AI** | ✅ Context 构建 · Prompt 组装 · ProviderProtocol+Mock+OpenAICompat · **真实流式 SSE**（B2-B）· **Extractor**（B3）· **对话持久化**（/conversations）· **用户记忆**（B8 上下文注入 + B28 管理面）· TutorPanel | ❌ 自定义卡组（同复习行）· AI 薄弱诊断 |
+
+> 本表 2026-08-31 逐项对照代码核实（B 后端闭环批 + M3.5-B 交付后）。
+> 此前「大纲反解析/错题本 API/复习历史分析/流式输出/概念提取/自动链接/
+> Vault 监听/用户记忆」均标注未实现，与 B12/B13/B17/B18/B2-B/B5/B16/B28
+> 实际交付不符，已更正——**每一项都有对应 router/core 文件为证**。
 | **同步** | ✅ Core · Discovery · Transport · Apply · Conflict UI · E2E Demo · Release Audit | ❌ 移动设备同步 · 自动定时同步 |
 | **发布** | ✅ 本地双端运行 · migration runner · 23 ADR | ❌ 数据全量导出（T-EXPORT）· Tauri 打包（M6）· Docker · i18n |
 

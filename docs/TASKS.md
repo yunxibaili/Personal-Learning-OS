@@ -40,7 +40,7 @@
 | M2-C | 搜索 UI（FTS5 结果跳转） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2-D | Graph Read Model（GET /api/v1/graph 递归 CTE） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
 | M2-E | React Flow 基础图谱（仅渲染，无动画无 d3-force） | `[x]` 完成 | [T-M2](#t-m2-m2-双链反链图谱完成2026-08-26) |
-| M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[~]` M2b-001~003 ✅，大纲反解析挂起 | — |
+| M2b | Mind Map 编辑器（旁车 json + 生成大纲） | `[x]` 完成（M2b-001~003 + B18 大纲反解析 ✅，2026-08-31 核实回填） | [T-M2b](#m2b-003-mindmap-编辑器完成2026-08-27) |
 | M3 | Learning Graph（掌握度/状态机/SM-2/Dashboard） | `[x]` 完成 | [T-M3](#t-m3-m3-learning-graph-完成2026-08-26) |
 | M3b | Knowledge Universe 视觉层（Galaxy/Explorer/Memory Map，ADR-007） | `[x]` 完成（M3b-001~004） | 见 CURRENT_STATE |
 | M3.5-A | Knowledge Radar MVP（全知领域 Phase A：FTS+Graph+Radar 面板，ADR-012） | `[x]` 完成 | [T-M3.5A](#t-m35a-m35-a-knowledge-radar-mvp-完成2026-08-26) |
@@ -48,7 +48,7 @@
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[x]` 完成（M4-A~E + Gate 1，ADR-014/015/016） | 见 CURRENT_STATE |
 | M5 | 复习闭环（队列/测验/时间线） | `[x]` 完成 | [T-M5](#t-m5-m5-复习闭环完成2026-08-27) |
 | M6 | Tauri 桌面打包 | `[ ]` | — |
-| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[~]` M7-001~004 ✅，M7-005 未开工 | 见下方 M7 拆解 |
+| M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[x]` 完成（M7-001~008 全链路闭环，2026-08-31 核实回填） | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
 | M9 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
 | M10 | AI 生成可视化 | `[ ]` | — |
