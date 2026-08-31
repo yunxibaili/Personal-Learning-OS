@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { apiGet } from "../lib/api";
+import { Progress } from "./ui";
 import type {
   SuggestionResponse,
 } from "@shared/types/suggest";
@@ -115,11 +116,10 @@ export function KnowledgeRadar({ query, noteId, onOpenNote }: Props) {
           {memory.mastery != null && (
             <div className="radar-memory-row">
               <span className="radar-memory-k">掌握度</span>
-              <span className="radar-memory-bar" aria-hidden="true">
-                <span
-                  className="radar-memory-bar-fill"
-                  style={{ width: `${Math.round(memory.mastery * 100)}%` }}
-                />
+              {/* 复用组件库 Progress（ADR-013：不私自造组件），
+                  tone 走其内置 auto（≥70% ok / ≥40% brand / 其余 err） */}
+              <span className="radar-memory-bar">
+                <Progress value={memory.mastery} label="掌握度" />
               </span>
               <span className="radar-memory-v">{Math.round(memory.mastery * 100)}%</span>
             </div>
