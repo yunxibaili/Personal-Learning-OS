@@ -3,6 +3,14 @@
 职责：扫描 vault/ 目录，将 Markdown 文件同步到 notes + FTS5 + links + concepts。
 属于 Workspace synchronization，不负责单文件 Entity mutation（由 knowledge.py 处理）。
 
+BUG-1（2026-08-31）：新增概念/掌握度恢复——此前 reindex 只还原 notes/links，
+concept（含 origin=manual）与 concept_mastery 仅存 SQLite，导出→重建后丢失
+（场景 C 实测 1→0）。恢复链：
+  1. concepts.json（导出快照，随包走）→ upsert 概念 + SM-2 状态（权威、确定性）
+  2. metadata/eventlogs/*.jsonl → 回放学习事件（快照缺 mastery 行时的兜底，
+     也是「事件真相」语义的体现：维度值 = 事件序列重放）
+恢复为**保守合并**：不覆盖已存在且更新的数据（reindex 幂等，可反复执行）。
+
 接口设计：
   reindex_vault(conn, vault_root, changed_paths=None, prune_missing=False)
     - changed_paths=None  → 全量扫描（MVP 默认）
@@ -13,15 +21,18 @@
 调用链：
   reindex.py → knowledge.upsert_note_index()
              → knowledge.rebuild_note_links()
+             → mastery.restore_concepts_and_mastery()（BUG-1，仅全量模式）
              → knowledge.drop_note_index()（仅 prune 模式）
              → knowledge.cascade_drop_entity()（仅 prune 模式）
 """
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
 from . import knowledge as K
+from .mastery import restore_concepts_and_mastery
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +54,8 @@ def reindex_vault(
       prune_missing: 仅全量模式生效：删除 vault 中不存在的 notes
 
     返回统计字典：
-      {notes_scanned, notes_upserted, notes_dropped, links_rebuilt, stubs_created}
+      {notes_scanned, notes_upserted, notes_dropped, links_rebuilt, stubs_created,
+       concepts_restored, mastery_restored, events_replayed}  # 后三项为 BUG-1
     """
     stats = {
         "notes_scanned": 0,
@@ -51,6 +63,9 @@ def reindex_vault(
         "notes_dropped": 0,
         "links_rebuilt": 0,
         "stubs_created": 0,
+        "concepts_restored": 0,
+        "mastery_restored": 0,
+        "events_replayed": 0,
     }
 
     if not vault_root.exists():
@@ -104,6 +119,12 @@ def reindex_vault(
                 K.cascade_drop_entity(conn, "note", row["id"])
                 stats["notes_dropped"] += 1
                 logger.info("pruned orphan note: %s", row["path"])
+
+    # 3. 概念/掌握度恢复（BUG-1，仅全量模式；增量模式走 vault_watcher 时
+    #    由后续全量或导入流程兜底）。restore 为幂等保守合并。
+    ws_root = vault_root.parent  # workspace root（vault 的上级）
+    restore_stats = restore_concepts_and_mastery(conn, ws_root)
+    stats.update(restore_stats)
 
     return stats
 

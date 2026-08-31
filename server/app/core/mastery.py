@@ -25,6 +25,7 @@ import json
 import logging
 import math
 import os
+import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -372,3 +373,215 @@ def ensure_concept_learning_state(conn, concept_id: int) -> None:
             "VALUES (?, ?, 0.5, 'pending')",
             (concept_id, now),
         )
+
+
+# ── 概念/掌握度恢复（BUG-1，2026-08-31）──────────────────────────────
+# 场景 C 实测：导出→重建后概念 1→0、掌握度 1→0——两者只存 SQLite，不随
+# 导出包走，违背「数据不锁死」红线。恢复链（保守合并、幂等可重放）：
+#   1. concepts.json（导出快照）：概念全量 + mastery + review_queue —— 权威
+#   2. metadata/eventlogs/*.jsonl：按事件序列重放维度增量 —— 兜底
+# 事件回放会写入 learning_events（event_id 唯一索引防重），但不重复追加
+# eventlog 文件（避免恢复动作本身污染下一轮导出）。
+
+# 事件类型 → 维度增量（与 update_mastery 增量表同源；此处只读重放）
+_REPLAY_INCREMENTS = {
+    "answer_correct": 0.15,
+    "answer_wrong": -0.10,
+    "explain": 0.08,
+    "visualize": 0.05,
+    "review": 0.10,
+    "code_run": 0.08,
+}
+
+
+def _replay_eventlog_files(conn, eventlog_dir: Path, stats: dict) -> None:
+    """回放 eventlogs/*.jsonl → learning_events + 维度增量。
+
+    - event_id 已存在（UNIQUE 索引）→ 跳过该行（幂等）
+    - concept_id 不存在 → 跳过并计数（快照未覆盖的孤儿事件，不静默造概念）
+    - 不追加 eventlog 文件、不写 mistakes（恢复不是新学习事件）
+    """
+    if not eventlog_dir.is_dir():
+        return
+    for f in sorted(eventlog_dir.glob("*.jsonl")):
+        try:
+            lines = f.read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            logger.warning("eventlog read skipped %s: %s", f, exc)
+            continue
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                stats["events_replayed"] += 0  # 坏行忽略，不影响好行
+                continue
+            eid = ev.get("event_id")
+            cid = ev.get("concept_id")
+            if not eid or cid is None:
+                continue
+            exists = conn.execute(
+                "SELECT 1 FROM learning_events WHERE event_id=?", (eid,)
+            ).fetchone()
+            if exists:
+                continue
+            row = conn.execute(
+                "SELECT 1 FROM concepts WHERE id=?", (cid,)
+            ).fetchone()
+            if row is None:
+                continue  # 孤儿事件：概念不在库（快照缺失），不静默造桩
+            try:
+                conn.execute(
+                    "INSERT INTO learning_events (concept_id, event_type, "
+                    "dimension, weight, source, detail, event_id, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (cid, ev.get("event_type", "explain"),
+                     ev.get("dimension"), float(ev.get("weight", 1.0)),
+                     ev.get("source", "reindex_restore"),
+                     ev.get("detail"), eid, ev.get("created_at") or _now_iso()),
+                )
+            except sqlite3.IntegrityError:
+                continue  # 并发场景下 event_id 冲突，跳过
+            stats["events_replayed"] += 1
+
+
+def restore_concepts_and_mastery(conn, ws_root: Path) -> dict:
+    """从导出包快照 + eventlogs 恢复概念与学习状态（BUG-1 核心）。
+
+    读取位置：ws_root/metadata/concepts.json（导入流程把包内 concepts.json
+    落到 metadata/ 下；无快照时仅回放 eventlogs）。
+
+    保守合并语义（幂等，reindex 可反复执行）：
+      - 概念：按 title 幂等 upsert（存在→保留原 id 更新元数据；缺失→插入）
+      - mastery/review_queue：仅该概念**尚无** mastery 行时恢复——
+        不覆盖现网可能更新的学习进度（reindex 是恢复机制，不是回滚机制）
+      - 事件回放：event_id 去重后补插 + 维度增量重放（只对刚恢复/无事件的概念）
+
+    返回 {concepts_restored, mastery_restored, events_replayed}。
+    """
+    stats = {"concepts_restored": 0, "mastery_restored": 0, "events_replayed": 0}
+    snapshot_path = ws_root / "metadata" / "concepts.json"
+
+    snapshot = None
+    if snapshot_path.is_file():
+        try:
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("concepts.json unreadable, skip snapshot restore: %s", exc)
+
+    if snapshot and isinstance(snapshot.get("concepts"), list):
+        for c in snapshot["concepts"]:
+            title = (c.get("title") or "").strip()
+            if not title:
+                continue
+            existing = conn.execute(
+                "SELECT id, origin, status FROM concepts WHERE title=?", (title,)
+            ).fetchone()
+            if existing:
+                concept_id = existing["id"]
+                # 已存在的同名概念：仅当它是 reindex 刚造的 markdown stub 时
+                # 升格为快照里的真实身份（origin/status），保留其 id 与链接拓扑；
+                # 否则不动用户现网数据（保守合并）。元数据只补空缺，不覆盖。
+                was_stub = (
+                    existing["origin"] == "markdown"
+                    and existing["status"] == "unconfirmed"
+                )
+                conn.execute(
+                    "UPDATE concepts SET "
+                    "origin = CASE WHEN ? THEN ? ELSE origin END, "
+                    "status = CASE WHEN ? THEN ? ELSE status END, "
+                    "domain = CASE WHEN domain='' THEN ? ELSE domain END, "
+                    "aliases_json = CASE WHEN aliases_json='[]' THEN ? "
+                    "ELSE aliases_json END, "
+                    "summary = CASE WHEN summary='' THEN ? ELSE summary END, "
+                    "updated_at = CASE WHEN ? THEN ? ELSE updated_at END "
+                    "WHERE id=?",
+                    (was_stub, c.get("origin") or "manual",
+                     was_stub, c.get("status") or "active",
+                     c.get("domain") or "",
+                     c.get("aliases_json") or "[]",
+                     c.get("summary") or "",
+                     was_stub, c.get("updated_at") or _now_iso(),
+                     concept_id),
+                )
+                if was_stub:
+                    stats["concepts_restored"] += 1
+            else:
+                cur = conn.execute(
+                    "INSERT INTO concepts (title, aliases_json, summary, domain, "
+                    "origin, status, created_at, updated_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (title, c.get("aliases_json") or "[]", c.get("summary") or "",
+                     c.get("domain") or "", c.get("origin") or "manual",
+                     c.get("status") or "active",
+                     c.get("created_at") or _now_iso(),
+                     c.get("updated_at") or _now_iso()),
+                )
+                concept_id = cur.lastrowid
+                stats["concepts_restored"] += 1
+
+            # mastery：快照行匹配按快照内 concept_id（c['id']）；恢复策略分两层：
+            #   a) 快照有该概念的 mastery → **覆盖**（快照是用户显式导出的学习
+            #      状态真相；reindex 途中惰性造的 0 值占位行不是用户数据）
+            #   b) 快照无 → 仅无行时惰性初始化（新建概念场景）
+            m_by_cid = {m.get("concept_id"): m for m in snapshot.get("mastery", [])} \
+                if snapshot else {}
+            m = m_by_cid.get(c.get("id"))
+            has_mastery = conn.execute(
+                "SELECT 1 FROM concept_mastery WHERE concept_id=?", (concept_id,)
+            ).fetchone()
+            if m:
+                conn.execute(
+                    "INSERT INTO concept_mastery (concept_id, dimensions, "
+                    "effective, next_review, ease_factor, interval, "
+                    "review_count, created_at, updated_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "ON CONFLICT(concept_id) DO UPDATE SET "
+                    "dimensions=excluded.dimensions, effective=excluded.effective, "
+                    "next_review=excluded.next_review, "
+                    "ease_factor=excluded.ease_factor, interval=excluded.interval, "
+                    "review_count=excluded.review_count, "
+                    "updated_at=excluded.updated_at",
+                    (concept_id, m.get("dimensions") or
+                     json.dumps(DEFAULT_DIMENSIONS),
+                     float(m.get("effective", 0.0)), m.get("next_review"),
+                     float(m.get("ease_factor", 2.5)),
+                     int(m.get("interval", 0)),
+                     int(m.get("review_count", 0)),
+                     m.get("created_at") or _now_iso(),
+                     m.get("updated_at") or _now_iso()),
+                )
+                stats["mastery_restored"] += 1
+            elif has_mastery is None:
+                get_or_create_mastery(conn, concept_id)
+                stats["mastery_restored"] += 1
+
+            # review_queue：仅无行时恢复
+            has_rq = conn.execute(
+                "SELECT 1 FROM review_queue WHERE concept_id=?", (concept_id,)
+            ).fetchone()
+            if has_rq is None:
+                rq_by_cid = {
+                    r.get("concept_id"): r
+                    for r in snapshot.get("review_queue", [])
+                }
+                r = rq_by_cid.get(c.get("id"))
+                if r:
+                    conn.execute(
+                        "INSERT INTO review_queue (concept_id, due_at, priority, "
+                        "status, last_result, created_at, updated_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (concept_id, r.get("due_at") or _now_iso(),
+                         float(r.get("priority", 0.5)),
+                         r.get("status") or "pending", r.get("last_result"),
+                         r.get("created_at") or _now_iso(),
+                         r.get("updated_at") or _now_iso()),
+                    )
+                # 无 r → 不造队列行：快照都没有说明原库也没有（保守）
+
+    # 事件回放（无论有无快照都执行：event_id 去重保证幂等）
+    _replay_eventlog_files(conn, ws_root / "metadata" / "eventlogs", stats)
+
+    return stats

@@ -110,3 +110,124 @@ class TestZipIntegrity:
         assert md
         content = z.read(md[0]).decode("utf-8")
         assert "round trip" in content
+
+
+class TestConceptsSnapshotExport:
+    """BUG-1 守护：概念/掌握度进导出包（concepts.json 快照）。"""
+
+    def test_concepts_json_included(self, client: TestClient, tmp_workspace: Path):
+        client.post("/api/v1/concepts", json={"title": "快照概念A", "domain": "测试"})
+        z = _export(client)
+        assert "concepts.json" in z.namelist(), "概念快照未进入导出包"
+        snap = json.loads(z.read("concepts.json").decode("utf-8"))
+        titles = [c["title"] for c in snap["concepts"]]
+        assert "快照概念A" in titles
+        assert snap["version"] == 1
+
+    def test_mastery_and_sm2_in_snapshot(self, client: TestClient, tmp_workspace: Path):
+        """SM-2 排期字段（ease_factor 等）随快照走——复习节奏不归零。"""
+        cid = client.post("/api/v1/concepts", json={"title": "快照概念B"}).json()["id"]
+        r = client.post(f"/api/v1/review/{cid}/answer", json={"quality": 3})
+        assert r.status_code == 200
+        z = _export(client)
+        snap = json.loads(z.read("concepts.json").decode("utf-8"))
+        mrows = [m for m in snap["mastery"] if m["effective"] > 0 or m["review_count"] > 0]
+        assert mrows, "答题后的掌握度/复习状态未进快照"
+        assert any(m["ease_factor"] != 2.5 or m["review_count"] > 0 for m in mrows), \
+            "SM-2 字段未随快照导出"
+
+
+class TestExportRebuildClosedLoop:
+    """BUG-1 守护（场景 C 内核）：导出 → 全新库重建 → 概念/掌握度一致。
+
+    红线：AGENTS §3「用户数据永不锁死」——删 SQLite 后仅凭导出包必须能
+    恢复核心学习数据（概念、掌握度、SM-2 排期）。
+    """
+
+    def test_rebuild_restores_concepts_and_mastery(
+        self, client: TestClient, tmp_workspace: Path, monkeypatch
+    ):
+        import io as _io
+        import zipfile as _zipfile
+        from app.db import connect, init_db
+
+        # ── 原库：概念 + 笔记（wikilink 解析到已有概念）+ 答题 ──
+        # （顺序不可反：[[重建概念X]] 会先建 stub，同名 POST 概念会 409）
+        cid = client.post("/api/v1/concepts",
+                          json={"title": "重建概念X", "domain": "物理"}).json()["id"]
+        _mk_note(client, "重建笔记甲", "讲讲 [[重建概念X]]。")
+        client.post("/api/v1/events", json={
+            "concept_id": cid, "event_type": "explain",
+            "dimension": "knowledge", "weight": 1.0, "source": "manual"})
+        client.post(f"/api/v1/review/{cid}/answer", json={"quality": 3})
+        before_m = client.get("/api/v1/mastery").json()
+        before_m = before_m["mastery"] if isinstance(before_m, dict) else before_m
+        before_x = [m for m in before_m if m.get("title") == "重建概念X"]
+        assert before_x, "前置失败：原库无掌握度行"
+
+        # ── 导出 → 解包到暂存目录 ──
+        r = client.get("/api/v1/export")
+        stage = tmp_workspace / "stage"
+        stage.mkdir()
+        with _zipfile.ZipFile(_io.BytesIO(r.content)) as zf:
+            zf.extractall(stage)
+
+        # ── 全新库（同进程新 workspace）──
+        ws2 = tmp_workspace / "workspace2"
+        ws2.mkdir()
+        monkeypatch.setenv("WORKSPACE_DIR", str(ws2))
+        init_db()
+        im = client.post("/api/v1/notes/import",
+                         json={"source": str(stage / "vault"), "prefix": ""})
+        assert im.status_code == 200, im.text
+        assert im.json().get("concepts_snapshot_staged") is True, \
+            "concepts.json 未被导入流程暂存"
+        client.post("/api/v1/admin/reindex", json={})
+
+        # ── 核对：概念 + 掌握度 + SM-2 恢复 ──
+        concepts = client.get("/api/v1/concepts").json().get("concepts", [])
+        titles = [c["title"] for c in concepts]
+        assert "重建概念X" in titles, "概念未随重建恢复（BUG-1 复现）"
+        after_m = client.get("/api/v1/mastery").json()
+        after_m = after_m["mastery"] if isinstance(after_m, dict) else after_m
+        after_x = [m for m in after_m if m.get("title") == "重建概念X"]
+        assert after_x, "掌握度行未随重建恢复（BUG-1 复现）"
+        b, a = before_x[0], after_x[0]
+        assert abs(a["effective"] - b["effective"]) < 1e-6, \
+            f"effective 不一致: before={b['effective']} after={a['effective']}"
+        assert a["review_count"] == b["review_count"], "SM-2 review_count 不一致"
+        assert a["next_review"] == b["next_review"], "SM-2 next_review 不一致"
+
+    def test_reindex_replays_eventlogs_idempotent(
+        self, client: TestClient, tmp_workspace: Path, monkeypatch
+    ):
+        """连续两次 reindex 幂等：事件不重复计数，掌握度不翻倍。"""
+        from app.db import connect
+
+        cid = client.post("/api/v1/concepts", json={"title": "幂等概念"}).json()["id"]
+        _mk_note(client, "幂等笔记", "引用 [[幂等概念]]。")
+        client.post("/api/v1/events", json={
+            "concept_id": cid, "event_type": "explain",
+            "dimension": "knowledge", "weight": 1.0, "source": "manual"})
+
+        import json as _json
+        import os as _os
+        from pathlib import Path as _P
+        ws = _P(_os.environ["WORKSPACE_DIR"])
+        meta = ws / "metadata"
+        meta.mkdir(exist_ok=True)
+        (meta / "concepts.json").write_text(_json.dumps({
+            "version": 1, "concepts": [{"id": cid, "title": "幂等概念",
+                                        "origin": "manual", "status": "active"}],
+            "mastery": [], "review_queue": []}), encoding="utf-8")
+
+        conn = connect()
+        try:
+            from app.core.reindex import reindex_vault
+            vault = ws / "vault"
+            s1 = reindex_vault(conn, vault)
+            s2 = reindex_vault(conn, vault)
+            assert s2["events_replayed"] == 0, "二次 reindex 重复回放事件"
+            assert s2["concepts_restored"] == 0, "二次 reindex 重复建概念"
+        finally:
+            conn.close()
