@@ -163,6 +163,12 @@ learning-os/            # 应用源码，Git 管理
 自动执行 Git push · 自动修改用户 repository · 用户代码上传云端 AI ·
 增加新数据库 · 新状态管理框架 · 新 UI 框架 · 新 ORM · 新构建系统
 
+> **「自动执行 Git push」的作用域**（2026-08-31 澄清）：
+> 指**未被告知、未经验收的**静默推送——例如过程中顺手推、把未完成的中间态推上去、
+> 或在**导入的第三方 repository** 上执行任何 push。这些必须先报告。
+> **本项目仓库（`origin`）在完成一轮任务并跑通自检后推送，是 §18 §2.2 的强制义务，
+> 不属此列**——那种情形恰恰相反：不推送才需要报告。
+
 报告格式：
 ```
 [ARCHITECTURE WARNING]
@@ -532,9 +538,52 @@ AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件
 ### 2. 用户数据永不入库
 - `workspace/` 整体 `.gitignore`（知识库、附件、SQLite、AI 生成内容）
 - `.env*` 及一切密钥凭证禁止提交
+- 构建与验证产物不入库：`dist/`、`dist_verify*/`、`coverage/`、`*.log`
 - 导入的外部 Git repository 保留原始 `.git`，默认只读；
-  commit/push/pull/checkout/merge/rebase 仅在用户明确要求时执行，
- 且绝不自动 push
+  commit/push/pull/checkout/merge/rebase 仅在用户明确要求时执行
+
+#### 2.1 入库 / 不入库边界（2026-08-31 明确）
+
+**必须入库**（丢失即不可逆，或破坏可复现开发）：
+
+| 类别 | 例子 | 理由 |
+|---|---|---|
+| 源码 | `server/app/**` · `web/src/**` | 一切工作的本体 |
+| 契约 | `shared/types/**` | 前后端唯一权威定义 |
+| 测试 | `server/tests/**` · `web/src/**/*.test.ts` | 可复现开发；**正式回归测试不属于「本地临时脚本」**，必须入库 |
+| 文档 | `docs/**` · `AGENTS.md` · `README.md` · ADR | §10 同步义务 |
+| 依赖锁 | `server/requirements.txt` · `web/package-lock.json` | 环境可复现 |
+| 静态资源 | `web/public/**`（含 `favicon.svg`、`assets/dots-world.png`） | 运行时依赖 |
+| 配置模板 | `.gitignore` · `vite.config.ts` · `tsconfig.json` | 环境一致性 |
+
+**永不入库**：
+
+| 类别 | 例子 | 处置 |
+|---|---|---|
+| 用户私有数据 | `workspace/`（知识库/附件/SQLite/AI 生成内容） | gitignore |
+| 密钥凭证 | `.env*` · API key · Token · SSH key | gitignore；LLM key 只存 `workspace/db/` |
+| 构建与验证产物 | `dist/` · `dist_verify*/` · `coverage/` · `*.log` | gitignore |
+| Python/Node 环境 | `.venv/` · `node_modules/` · `__pycache__/` · `.pytest_cache/` | gitignore |
+| 本地归档区 | `_local/`（旧代码快照/旧文档版本/临时脚本） | gitignore |
+| 一次性实验 | `sandbox/`（用完即删；有价值的结论沉淀为 ADR） | gitignore |
+| 后端缓存 | `server/.cache/` | gitignore |
+| 打包产物 | `src-tauri/target/` | gitignore |
+
+> **判据**：这个东西丢了，能从 git 历史/origin 恢复吗？能 → 不入库（或可删）；
+> 不能 → 必须入库。**测试与文档按「不能」处理。**
+
+### 2.2 推送策略（2026-08-31 明确）
+
+- 本项目仓库（`origin` = `Personal-Learning-OS`）：**每轮任务完成即推送**
+  （`git push origin main`）。积压在本地 = 单点风险——仅存于本机磁盘，无副本。
+- 推送前自检：`tsc --noEmit` / `vitest run` / `pytest -q` 全绿 + 构建通过。
+- **例外**：在 `feature/<name>` 短分支上的未完成工作可不推，但合回 `main` 后必须推。
+- **导入的第三方仓库**：仍适用 §4.1 / §19 的 Read-only 边界——
+  commit/push 仅在用户明确要求时执行，绝不自动 push。
+  > ⚠️ 该边界的作用域是**导入的外部仓库**，不是本项目仓库。
+  > 曾因误读为全局禁令导致本项目 118 个提交积压 4 天未推送（2026-08-31）。
+- 若推送因认证失败（HTTPS 无法交互输凭据 / SSH publickey 被拒），
+  **必须明确报告用户**，并说明本地未推送的提交数——不得静默跳过。
 
 ### 3. 版本发布（Semver）
 - 格式 `MAJOR.MINOR.PATCH`；MVP 开发期固定 `0.x.y`
@@ -588,6 +637,10 @@ AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件
 - AI 不获得整库访问权：只能拿到管线检索出的片段与用户显式授权的范围
 
 ### 外部 Git 仓库导入
+
+> ⚠️ **本节作用域 = 导入到本项目的第三方/外部仓库，不是本项目仓库本身。**
+> 本项目仓库（`origin`）的推送策略见 **§18 §2.2**——每轮任务完成即推送。
+> 曾因把本节误读为全局「禁止自动 push」导致 118 个提交积压 4 天（2026-08-31）。
 
 - 默认 Read-only / Safe Import；保留原始 `.git`，不改历史、不改用户 Git 配置
 - commit / push / pull / checkout / merge / rebase 仅在用户明确指令时执行

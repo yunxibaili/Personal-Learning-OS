@@ -21,7 +21,10 @@ __pycache__/
 # Node
 node_modules/
 dist/
+# 构建验证产物（vite build --outDir dist*）——两种连字符写法都忽略
 dist-verify/
+dist_verify*/
+dist-verify*/
 
 # 构建与测试产物
 coverage/

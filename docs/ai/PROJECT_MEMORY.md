@@ -78,3 +78,13 @@ DDL 完整版见 `TECH_DESIGN.md §4`；变更追踪见 `docs/DATA_MODEL.md §A`
 - Tailwind → 单一 global.css
 - D3 全家桶 → React Flow + d3-force（ADR-007）
 - 向量数据库 → FTS5（触发条件：概念数 >2000）
+
+## Git 纪律（2026-08-31 加入，详见 AGENTS §18 §2.1/§2.2）
+
+- **每轮任务完成必须 `git push origin main`**。积压在本地 = 单点风险，无副本。
+- **必须入库**：源码 · 契约（`shared/types`）· **测试** · **文档** ·
+  `package-lock.json` · `web/public/**`
+- **永不入库**：`workspace/`（用户数据）· `.env*` 与密钥 · `dist*/`
+  与 `coverage/` · `node_modules/` `.venv/` · `_local/` · `sandbox/`
+- 「不自动 push」的规则**只作用于导入的第三方repository**，不是本项目仓库。
+- 推送失败必须报告用户并说明未推送提交数，不得静默跳过。

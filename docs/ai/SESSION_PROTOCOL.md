@@ -29,13 +29,20 @@
 - 不改 Forbidden 列表中的文件
 - 遇到 [ARCHITECTURE WARNING] 触发条件 → 停止并报告
 
-### 完成后
+### 完成后（2026-08-31 修订：补第 6 步推送）
 
 1. `pytest -q` → 全绿
-2. `npm run build` → 通过
+2. `npm run build`（含 `tsc --noEmit` 与 `vitest run`）→ 通过
 3. git commit（conventional 风格）
-4. 更新 `CURRENT_STATE.md`（last commit + 本次改动）
-5. 清空 `ACTIVE_TASK.md`（回模板）
+4. **`git push origin main`** ← 必做。本项目仓库每轮任务完成即推送，
+   积压在本地 = 单点风险（依据 `AGENTS.md` §18 §2.2）
+5. 更新 `CURRENT_STATE.md`（last commit + 本次改动）
+6. 清空 `ACTIVE_TASK.md`（回模板）
+
+> **推送失败时**：明确告诉用户「本地有 N 个提交未推送」并给出原因与解决方式，
+> **不得静默跳过**继续做别的任务。
+> **导入的第三方仓库**不适用第 4 步——那类仓库保持 Read-only，
+> push 仅在用户明确要求时执行（`AGENTS.md` §4.1 / §19）。
 
 ## 禁止行为
 

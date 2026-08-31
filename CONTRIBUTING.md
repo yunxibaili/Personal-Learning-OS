@@ -16,6 +16,9 @@ Python 3.12 + Node 20+，两条命令分别启动后端(8000)与前端(5173)，�
 3. **自答设计三问**：用户真需要？现在必须做？三个月后新人能看懂？
 4. **测试要求**：Core 逻辑必须有 pytest/vitest 覆盖；API 响应形状受契约测试锁定
 5. **提交规范**：Conventional Commits，小而单一目的（见 docs/version-control/git-policy.md）
+6. **推送**：每轮任务完成即 `git push origin main`（`AGENTS.md` §18 §2.2）。
+   入库/不入库边界见 §18 §2.1——测试与文档必须入库，
+   `workspace/`、`.env*`、`dist*/`、`node_modules/`、`.venv/` 永不入库
 
 ## 架构红线速览（全文见 AGENTS.md §2-§3）
 
@@ -36,3 +39,4 @@ Python 3.12 + Node 20+，两条命令分别启动后端(8000)与前端(5173)，�
 - [ ] `npm run build` 通过
 - [ ] 相关文档（TECH_DESIGN/REGISTRY/INDEX/CHANGELOG）已同步
 - [ ] 不含密钥、workspace 用户数据、构建产物
+- [ ] 已 `git push origin main`（本地不积压提交）
