@@ -26,6 +26,8 @@
 | `visual-engine/` | **M9 视觉引擎组件库**（TS/TSX）：6 组件 + 3 纯逻辑模块 + CSS。**仅 ui 库，未合并进 `web/`**，回灌归 M9-007 | `UI_DESIGN.md` §7.4 · ADR-025 v3 |
 | `visual-engine-demo.html` | **M9 视觉引擎演示页（组件跑起来的样子）**：页面壳按 ui 库规范，组件样式直接引用 `./visual-engine/visual-engine.css`（不复制不重写）；数据/渲染脚本由同步脚本从定稿处注入 | `visual-engine.html` · `visual-engine/` |
 | `visual-engine/sync-demo-html.mjs` | 演示页同步脚本（幂等）：把定稿处的 `#traceData`（6 示例真实 TraceRun）与主渲染脚本注入演示页占位块。改完 `visual-engine.html` 后重跑一次即可 | `visual-engine-demo.html` |
+| `audit-component-wiring.mjs` | **组件层接线审计**：扫 `web/src` 统计 21 个导出符号的业务引用，排除组件层/`motion/`·`dev/`·`ComponentGallery`·测试。产出「已接线 / 零接线」清单，是 §「组件层没接线」结论的证据，可重跑复核 | `empty-states.html` §④ |
+| `audit-ui-health.mjs` | **ui 库健康审计**：① 全库 `href="./..."` 死链 ② 根目录 html 是否登记进 `index.html` ③ 是否被 `README`/`UI_DESIGN` 提及 ④ 体积排序。整理 ui 库（启用留根目录 / 不用进 `archive/`）时的判定依据 | 本库 |
 | `archive/visual-engine-tsx-2026-09-01/` | **归档**：样式定稿前的 M9 TSX 稿，冻结不再维护 | 已被 `visual-engine/` 取代 |
 | `archive/legacy-gallery-html-2026-09-01/` | **归档**：`app-shell.html` · `bento-dashboard.html` · `marquee.html`（与后续设计裁决冲突，理由见该目录 `README.md`）；另有 `spotlight-card.html` **旧稿**——其「内容卡聚光」形态仍被否决，2026-09-02 以「空状态引导」限定形态解禁，新稿在根目录 `spotlight-card.html` | `UI_DESIGN.md` §7.1/§7.2 已标 `归档·` / ⛔ · ADR-013 §2.13 |
 | `assets/dots-world.png` | 点阵世界贴图（地球自转滚动用，2000×1049） | `home-hero.html` |

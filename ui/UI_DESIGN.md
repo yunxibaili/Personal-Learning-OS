@@ -305,6 +305,9 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 ### 7.4 M9 视觉引擎组件（2026-09-01 新增 · 仅 ui 库）
 
 > **位置**：[`visual-engine/`](./visual-engine/)（ui 库）。
+> **对外演示页**：`visual-engine-demo.html`（ui 库根目录）。样式直引
+> `visual-engine/visual-engine.css` —— 演示的是**组件真实样式**，不是另抄一遍；
+> 数据与脚本由 `visual-engine/sync-demo-html.mjs` 从定稿处幂等注入，改定稿后重跑即同步。
 > **未合并进 `web/`** —— `web/src/components/ui/index.ts` 按所有者裁定不导出 M9 组件，
 > 避免出现「ui 库一套样式、项目里另一套」的双份来源。回灌时机归 **M9-007**。
 > **旧实现已归档**：`archive/visual-engine-tsx-2026-09-01/`（样式定稿前的 TSX 稿，冻结不再维护）。
