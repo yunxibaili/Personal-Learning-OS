@@ -708,7 +708,7 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 | 示例库 | `server/app/core/tracer/examples/`（+ `manifest.py`） | ✅ 6 示例 + manifest（M9-003） |
 | 路由 | `server/app/routers/trace.py` | ✅ M9-004（+ 只读 examples 端点） |
 | 契约 | `shared/types/trace.ts` | ✅ M9-002 |
-| 前端 | `web/src/components/ui/visual-engine/`（6 tsx + 3 纯逻辑模块，**入 ui 库**） | ✅ M9-005/006 |
+| 前端 | **`ui/visual-engine/`**（6 tsx + 3 纯逻辑模块 + CSS）。**仅 ui 库，未合并 `web/`**；旧稿归档 `ui/archive/visual-engine-tsx-2026-09-01/` | ✅ M9-005/006 |
 | 数据表 | migration 010+ | 止于 `009_event_id_rename.sql`（V1 不建表） |
 | API | `POST /api/v1/trace/run` | ✅ M9-004 |
 
@@ -724,9 +724,9 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 | **M9-002** | `shared/types/trace.ts`（`TraceRun` / `TraceEvent` / `TraceValue`）+ 契约测试 | 契约与守护测试 | M9-001 | `[x]` 2026-09-01（含 runner 真实输出往返校验 6 项） |
 | **M9-003** | tracer PoC **四步**（见下） | `runner` / `snapshot` / `limits` | M9-002 | `[x]` 2026-09-01（PoC 四步全绿；独立审核修复：tempfile 对齐 §5.5、per-event stdout 对齐 §4.2、删 `_exec_in_process` 死代码、§5.4 六项 builtins 全移除、序列化集中 snapshot.py） |
 | **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 | `[x]` 2026-09-01（15 项测试：400/404/422/429 映射、同步 def 守护、信号量 429/归还、非 completed → 200 桩锁定；`code` 字段 422 需 handler 内手工校验——全局 RequestValidationError handler 会把 422 转 400） |
-| **M9-005** | `CodePane` + `DebugToolbar` + `stepping` 状态模型（**入 ui 组件库**；2026-09-01 裁定否决播放器，改 IDE 步进，见 ADR-025 §3.2） | IDE 步进壳，无 Renderer | M9-002 | `[x]` 2026-09-01（纯逻辑 58 项测试全绿；组件接入视图归 M9-007） |
-| **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer（`derive.ts` 纯函数驱动） | M9-005 | `[x]` 2026-09-01（真实 trace 夹具测试全绿；接入视图归 M9-007） |
-| **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 | 端到端闭环 | M9-004 + M9-006 | `[ ]` |
+| **M9-005** | `CodePane` + `DebugToolbar` + `stepping` 状态模型（**入 ui 组件库**；2026-09-01 裁定否决播放器，改 IDE 步进，见 ADR-025 §3.2） | IDE 步进壳，无 Renderer | M9-002 | `[x]` 2026-09-01（纯逻辑 68 项测试全绿；组件**仅入 ui 库不合并 `web/`**，接入视图归 M9-007） |
+| **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer（`derive.ts` 纯函数驱动） | M9-005 | `[x]` 2026-09-01（真实 trace 夹具测试全绿；样式以 `ui/visual-engine.html` 定稿，组件 CSS 为其等值转写） |
+| **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 **+ 把 `ui/visual-engine/` 回灌到 `web/src/components/ui/` 并在 `index.ts` 解冻导出** | 端到端闭环 | M9-004 + M9-006 | `[ ]`（回灌前 `web/src/components/ui/index.ts` 按裁定**不导出** M9 组件） |
 | **M9-008** | M9 全量验收（11 条） | 验收报告 | M9-007 | `[ ]` |
 
 #### M9-003 PoC 四步（不得跳步）

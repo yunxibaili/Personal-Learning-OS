@@ -245,40 +245,45 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 
 ### 7.1 基础（Base）
 
+> **示例路径注（2026-09-01）**：`app-shell.html` · `bento-dashboard.html` · `spotlight-card.html` ·
+> `marquee.html` 四个示例页已归档至 `archive/legacy-gallery-html-2026-09-01/`，下表以
+> `归档·<文件名>` 简写指代该目录下的同名文件。它们不再代表现行设计方向，
+> 仅作历史参考——归档理由见该目录 `README.md`。
+
 | 组件 | 视觉 | 示例 | 实现映射 |
 |---|---|---|---|
-| Button | 主/次/幽灵/链接/图标；尺寸 sm/md/lg；药丸可选 | `home-hero.html` · `app-shell.html` | `web/src/components/ui/Button.tsx`（待建） |
+| Button | 主/次/幽灵/链接/图标；尺寸 sm/md/lg；药丸可选 | `home-hero.html` · `归档·app-shell.html` | `web/src/components/ui/Button.tsx`（待建） |
 | Input | 8px 圆角，42px 高，focus 橙描边 + 外发光 | `motion-primitives.html` | 待建 |
 | Textarea | 同 Input；自适应高度 | — | 待建 |
 | Select | 自绘下拉（禁浏览器默认） | `motion-primitives.html` | 待建 |
 | Checkbox / Radio / Switch | 自绘；switch 滑过用 brand-soft → brand | — | 待建 |
-| Tag / Chip | 灰底无描边 / brand-soft 底（激活） | `bento-dashboard.html` | 待建 |
-| Avatar | 圆形 32/40/56；首字母 / 域色 | `app-shell.html` | 待建 |
-| Badge | 状态色徽章（ok/warn/err/info） | `bento-dashboard.html` | 待建 |
-| Tooltip | 黑底白字 8px 圆角 4px 阴影 3 | `bento-dashboard.html` | 待建 |
+| Tag / Chip | 灰底无描边 / brand-soft 底（激活） | `归档·bento-dashboard.html` | 待建 |
+| Avatar | 圆形 32/40/56；首字母 / 域色 | `归档·app-shell.html` | 待建 |
+| Badge | 状态色徽章（ok/warn/err/info） | `归档·bento-dashboard.html` | 待建 |
+| Tooltip | 黑底白字 8px 圆角 4px 阴影 3 | `归档·bento-dashboard.html` | 待建 |
 | Toast | 右上角堆叠，4s 自动消失 | `motion-primitives.html` | 待建 |
 | Modal | 居中，遮罩 30% 黑，240ms 进场 | — | 待建 |
 | Skeleton | 灰块 1.2s 闪烁（`--surface-2` ↔ `--surface-3`） | `motion-primitives.html` | 待建 |
-| Progress | 进度条 / 圆环；品牌橙填充 | `bento-dashboard.html` · `motion-primitives.html` | 待建 |
+| Progress | 进度条 / 圆环；品牌橙填充 | `归档·bento-dashboard.html` · `motion-primitives.html` | 待建 |
 | Segmented Control | 滑块移动 250ms `--ease` | `motion-primitives.html` | 待建 |
-| Tabs | 下划线从左展开 | `app-shell.html` | 待建 |
+| Tabs | 下划线从左展开 | `归档·app-shell.html` | 待建 |
 
 ### 7.2 复合（Composite）
 
 | 组件 | 视觉 | 示例 | 实现映射 |
 |---|---|---|---|
-| AppShell | 顶栏 64 + 侧边栏 280 + 内容区 | `app-shell.html` | `web/src/App.tsx`（重设） |
+| AppShell | 顶栏 64（半透白 blur）+ 内容区；视图切换为浮层态，**无平级侧边栏** | `note-workspace.html` · `ui-preview.html` | ✅ `components/shell/AppShell.tsx`（Phase 2 已实现）<br>⚠️ 旧示例 `归档·app-shell.html` 的**平级侧栏导航**已否决，仅顶栏尺寸/层次仍沿用 |
 | Hero | 12 列，左文 6 / 右图 6，地球 | `home-hero.html` | `components/planet/`（待建） |
-| BentoGrid | 不等高网格（1+1+2 / 1+3 等） | `bento-dashboard.html` | `DashboardView.tsx`（重设） |
-| SpotlightCard | 鼠标跟随聚光描边（开源 Aceternity 风） | `spotlight-card.html` | 待建 |
-| Marquee | 无缝横向滚动（开源 Magic UI 风） | `marquee.html` | 待建 |
+| ~~BentoGrid~~ | 不等高网格（1+1+2 / 1+3 等） | `归档·bento-dashboard.html` | ⛔ **已否决**：裁决 A 删除独立仪表盘，学习数据分散到该出现处 |
+| ~~SpotlightCard~~ | 鼠标跟随聚光描边（开源 Aceternity 风） | `归档·spotlight-card.html` | ⛔ **已否决**：ADR-013 禁 glassmorphism 与装饰性光晕 |
+| ~~Marquee~~ | 无缝横向滚动（开源 Magic UI 风） | `归档·marquee.html` | ⛔ **已否决**：ADR-013 禁装饰性动效 |
 | CommandPalette | Ctrl+K，浮层居顶 | v1 未建示例 | `stores/ui.ts` |
-| Wikilink | `[[...]]` 黄色高亮 + 墨蓝字 | `app-shell.html`（笔记正文） | `editor/` |
+| Wikilink | `[[...]]` 黄色高亮 + 墨蓝字 | `归档·app-shell.html`（笔记正文） | `editor/` |
 | TutorPanel | 流式对话 + 抽屉 | v1 未建示例 | `components/tutor/` |
 | KnowledgePlanet | 点阵球 + 轨道卫星（无概念节点） | `home-hero.html` | `components/planet/` |
-| Graph | 力导向/层级，d3-force | v1 未建示例（`bento-dashboard.html` 有缩略） | `components/graph/` |
+| Graph | 力导向/层级，d3-force | v1 未建示例（`归档·bento-dashboard.html` 有缩略） | `components/graph/` |
 | ReviewCard | 复习专注模式 | v1 未建示例 | `ReviewSessionView.tsx` |
-| MasteryRadar | SVG 雷达四维 | `bento-dashboard.html`（雷达块） | M3 |
+| MasteryRadar | SVG 雷达四维 | `归档·bento-dashboard.html`（雷达块） | M3 |
 
 ### 7.3 动效基元
 
@@ -291,16 +296,92 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 | ProgressRing | 0→62% 描边动画 | `motion-primitives.html` |
 | WaveUnderline | 链接 hover 下划线展开 | `motion-primitives.html` |
 
+### 7.4 M9 视觉引擎组件（2026-09-01 新增 · 仅 ui 库）
+
+> **位置**：[`visual-engine/`](./visual-engine/)（ui 库）。
+> **未合并进 `web/`** —— `web/src/components/ui/index.ts` 按所有者裁定不导出 M9 组件，
+> 避免出现「ui 库一套样式、项目里另一套」的双份来源。回灌时机归 **M9-007**。
+> **旧实现已归档**：`archive/visual-engine-tsx-2026-09-01/`（样式定稿前的 TSX 稿，冻结不再维护）。
+> **契约来源**：`docs/adr/ADR-025-visual-engine-v1.md` v3（唯一事实源，本文档只记 UI 层决策）。
+
+#### 7.4.1 心智模型：调试器，不是播放器
+
+用户在这里是**逐步追问**，不是**观看动画**。因此：
+
+| 有 | 无 |
+|---|---|
+| Step Into / Over / Out / Continue / Back / Restart | ❌ 播放三角 |
+| 步号 `n / total`、栈深、当前行 | ❌ 进度条、时间轴、自动播放 |
+| 键盘方向键 + 空格 + R | ❌ 倍速、循环播放 |
+
+**为什么不用播放器**：学习者的真实动作是「这行为什么走到这里」——需要**随时后退对比**，
+播放器的单向时间轴做不到；而 `Back` 在 trace 数据上是 O(1) 的（后退只是索引 −1），
+成本几乎为零。这条与 VS Code / Python Tutor / Thonny 的步进派一致
+（VS Code 亦以 continue→over→into→out→restart 为主序）。
+
+**键位刻意偏离 VS Code（F5/F10/F11/Shift+F11）**：F 键会被浏览器抢走（F5 刷新、F11 全屏），
+且笔记本上需配合 Fn。改用 ↓ → ↑ 空格 ← R，单手可达、无需说明。
+
+#### 7.4.2 组件清单
+
+| 组件 | 职责 | 视觉要点 |
+|---|---|---|
+| `VisualEngine` | 组合壳；模板路由 + 键盘绑定 + `onVisualize` 只发一次 | 三段：工具栏 / 代码窗 / 可视化区 |
+| `DebugToolbar` | 6 个步进按钮 + 步号 + 栈深 | primary = 单步进入；ghost = 后退/重开；disabled 由 `canStep()` 判定 |
+| `CodePane` | 代码 + gutter（行号 + 热力条）+ 当前行 + 调用者行 + 行内变量 | 等宽 13px；`scrollIntoView` 跟随当前行 |
+| `ArrayView` | 数值数组柱状图（模板 `array`） | SVG viewBox 320×168；变化项橙描边 |
+| `FrameStackView` | 调用栈（模板 `framestack`） | 栈顶在**最上**、带橙框；`marginLeft: i*10` 表达递归深度 |
+| `GeneralView` | 兜底：数组 chips + 帧列表 | 无专属可视化时的诚实降级 |
+
+**纯逻辑模块**（零依赖、可单测、项目内可复用）：`stepping.ts`（`nextStepIndex` / `canStep` / `stackDepth`）、
+`derive.ts`（`formatValue` / `computeHitCounts` / `inlineValuesForLine` / `changedKeys` / `pickNumericArray` / `changedIndices` / `normalizeHeights`）、
+`highlight.ts`（`tokenizePython` / `tokenizePythonLine`，跨行字符串状态机）。
+
+#### 7.4.3 编码通道预算（ADR-025 §3.6 · 一个维度只占一个通道）
+
+通道复用会让「当前行」「变化量」「深度」三件事互相干扰，读者分不清哪个信号在说话。
+
+| 维度 | 通道 | 说明 |
+|---|---|---|
+| 当前执行行 | 品牌橙底 | **唯一**暖色行；其他行不得用橙 |
+| 调用者行 | 中性墨蓝底 | 次级指向，不与橙抢注意力 |
+| 命中次数 | gutter 竖条**透明度** | 不用长度不用色相 |
+| 变量变化 | 橙色**描边** | 非填充，避免与当前行混淆 |
+| 递归深度 | 卡片 **y 偏移**（`marginLeft`） | 位置即深度 |
+| 数组值大小 | 柱**高度** | 长度语义 |
+| 栈顶帧 | 橙色**边框** | 与调用者行的墨蓝区分 |
+
+#### 7.4.4 纪律
+
+- **样式单一来源**：`visual-engine.css` 全部取值来自 `tokens.css`，无裸值、无硬编码色。
+- **ADR-013 硬约束**：无 gradient / backdrop-filter / 装饰 SVG / 卡片套卡片 >2 层 / 图标库 / emoji 图标。
+- **CLS**：可视化区定高（不 `return null` 造成跳动）；`contain: layout paint`。
+- **Python 语义**：渲染 `None` / `True` / `False`，**不是** JS 的 `null` / `true` / `false`；不调用用户 `repr()`。
+
+#### 7.4.5 验证
+
+```bash
+# 纯逻辑单测（68 项）
+cd web && ./node_modules/.bin/vitest run --dir ../ui/visual-engine
+
+# 组件类型自检（ui/ 无 node_modules，react 类型经 paths 指向 web/）
+cd ui/visual-engine && ../../web/node_modules/.bin/tsc --noEmit -p tsconfig.check.json
+
+# HTML 原型冒烟（36 项断言，跑真实 tracer 产出的 TraceRun）
+node ui/visual-engine.smoke.js
+```
+
 ---
 
 ## 8. 页面骨架（2026-08-30 裁决 A 改写：笔记优先）
 
 > 打开应用即笔记工作区，**取消平级 tab，无独立首页/Dashboard**（裁决 A；
-> `bento-dashboard.html` 作废）。图谱/星系/导图/Tutor 为顶栏「← 返回笔记」的浮层态。
+> `bento-dashboard.html` 作废，2026-09-01 归档至 `archive/legacy-gallery-html-2026-09-01/`）。
+> 图谱/星系/导图/Tutor 为顶栏「← 返回笔记」的浮层态。
 
 | 界面 | 布局 | 核心 | 实现参考 |
 |---|---|---|---|
-| **笔记工作区（默认主界面）** | 三栏：列表 240 + 编辑器 680 行宽居中 + 右栏 320（大纲/反链/关联/掌握度/雷达）；TopBar 64（搜索/复习徽章/同步） | 编辑器三条硬约束：工具栏只放格式控件 · 行宽 680 · 保存态极小字下沉元信息行 | `note-workspace.html` · `app-shell.html` · `ui-preview.html` |
+| **笔记工作区（默认主界面）** | 三栏：列表 240 + 编辑器 680 行宽居中 + 右栏 320（大纲/反链/关联/掌握度/雷达）；TopBar 64（搜索/复习徽章/同步） | 编辑器三条硬约束：工具栏只放格式控件 · 行宽 680 · 保存态极小字下沉元信息行 | `note-workspace.html` · `ui-preview.html`（`归档·app-shell.html` 的平级侧栏已否决，仅外壳尺寸可参考） |
 | **图谱（浮层）** | 全屏画布 + 左浮工具条 + 右浮 Inspector | 形状即语义（ADR-023） | `graph-view.html` |
 | **复习（浮层）** | 居中专注卡 + 键盘驱动（1/2/3 三档打分 = SM-2 quality 1/3/5 · Esc 退出；2026-08-31 按实现实况校正，原拟 1–4） | ProgressRing | `motion-primitives.html` |
 | **星系（浮层）** | 双形态：全屏单颗 4s 轮换 / 右栏单颗静止 | 地球移植 `home-hero.html`，主笔记=星球 | `home-hero.html` |
@@ -358,7 +439,9 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 | 星系（多星球系统） | `components/galaxy/GalaxyCanvas.tsx` | ✅ Phase 3 ⑤ |
 | 组件活文档 | `dev/ComponentGallery.tsx`（`#gallery`，dev-only） | ✅ Phase 1 |
 
-**作废**：`bento-dashboard.html`（裁决 A 删除仪表盘，§8）；
+**作废**：`bento-dashboard.html`（裁决 A 删除仪表盘，§8；2026-09-01 归档）·
+`app-shell.html`（平级侧栏违背笔记优先 IA）· `spotlight-card.html` · `marquee.html`
+（ADR-013 禁装饰）——四者均归档至 `archive/legacy-gallery-html-2026-09-01/`，理由见该目录 `README.md`；
 `components/universe/` 旧星系与 `components/planet/` 已被 `components/galaxy/` 取代
 （代码待项目所有者决定是否删除）。
 
@@ -393,6 +476,7 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 |---|---|---|
 | v1 | 2026-08-29 | 初版。统一令牌到 MiMo 橙白体系；新增 5 个组件页（Home Hero / App Shell / Bento Dashboard / Spotlight / Marquee）+ 1 个动效基元页 + 总览导航页。`ui/README.md` 索引同步。 |
 | v1.1 | 2026-08-31 | **a11y 与一致性收口**：① §2.2 对比度改为**实测表**（原「品牌橙 3.6:1」为笔误，实测 2.84:1）；② 新增 `--brand-text #C2410C`（5.18:1）供品牌色作文字/白字底；`--brand` 降级为仅图形/填充；`--text-3` 由 `#A3A3A3`(2.52:1) 改为 `#737373`(4.74:1)；③ §11 映射表由「待同步」改为「已落地」真实状态，并补组件落地位置；④ §8 已按裁决 A 改写为笔记优先（原「六页面骨架」）。 |
+| v1.2 | 2026-09-01 | **新增 §7.4 M9 视觉引擎组件**：6 个组件 + 3 个纯逻辑模块落地 `visual-engine/`，**仅入 ui 库不合并 `web/`**（`web/src/components/ui/index.ts` 按裁定不导出）；旧 TSX 归档至 `archive/visual-engine-tsx-2026-09-01/`；登记心智模型（调试器非播放器）、7 条编码通道预算、键位偏离 VS Code 的理由、三条验证命令。**旧画廊 HTML 归档**：`app-shell.html` / `bento-dashboard.html` / `spotlight-card.html` / `marquee.html` 移入 `archive/legacy-gallery-html-2026-09-01/`（四项与设计裁决冲突，§7.1/§7.2 已标 `归档·` 与 ⛔ 已否决）；总览页 `index.html` 对归档项加 `is-archived` 灰显 + 新增 M9 Visual Engine 卡片。 |
 
 ---
 

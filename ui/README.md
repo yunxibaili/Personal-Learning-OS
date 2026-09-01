@@ -16,12 +16,23 @@
 | `graph-view.html` | **知识图谱规范页**（前后对照 + 规范表 9 条 + 已移除噪音 8 项 + ADR-023 裁决记录） | `web/src/components/graph/` · ADR-023 |
 | `note-workspace.html` | **笔记工作区（建议主界面）**：三栏（列表 / 编辑器 / 上下文），680px 行宽，可视化降为右栏标签 | `web/src/views/NoteEditor.tsx` |
 | `home-hero.html` | 首页 Hero（大字 + 橙色渐变 CTA + 自包含点阵地球 + 轨道卫星 + 浮动芯片） | `docs/DESIGN.md` §3 |
-| `app-shell.html` | 应用外壳（细顶栏 + 侧边栏 + 编辑器 + 右栏；MiMo 半透白 + 极简导航） | `web/src/App.tsx` |
-| `bento-dashboard.html` | Dashboard Bento 网格（6 列不等高：今日复习/掌握度雷达/趋势/最近笔记/图谱缩略/错题/概念库/状态/新建） | `DashboardView.tsx` |
-| `spotlight-card.html` | 鼠标跟随聚光卡片（v1 基础光晕 + v2 渐变描边） | 通用组件 |
-| `marquee.html` | 无缝横向滚动条（3 行：概念/复习队列/学习节奏） | 通用组件 |
 | `motion-primitives.html` | 动效基元（FadeInUp / CountUp / Skeleton / Toast / ProgressRing / WaveUnderline / SegmentedControl / Input） | 跨组件复用 |
+| `visual-engine.html` | **M9 视觉引擎原型页（样式定稿处）**：6 示例真实 TraceRun + 编码通道预算表 + 组件规格表 + 步进语义表 | `visual-engine/` · ADR-025 |
+| `visual-engine.smoke.js` | 原型页零依赖 DOM 冒烟脚本（36 项断言，驱动内联的真实 TraceRun） | `visual-engine.html` |
+| `visual-engine/` | **M9 视觉引擎组件库**（TS/TSX）：6 组件 + 3 纯逻辑模块 + CSS。**仅 ui 库，未合并进 `web/`**，回灌归 M9-007 | `UI_DESIGN.md` §7.4 · ADR-025 v3 |
+| `archive/visual-engine-tsx-2026-09-01/` | **归档**：样式定稿前的 M9 TSX 稿，冻结不再维护 | 已被 `visual-engine/` 取代 |
+| `archive/legacy-gallery-html-2026-09-01/` | **归档**：`app-shell.html` · `bento-dashboard.html` · `spotlight-card.html` · `marquee.html`（与后续设计裁决冲突，理由见该目录 `README.md`） | `UI_DESIGN.md` §7.1/§7.2 已标 `归档·` / ⛔ |
 | `assets/dots-world.png` | 点阵世界贴图（地球自转滚动用，2000×1049） | `home-hero.html` |
+
+### M9 视觉引擎：`visual-engine/` 的三条边界
+
+1. **不合并**：组件只放 `ui/visual-engine/`，`web/src/components/ui/index.ts` 按所有者裁定
+   （2026-09-01）**不导出** M9 组件——避免「ui 库一套样式、项目里另一套」的双份来源。
+2. **样式回溯**：任何样式疑问以 `visual-engine.html` 为准，组件 CSS 是它的等值转写。
+3. **旧稿归档**：`archive/` 只进不出——需要复用时 copy 到 `ui/` 根目录新文件并重新登记，不原地修改。
+   两个归档目录：`visual-engine-tsx-2026-09-01/`（M9 样式定稿前 TSX 稿）、
+   `legacy-gallery-html-2026-09-01/`（4 个违背现行裁决的旧画廊 HTML）。
+   总览页 `index.html` 对归档项统一 `is-archived` 灰显并标注「已归档」。
 
 ## 信息架构：笔记优先（2026-08-29）
 
@@ -141,3 +152,5 @@ ADR-023 已同步修订，「禁止」条款补上唯一例外，并新增「编
 | 2026-08-29 | 设计系统 v1 落地（10 个文件）；移除全部 pre-v1 示例（14 个 HTML + `react/HeroEarth.tsx` + `assets/orbit.png`），已入回收站可还原 |
 | 2026-08-29 | 知识图谱简约化：9 色 3 通道 → 2 级中性灰 1 通道；移除点阵背景/MiniMap/蓝环/绿边；Concept 加 mastery 环；新增 `graph-view.html` 规范页 |
 | 2026-08-29 | 信息架构纠正「本末倒置」：新增 `note-workspace.html` 笔记优先原型（取消 7 平级 tab，笔记即工作区，可视化降为右栏上下文） |
+| 2026-09-01 | **M9 视觉引擎入库**：组件落 `visual-engine/`（6 组件 + 3 纯逻辑模块 + CSS，仅 ui 库不合并 `web/`），`visual-engine.html` 为样式定稿处（36 项冒烟 + 68 项单测 + tsc 全绿），定稿前 TSX 稿归档 `archive/visual-engine-tsx-2026-09-01/` |
+| 2026-09-01 | **旧画廊 HTML 归档**：`app-shell` / `bento-dashboard` / `spotlight-card` / `marquee` 四项与现行裁决冲突，移入 `archive/legacy-gallery-html-2026-09-01/`（含归档理由 README）；总览页 `index.html` 新增 M9 Visual Engine 卡片，归档项 `is-archived` 灰显并改指归档路径 |

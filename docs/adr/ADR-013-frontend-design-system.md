@@ -243,10 +243,17 @@ Knowledge Universe：允许 Scientific Visualization。
 | 选择器 | 用法 | 来源资产 |
 |---|---|---|
 | `.btn-primary` | `linear-gradient(135deg,var(--brand),var(--brand-2))` + `box-shadow:var(--shadow-glow)` | `motion-primitives.html` |
-| `.avatar` / `.topbar__dot` | 品牌渐变 | `app-shell.html` |
-| `.topbar` | `backdrop-filter: saturate(180%) blur(12px)` 毛玻璃 | `app-shell.html` |
+| `.avatar` / `.topbar__dot` | 品牌渐变 | `app-shell.html` ⚠️ **已归档** |
+| `.topbar` | `backdrop-filter: saturate(180%) blur(12px)` 毛玻璃 | `app-shell.html` ⚠️ **已归档** |
 | `.wavelink` | 品牌渐变下划线 | `motion-primitives.html` |
 | `.skel` | 灰渐变 shimmer | `motion-primitives.html` |
+
+> **2026-09-01 归档注**：`app-shell.html` 因「平级侧栏违背笔记优先 IA」移入
+> `ui/archive/legacy-gallery-html-2026-09-01/`，上表两行的来源资产路径随之变更。
+> **但冲突并未消解** —— 三处样式已在 `web/src/global.css` 1:1 移植（`.topbar` L2190 含
+> `backdrop-filter`、`.avatar` L1951 与 `.topbar__dot` 品牌渐变），
+> 其中 `.topbar` / `.topbar__dot` 由 `components/shell/TopBar.tsx` 实际消费。
+> 归档只移走示例页，`global.css` 未动，本条依旧待所有者裁决。
 
 同理 §2.6「动效 150-250ms」与设计资产内的 `.fade-target`(.6s) / `.skel`(1.4s) /
 `ProgressRing`(1.2s) / tab `left`(.35s) 也存在张力。

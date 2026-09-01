@@ -118,19 +118,39 @@ shared/types/trace.ts
 > **绝不放 `workspace/vault/`**（用户数据区，会参与同步，且可被用户改写——
 > 一旦可改写就不再是「受信任示例」）。
 
-**前端**（组件**入 ui 组件库**，经 `web/src/components/ui/index.ts` 统一导出）：
+**前端**（组件**入 ui 组件库**）：
+
+> **2026-09-01 落地裁定**：组件落在 **`ui/visual-engine/`**（ui 库），
+> **不合并进 `web/`**。`web/src/components/ui/index.ts` **不导出** M9 组件——
+> 避免出现「ui 库一套样式、项目里另一套」的双份来源。
+> 样式定稿处是 `ui/visual-engine.html`（HTML 原型，内含 6 个示例的真实 TraceRun），
+> 组件 CSS 是它的等值转写。**回灌 `web/` 的时机归 M9-007。**
 
 ```text
-web/src/components/ui/visual-engine/
-   ├── VisualEngine.tsx      # 组合壳：CodePane + Renderer + DebugToolbar 三区布局
+ui/visual-engine/
+   ├── VisualEngine.tsx      # 组合壳：CodePane + Renderer + DebugToolbar 三区布局 + 键盘绑定
    ├── CodePane.tsx          # 代码 pane：gutter 行号/执行热力 + 当前行橙底 + 行尾 inline values
-   ├── DebugToolbar.tsx      # IDE 步进语义：Step Over/Into/Out/Continue/Restart
-   ├── FrameStackView.tsx    # SVG stack frames
-   ├── ArrayView.tsx         # SVG array
-   ├── GeneralView.tsx       # SVG frames + locals（fallback）
-   ├── stepping.ts           # 步进状态纯函数（无 React）
-   ├── derive.ts             # 派生计算纯函数（热力/变更键/inline values）
-   └── highlight.ts          # 零依赖 Python 词法高亮纯函数
+   ├── DebugToolbar.tsx      # IDE 步进语义：Back/Into/Over/Out/Continue/Restart + KEY_BINDINGS
+   ├── FrameStackView.tsx    # 调用栈（栈顶在上，y 偏移表递归深度）
+   ├── ArrayView.tsx         # SVG 柱状图（数值数组）
+   ├── GeneralView.tsx       # 兜底：数组 chips + 帧列表
+   ├── stepping.ts           # 步进状态纯函数（无 React）：nextStepIndex / canStep / stackDepth
+   ├── derive.ts             # 派生计算纯函数（热力/变更键/inline values/柱高归一化）
+   ├── highlight.ts          # 零依赖 Python 词法高亮（跨行字符串状态机）
+   ├── visual-engine.css     # 取值全部来自 ../../tokens.css，无裸值
+   ├── index.ts              # 唯一对外暴露面（组件 + 纯逻辑 + 类型 + CSS_PATH）
+   ├── tsconfig.check.json   # 仅类型自检；ui/ 无 node_modules，react 类型经 paths 指向 web/
+   └── *.test.ts             # 68 项：stepping 19 / derive 37 / highlight 12
+
+ui/archive/visual-engine-tsx-2026-09-01/   # 归档：样式定稿前的 TSX 稿，冻结不再维护
+```
+
+**验证命令**（三条，须全绿）：
+
+```bash
+cd web && ./node_modules/.bin/vitest run --dir ../ui/visual-engine        # 68 项
+cd ui/visual-engine && ../../web/node_modules/.bin/tsc --noEmit -p tsconfig.check.json
+node ui/visual-engine.smoke.js                                            # HTML 原型 36 项断言
 ```
 
 > **交互范式裁定（2026-09-01 所有者）**：**否决 StepPlayer 播放器**
@@ -138,6 +158,11 @@ web/src/components/ui/visual-engine/
 > 代码是主角，步进 = 检查程序状态而非"看视频"。借鉴 VS Code Debug
 > （inline values、CALL STACK、Step Over/Into/Out）与 birdseye（执行热力）。
 > 轨迹全量已录（TraceRun 一次性返回），所以"后退"天然可用，无需播放器。
+>
+> **键位刻意偏离 VS Code（F5/F10/F11/Shift+F11）**：F 键会被浏览器抢走
+> （F5 刷新、F11 全屏），笔记本上还需配合 Fn。改用 **↓ 单步进入 / → 单步跳过 /
+> ↑ 单步跳出 / 空格 继续 / ← 上一步 / R 重新开始**，单手可达、无需说明。
+> 详细理由与业界对照见 `ui/UI_DESIGN.md` §7.4.1。
 
 **职责解耦**：**模板 View 不处理步进控制**。M8 Mobile 改触摸交互时只动
 `DebugToolbar` / `stepping.ts`，三个 Renderer 不受影响。

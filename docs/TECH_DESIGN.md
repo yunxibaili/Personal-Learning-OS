@@ -766,8 +766,14 @@ Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
 
 > 原 `FuncPlotView` **已取消**，改为 `GeneralView`；函数图像待有真实需求时再立。
 
-目录 `web/src/components/ui/visual-engine/`（**入 ui 组件库**，经 `ui/index.ts` 导出）：
-`VisualEngine` 组合壳 · `CodePane`（IDE 风格代码 pane）· `DebugToolbar`（步进控制）· 三个 Renderer。
+目录 **`ui/visual-engine/`**（入 ui 组件库）：
+`VisualEngine` 组合壳 · `CodePane`（IDE 风格代码 pane）· `DebugToolbar`（步进控制）· 三个 Renderer
+（+ 纯逻辑 `stepping.ts` / `derive.ts` / `highlight.ts`）。
+> **2026-09-01 落地裁定：仅入 ui 库，不合并进 `web/`。**
+> `web/src/components/ui/index.ts` **不导出** M9 组件——避免「ui 库一套样式、项目里另一套」的双份来源。
+> 样式定稿处为 `ui/visual-engine.html`（HTML 原型，含 6 示例真实 TraceRun），组件 CSS 是其等值转写。
+> 旧 TSX 稿已归档 `ui/archive/visual-engine-tsx-2026-09-01/`（冻结）。**回灌 `web/` 归 M9-007。**
+
 **模板 View 不处理步进控制**——M8 Mobile 改触摸交互时只动 `DebugToolbar` / `stepping.ts`。
 > 2026-09-01 所有者裁定：否决播放器（StepPlayer/TraceTimeline），改 IDE 调试器语义，详见 ADR-025 §3.2。
 
