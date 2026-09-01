@@ -34,7 +34,7 @@
 ── 项目所有者 2026-09-01 裁定：M9 优先于 T-NOTE-HIER P1 ──
 9. [~] M9 Visual Engine V1（ADR-025 v2 已批准）
    M9-001 ✅ ADR 批准 + 文档同步 → M9-002 ✅ 契约 + 往返校验 → M9-003 ✅ PoC 四步全绿（2026-09-01，含独立审核修复）
-   → M9-004 API（下一步）→ M9-005 StepPlayer → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
+   → M9-004 ✅ API 路由（2026-09-01）→ M9-005 StepPlayer → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
 ```
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
@@ -717,7 +717,7 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 | **M9-001** | ADR-025 v3 批准 + 文档同步（TECH_DESIGN §8 / AGENTS §10 / ADR_INDEX / 本节） | 4 处文档 | — | `[~]` 文档已落（v3 含二轮终审 5 项修正），**待批准** |
 | **M9-002** | `shared/types/trace.ts`（`TraceRun` / `TraceEvent` / `TraceValue`）+ 契约测试 | 契约与守护测试 | M9-001 | `[x]` 2026-09-01（含 runner 真实输出往返校验 6 项） |
 | **M9-003** | tracer PoC **四步**（见下） | `runner` / `snapshot` / `limits` | M9-002 | `[x]` 2026-09-01（PoC 四步全绿；独立审核修复：tempfile 对齐 §5.5、per-event stdout 对齐 §4.2、删 `_exec_in_process` 死代码、§5.4 六项 builtins 全移除、序列化集中 snapshot.py） |
-| **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 | `[ ]` |
+| **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 | `[x]` 2026-09-01（15 项测试：400/404/422/429 映射、同步 def 守护、信号量 429/归还、非 completed → 200 桩锁定；`code` 字段 422 需 handler 内手工校验——全局 RequestValidationError handler 会把 422 转 400） |
 | **M9-005** | `StepPlayer` + `TraceTimeline` | 播放壳，无 Renderer | M9-002 | `[ ]` |
 | **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer | M9-005 | `[ ]` |
 | **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 | 端到端闭环 | M9-004 + M9-006 | `[ ]` |
