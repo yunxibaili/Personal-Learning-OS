@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ..core import knowledge as K
+from ..core import hierarchy as H
 from ..core.autolink import suggest_note_links
 from ..core.importer import import_markdown
 from ..core.reindex import reindex_vault
@@ -30,18 +31,31 @@ def _err(status: int, code: str, message: str) -> JSONResponse:
                         content={"error": {"code": code, "message": message}})
 
 
-def _summary(row) -> dict:
+def _parent_map(conn) -> dict[int, int]:
+    """当前全库权威 parent 关系 `{child_id: parent_id}`（ADR-024 红线 5）。
+
+    一切 hierarchy 语义只经唯一 `resolve_hierarchy()`，视图与路由禁止各自推断。
+    代价是 O(笔记数) 次 vault 文件读，与 `/graph` 同口径。若将来要优化，只能走
+    `materialize_parent_links` 的派生索引，且必须先解决 reindex 新鲜度保证
+    （红线 3：派生缺失/过期不得改变权威结果）——在此之前**不引入缓存**。
+    """
+    return H.resolve_hierarchy(conn)["parent_of"]
+
+
+def _summary(row, parent_of: dict | None = None) -> dict:
     return {
         "id": row["id"],
         "path": row["path"],
         "title": row["title"],
         "tags": json.loads(row["tags_json"]),
         "updated_at": row["updated_at"],
+        # ADR-024：来自唯一 resolver，不是 links 派生索引（红线 2/3）
+        "parent_id": (parent_of or {}).get(row["id"]),
     }
 
 
-def _detail(row, body: str) -> dict:
-    d = _summary(row)
+def _detail(row, body: str, parent_of: dict | None = None) -> dict:
+    d = _summary(row, parent_of)
     d["content_md"] = body
     return {"note": d}
 
@@ -49,6 +63,8 @@ def _detail(row, body: str) -> dict:
 class NoteCreate(BaseModel):
     title: str
     content_md: str = ""
+    # ADR-024：创建时一步指定父笔记（None=不设；""/无效目标不阻断，红线 4）
+    parent: str | None = None
 
 
 class NotePatch(BaseModel):
@@ -66,16 +82,21 @@ def list_notes() -> dict:
         rows = conn.execute(
             "SELECT * FROM notes ORDER BY updated_at DESC, id DESC"
         ).fetchall()
-        return {"notes": [_summary(r) for r in rows]}
+        parent_of = _parent_map(conn)
+        return {"notes": [_summary(r, parent_of) for r in rows]}
     finally:
         conn.close()
 
 
-def _create_note_vault(conn, title: str, content_md: str) -> tuple[str, int | None]:
+def _create_note_vault(
+    conn, title: str, content_md: str, parent: str | None = None,
+) -> tuple[str, int | None]:
     """写 vault 文件 + 更新 SQLite 索引（单篇）。返回 (status, note_id|None)。
 
     供单篇 create_note 与批量导入（B15）共用，避免重复。
     status：ok | empty_title | duplicate_title | bad_attachment_path | io_error
+    parent：ADR-024 主/副笔记——非 None 时写入 frontmatter `parent: "[[标题]]"`。
+      红线 4：目标不存在/自指**不阻断创建**（保留原值，resolver 标 invalid）。
     """
     try:
         title = K.sanitize_title(title)
@@ -97,13 +118,23 @@ def _create_note_vault(conn, title: str, content_md: str) -> tuple[str, int | No
     )
     note_id = cur.lastrowid
     try:
-        K.atomic_write_file(target, K.compose_file({}, content_md))
+        meta: dict = {}
+        if parent is not None:
+            raw_parent = parent.strip()
+            if raw_parent:
+                # 统一写 `parent: "[[标题]]"`（与 PATCH 同语义）；无效目标不阻断（红线 4）
+                meta = K.set_meta_parent(meta, raw_parent)
+        K.atomic_write_file(target, K.compose_file(meta, content_md))
         mtime = time.time()
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
                             tags=[], body=body_text, mtime=mtime)
         K.promote_stub_to_note(conn, note_id, title)
         K.rebuild_note_links(conn, note_id, body_text)
+        # ADR-024 §2.4：创建带 parent 时同步镜像派生边（单篇语义，与 PATCH 一致）
+        if parent is not None:
+            from ..core.hierarchy import sync_note_parent
+            sync_note_parent(conn, note_id)
         conn.commit()
     except OSError:
         conn.rollback()
@@ -115,7 +146,8 @@ def _create_note_vault(conn, title: str, content_md: str) -> tuple[str, int | No
 def create_note(body: NoteCreate) -> dict:
     conn = connect()
     try:
-        status, note_id = _create_note_vault(conn, body.title, body.content_md)
+        status, note_id = _create_note_vault(conn, body.title, body.content_md,
+                                             body.parent)
         if status == "empty_title":
             return _err(400, "empty_title", "标题不能为空")
         if status == "duplicate_title":
@@ -126,11 +158,12 @@ def create_note(body: NoteCreate) -> dict:
         if status == "io_error":
             return _err(500, "io_error", "写入失败")
         row = K.get_note_row(conn, note_id)
+        parent_of = _parent_map(conn)
     finally:
         conn.close()
 
     _, body_text = K.read_note_file(row["path"])
-    return _detail(row, body_text)
+    return _detail(row, body_text, parent_of)
 
 
 class NoteBatchBody(BaseModel):
@@ -183,10 +216,11 @@ def get_note(note_id: int) -> dict:
         row = K.get_note_row(conn, note_id)
         if row is None:
             return _err(404, "http_404", "笔记不存在")
+        parent_of = _parent_map(conn)
     finally:
         conn.close()
     tags, body = K.read_note_file(row["path"])
-    return _detail(row, body)
+    return _detail(row, body, parent_of)
 
 
 @router.patch("/{note_id}")
@@ -262,10 +296,11 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
     conn = connect()
     try:
         row = K.get_note_row(conn, note_id)
+        parent_of = _parent_map(conn)
     finally:
         conn.close()
     tags, body_text = K.read_note_file(row["path"])
-    return _detail(row, body_text)
+    return _detail(row, body_text, parent_of)
 
 
 @router.delete("/{note_id}")

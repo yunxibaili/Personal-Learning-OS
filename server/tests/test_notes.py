@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-SUMMARY_KEYS = {"id", "path", "title", "tags", "updated_at"}
+# ADR-024 P1-1：契约加 parent_id（来自唯一 resolve_hierarchy，红线 2/5）
+SUMMARY_KEYS = {"id", "path", "title", "tags", "updated_at", "parent_id"}
 DETAIL_KEYS = SUMMARY_KEYS | {"content_md"}
 
 
@@ -209,3 +210,77 @@ def test_cjk_search_scores_relevant_higher(client: TestClient) -> None:
     if "强相关" in titles and "弱相关" in titles:
         assert titles.index("强相关") < titles.index("弱相关")
     assert any(x.get("method") == "cjk_bigram" for x in res)
+
+
+# ── ADR-024 P1-1：/notes 契约带 parent_id（来自唯一 resolver，红线 2/5）──
+
+def test_list_contract_includes_parent_id(client: TestClient) -> None:
+    """/notes 列表响应锁定 parent_id 字段（契约三层一致的后端侧）。"""
+    child = client.post("/api/v1/notes", json={
+        "title": "反向传播", "content_md": "x"}).json()["note"]
+    parent = client.post("/api/v1/notes", json={
+        "title": "深度学习", "content_md": "y"}).json()["note"]
+    client.patch(f"/api/v1/notes/{child['id']}", json={"parent": "深度学习"})
+
+    notes = {n["title"]: n for n in client.get("/api/v1/notes").json()["notes"]}
+    assert notes["反向传播"]["parent_id"] == parent["id"]   # 显式 parent 经 resolver
+    assert notes["深度学习"]["parent_id"] is None          # 根
+
+
+def test_detail_contract_includes_parent_id(client: TestClient) -> None:
+    note = client.post("/api/v1/notes", json={"title": "甲", "content_md": ""}).json()["note"]
+    detail = client.get(f"/api/v1/notes/{note['id']}").json()["note"]
+    assert "parent_id" in detail
+    assert detail["parent_id"] is None
+
+
+def test_create_with_parent_one_step(client: TestClient) -> None:
+    """POST /notes 带 parent：一步创建副笔记（P1「新建副笔记」入口的后端语义）。"""
+    parent = client.post("/api/v1/notes", json={
+        "title": "机器学习", "content_md": ""}).json()["note"]
+    r = client.post("/api/v1/notes", json={
+        "title": "Adam 优化器", "content_md": "正文", "parent": "机器学习"})
+    assert r.status_code == 201
+    note = r.json()["note"]
+    assert note["parent_id"] == parent["id"]
+
+    # frontmatter 事实源落盘
+    from app.core.knowledge import resolve_vault_file
+    text = resolve_vault_file("Adam 优化器.md").read_text(encoding="utf-8")
+    assert 'parent: "[[机器学习]]"' in text
+
+    # 派生索引同步镜像
+    from app.db import connect
+    conn = connect()
+    try:
+        edge = conn.execute(
+            "SELECT target_id FROM links WHERE source_id=? AND relation='parent'",
+            (note["id"],),
+        ).fetchone()
+        assert edge is not None and edge["target_id"] == parent["id"]
+    finally:
+        conn.close()
+
+
+def test_create_with_invalid_parent_does_not_block(client: TestClient) -> None:
+    """红线 4：orphan parent 创建不阻断；保留 frontmatter 原值，parent_id=null。"""
+    r = client.post("/api/v1/notes", json={
+        "title": "孤儿", "content_md": "", "parent": "不存在的笔记"})
+    assert r.status_code == 201, r.text
+    note = r.json()["note"]
+    assert note["parent_id"] is None
+
+    from app.core.knowledge import resolve_vault_file
+    text = resolve_vault_file("孤儿.md").read_text(encoding="utf-8")
+    assert 'parent: "[[不存在的笔记]]"' in text   # 原值保留，resolver 标 invalid
+
+
+def test_create_with_empty_parent_omits_frontmatter(client: TestClient) -> None:
+    """parent="" 或 None 与旧语义一致：不写 frontmatter。"""
+    cases = [("无父甲", {}), ("无父乙", {"parent": None}), ("无父丙", {"parent": ""})]
+    for title, kw in cases:
+        r = client.post("/api/v1/notes", json={"title": title, **kw})
+        assert r.status_code == 201, r.text
+        from app.core.knowledge import resolve_vault_file
+        text = resolve_vault_file(f"{title}.md").read_text(encoding="utf-8")
+        assert "parent" not in text
