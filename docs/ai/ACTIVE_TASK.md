@@ -1,13 +1,13 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。权威源：`docs/PROJECT_STATE.md`（状态唯一来源）· `docs/TASKS.md`（任务与报告）。
-> 上次更新：2026-09-01 · HEAD `6ba3260`（192 commits）· Gate：pytest **848**（含 T-NOTE-HIER 12）· vitest **30** · tsc PASS · build PASS · CI 双绿
+> 上次更新：2026-09-01 · HEAD `3b49bd8`（193 commits）+ 未提交 P1+审计 · Gate：pytest **865** · vitest **36** · tsc PASS · build PASS · CI 双绿
 
 ---
 
 ## Task ID
 
-**T-NOTE-HIER 主/副笔记层级（ADR-024）P0 完成**（2026-09-01 · pytest 848 · vitest 30 · tsc/build PASS）。
+**T-NOTE-HIER 主/副笔记层级（ADR-024）P0+P1 完成 + Vault Rebuild Test + Doc Truth Audit**（2026-09-01 · pytest 865 · vitest 36 · tsc/build PASS）。
 **当前无进行中任务**——项目处于 P8 收尾阶段（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
 
 ### 核心裁决（ADR-024，不可协商）
@@ -65,7 +65,7 @@
 | 方向 | 说明 | 前置/风险 |
 |---|---|---|
 | **A. UI 视觉打磨** | 层次 ✅ / 状态色 a11y ✅ / 按钮字体 ✅ / 空态 ✅ / 微交互 ✅；MiSans 已裁定 C 收尾 | **已收尾**（浮层目视按需） |
-| **B. 主/副笔记层级（T-NOTE-HIER）** | ✅ **P0 完成（2026-09-01）**；遗留 P1：左侧嵌套树 UI · 稳定 note ID | — |
+| **B. 主/副笔记层级（T-NOTE-HIER）** | ✅ **P0+P1 完成（2026-09-01）**：P0（resolver + reindex + graph）+ P1-1（左侧层级树 `buildNoteTree` + `NoteTreeList` + CSS + `NoteCreate.parent` 一步创建副笔记）；遗留：稳定 note ID（独立 ADR） | — |
 | **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
 | **D. M9 Visual Engine / M10 AI 生成可视化** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
 | 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |

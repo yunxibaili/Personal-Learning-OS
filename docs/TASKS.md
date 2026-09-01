@@ -27,7 +27,7 @@
 ── 前端阶段（2026-08-30 项目所有者宣布进入）──
 7. ✅ /home 聚合端点（D1）+ P8-003 Home 最小接线 · pytest 826 · vitest 23 · tsc/build PASS
 · FE-001（UI 视觉打磨，2026-08-31 解冻：Round1-3 已推 907ff74/888ecd2/3182465）
-8. [~] T-NOTE-HIER 主/副笔记层级（ADR-024）——地基先行，UI 后置
+8. [x] T-NOTE-HIER 主/副笔记层级（ADR-024）——P0+P1 完成（2026-09-01 · pytest 853 · vitest 36）
    P0-1 frontmatter round-trip → P0-2 显式 parent + 校验 → P0-3 resolve_hierarchy
    → P0-4 graph/universe 统一消费 → P0-5 round-trip/rebuild 守护测试（P0 验收标准）
    P1（独立 ADR，不在本任务）：稳定 note ID · 左侧嵌套树 UI
@@ -424,8 +424,7 @@ Forbidden：改数据库 / Core / API / 同步逻辑
       #b3564d/rgba(179,86,77,*)→--err/--err-soft · #e08c85→--err · rgba(91,157,217,.1)→--ink-soft ·
       color:#fff→--text-inv 等）
 - [x] 旧令牌别名块（--bg-primary/--text-secondary/--brand-hover 等 → 新令牌，保留一版本后删）
-- [~] 字体栈：body 已接 `var(--font)`（MiSans 本地安装即生效）；**woff2 子集待补**——
-      仓库无 MiSans 字体文件，需用户提供后再做 @font-face（不引 CDN）
+- [x] 字体栈：body 已接 `var(--font)`（MiSans 本地安装即生效）；woff2 子集**已放弃**（裁定 C：MiSans 协议禁止子集化，维持现状降级苹方/雅黑）
 - [x] 全局基线：`*:focus-visible` 品牌焦点环 · `prefers-reduced-motion` 全局动效归零块
       （`html lang="zh-CN"` 既有即满足）
 - [x] 验收：`tsc --noEmit` PASS · `vitest` 23 passed · `vite build` PASS ·
@@ -1322,12 +1321,50 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 `now_iso()[:7]`（复用 B21 单一时间源）。经 `git stash` 回干净 HEAD 复跑确认
 为**测试过时**，非本次回归。
 
+#### P1-1 完成报告（2026-09-01 · 未提交）
+
+落地要点：
+
+- **契约 TS**：`NoteSummary.parent_id: number | null`（ADR-024 红线 2/5）+
+  `NoteCreateBody.parent?: string | null`（创建时一步指定父笔记）
+- **后端 4 端点**：`_parent_map(conn)` → `resolve_hierarchy()`；list/get/patch/create
+  全部返回 `parent_id`；`NoteCreate.parent` → `_create_note_vault` 写 frontmatter +
+  `sync_note_parent` 镜像派生边
+- **前端层级树**：`buildNoteTree`（纯函数，orphan 兜底 + 深度防御 + `updated_at` 降序）→
+  `NoteTreeList` 递归渲染（缩进 + branch/leaf + 「＋」创建副笔记按钮）→
+  `createNote(parent)` 一步到位
+- **CSS**：`.note-tree__*` 树样式（缩进 + 活跃态 + 按钮）
+
+**验证**：pytest **853 passed**（+5 notes 测试）· vitest **36 passed**（+6 buildNoteTree）
+· tsc PASS · vite build PASS。
+
+#### Vault Rebuild Test（2026-09-01 · GPT 评审建议 · 未提交）
+
+新增 `tests/unit/test_vault_rebuild.py`（12 项）：
+
+| 测试 | 断言 |
+|---|---|
+| notes + links 重建 | 笔记元数据 + wikilink 边一致 |
+| parent hierarchy 重建 | parent_of + parent_edges 一致 |
+| tags 重建 | tags_json 一致 |
+| orphan parent 重建 | invalid 标记一致 |
+| self-parent 重建 | invalid 标记一致 |
+| cycle 重建 | 环上节点 invalid 一致 |
+| 多级嵌套重建 | A→B→C 链一致 |
+| wikilink + parent 混合 | 两种边都一致 |
+| 空 vault 重建 | 空状态一致 |
+| 幂等性 | 连续两次 reindex 结果一致 |
+| 文件修改后重建 | 反映最新状态 |
+| 表重建 | 所有表重新创建 |
+
+**验证**：12/12 passed。核心架构不变量「Markdown = 唯一事实源」被自动验证。
+
 ### P1 遗留（未开工）
 
 | 项 | 内容 | 前置 |
 |---|---|---|
-| P1-1 | **左侧嵌套树 UI**（用户原始诉求「左边也要出现」）：`/notes` 契约补 `parent_id` → `NoteList` 渲染层级树（折叠/展开 + 新建副笔记入口） | 契约层改动，需三层一致 |
-| P1-2 | **稳定 note ID**（独立 ADR）：当前 `parent` 按标题寻址，主笔记改名需级联更新子笔记 frontmatter | 独立 ADR，不与本功能绑带（GPT 评审明确） |
+| P1-1 | **左侧嵌套树 UI**（用户原始诉求「左边也要出现」）：`/notes` 契约补 `parent_id` → `NoteList` 渲染层级树（折叠/展开 + 新建副笔记入口） | `[x]` 完成（2026-09-01 · `buildNoteTree` + `NoteTreeList` + CSS + `NoteCreate.parent`） |
+| P1-2 | **稳定 note ID**（独立 ADR）：当前 `parent` 按标题寻址，主笔记改名需级联更新子笔记 frontmatter | `[ ]` 独立 ADR，不与本功能绑带（GPT 评审明确） |
 
 ### 失败语义（ADR-024 §2.3，不得偏离）
 
@@ -1340,7 +1377,7 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 
 ### 验收
 
-- `pytest` 全绿（含新增 12 项守护测试）
-- `npx tsc --noEmit` · `npx vitest run` · `npx vite build` 全绿
+- `pytest` 全绿（含新增 12 项守护测试 + 5 项 notes 测试 + 12 项 Vault Rebuild 测试）
+- `npx tsc --noEmit` · `npx vitest run`（36 passed）· `npx vite build` 全绿
 - export → rebuild → query：parent 关系不丢
 - 与 links 派生冲突时，显式 parent 恒优先

@@ -92,6 +92,32 @@ tags: 机器学习
 4. **关系校验失败统一失败语义**：不得静默修改用户输入，也**不得以 4xx 阻断 Markdown 保存**；应保留用户原始值并标记 `invalid`，由 resolver 拒绝建立无效关系（自指 / orphan / cycle 三者一致）。
 5. **P0-4 属 `[ARCHITECTURE WARNING]` 协议范围**：写码前必须逐一确认——Markdown authority · 唯一 resolver · links 派生性 · reindex 可重建 · 冲突时 Markdown 优先 · 禁止视图自行推断。
 
+### 2.7 架构不变量契约（GPT 评审建议 · 2026-09-01）
+
+> 以下五句话是 ADR-024 的**最简契约摘要**，比实现细节更重要。
+> 任何对层级关系的修改必须先对照此契约。
+
+```text
+parent relation:
+    Markdown frontmatter — 唯一事实源，可从 vault 完整重建。
+
+SQLite:
+    derived / index / cache only — links(relation='parent') 是可重建派生索引，
+    不是事实存储；删 SQLite 后 reindex 必须能恢复。
+
+Backend:
+    resolve_hierarchy() is the canonical resolver — /graph、/universe、review
+    的一切 hierarchy 语义必须经此函数；禁止各视图自行推断。
+
+Frontend:
+    buildNoteTree() is presentation projection — 纯展示层投影，
+    不定义 domain semantics，数据来自 /notes 的 parent_id 字段。
+
+Prohibition:
+    No other component may independently resolve parent semantics —
+    任何组件不得绕过 resolve_hierarchy() 自行判定层级关系。
+```
+
 ## 3. Frontmatter Round-Trip（地基，P0-1）
 
 本 ADR 的**前置条件**，不是可选项。

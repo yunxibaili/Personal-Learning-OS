@@ -6,7 +6,7 @@
 > 基线：2026-08-31 · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
 > · License Apache-2.0
 > 验证：`pytest` / `vitest` / `tsc --noEmit` / `vite build` 以最近一次全量 Gate 实测为准
-> （2026-09-01 Gate：pytest **848**（含 T-NOTE-HIER 12）· vitest **30** · tsc PASS · build PASS）
+> （2026-09-01 Gate：pytest **865**（含 T-NOTE-HIER 29）· vitest **36** · tsc PASS · build PASS）
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，
 > 工程约束见根 `AGENTS.md`。
@@ -285,8 +285,8 @@ cobe 0.6.5（WebGL 地球）· TipTap 3.30 · KaTeX 0.16
 Token 截断 + 双重敏感字段过滤。设计目标：OpenAI-compatible HTTP 接口
 （DeepSeek/Qwen/OpenAI/Ollama 任一，settings 驱动）——**当前未落地**
 
-**Testing**：pytest 8 + httpx（FastAPI TestClient）→ 486 passed ·
-vitest 2.1 → 23 passed（3 文件：ui 2 / universe layout 14 / graph layout 7）
+**Testing**：pytest 8 + httpx（FastAPI TestClient）→ **853 passed**（2026-09-01）·
+vitest 2.1 → **36 passed**（4 文件：ui 2 / universe layout 14 / graph layout 7 / galaxy 15 / buildNoteTree 6）
 
 **Build**：Vite 5.4 · `tsc --noEmit` 门禁 · `scripts/test.ps1` · `scripts/seed_demo.py`
 
@@ -590,7 +590,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | 命令 | 结果 |
 |---|---|
 | `pytest -q` | **815 passed**（M7-008 后；基线 730 + 新增 85，约 8.5 min） |
-| `npx vitest run` | **23 passed**（3 files） |
+| `npx vitest run` | **36 passed**（4 files） |
 | `tsc --noEmit` | **PASS** |
 | `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |
 
@@ -647,14 +647,19 @@ round-trip → 显式 parent + 校验 → 统一 `resolve_hierarchy()` → graph
 统一消费 → 12 项守护测试）；左侧嵌套树 UI 与稳定 note ID（独立 ADR，P1）不在
 P0 范围。计划与验收见 `docs/TASKS.md` §T-NOTE-HIER。
 
-**T-NOTE-HIER P0 已完成（2026-09-01）**：frontmatter round-trip（`compose_file(meta,body)`
-保任意关键）→ 显式 parent 读写+校验（`parse_parent`/`set_meta_parent` + notes PATCH，
-自指/orphan/cycle 统一「保存原值 + 标 invalid，不阻断保存」）→ 统一
-`resolve_hierarchy()`（`hierarchy.py`，explicit>inferred，含 cycle 环检测）→
-reindex 物化 `links(relation='parent')` 派生索引 + `/graph` 并入权威父边 →
-`derivePlanets` 显式优先（无 parent 边时回退 wikilink 推断）。守护测试
-`tests/unit/test_hierarchy.py` 12 项 + web 2 项全过。**Gate：pytest 848 · vitest 30 ·
-tsc PASS · build PASS**。遗留（P1）：左侧嵌套树 UI · 稳定 note ID（独立 ADR）。
+**T-NOTE-HIER P1-1 已完成（2026-09-01）**：`buildNoteTree` 纯函数（平铺列表→森林，
+含 orphan 兜底 + 深度防御 + 同层 `updated_at` 降序）→ `NoteTreeList` 递归渲染
+（缩进 + branch/leaf 图标 + 「＋」创建副笔记按钮）→ `NoteCreate.parent` 一步到位
+（后端 `_create_note_vault` 写 frontmatter + `sync_note_parent` 镜像）→
+CSS `.note-tree__*` 样式。守护：`buildNoteTree.test.ts` 6 项 + `test_notes.py` 5 项。
+
+**T-NOTE-HIER P0+P1 已完成（2026-09-01）**：P0（frontmatter round-trip → 显式 parent
+读写+校验 → 统一 `resolve_hierarchy()` → reindex 物化 + `/graph` 并入权威父边 →
+web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `NoteTreeList`
+递归渲染层级树 + `NoteCreate.parent` 一步创建副笔记）。守护测试
+`tests/unit/test_hierarchy.py` 12 项 + galaxy 2 项 + `buildNoteTree` 6 项 +
+`test_notes` 5 项。**Gate：pytest 853 · vitest 36 · tsc PASS · build PASS**。
+遗留（P1）：稳定 note ID（独立 ADR）。
 
 ---
 
