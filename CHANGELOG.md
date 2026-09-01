@@ -5,6 +5,42 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v0.1.0-rc.1] — 2026-09-01
+
+### Added
+- **T-NOTE-HIER 主/副笔记层级（ADR-024）P0+P1**：
+  - P0：frontmatter round-trip（`compose_file(meta,body)` 保任意 key）→ 显式 parent
+    读写+校验（`parse_parent`/`set_meta_parent`，自指/orphan/cycle 标 invalid 不阻断保存）
+    → 统一 `resolve_hierarchy()`（explicit>inferred，含 cycle 检测）→ reindex 物化
+    `links(relation='parent')` → `/graph` 并入权威父边 → `derivePlanets` 显式优先
+  - P1：契约 TS（`NoteSummary.parent_id` + `NoteCreateBody.parent`）→ 后端 4 端点
+    返回 `parent_id` → `NoteCreate.parent` 一步创建副笔记 → 前端 `buildNoteTree`
+    纯函数建树 + `NoteTreeList` 递归层级树 + CSS
+  - 守护：hierarchy 12 + derivePlanets 2 + buildNoteTree 6 + notes 5 + boundary 8 + Vault Rebuild 12 = 45 项
+  - ADR-024 §2.7 五句话架构不变量契约
+- **Vault Rebuild Test**（GPT 评审建议）：删 SQLite → rebuild → 断言 notes/links/hierarchy/FTS 一致，
+  验证「Markdown = 唯一事实源」架构不变量（12 项）
+- **Documentation Truth Audit**：修复 PROJECT_STATE/TASKS/ADR-024 中的过时数据
+
+### Changed
+- `/notes` 响应新增 `parent_id: number | null` 字段
+- `POST /notes` 支持 `parent` 参数（创建时一步指定父笔记）
+- 左侧列表从平铺改为层级树（缩进 + branch/leaf 图标 + 「＋」创建副笔记按钮）
+
+### Removed
+- 未使用依赖：`cobe`、`d3-force`、`@types/d3-force`、`@tiptap/pm`
+- `@types/dagre` 从 dependencies 移至 devDependencies
+
+### Fixed
+- `compose_file` 原只回写 `tags`，其余 frontmatter key 保存时静默丢弃（ADR-024 地基缺陷）
+- `_detect_cycles` 首版对任何成环无限循环（P0-5 守护测试逼出）
+
+### Performance
+- `resolve_hierarchy()` 200 笔记基线：avg 160ms（min 149ms, max 175ms）
+
+### Gate
+- pytest **873 passed** · vitest **36 passed** · tsc PASS · vite build PASS
+
 ### Added
 - **M3.5-B Full Omniscience**（ADR-012 Phase B，Knowledge Radar 学习状态真实化）：
   `suggest_for_context` 的 memory 三字段从占位 null 接真实数据——

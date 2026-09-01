@@ -169,3 +169,92 @@ def test_12_explicit_parent_wins_over_links(client):
     h = _h(client)
     assert h["parent_of"].get(c) == a
     assert h["source"].get(c) == H.EXPLICIT
+
+
+# ---------- frontmatter 边界测试（GPT 评审建议 · 2026-09-01）----------
+
+
+def test_13_parent_with_special_chars(client):
+    """parent 标题含特殊字符（中文括号、点号）仍可正常解析。"""
+    a = _mk(client, "机器学习（基础）")
+    b = _mk(client, "优化器", parent="机器学习（基础）")
+    assert _h(client)["parent_of"].get(b) == a
+    assert K.parse_parent(_note_meta(client, b)) == "机器学习（基础）"
+
+
+def test_14_parent_with_dots(client):
+    """parent 标题含点号（如 '3.14'）。"""
+    a = _mk(client, "第3.14章")
+    b = _mk(client, "子节点", parent="第3.14章")
+    assert _h(client)["parent_of"].get(b) == a
+
+
+def test_15_parent_long_title(client):
+    """超长 parent 标题（100 字符）仍可正常解析。"""
+    long_title = "A" * 100
+    a = _mk(client, long_title)
+    b = _mk(client, "子节点", parent=long_title)
+    assert _h(client)["parent_of"].get(b) == a
+    assert K.parse_parent(_note_meta(client, b)) == long_title
+
+
+def test_16_parent_empty_string(client):
+    """parent='' 等同于无 parent（真删除 frontmatter key）。"""
+    a = _mk(client, "A")
+    _set_parent(client, a, "")
+    meta = _note_meta(client, a)
+    assert "parent" not in meta
+    assert a not in _h(client)["parent_of"]
+
+
+def test_17_parent_whitespace_only(client):
+    """parent='   ' 等同于无 parent。"""
+    a = _mk(client, "A")
+    _set_parent(client, a, "   ")
+    assert a not in _h(client)["parent_of"]
+
+
+def test_18_parent_wikilink_syntax_variants(client):
+    """兼容 `[[标题]]` 和裸标题两种写法——parse_parent 都能正确解析。"""
+    # 验证 parse_parent 对两种格式的解析
+    assert K.parse_parent({"parent": "[[主笔记]]"}) == "主笔记"
+    assert K.parse_parent({"parent": "主笔记"}) == "主笔记"
+    assert K.parse_parent({"parent": "  [[带空格]]  "}) == "带空格"
+    assert K.parse_parent({}) is None
+    assert K.parse_parent({"parent": ""}) is None
+
+    # 实际创建+设置验证
+    a = _mk(client, "主笔记")
+    b1 = _mk(client, "子1")
+    _set_parent(client, b1, "主笔记")  # 裸标题
+    b2 = _mk(client, "子2")
+    _set_parent(client, b2, "主笔记")  # 同样裸标题（set_meta_parent 会自动包 [[ ]]）
+    h = _h(client)
+    assert h["parent_of"].get(b1) == a
+    assert h["parent_of"].get(b2) == a
+
+
+def test_19_create_note_with_parent_directly(client):
+    """POST /notes 直接带 parent 参数（一步创建副笔记）。"""
+    a = _mk(client, "主笔记")
+    r = client.post("/api/v1/notes", json={
+        "title": "副笔记",
+        "content_md": "内容",
+        "parent": "主笔记",
+    })
+    assert r.status_code == 201
+    b = r.json()["note"]["id"]
+    assert _h(client)["parent_of"].get(b) == a
+    assert K.parse_parent(_note_meta(client, b)) == "主笔记"
+
+
+def test_20_create_note_with_invalid_parent(client):
+    """POST /notes parent 指向不存在的笔记 → 不阻断创建，标 orphan。"""
+    r = client.post("/api/v1/notes", json={
+        "title": "孤儿",
+        "parent": "不存在的笔记",
+    })
+    assert r.status_code == 201
+    nid = r.json()["note"]["id"]
+    assert _invalid_reasons(client).get(nid) == H.REASON_ORPHAN
+    assert K.parse_parent(_note_meta(client, nid)) == "不存在的笔记"
