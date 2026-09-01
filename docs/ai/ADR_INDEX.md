@@ -30,6 +30,7 @@
 | ADR-022 | Product Mode Boundary（产品模式边界冻结） | 全局 UX 方向 | Accepted |
 | ADR-023 | Visualization Boundary（可视化边界冻结） | P8 前端可视化 | Accepted |
 | ADR-024 | Note Hierarchy（主/副笔记 parent 关系） | 笔记层级 / frontmatter / 图谱消费 | Accepted |
+| ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / StepPlayer / 三 Renderer · 只执行预置示例 · 安全模型 | Proposed |
 
 ## 快速查阅指南
 
@@ -55,4 +56,6 @@
 - P8 可视化边界（Universe/Graph/MindMap） → 读 ADR-023
 - 笔记层级 / 主副笔记 / frontmatter parent → 读 ADR-024 + ADR-001
 - 改 frontmatter 读写 → 读 ADR-024 §3（round-trip 是地基，先修）
+- M9 算法轨迹可视化 / trace 契约 / 代码执行安全 → 读 ADR-025
+- 改可视化（第四类：非图谱） → 读 ADR-025 §2.5（与 ADR-023 的边界裁决）
 - 图谱 / 星系消费层级关系 → 读 ADR-024 §2.2 铁规则 5（单一 resolver，禁止各自推断）

@@ -31,6 +31,10 @@
    P0-1 frontmatter round-trip → P0-2 显式 parent + 校验 → P0-3 resolve_hierarchy
    → P0-4 graph/universe 统一消费 → P0-5 round-trip/rebuild 守护测试（P0 验收标准）
    P1（独立 ADR，不在本任务）：稳定 note ID · 左侧嵌套树 UI
+── 项目所有者 2026-09-01 裁定：M9 优先于 T-NOTE-HIER P1 ──
+9. [~] M9 Visual Engine V1（ADR-025 v2 已批准）
+   M9-001 ✅ ADR 批准 + 文档同步 → M9-002 ✅ 契约 + 往返校验 → M9-003 ✅ PoC 四步全绿（2026-09-01，含独立审核修复）
+   → M9-004 API（下一步）→ M9-005 StepPlayer → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
 ```
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
@@ -54,7 +58,7 @@
 | M6 | Tauri 桌面打包 | `[x]` 完成（2026-09-01，GNU 工具链，MSI 65MB + NSIS 102MB） | [T-M6](#t-m6-m6-tauri-桌面打包完成2026-09-01) |
 | M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[x]` 完成（M7-001~008 全链路闭环，2026-08-31 核实回填） | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
-| M9 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
+| M9 | Visual Engine V1（预置示例 trace/StepPlayer/三 Renderer） | `[ ]` 未开始（ADR-025 v2 提议 · 2026-09-01 按终审重订） | [M9 拆解](#m9-visual-engine-任务拆解) |
 | M10 | AI 生成可视化 | `[ ]` | — |
 
 ## M7 LAN Sync 任务拆解（当前）
@@ -679,6 +683,94 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 > 触达时发生），这些 concept 的 memory 返回全 null——**是正确行为**，不是 bug。
 > 旧数据回填如需要属独立小任务（遍历 concepts 调 `ensure_concept_learning_state`）。
 
+## M9 Visual Engine 任务拆解
+
+> **ADR-025 v3（2026-09-01 按二轮终审修正；v2 六项偏离已全部获确认）· 登记 HEAD `3db327a`**
+>
+> 契约、安全模型、范围边界以 `docs/adr/ADR-025-visual-engine-v1.md` 为**唯一来源**。
+> 本节只维护**进度**与**任务清单**；守护测试清单见 ADR-025 §8，不在此重复（避免双份维护漂移）。
+>
+> **V1 定位**：受控的 Python 教学示例执行可视化器，**不是通用代码可视化器**。
+> 只执行 `core/tracer/examples/` 清单内的 6 个示例；**用户任意代码不执行**。
+> 复杂数据结构（力扣 / 链表 / 树 / DP / 图）归 M9.5 ALGOGEN / VTA。
+
+### 开工前核查（2026-09-01 实查）
+
+| 交付物 | 应有位置 | 实际 |
+|---|---|---|
+| tracer 包 | `server/app/core/tracer/{__init__,runner,snapshot,limits}.py` | ❌ 不存在 |
+| 示例库 | `server/app/core/tracer/examples/`（+ `manifest.py`） | ❌ 不存在 |
+| 路由 | `server/app/routers/trace.py` | ❌ 不存在 |
+| 契约 | `shared/types/trace.ts` | ❌ 不存在 |
+| 前端 | `web/src/components/visual-engine/`（5 个 tsx） | ❌ 不存在 |
+| 数据表 | migration 010+ | 止于 `009_event_id_rename.sql`（V1 不建表） |
+| API | `POST /api/v1/trace/run` | §9.2 标 ❌，归属 M9 |
+
+**已就位**：`core/mastery.py:134/194/391` 已支持 `visualize → practice +0.05 × weight`——
+掌握度侧零改动，M9 只补事件生产者。
+**门槛已解除**：`TECH_DESIGN` §10「后端 backlog 清零前 M9 不启动」——本文件第 26 行已标清零，M6 已完成。
+
+### 子任务（8 项）
+
+| # | 任务 | 产出 | 前置 | 状态 |
+|---|---|---|---|---|
+| **M9-001** | ADR-025 v3 批准 + 文档同步（TECH_DESIGN §8 / AGENTS §10 / ADR_INDEX / 本节） | 4 处文档 | — | `[~]` 文档已落（v3 含二轮终审 5 项修正），**待批准** |
+| **M9-002** | `shared/types/trace.ts`（`TraceRun` / `TraceEvent` / `TraceValue`）+ 契约测试 | 契约与守护测试 | M9-001 | `[x]` 2026-09-01（含 runner 真实输出往返校验 6 项） |
+| **M9-003** | tracer PoC **四步**（见下） | `runner` / `snapshot` / `limits` | M9-002 | `[x]` 2026-09-01（PoC 四步全绿；独立审核修复：tempfile 对齐 §5.5、per-event stdout 对齐 §4.2、删 `_exec_in_process` 死代码、§5.4 六项 builtins 全移除、序列化集中 snapshot.py） |
+| **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 | `[ ]` |
+| **M9-005** | `StepPlayer` + `TraceTimeline` | 播放壳，无 Renderer | M9-002 | `[ ]` |
+| **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer | M9-005 | `[ ]` |
+| **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 | 端到端闭环 | M9-004 + M9-006 | `[ ]` |
+| **M9-008** | M9 全量验收（11 条） | 验收报告 | M9-007 | `[ ]` |
+
+#### M9-003 PoC 四步（不得跳步）
+
+| 步 | 用例 | 验证点 |
+|---|---|---|
+| **PoC-1** | `factorial` | `call` / `line` / 递归 frames / `return` |
+| **PoC-2** | `quicksort` | 数组变更、行高亮、ArrayView 数据完整性 |
+| **PoC-3** | `while True: pass` | watchdog 生效、`process.kill()`、`status == "timeout"`、无僵尸进程 |
+| **PoC-4** | 大量 `print` | tempfile 输出、`output_limit`、不阻塞 |
+
+目标**不是「做通用 tracer」**，而是证明：settrace + 递归 frame + 安全快照 +
+`process.kill` + stdout tempfile + TraceRun 序列化，六件事全部成立。**四步全绿才进 M9-004。**
+
+### 排位
+
+当前活跃任务为 **T-NOTE-HIER**（ADR-024），其 P1（稳定 note ID · 左侧嵌套树 UI）未完成；
+M8 Mobile 同为 `[ ]`。**M9 尚未进执行队列**——需项目所有者在 T-NOTE-HIER P1 与 M9 之间排序。
+
+### 待拍板项（阻塞 M9-001 批准）
+
+**A. 对终审意见的六处偏离**（详见 ADR-025 §11）——**已裁决：二轮终审（2026-09-01）逐条确认全部成立，无需推翻**。下表保留为裁定记录：
+
+| # | 偏离 | 关键度 | 裁决 |
+|---|---|---|---|
+| 1 | 请求体**不开放 `code` 字段**（终审 §17 给了 `{code}`，与 §2「不执行用户任意代码」冲突） | 🔴 高 | ✅ 确认（「禁止字段」，收到即 422） |
+| 2 | `status` 枚举补为 5 值（终审 §11 的 `output_limit` 未在 §6 枚举内） | 🟢 低 | ✅ 确认 |
+| 3 | 取消 `TraceEvent.heap` 字段，值内联在 `locals` | 🟡 中 | ✅ 确认（🟢/🟡） |
+| 4 | V1 **不建** `trace_cache` 表（终审自述「可选」；原则即刻生效） | 🟡 中 | ✅ 确认（TraceRun 只存在于 HTTP response + 前端内存） |
+| 5 | tempfile 结论采纳，**理由修正**（不是 PIPE 死锁，是内存无界） | 🟢 低 | ✅ 确认 |
+| 6 | **不建** `TraceProvider` 抽象基类，改由契约约束兑现 Provider 中立 | 🟡 中 | ✅ 确认（第二个真实实现出现时再评估抽象边界） |
+
+**A2. 二轮终审 5 项冻结前修正**（P0×3 + P1×2，均已落入 ADR-025 v3，见其 §11.2）：
+
+| # | 修正 | 落点（ADR-025 v3） |
+|---|---|---|
+| 1 | `example_id` 取代 `code`；`code` = 禁止字段 → 422 | §4.5 |
+| 2 | Trusted Example Registry：枚举键非路径（防穿透）、title→example 唯一、>1 匹配禁止猜测 | §3.3 |
+| 3 | `MAX_CONCURRENT_TRACES = 1`，超出 → 429 `trace_busy` | §5.7 + 守护测试 16 |
+| 4 | cleanup 生命周期（Timer / 句柄 / 回收 / tempfile，`finally` 全覆盖） | §5.7 + 守护测试 18 |
+| 5 | 清除 heap / `$ref` / Event.metadata.template / {code} 残留；统一「TraceRun 运行时派生数据，V1 不持久化」措辞；验收分三层 | §2.3 · §4 · §6.2 · §8 |
+
+**B. 其他**
+
+| # | 事项 | 建议 |
+|---|---|---|
+| 1 | **信任模型**：接受「执行随代码发布的受信任示例」？无 Docker 隔离（Phase 5 才有） | 接受；风险已写入 ADR §10 |
+| 2 | **打包态（`sys.frozen`）子进程解释器** | M6 未打包后端（无 sidecar / 无 PyInstaller spec），V1 不处理；**后端一旦打包须回补** |
+| 3 | **Markdown VisualizationSpec 载体** | HTML 注释**已排除**（`TiptapEditor.tsx:27` 配 `html:false`，注释载入即丢、保存即删）。V1 不引入声明，Concept 页按 title 匹配；载体标为 M9.5 待定 |
+
 ## 挂起区（有明确触发条件，未排期）
 
 | 计划 | 触发条件 | 文档 |
@@ -686,6 +778,7 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 | UpMark 联动 U1 错题登记流入 → U2 双向出题 → U3 题库导入 | 用户显式发起；前置 M3/M4(/M5) 完成 | docs/adr/integration-upmark.md |
 | Radar 编辑器内触发（选中正文 → Ctrl+Shift+K → 段落提取为查询词） | 用户显式要求；M3.5-A 原计划的增强项，雷达现已挂右栏可用 | ADR-012 §5 Phase A |
 | **P8-Mode-001** Knowledge/Learning Mode 实现（workspace_mode + TopBar Mode UI + Reminder） | 项目所有者显式立项；语义与载体已由 ADR-022 附录 A 冻结 | docs/adr/ADR-022-product-mode-boundary.md Appendix A |
+| 修 `REGISTRY.md` 引用漂移（`AGENTS.md:213` / `:532` / `ADR_INDEX.md` 快速查阅） | 项目所有者发起；**登记来源** ADR-025 §7 第 3 项 | 该文件已并入 `docs/DEPENDENCIES.md`，仓库根无此文件 |
 
 ## 完成报告
 

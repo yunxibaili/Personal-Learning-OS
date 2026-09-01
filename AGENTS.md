@@ -254,7 +254,7 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 
 | 目录 | 内容 |
 |---|---|
-| `docs/adr/` | ADR-001~023 + principles + separation + upmark（重大决策记录） |
+| `docs/adr/` | ADR-001~025 + principles + separation + upmark（重大决策记录） |
 | `docs/ai/` | AI 会话流程（PROJECT_MEMORY · SESSION_PROTOCOL · CURRENT_STATE · ACTIVE_TASK · ADR_INDEX） |
 | `docs/release/` | 发布审计与导出清单（RELEASE_AUDIT_M7 · EXPORT_MANIFEST） |
 | `docs/security/` · `docs/version-control/` | 网络边界 · Git 策略（活契约，未合并） |

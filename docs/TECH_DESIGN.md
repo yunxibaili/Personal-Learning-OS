@@ -680,38 +680,106 @@ Debug Mode（代码知识图）⏭ Phase 5。
 
 ### 8.2 Learning Trace Engine（算法可视化引擎，M9 实施）
 
-教学工具而非生产 IDE——参考 Python Tutor / VisuAlgo 的定位。
-代码执行 → **Trace 记录** → **模板渲染动画**。绝不让 LLM 直接生成动画数据/视频（LLM 只生成示例代码，走同一条 trace 管线）。
+> **⚠️ 契约版本化、安全模型、模板路由、范围边界、与 ADR-023 的裁决，
+> 一律以 `docs/adr/ADR-025-visual-engine-v1.md` 为唯一来源。本节与之冲突时以 ADR 为准。**
 
-### 8.3 采集器（server/core/tracer.py，纯标准库）
+**定位（ADR-025 v2）**：**受控的 Python 教学示例执行可视化器，不是通用代码可视化器。**
+`sys.settrace` 对受控教学示例足够好，但没有必要用它解决通用算法可视化问题。
 
-- 机制：子进程内 `sys.settrace()`，监听 `call/line/return` 事件 + 每步局部变量快照
-- 堆对象模型：list/dict/set/自定义对象分配 heap_id，快照中以 `$ref` 去重（Python Tutor 同思路）
-- 限制：单文件脚本、禁 IO/import 白名单外模块、总步数上限 10000、超时 10s（子进程 kill）
-- 信任级说明：本地个人应用运行用户自己写的代码，等同用户手动跑脚本；CPU/内存/网络硬隔离沙箱留待 Phase 5 Docker 方案
+**V1 范围锁死**：
 
-### 8.4 TraceEvent v1 契约（前后端唯一接口，版本化）
+- **允许**：Concept 页预置的 6 个教学示例 · 单文件 · 基础类型 · 清单中声明的 `example_id` · 三个 Renderer
+- **禁止**：用户任意代码 · 笔记 code block 自动执行 · 力扣 / 链表 / 树 / DP / 图 · 通用 AST→可视化
+  （后三类归 **M9.5 ALGOGEN / VTA**）
+- **入口只有一个**：`POST /api/v1/trace/run`，**只接受 `example_id`，不接受 code 字符串**；
+  `code` 是 **V1 禁止字段**（不是「暂不支持」），请求体含 `code` → 422
+
+核心链路：
+
+```text
+Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
+  → 独立 Python 子进程（sys.settrace）→ safe_snapshot + limits → TraceRun
+  → StepPlayer → FrameStackView / ArrayView / GeneralView
+  → Learning Event（visualize）
+```
+
+**数据职责不混淆**：`Markdown` = 知识 + 可视化声明；`TraceRun` = **运行时派生数据，V1 不持久化**；
+`Learning Event` = 用户是否使用过动画。**Markdown 保存声明，不保存 Trace 本体。**
+
+### 8.3 采集器（`server/app/core/tracer/` 包，纯标准库）
+
+- **结构**：`core/tracer/{__init__,runner,snapshot,limits}.py` + `examples/`
+  （快照逻辑独立，Python 版本升级时不污染 tracer 主逻辑）
+- **机制**：独立 OS 子进程内 `sys.settrace()`，监听 `call/line/return` + 每步局部变量快照
+- **不做对象图**：无 `heap_id`、无 `$ref` 去重，值内联在 `frames[].locals`（见 §8.4）
+- **五重限制**（不能只依赖 timeout）：`MAX_RUNTIME` 10s · `MAX_TRACE_EVENTS` 5000 ·
+  `MAX_STDOUT_BYTES` 64KB · `MAX_STDERR_BYTES` 64KB · `MAX_RECURSION_DEPTH` 100
+- **第六道护栏（API 层，ADR-025 §5.7）**：`MAX_CONCURRENT_TRACES = 1`——
+  同步 handler 只保证不阻塞事件循环，并发多个 10s 级 trace 仍会占满线程池；
+  已有 trace 在跑时再请求 → **429 `trace_busy`**，不排队
+- **cleanup 生命周期**：trace 结束（含 timeout kill）后必须在 `finally` 中
+  cancel watchdog Timer → 关闭 tempfile 句柄 → `process.wait()` 回收 → 删 tempfile（kill ≠ cleanup complete）
+- **`example_id` 是清单枚举键，不是文件路径**——worker 源码只经 manifest 的 `path` 字段解析，
+  绝不 `Path("examples") / example_id` 拼接（防路径穿透，ADR-025 §3.3）
+- **输出**：stdout / stderr **一律走 tempfile**，禁止 `PIPE`。
+  理由不是「PIPE 死锁」（`subprocess.run(capture_output=True)` 并不死锁），
+  而是**内存无界**——无限 `print` 会把父进程读爆
+- **拦截机制（ADR-025 §5.4，勿误读）**：`sys.settrace` **只采集、不拦截**——`line` 事件在该行执行前回调，
+  无法否决行内副作用。IO 禁止由两层实现：① 子进程执行用户代码前收敛 `builtins`
+  （移除 `open`/`exec`/`eval`/`compile`/`input`/`breakpoint`）
+  ② 替换 `builtins.__import__` 为白名单版本（`os`/`sys`/`subprocess`/`socket` 等因此不可达）
+- ⚠️ **事件循环红线**：`POST /trace/run` 的 handler **必须是同步 `def`**——
+  `async def` 中阻塞等待会冻结整个 FastAPI 事件循环最长 10 秒。
+  非协程只是**必要条件**，并发保护靠上一条 429 护栏（守护测试 12 + 16 缺一不可）
+- 信任级说明：V1 执行随代码发布的受信任示例，等同用户手动跑脚本；Docker 沙箱留待 Phase 5
+
+### 8.4 TraceRun v1 契约（前后端唯一接口，版本化）
+
+> **冻结形状以 `ADR-025` §4 为唯一来源**（顶层六字段 · `TraceEvent` · `TraceValue` · `status` 五值）。
+> 下方为示意，缺字段以 ADR 为准。落地位置：`shared/types/trace.ts`
+> + 契约测试 `server/tests/unit/test_trace_contract.py`。
 
 ```json
-{"v":1,"steps":[
-  {"step":12,"type":"call|line|return",
-   "frames":[{"func":"quick_sort","line":14,"locals":{"arr":{"$ref":"h1"},"lo":0}}],
-   "heap":{"h1":{"t":"list","items":[{"$ref":"h2"},{"$ref":"h3"},5,1]}},
-   "stdout":"..."}]}
+{"version":"1","language":"python",
+ "events":[{"step":12,"line":14,
+   "frames":[{"func":"quick_sort","line":14,"locals":{"arr":[3,7,2,8,1],"lo":0}}],
+   "stdout":"","metadata":{}}],
+ "status":"completed","error":null,
+ "metadata":{"example_id":"quicksort-basic","template":"ArrayView"}}
 ```
+
+- **API 返回值是 `TraceRun`，不是 `TraceEvent[]`**——`status` / 错误 / 版本 /
+  运行元数据不得塞进 `TraceEvent`
+- **`status`**：`completed` · `timeout` · `error` · `trace_limit` · `output_limit`；
+  四类非 `completed` 一律 **HTTP 200**，已录得的部分轨迹仍可回放。
+  真 4xx/5xx 只用于调用方错误（未知 `example_id` → 404 · `mode:"vta"` → 400）
+- **`settrace` 是实现，不是协议**：`TraceRun` 中不得出现任何 settrace 专有概念
+  （无 `opcode`、无 `f_lineno`、无 `frame.f_*` 语义）
 
 ### 8.5 渲染模板（纯前端插件，新模板不动管线）
 
 | 模板 | 场景 | 实现 |
 |---|---|---|
-| FrameStackView | 递归展开（factorial/快排） | SVG 堆叠帧 + return 值回流动画 |
-| ArrayView | 排序/数组操作 | SVG 条形 + swap 高亮 + CSS transition |
-| FuncPlotView | 函数图像/优化过程 | SVG 折线/等高线 + 参数播放头（梯度下降球、泰勒逼近），可拖进度条 |
+| `FrameStackView` | factorial / 递归 / 调用栈 | SVG 堆叠帧 + return 值回流 |
+| `ArrayView` | quicksort / 二分 / 排序 | SVG 条形 + 当前位置高亮 + CSS transition |
+| `GeneralView` | 其他简单算法（**V1 fallback**） | SVG frames + locals + 简单容器 |
 
-StepPlayer 组件：播放/暂停/单步/速度滑杆，复用于三模板外壳。
-观看完成 → `learning_events(type="visualize")` → 喂给掌握度模型。
+> 原 `FuncPlotView` **已取消**，改为 `GeneralView`；函数图像待有真实需求时再立。
 
-入口：Concept 详情页「▶ Visualize」按钮 + 笔记 python 代码块「Run & Visualize」（TipTap code block 自定义按钮）。
+目录 `web/src/components/visual-engine/`：`StepPlayer` · `TraceTimeline` · 三个 Renderer。
+**模板 View 不处理播放控制**——M8 Mobile 改触摸交互时只动 `StepPlayer` / `TraceTimeline`。
+
+**模板路由（ADR-025 §3.4）**：由 `core/tracer/examples/manifest.py` 的 `template` 字段决定，
+前端只读该字段路由，**不做语义分析**。V1 **不做**自动推断（不做 swap 检测 / heap diff），延后 M9.5。
+
+**入口**：Concept 详情页「▶ Visualize」，按 `concepts.title` 匹配示例清单。
+无匹配示例的 Concept **不显示**按钮（不是灰置）。
+
+> ⚠️ 笔记内 code block「Run & Visualize」入口**已取消**——V1 不执行用户代码。
+> 且 `examples/` 属**应用资产**，绝不放 `workspace/vault/`（用户数据区，会参与同步且可被改写）。
+
+**`visualize` 事件：点击即记录**，不等待播放完成。V1 衡量的是「用户是否主动使用」，
+不是「是否完整观看」；`visualize_started/25/50/completed` 细分留待 M9.5。
 
 ---
 
