@@ -34,7 +34,8 @@
 ── 项目所有者 2026-09-01 裁定：M9 优先于 T-NOTE-HIER P1 ──
 9. [~] M9 Visual Engine V1（ADR-025 v2 已批准）
    M9-001 ✅ ADR 批准 + 文档同步 → M9-002 ✅ 契约 + 往返校验 → M9-003 ✅ PoC 四步全绿（2026-09-01，含独立审核修复）
-   → M9-004 ✅ API 路由（2026-09-01）→ M9-005 StepPlayer → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
+   → M9-004 ✅ API 路由（2026-09-01）→ M9-005 IDE 步进壳（2026-09-01 裁定否决播放器，组件入 ui 库）
+   → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
 ```
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
@@ -58,7 +59,7 @@
 | M6 | Tauri 桌面打包 | `[x]` 完成（2026-09-01，GNU 工具链，MSI 65MB + NSIS 102MB） | [T-M6](#t-m6-m6-tauri-桌面打包完成2026-09-01) |
 | M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[x]` 完成（M7-001~008 全链路闭环，2026-08-31 核实回填） | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
-| M9 | Visual Engine V1（预置示例 trace/StepPlayer/三 Renderer） | `[ ]` 未开始（ADR-025 v2 提议 · 2026-09-01 按终审重订） | [M9 拆解](#m9-visual-engine-任务拆解) |
+| M9 | Visual Engine V1（预置示例 trace/VisualEngine/三 Renderer） | `[~]` 进行中（ADR-025 v3 · 2026-09-01 裁定 IDE 步进范式） | [M9 拆解](#m9-visual-engine-任务拆解) |
 | M10 | AI 生成可视化 | `[ ]` | — |
 
 ## M7 LAN Sync 任务拆解（当前）
@@ -694,17 +695,17 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 > 只执行 `core/tracer/examples/` 清单内的 6 个示例；**用户任意代码不执行**。
 > 复杂数据结构（力扣 / 链表 / 树 / DP / 图）归 M9.5 ALGOGEN / VTA。
 
-### 开工前核查（2026-09-01 实查）
+### 交付物核查（2026-09-01 实查；开工时全 ❌，随任务推进回填）
 
 | 交付物 | 应有位置 | 实际 |
 |---|---|---|
-| tracer 包 | `server/app/core/tracer/{__init__,runner,snapshot,limits}.py` | ❌ 不存在 |
-| 示例库 | `server/app/core/tracer/examples/`（+ `manifest.py`） | ❌ 不存在 |
-| 路由 | `server/app/routers/trace.py` | ❌ 不存在 |
-| 契约 | `shared/types/trace.ts` | ❌ 不存在 |
-| 前端 | `web/src/components/visual-engine/`（5 个 tsx） | ❌ 不存在 |
+| tracer 包 | `server/app/core/tracer/{__init__,runner,snapshot,limits}.py` | ✅ M9-003 |
+| 示例库 | `server/app/core/tracer/examples/`（+ `manifest.py`） | ✅ 6 示例 + manifest（M9-003） |
+| 路由 | `server/app/routers/trace.py` | ✅ M9-004（+ 只读 examples 端点） |
+| 契约 | `shared/types/trace.ts` | ✅ M9-002 |
+| 前端 | `web/src/components/ui/visual-engine/`（6 tsx + 3 纯逻辑模块，**入 ui 库**） | ✅ M9-005/006 |
 | 数据表 | migration 010+ | 止于 `009_event_id_rename.sql`（V1 不建表） |
-| API | `POST /api/v1/trace/run` | §9.2 标 ❌，归属 M9 |
+| API | `POST /api/v1/trace/run` | ✅ M9-004 |
 
 **已就位**：`core/mastery.py:134/194/391` 已支持 `visualize → practice +0.05 × weight`——
 掌握度侧零改动，M9 只补事件生产者。
@@ -718,8 +719,8 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 | **M9-002** | `shared/types/trace.ts`（`TraceRun` / `TraceEvent` / `TraceValue`）+ 契约测试 | 契约与守护测试 | M9-001 | `[x]` 2026-09-01（含 runner 真实输出往返校验 6 项） |
 | **M9-003** | tracer PoC **四步**（见下） | `runner` / `snapshot` / `limits` | M9-002 | `[x]` 2026-09-01（PoC 四步全绿；独立审核修复：tempfile 对齐 §5.5、per-event stdout 对齐 §4.2、删 `_exec_in_process` 死代码、§5.4 六项 builtins 全移除、序列化集中 snapshot.py） |
 | **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 | `[x]` 2026-09-01（15 项测试：400/404/422/429 映射、同步 def 守护、信号量 429/归还、非 completed → 200 桩锁定；`code` 字段 422 需 handler 内手工校验——全局 RequestValidationError handler 会把 422 转 400） |
-| **M9-005** | `StepPlayer` + `TraceTimeline` | 播放壳，无 Renderer | M9-002 | `[ ]` |
-| **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer | M9-005 | `[ ]` |
+| **M9-005** | `CodePane` + `DebugToolbar` + `stepping` 状态模型（**入 ui 组件库**；2026-09-01 裁定否决播放器，改 IDE 步进，见 ADR-025 §3.2） | IDE 步进壳，无 Renderer | M9-002 | `[x]` 2026-09-01（纯逻辑 58 项测试全绿；组件接入视图归 M9-007） |
+| **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer（`derive.ts` 纯函数驱动） | M9-005 | `[x]` 2026-09-01（真实 trace 夹具测试全绿；接入视图归 M9-007） |
 | **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 | 端到端闭环 | M9-004 + M9-006 | `[ ]` |
 | **M9-008** | M9 全量验收（11 条） | 验收报告 | M9-007 | `[ ]` |
 

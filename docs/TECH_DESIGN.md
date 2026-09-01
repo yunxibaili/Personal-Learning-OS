@@ -83,7 +83,7 @@ M8：React Native Android 客户端 —— 混合内核离线可用（ADR-006）
 ```
 web/ (React + TS + Zustand)
  ├─ views: NoteEditor / GraphView / MindMapView(M2b) / TutorPanel / ReviewQueue / MemoryDashboard
- └─ lib: api client, trace StepPlayer (M9)
+ └─ lib: api client, trace VisualEngine (M9, 组件入 ui 库)
         │ fetch /api/*
 server/app/ ▼         # Python 包（启动：uvicorn app.main:app）
  ├─ main.py          FastAPI 入口（绑定 127.0.0.1，PORT 环境变量可覆盖默认 8000）+ 静态托管前端构建产物
@@ -699,7 +699,7 @@ Debug Mode（代码知识图）⏭ Phase 5。
 ```text
 Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
   → 独立 Python 子进程（sys.settrace）→ safe_snapshot + limits → TraceRun
-  → StepPlayer → FrameStackView / ArrayView / GeneralView
+  → VisualEngine（IDE 步进）→ FrameStackView / ArrayView / GeneralView
   → Learning Event（visualize）
 ```
 
@@ -766,8 +766,10 @@ Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
 
 > 原 `FuncPlotView` **已取消**，改为 `GeneralView`；函数图像待有真实需求时再立。
 
-目录 `web/src/components/visual-engine/`：`StepPlayer` · `TraceTimeline` · 三个 Renderer。
-**模板 View 不处理播放控制**——M8 Mobile 改触摸交互时只动 `StepPlayer` / `TraceTimeline`。
+目录 `web/src/components/ui/visual-engine/`（**入 ui 组件库**，经 `ui/index.ts` 导出）：
+`VisualEngine` 组合壳 · `CodePane`（IDE 风格代码 pane）· `DebugToolbar`（步进控制）· 三个 Renderer。
+**模板 View 不处理步进控制**——M8 Mobile 改触摸交互时只动 `DebugToolbar` / `stepping.ts`。
+> 2026-09-01 所有者裁定：否决播放器（StepPlayer/TraceTimeline），改 IDE 调试器语义，详见 ADR-025 §3.2。
 
 **模板路由（ADR-025 §3.4）**：由 `core/tracer/examples/manifest.py` 的 `template` 字段决定，
 前端只读该字段路由，**不做语义分析**。V1 **不做**自动推断（不做 swap 检测 / heap diff），延后 M9.5。
@@ -861,7 +863,7 @@ Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
 | M6 | Tauri 桌面版 | 安装 Rust 工具链；PyInstaller 打包后端；`tauri dev/build` 出 exe；双击启动=完整应用；数据目录迁移至 userData |
 | M7 | LAN Sync v1 | 第二设备经配对码完成配对；双向同步 vault+attachments+eventlogs 三类白名单；新增/变更/删除三态正确；冲突保留双份并出现在解决列表；db/settings/密钥验证永不出现在传输内容中 |
 | M8 | Mobile MVP(Android) | RN 应用配对桌面→全量拉取→离线浏览/FTS 搜索/复习测验；SM-2 TS 内核与 Python 版通过同一事件夹具一致性测试；笔记轻编辑可推回；AI 在局域网走桌面引擎、外出提示降级或直连云 |
-| M9 | Visual Engine V1 | Python 单文件代码 trace 成功（含递归）；StepPlayer 三模板可播放；从 Concept 页一键可视化排序算法；visualize 事件计入掌握度 |
+| M9 | Visual Engine V1 | Python 单文件代码 trace 成功（含递归）；VisualEngine 三模板可步进检查；从 Concept 页一键可视化排序算法；visualize 事件计入掌握度 |
 | M10 | AI 生成可视化 | 对任意 Concept 让 LLM 生成示例代码→自动 trace→播放；生成结果可保存复用 |
 
 ### 路线图 backlog（有想法先记这里，不扩当前范围）

@@ -30,7 +30,7 @@
 | ADR-022 | Product Mode Boundary（产品模式边界冻结） | 全局 UX 方向 | Accepted |
 | ADR-023 | Visualization Boundary（可视化边界冻结） | P8 前端可视化 | Accepted |
 | ADR-024 | Note Hierarchy（主/副笔记 parent 关系） | 笔记层级 / frontmatter / 图谱消费 | Accepted |
-| ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / StepPlayer / 三 Renderer · 只执行预置示例 · 安全模型 | Proposed |
+| ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Proposed |
 
 ## 快速查阅指南
 

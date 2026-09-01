@@ -87,7 +87,7 @@ safe_snapshot + limits
    ↓
 TraceRun
    ↓
-StepPlayer → FrameStackView / ArrayView / GeneralView
+VisualEngine（IDE 步进）→ FrameStackView / ArrayView / GeneralView
    ↓
 Learning Event（visualize）
 ```
@@ -118,19 +118,29 @@ shared/types/trace.ts
 > **绝不放 `workspace/vault/`**（用户数据区，会参与同步，且可被用户改写——
 > 一旦可改写就不再是「受信任示例」）。
 
-**前端**（沿用项目 `components/` 惯例，不新建 `features/`）：
+**前端**（组件**入 ui 组件库**，经 `web/src/components/ui/index.ts` 统一导出）：
 
 ```text
-web/src/components/visual-engine/
-   ├── StepPlayer.tsx        # play / pause / step forward / backward / progress
-   ├── TraceTimeline.tsx     # step / progress
+web/src/components/ui/visual-engine/
+   ├── VisualEngine.tsx      # 组合壳：CodePane + Renderer + DebugToolbar 三区布局
+   ├── CodePane.tsx          # 代码 pane：gutter 行号/执行热力 + 当前行橙底 + 行尾 inline values
+   ├── DebugToolbar.tsx      # IDE 步进语义：Step Over/Into/Out/Continue/Restart
    ├── FrameStackView.tsx    # SVG stack frames
    ├── ArrayView.tsx         # SVG array
-   └── GeneralView.tsx       # SVG frames + locals（fallback）
+   ├── GeneralView.tsx       # SVG frames + locals（fallback）
+   ├── stepping.ts           # 步进状态纯函数（无 React）
+   ├── derive.ts             # 派生计算纯函数（热力/变更键/inline values）
+   └── highlight.ts          # 零依赖 Python 词法高亮纯函数
 ```
 
-**职责解耦**：**模板 View 不处理播放控制**。M8 Mobile 改触摸交互时只动
-`StepPlayer` / `TraceTimeline`，三个 Renderer 不受影响。
+> **交互范式裁定（2026-09-01 所有者）**：**否决 StepPlayer 播放器**
+> （播放三角 + 拖拽进度条的时间轴隐喻），改用 **IDE 调试器语义**——
+> 代码是主角，步进 = 检查程序状态而非"看视频"。借鉴 VS Code Debug
+> （inline values、CALL STACK、Step Over/Into/Out）与 birdseye（执行热力）。
+> 轨迹全量已录（TraceRun 一次性返回），所以"后退"天然可用，无需播放器。
+
+**职责解耦**：**模板 View 不处理步进控制**。M8 Mobile 改触摸交互时只动
+`DebugToolbar` / `stepping.ts`，三个 Renderer 不受影响。
 
 ### 3.3 示例库 = 唯一可执行来源
 
@@ -490,7 +500,7 @@ Markdown 声明的**载体**标为 M9.5 待定；**原则**（只存声明、不
 ### 6.2 TraceRun 是运行时派生数据
 
 ```text
-Markdown Vault ── VisualizationSpec ──> Engine ──> TraceRun ──> StepPlayer
+Markdown Vault ── VisualizationSpec ──> Engine ──> TraceRun ──> VisualEngine
 ```
 
 > **TraceRun 是运行时派生数据，不属于 Markdown 事实源；V1 不持久化。**
@@ -525,7 +535,7 @@ M9.5 再考虑 `visualize_started` / `visualize_25` / `visualize_50` / `visualiz
 | **M9-002** | `shared/types/trace.ts`（TraceRun / TraceEvent / TraceValue）+ 契约测试 | 契约与守护测试 | M9-001 |
 | **M9-003** | tracer PoC（**拆 4 步，见下**） | runner / snapshot / limits | M9-002 |
 | **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 |
-| **M9-005** | `StepPlayer` + `TraceTimeline` | 播放壳，无 Renderer | M9-002 |
+| **M9-005** | `CodePane` + `DebugToolbar` + `stepping` 状态模型（**入 ui 组件库**，见 §3.2 裁定） | IDE 步进壳，无 Renderer | M9-002 |
 | **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer | M9-005 |
 | **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 | 端到端闭环 | M9-004 + M9-006 |
 | **M9-008** | M9 全量验收（11 条） | 验收报告 | M9-007 |
@@ -565,7 +575,7 @@ process.kill + stdout tempfile + TraceRun 序列化，六件事全部成立。
 
 | # | 标准 |
 |---|---|
-| 3 | `StepPlayer` 支持播放、暂停、前进、后退 |
+| 3 | `DebugToolbar` 支持步进语义：Step Over / Into / Out / Continue / Restart（含后退——轨迹全量已录） |
 | 4 | 当前 step 能正确高亮代码行 |
 
 ### C. 产品 / 架构层
@@ -617,7 +627,7 @@ V1 **不实现**，但协议层预留扩展位：
 | Docker 沙箱 | Phase 5（`AGENTS.md` §705） |
 | 打包态（`sys.frozen`）子进程解释器 | M6 未打包后端（无 sidecar / 无 PyInstaller spec），V1 不触发；**后端一旦打包必须回补** |
 
-**M9 与 M9.5 复用同一层**：`StepPlayer` · `TraceTimeline` · Renderer 架构 ·
+**M9 与 M9.5 复用同一层**：`VisualEngine` 组件集（CodePane · DebugToolbar · Renderer 架构）·
 `VisualizationSpec` · `Learning Event`。因此 M9 **不需要**为 M9.5 提前实现复杂算法可视化。
 
 ---
