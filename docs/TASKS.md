@@ -1289,13 +1289,45 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| P0-1 | frontmatter round-trip：`parse_frontmatter ↕ compose_file` 保任意 key、真删除、稳定顺序 | `[ ]` 待办 |
-| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | `[ ]` 待办 |
-| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | `[ ]` 待办 |
-| P0-4 | `/graph`、`/universe` 统一消费 resolver | `[ ]` 待办 |
-| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | `[ ]` 待办 |
+| P0-1 | frontmatter round-trip：`parse_frontmatter ↕ compose_file` 保任意 key、真删除、稳定顺序 | `[x]` 完成（`compose_file(meta, body)` + `read_note_meta`） |
+| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | `[x]` 完成（`parse_parent`/`set_meta_parent` + `NotePatch.parent`） |
+| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | `[x]` 完成（`server/app/core/hierarchy.py`） |
+| P0-4 | `/graph`、`/universe` 统一消费 resolver | `[x]` 完成（`_merge_parent_edges` + reindex 物化 + web `derivePlanets` 显式优先） |
+| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | `[x]` 完成（`tests/unit/test_hierarchy.py` 12 项 + `derivePlanets.test.ts` 2 项） |
 
 **不在 P0**：左侧嵌套树 UI · 稳定 note ID（独立 ADR）· 星系视觉改造。
+
+#### P0 完成报告（2026-09-01 · commit `08dff52`）
+
+落地要点：
+
+- **P0-1 修掉地基缺陷**：`compose_file` 原只回写 `tags`，其余 frontmatter key
+  保存时静默丢弃（每加一个字段就会再踩一次）。改为 `compose_file(meta, body)`：
+  保任意 key · 真删除（调用方 `pop`）· 稳定顺序 · 无 key 不写 `---` 块。
+- **P0-2 红线 4**：自指与 orphan **不以 4xx 阻断保存**——保留用户原值，由 resolver
+  标记 `invalid` 并拒绝建立关系。原实现缺 `NotePatch.parent` 字段（崩点）一并修掉。
+- **P0-3**：`hierarchy.py` 新增 `resolve_hierarchy()`（唯一 resolver）·
+  `sync_note_parent`（单篇镜像）· `materialize_parent_links`（reindex 全量物化）。
+  wikilink 推断仅对**完全没声明过** parent 的旧笔记生效，避免结果摇摆。
+- **顺带修掉真 bug**：`_detect_cycles` 首版对任何成环**无限循环**（缺「当前路径
+  回头」检测），由 P0-5 守护测试逼出。
+
+**验证**：pytest **848 passed**（全量，含新增 12 项）· tsc PASS · vitest **30 passed**
+· vite build PASS · CI 双绿。真实 vault 端到端实测：显式 `Adam优化器→机器学习`
+压过正文 `[[梯度下降]]` 推断；orphan 保留值且不建关系；改正文 parent 存活；
+`parent=""` 真删除。
+
+**同期修复（非本任务，独立 commit `b4c0a9f`）**：`tests/unit/test_eventlog.py`
+硬编码读 `2026-08.jsonl`，跨月进入 2026-09 后 6 项静默失败。已改为默认取
+`now_iso()[:7]`（复用 B21 单一时间源）。经 `git stash` 回干净 HEAD 复跑确认
+为**测试过时**，非本次回归。
+
+### P1 遗留（未开工）
+
+| 项 | 内容 | 前置 |
+|---|---|---|
+| P1-1 | **左侧嵌套树 UI**（用户原始诉求「左边也要出现」）：`/notes` 契约补 `parent_id` → `NoteList` 渲染层级树（折叠/展开 + 新建副笔记入口） | 契约层改动，需三层一致 |
+| P1-2 | **稳定 note ID**（独立 ADR）：当前 `parent` 按标题寻址，主笔记改名需级联更新子笔记 frontmatter | 独立 ADR，不与本功能绑带（GPT 评审明确） |
 
 ### 失败语义（ADR-024 §2.3，不得偏离）
 
