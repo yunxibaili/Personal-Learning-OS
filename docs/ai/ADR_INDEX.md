@@ -31,6 +31,7 @@
 | ADR-023 | Visualization Boundary（可视化边界冻结） | P8 前端可视化 | Accepted |
 | ADR-024 | Note Hierarchy（主/副笔记 parent 关系） | 笔记层级 / frontmatter / 图谱消费 | Accepted |
 | ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Proposed |
+| ADR-026 | Note Domain（笔记学科维度 + 五级层级树） | 笔记学科 frontmatter `domain` + notes.domain 缓存列（migration 010）/ `GET /notes/tree` 经 resolve_hierarchy / Galaxy 维持两层 | Proposed（待批准 + Q1–Q3 拍板） |
 
 ## 快速查阅指南
 
@@ -55,6 +56,7 @@
 - 产品模式 / UX 方向 → 读 ADR-022
 - P8 可视化边界（Universe/Graph/MindMap） → 读 ADR-023
 - 笔记层级 / 主副笔记 / frontmatter parent → 读 ADR-024 + ADR-001
+- 笔记学科 domain / 学科过滤 / 层级树端点 → 读 ADR-026（待批准）+ ADR-024（层级语义地基）
 - 改 frontmatter 读写 → 读 ADR-024 §3（round-trip 是地基，先修）
 - M9 算法轨迹可视化 / trace 契约 / 代码执行安全 → 读 ADR-025
 - 改可视化（第四类：非图谱） → 读 ADR-025 §2.5（与 ADR-023 的边界裁决）

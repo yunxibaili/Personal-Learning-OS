@@ -8,7 +8,7 @@
 > **禁止新增任何前端任务**。详见 `PROJECT_STATE.md` §0 与 `TASKS.md` §0。
 >
 > 配套文档：依赖 `DEPENDENCIES.md` · 数据模型契约 `DATA_MODEL.md` · 同步 `SYNC.md` ·
-> 测试 `TESTING.md` · 评估 `EVALUATION.md` · 架构决策记录 `adr/`（ADR-001~023）
+> 测试 `TESTING.md` · 评估 `EVALUATION.md` · 架构决策记录 `adr/`（ADR-001~026）
 >
 > 所有依赖决定附「被否掉的备选及原因」，防止未来开发会话把已否决的方案加回来。
 
@@ -830,6 +830,7 @@ Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
 | ❌ `GET /sync/pair` | 配对码 → LAN bearer token | S2 |
 | ❌ `POST /sync/manifest` · `/sync/fetch` · `/sync/push` | 三态差异交换与差量传输（E2E 已验证传输协议，HTTP 层未建） | S2 |
 | ❌ `POST /trace/run` | 运行并返回 TraceEvent[]（M9） | M9 |
+| ❌ `GET /notes?domain=X` · `GET /notes/domains` · `GET /notes/tree?domain=X` | 笔记学科（domain）过滤 · 学科聚合 · 层级树投影（树必须经 `resolve_hierarchy()` 构建，后端不限深、前端展示≤5 级；Galaxy 维持两层）。前置：ADR-026 批准 + migration 010（notes.domain 缓存列，frontmatter 为事实源，镜像 tags 双存储模式） | ADR-026（Proposed，待批准） |
 | ❌ `GET /api/v1/home` | Mobile 聚合读（recent_notes + weak_concepts + review_count） | Mobile API Preparation，仅确有需求时补 |
 
 错误约定：`{error: {code, message}}`；业务异常 HTTP 400，内部错误 500 不泄露堆栈。

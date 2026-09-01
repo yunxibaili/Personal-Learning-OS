@@ -661,6 +661,16 @@ web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `N
 `test_notes` 5 项。**Gate：pytest 853 · vitest 36 · tsc PASS · build PASS**。
 遗留（P1）：稳定 note ID（独立 ADR）。
 
+**T-NOTE-DOMAIN 已登记、未裁决（2026-09-01）**：项目所有者提出「Subject (Domain) +
+5-Level Hierarchy」计划——笔记按学科组织 + 左侧五级层级树。技术方案经与实际代码
+核对后落地为 **ADR-026（Proposed，待批准）**：frontmatter `domain` 为事实源 +
+SQLite `notes.domain` 缓存列（migration 010，镜像 tags 双存储模式）；
+`GET /notes/tree` 经唯一 `resolve_hierarchy()` 构建（ADR-024 红线 2），后端不限深、
+前端展示≤5 级；Galaxy 维持两层不变；与 concepts.domain 双轨独立不 join。
+实现前待所有者拍板 3 问（ADR-026 §4）：Q1 学科词表（预定义 vs 自由文本）、
+Q2 子笔记是否继承父 domain、Q3 树默认展开深度。执行计划见 `docs/TASKS.md`
+§T-NOTE-DOMAIN；当前未开始任何实现。
+
 ---
 
 ## §11 Frozen Domains & Do-Not-Touch
