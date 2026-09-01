@@ -12,6 +12,7 @@ import pytest
 
 from app.core.mastery import update_mastery, _write_eventlog
 from app.core.sync.device import load_or_create_device
+from app.core.timeutil import now_iso
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -23,9 +24,17 @@ def _create_concept(conn, title: str = "EventlogTest") -> int:
     return conn.execute("SELECT id FROM concepts WHERE title=?", (title,)).fetchone()["id"]
 
 
-def _read_eventlog_lines(ws: Path, month: str = "2026-08") -> list[dict]:
-    """读取指定月份的 eventlog 文件，返回解析后的 JSON 列表。"""
-    event_file = ws / "metadata" / "eventlogs" / f"{month}.jsonl"
+def _read_eventlog_lines(ws: Path, month: str | None = None) -> list[dict]:
+    """读取指定月份的 eventlog 文件，返回解析后的 JSON 列表。
+
+    `month=None` 时读**当前月**（与 `update_mastery()` 落盘的月份一致）。
+
+    ⚠️ 不得硬编码月份：eventlog 按 `<yyyy-mm>.jsonl` 分月，而 `update_mastery()`
+    用 `timeutil.now_iso()` 的当前时间戳落盘。硬编码后一跨月就静默失效——
+    2026-09-01 就是这样挂掉 6 项（写进 2026-09，测试却读 2026-08）。
+    这里复用同一时间源 `now_iso()`，避免时区/口径二次漂移。
+    """
+    event_file = ws / "metadata" / "eventlogs" / f"{month or now_iso()[:7]}.jsonl"
     if not event_file.exists():
         return []
     lines = event_file.read_text(encoding="utf-8").strip().split("\n")
@@ -50,7 +59,7 @@ def test_write_eventlog_creates_file(core_conn, tmp_workspace: Path) -> None:
         created_at="2026-08-28 10:00:00",
     )
 
-    lines = _read_eventlog_lines(tmp_workspace)
+    lines = _read_eventlog_lines(tmp_workspace, month="2026-08")
     assert len(lines) == 1
     assert lines[0]["event_id"] == "test-uuid-001"
     assert lines[0]["concept_id"] == 1
@@ -75,7 +84,7 @@ def test_write_eventlog_appends(core_conn, tmp_workspace: Path) -> None:
             created_at=f"2026-08-28 10:0{i}:00",
         )
 
-    lines = _read_eventlog_lines(tmp_workspace)
+    lines = _read_eventlog_lines(tmp_workspace, month="2026-08")
     assert len(lines) == 3
     assert [l["event_id"] for l in lines] == ["uuid-0", "uuid-1", "uuid-2"]
 
