@@ -20,6 +20,8 @@
 | `visual-engine.html` | **M9 视觉引擎原型页（样式定稿处）**：6 示例真实 TraceRun + 编码通道预算表 + 组件规格表 + 步进语义表 | `visual-engine/` · ADR-025 |
 | `visual-engine.smoke.js` | 原型页零依赖 DOM 冒烟脚本（36 项断言，驱动内联的真实 TraceRun） | `visual-engine.html` |
 | `visual-engine/` | **M9 视觉引擎组件库**（TS/TSX）：6 组件 + 3 纯逻辑模块 + CSS。**仅 ui 库，未合并进 `web/`**，回灌归 M9-007 | `UI_DESIGN.md` §7.4 · ADR-025 v3 |
+| `visual-engine-demo.html` | **M9 视觉引擎演示页（组件跑起来的样子）**：页面壳按 ui 库规范，组件样式直接引用 `./visual-engine/visual-engine.css`（不复制不重写）；数据/渲染脚本由同步脚本从定稿处注入 | `visual-engine.html` · `visual-engine/` |
+| `visual-engine/sync-demo-html.mjs` | 演示页同步脚本（幂等）：把定稿处的 `#traceData`（6 示例真实 TraceRun）与主渲染脚本注入演示页占位块。改完 `visual-engine.html` 后重跑一次即可 | `visual-engine-demo.html` |
 | `archive/visual-engine-tsx-2026-09-01/` | **归档**：样式定稿前的 M9 TSX 稿，冻结不再维护 | 已被 `visual-engine/` 取代 |
 | `archive/legacy-gallery-html-2026-09-01/` | **归档**：`app-shell.html` · `bento-dashboard.html` · `spotlight-card.html` · `marquee.html`（与后续设计裁决冲突，理由见该目录 `README.md`） | `UI_DESIGN.md` §7.1/§7.2 已标 `归档·` / ⛔ |
 | `assets/dots-world.png` | 点阵世界贴图（地球自转滚动用，2000×1049） | `home-hero.html` |
@@ -154,3 +156,4 @@ ADR-023 已同步修订，「禁止」条款补上唯一例外，并新增「编
 | 2026-08-29 | 信息架构纠正「本末倒置」：新增 `note-workspace.html` 笔记优先原型（取消 7 平级 tab，笔记即工作区，可视化降为右栏上下文） |
 | 2026-09-01 | **M9 视觉引擎入库**：组件落 `visual-engine/`（6 组件 + 3 纯逻辑模块 + CSS，仅 ui 库不合并 `web/`），`visual-engine.html` 为样式定稿处（36 项冒烟 + 68 项单测 + tsc 全绿），定稿前 TSX 稿归档 `archive/visual-engine-tsx-2026-09-01/` |
 | 2026-09-01 | **旧画廊 HTML 归档**：`app-shell` / `bento-dashboard` / `spotlight-card` / `marquee` 四项与现行裁决冲突，移入 `archive/legacy-gallery-html-2026-09-01/`（含归档理由 README）；总览页 `index.html` 新增 M9 Visual Engine 卡片，归档项 `is-archived` 灰显并改指归档路径 |
+| 2026-09-01 | **M9 演示页落地**：新增 `visual-engine-demo.html`（ui 库规范页面壳 + 组件样式直引 `visual-engine/visual-engine.css`）与幂等同步脚本 `visual-engine/sync-demo-html.mjs`——数据与渲染脚本只从定稿处 `visual-engine.html` 注入，杜绝手抄漂移。无头浏览器自检：3 章节渲染/步进交互/编码通道/21 个导出符号全通过，零运行时错误 |
