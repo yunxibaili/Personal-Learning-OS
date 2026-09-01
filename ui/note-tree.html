@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多层级笔记列表 · note-tree — Open Learning OS</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  /* =============================================================================
+     页面外壳（沿用 ui/ 规范页骨架）
+     约束 ADR-013：无渐变 / 无 backdrop-filter / 无装饰 SVG / 无图标库 / 无 emoji 图标
+     ============================================================================= */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg-soft); color: var(--text);
+    font-family: var(--font); font-size: 14px; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+  header {
+    position: sticky; top: 0; z-index: var(--z-nav);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  header .wrap { height: var(--nav-h); display: flex; align-items: center; gap: 16px; }
+  .brand { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  .brand i { color: var(--brand); font-style: normal; }
+  header nav { margin-left: auto; display: flex; gap: 20px; font-size: 13px; }
+  header nav a { color: var(--text-2); text-decoration: none; }
+  header nav a:hover { color: var(--text); }
+
+  .hero { padding: 56px 0 28px; }
+  .eyebrow {
+    display: inline-block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--brand-text); margin-bottom: 14px;
+  }
+  h1 { font-size: 40px; line-height: 1.15; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 600; }
+  h1 em { font-style: normal; color: var(--brand-text); }
+  .hero p { max-width: 640px; color: var(--text-2); font-size: 15px; line-height: 1.8; margin: 0; }
+  .hero code, td code, li code {
+    font-family: var(--mono); font-size: 13px;
+    background: var(--surface-2); border: 1px solid var(--border-soft);
+    padding: 1px 5px; border-radius: var(--r-xs);
+  }
+
+  section { padding: 40px 0 8px; }
+  h2 { font-size: 24px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 6px; }
+  .sec-sub { color: var(--text-2); font-size: 14px; margin: 0 0 24px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 28px;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 14px; border: 1px solid var(--border-soft); vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 600; color: var(--text-2); font-size: 12px; }
+  td { color: var(--text-2); line-height: 1.6; }
+  td strong { color: var(--text); font-weight: 600; }
+
+  footer { padding: 56px 0 72px; color: var(--text-3); font-size: 12px; }
+
+  /* =============================================================================
+     ① 组件：多层级笔记列表（NoteTree · 左栏 280px）
+     编码通道预算（一个维度 = 一个通道）：
+       层级   = 缩进 + 父行/子行字体层级（唯一层级通道）
+       选中   = 品牌橙（brand-soft 底 + 2px brand 左缘，唯一橙色出口）
+       计数   = 父行右侧徽章
+       警告   = warn-text（仅 orphan 组）
+     ============================================================================= */
+  .demo-grid { display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start; }
+
+  .rail {
+    width: var(--rail-w); background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--r-lg);
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .rail-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--sp-4) var(--sp-4) var(--sp-2);
+  }
+  .rail-head h2 {
+    margin: 0; font-size: var(--fs-xs); font-weight: var(--fw-sb);
+    color: var(--text-3); letter-spacing: var(--tracking-caps); text-transform: uppercase;
+  }
+  .rail-head button {
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    color: var(--text-3); font-size: 18px; line-height: 1; padding: 0 4px 2px;
+    border-radius: var(--r-xs);
+  }
+  .rail-head button:hover { color: var(--brand-text); background: var(--surface-2); }
+  .rail-filter {
+    margin: 0 var(--sp-4) var(--sp-3);
+    width: calc(100% - var(--sp-8));
+    padding: 6px 10px; font-size: var(--fs-sm); font-family: var(--font);
+    border: 1px solid var(--border); border-radius: var(--r-sm);
+    background: var(--surface-2); color: var(--text);
+  }
+  .rail-filter:focus { outline: none; border-color: var(--border-strong); background: var(--surface); }
+  .rail-filter::placeholder { color: var(--text-3); }
+
+  .tree { outline: none; padding-bottom: var(--sp-3); }
+  .tree:focus-visible { box-shadow: inset 0 0 0 2px var(--brand-line); }
+
+  /* --- 行（父行与子行共用基座） --- */
+  .row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px var(--sp-4) 7px 10px;
+    border-left: 2px solid transparent;
+    cursor: pointer; user-select: none;
+  }
+  .row:hover { background: var(--surface-2); }
+  .row.active { background: var(--brand-soft); border-left-color: var(--brand); }
+  .row .t {
+    font-size: var(--fs-base); color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .row.active .t { font-weight: var(--fw-med); }
+
+  /* --- 父行：展开钮 + 计数徽章 --- */
+  .chev {
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    flex-shrink: 0; width: 18px; height: 18px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-3); font-size: 14px; line-height: 1; font-family: var(--font);
+    transform: rotate(0deg); transition: transform var(--dur-fast) var(--ease);
+    border-radius: var(--r-xs);
+  }
+  .chev:hover { color: var(--text); background: var(--surface-3); }
+  .parent.expanded > .row .chev { transform: rotate(90deg); }
+  .chev.leaf { visibility: hidden; }              /* 无子级：占位对齐，不可点 */
+  .parent > .row .t { font-weight: var(--fw-med); }
+  .count {
+    margin-left: auto; flex-shrink: 0;
+    font-family: var(--font-num); font-size: var(--fs-xs); color: var(--text-3);
+    background: var(--surface-2); border: 1px solid var(--border-soft);
+    padding: 0 6px; border-radius: var(--r-pill); line-height: 16px;
+  }
+  .row.active .count { background: var(--brand-tint); border-color: var(--brand-line); color: var(--brand-text); }
+
+  /* --- 子行：缩进即层级（唯一层级通道），前置短线承接父级 --- */
+  .children { display: none; }
+  .parent.expanded > .children { display: block; }
+  .child { display: flex; }
+  .child::before {                                /* 树线：竖线 + 短横，颜色恒为 border */
+    content: ""; flex-shrink: 0;
+    width: 22px; align-self: stretch;
+    background:
+      linear-gradient(var(--border), var(--border)) 0 0 / 1px 100% no-repeat,
+      linear-gradient(var(--border), var(--border)) 0 50% / 12px 1px no-repeat;
+  }
+  .child .row { flex: 1; padding-left: 2px; }
+  .child .row .t { font-size: var(--fs-sm); color: var(--text-2); }
+  .child .row.active .t { color: var(--text); }
+
+  /* --- 未挂载组（orphan：parent 指向不存在的笔记） --- */
+  .group-label {
+    padding: var(--sp-3) var(--sp-4) var(--sp-1);
+    font-size: var(--fs-xs); color: var(--text-3);
+  }
+  .group-label.warn { color: var(--warn-text); }
+  .row.orphan .t { color: var(--warn-text); }
+  .row.orphan .flag {
+    margin-left: auto; flex-shrink: 0;
+    font-size: var(--fs-xs); color: var(--warn-text);
+    background: var(--warn-soft); border: 1px solid var(--warn-soft);
+    padding: 0 6px; border-radius: var(--r-pill); line-height: 16px;
+  }
+
+  .tree-empty { padding: var(--sp-4); font-size: var(--fs-sm); color: var(--text-3); }
+  .filtering .count, .filtering .group-label { display: none; }
+
+  /* --- 演示区右侧说明 --- */
+  .demo-note { font-size: 13px; color: var(--text-2); line-height: 1.8; }
+  .demo-note b { color: var(--text); }
+  .kbd {
+    display: inline-block; font-family: var(--mono); font-size: 11px; color: var(--text-2);
+    background: var(--surface-2); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: var(--r-xs); padding: 0 5px; line-height: 16px; margin: 0 1px;
+  }
+
+  /* --- 前后对照 --- */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .vs h3 { margin-top: 0; }
+  .vs .tag-good, .vs .tag-bad {
+    display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: var(--r-pill);
+    margin-left: 8px; vertical-align: 2px;
+  }
+  .vs .tag-bad { color: var(--text-3); background: var(--surface-2); border: 1px solid var(--border); }
+  .vs .tag-good { color: var(--ok-text); background: var(--ok-soft); border: 1px solid var(--ok-soft); }
+  .vs .flat .row .t { font-weight: var(--fw-reg); }
+
+  @media (max-width: 900px) {
+    .demo-grid, .vs { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chev { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">Open Learning <i>OS</i>.</div>
+    <nav>
+      <a href="./index.html">总览</a>
+      <a href="./note-workspace.html">工作区</a>
+      <a href="./UI_DESIGN.md">设计系统</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="eyebrow">M-NOTE-TREE · 左栏多层级笔记列表</span>
+    <h1>层级是<em>视图</em>，不是目录</h1>
+    <p>
+      主/副笔记是<strong>严格单父</strong>关系（子笔记 frontmatter 写 <code>parent: "[[父标题]]"</code>，
+      事实源在 Markdown）。左栏把它渲染成一棵<strong>一层树</strong>：主笔记 = 可展开行，
+      副笔记 = 缩进子行。底层允许 parent 链，但 V1 界面只渲染一层——星球 / 卫星。
+      本页组件可交互：点击、展开、过滤、键盘导航全部真实生效。
+    </p>
+  </div>
+
+  <!-- ==================================================== ① 交互演示 -->
+  <section>
+    <h2>交互演示</h2>
+    <p class="sec-sub">整行点击 = 打开笔记；箭头独立命中区 = 展开/收起。试着在过滤框输入「卷积」，命中分支会自动展开。</p>
+    <div class="panel" style="background:var(--bg-soft); border:none; padding:24px 0;">
+      <div class="demo-grid">
+
+        <aside class="rail">
+          <div class="rail-head">
+            <h2>笔记</h2>
+            <button type="button" title="新建笔记" aria-label="新建笔记">+</button>
+          </div>
+          <input class="rail-filter" id="filter" type="text" placeholder="搜索笔记…" aria-label="过滤笔记">
+
+          <nav class="tree" id="tree" tabindex="0" aria-label="笔记树">
+            <!-- 主笔记 1 -->
+            <div class="parent expanded" data-node>
+              <div class="row" data-row data-title="优化器">
+                <button class="chev" type="button" aria-expanded="true" aria-label="展开/收起 优化器">›</button>
+                <span class="t">优化器</span>
+                <span class="count">3</span>
+              </div>
+              <div class="children">
+                <div class="child"><div class="row" data-row data-title="Adam"><span class="t">Adam</span></div></div>
+                <div class="child"><div class="row active" data-row data-title="SGD"><span class="t">SGD</span></div></div>
+                <div class="child"><div class="row" data-row data-title="学习率调度"><span class="t">学习率调度</span></div></div>
+              </div>
+            </div>
+
+            <!-- 主笔记 2 -->
+            <div class="parent expanded" data-node>
+              <div class="row" data-row data-title="注意力机制">
+                <button class="chev" type="button" aria-expanded="true" aria-label="展开/收起 注意力机制">›</button>
+                <span class="t">注意力机制</span>
+                <span class="count">2</span>
+              </div>
+              <div class="children">
+                <div class="child"><div class="row" data-row data-title="Self-Attention"><span class="t">Self-Attention</span></div></div>
+                <div class="child"><div class="row" data-row data-title="Multi-Head"><span class="t">Multi-Head</span></div></div>
+              </div>
+            </div>
+
+            <!-- 主笔记 3（有子级，默认收起） -->
+            <div class="parent" data-node>
+              <div class="row" data-row data-title="卷积神经网络">
+                <button class="chev" type="button" aria-expanded="false" aria-label="展开/收起 卷积神经网络">›</button>
+                <span class="t">卷积神经网络</span>
+                <span class="count">1</span>
+              </div>
+              <div class="children">
+                <div class="child"><div class="row" data-row data-title="池化"><span class="t">池化</span></div></div>
+              </div>
+            </div>
+
+            <!-- 主笔记 4（无子级） -->
+            <div class="parent" data-node>
+              <div class="row" data-row data-title="反向传播">
+                <button class="chev leaf" type="button" tabindex="-1" aria-hidden="true">›</button>
+                <span class="t">反向传播</span>
+              </div>
+              <div class="children"></div>
+            </div>
+
+            <!-- 未挂载组：parent 指向不存在的笔记（保留原值 + 警告，绝不自动删除） -->
+            <div class="group-label warn" id="orphanLabel">未挂载 · parent 指向不存在的笔记</div>
+            <div class="child" data-orphan>
+              <div class="row orphan" data-row data-title="残差连接">
+                <span class="t">残差连接</span>
+                <span class="flag">[[ResNet]] 缺失</span>
+              </div>
+            </div>
+
+            <div class="tree-empty" id="empty" hidden>没有匹配的笔记</div>
+          </nav>
+        </aside>
+
+        <div class="demo-note">
+          <p><b>这条左栏在演示什么。</b>「优化器」「注意力机制」是主笔记（星球），缩进的 Adam、SGD 是挂在它们下面的副笔记（卫星）。层级只用了<strong>一个通道</strong>：缩进 + 父/子两级字重；品牌橙<strong>只出现在选中行</strong>；右侧徽章是副笔记计数；「未挂载」组单独用警告色——因为 <code>parent: "[[ResNet]]"</code> 指向的笔记不存在，按裁决<strong>保留原值并标记，绝不自动删除</strong>。</p>
+          <p><b>交互。</b>
+            整行点击打开笔记；<span class="kbd">›</span> 箭头是独立命中区，只管展开/收起。
+            键盘：聚焦树后 <span class="kbd">↑</span><span class="kbd">↓</span> 移动，
+            <span class="kbd">→</span> 展开，<span class="kbd">←</span> 收起（子行按 ← 回到父行）。
+            过滤时命中行保留、其祖先链自动展开，计数徽章与分组标签隐藏，避免「搜到 3 行却看到 3 个组头」的噪声。
+          </p>
+          <p><b>与数据层的接线。</b>树由关系解析层（<code>resolve_hierarchy()</code>）产出：
+            显式 <code>parent</code> 优先，wikilink 拓扑推断只作 legacy fallback；
+            一个笔记最多一个父级；无父级笔记按现有平铺顺序排在树后。
+            展开/收起状态属于<strong>视图状态</strong>，可存本地但不进 vault、不进 SQLite。</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== ② 前后对照 -->
+  <section>
+    <h2>前后对照</h2>
+    <p class="sec-sub">左：现状 note-workspace 平铺列表（分组标签 + 全部笔记顺序堆叠）。右：层级树。</p>
+    <div class="vs">
+      <div class="panel flat">
+        <h3>平铺 <span class="tag-bad">现状 · 层级不可见</span></h3>
+        <div class="group-label">优化器</div>
+        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:14px;">优化器</span></div>
+        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:13px;color:var(--text-2);">Adam</span></div>
+        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:13px;color:var(--text-2);">SGD</span></div>
+        <div class="group-label">注意力机制</div>
+        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:14px;">注意力机制</span></div>
+        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:13px;color:var(--text-2);">Self-Attention</span></div>
+        <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
+          层级靠分组标签「猜」：主副关系每次都要在脑内重建；
+          笔记一多，同名子笔记（如多处的「笔记」）无法归属；展开状态无处安放。
+        </p>
+      </div>
+      <div class="panel flat">
+        <h3>层级树 <span class="tag-good">本组件 · 层级即结构</span></h3>
+        <div class="row" style="display:flex;gap:6px;align-items:center;padding:7px 16px 7px 10px;background:var(--surface-2);">
+          <span style="color:var(--text-3);font-size:14px;transform:rotate(90deg);width:18px;text-align:center;">›</span>
+          <span style="font-size:14px;font-weight:500;">优化器</span>
+          <span style="margin-left:auto;font-family:var(--font-num);font-size:12px;color:var(--text-3);background:var(--surface);border:1px solid var(--border-soft);padding:0 6px;border-radius:999px;line-height:16px;">3</span>
+        </div>
+        <div class="child"><div class="row" style="display:flex;padding:7px 16px 7px 2px;"><span class="t" style="font-size:13px;color:var(--text-2);">Adam</span></div></div>
+        <div class="child"><div class="row" style="display:flex;padding:7px 16px 7px 2px;"><span class="t" style="font-size:13px;color:var(--text-2);">SGD</span></div></div>
+        <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
+          主副关系一眼可见；收起时主笔记行即目录；
+          徽章回答「这颗星球有几颗卫星」；过滤时结构自动让位于命中。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== ③ 规范 -->
+  <section>
+    <h2>规范</h2>
+    <p class="sec-sub">组件只做渲染与交互；层级来自关系解析层，本组件不做任何推断。</p>
+
+    <h3>数据规则（来自 ADR-024 裁决链）</h3>
+    <table>
+      <tr><th style="width:220px;">规则</th><th>约定</th></tr>
+      <tr><td><strong>事实源</strong></td><td>子笔记 frontmatter <code>parent: "[[父标题]]"</code>；Markdown 是唯一权威，DB <code>links(relation=parent)</code> 只是可重建的派生索引</td></tr>
+      <tr><td><strong>单父</strong></td><td>一个笔记最多一个 parent；vault 可形成多棵树（forest）。底层允许 parent 链，<strong>V1 界面只渲染一层</strong>（星球/卫星）</td></tr>
+      <tr><td><strong>权威优先</strong></td><td>显式 parent &gt; 拓扑推断；树数据统一来自 <code>resolve_hierarchy()</code>，本组件不自行推断</td></tr>
+      <tr><td><strong>orphan（无效父级）</strong></td><td>parent 指向不存在的笔记 → 子笔记进「未挂载」组，保留原值 + 警告标记，<strong>绝不自动删除 parent</strong>（用户写错一次不能毁掉原始意图）</td></tr>
+      <tr><td><strong>展开状态</strong></td><td>纯视图状态：可存 localStorage，不进 vault、不进 SQLite</td></tr>
+    </table>
+
+    <h3>交互规则</h3>
+    <table>
+      <tr><th style="width:220px;">操作</th><th>行为</th></tr>
+      <tr><td>点击行</td><td>打开笔记并置为 active（brand-soft 底 + 2px 橙左缘）；若该行处于收起的父级内，先展开祖先链（跟随打开笔记）</td></tr>
+      <tr><td>点击 <code>›</code> 箭头</td><td>仅展开/收起，<strong>不</strong>切换 active——两个命中区分离，消除「想展开却打开了笔记」的误触</td></tr>
+      <tr><td>无子级的父行</td><td>箭头占位但不可见可点（对齐网格），不显示计数徽章</td></tr>
+      <tr><td>过滤框输入</td><td>标题含关键词的行保留；命中行祖先自动展开并显示；无命中后代的分支隐藏；计数徽章与分组标签暂时隐藏；零命中显示「没有匹配的笔记」</td></tr>
+      <tr><td>清空过滤</td><td>恢复完整树；展开状态回到过滤前的用户选择</td></tr>
+      <tr><td><span class="kbd">↑</span> <span class="kbd">↓</span></td><td>在可见行间移动 active（循环）</td></tr>
+      <tr><td><span class="kbd">→</span> / <span class="kbd">←</span></td><td>展开 / 收起当前父行；子行按 ← 回到父行</td></tr>
+    </table>
+
+    <h3>编码通道预算（一个维度 = 一个通道）</h3>
+    <table>
+      <tr><th style="width:160px;">维度</th><th style="width:200px;">通道</th><th>取值</th></tr>
+      <tr><td>层级</td><td>缩进 + 字体层级</td><td>父行 14px/med · 子行 13px/reg + 22px 树线缩进；<strong>不用颜色区分层级</strong></td></tr>
+      <tr><td>选中</td><td>品牌橙</td><td><code>--brand-soft</code> 底 + 2px <code>--brand</code> 左缘（全组件唯一橙色出口）</td></tr>
+      <tr><td>副笔记计数</td><td>徽章</td><td><code>--surface-2</code> 底 pill；active 时 <code>--brand-tint</code></td></tr>
+      <tr><td>警告（orphan）</td><td>warn 文字</td><td>仅「未挂载」组：<code>--warn-text</code> + <code>--warn-soft</code> 徽标</td></tr>
+      <tr><td>hover</td><td>中性灰</td><td><code>--surface-2</code>，不引入橙色</td></tr>
+    </table>
+
+    <h3>业界对照（为什么这么做）</h3>
+    <table>
+      <tr><th style="width:200px;">来源</th><th style="width:280px;">做法</th><th>本项目取舍</th></tr>
+      <tr><td>Notion 侧栏</td><td>整行点击打开页面；箭头独立区域只管展开；页面树一行一节点</td><td><strong>采纳</strong>「行/箭头双命中区」——这是展开类列表误触最低的范式</td></tr>
+      <tr><td>Obsidian · Nested Pages 插件</td><td>Notion 式树 + 过滤时命中分支自动展开 + 跟随 active 展开祖先 + 展开状态持久化</td><td><strong>采纳</strong>三条交互；持久化只存 localStorage（视图状态不进事实源）</td></tr>
+      <tr><td>Obsidian 原生文件树</td><td>文件夹即层级，扁平双链世界观</td><td>印证本项目「层级是视图不是目录」——不建真目录，vault 保持扁平</td></tr>
+      <tr><td>VS Code 资源管理器</td><td><span class="kbd">→</span><span class="kbd">←</span> 展开/收起、↑↓ 移动的树键盘语义</td><td><strong>采纳</strong>键位（与 M9 视觉引擎的方向键互不冲突：上下文不同）</td></tr>
+    </table>
+
+    <h3>与 note-workspace.html 的关系</h3>
+    <table>
+      <tr><td>本页是<strong>组件规范页</strong>：只定义左栏树本体。回灌项目时替换
+        <code>NoteListView</code> 的平铺列表区，栏宽/过滤框/rail-head 沿用工作区现值，不改三栏布局。</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    多层级笔记列表 · note-tree — 严格单父 · 层级是视图 · 品牌橙只给选中 · orphan 保留不删<br>
+    数据规则见 ADR-024；视觉约束见 UI_DESIGN.md §7 与 ADR-013
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var tree = document.getElementById('tree');
+  var filter = document.getElementById('filter');
+  var empty = document.getElementById('empty');
+  var rows = Array.prototype.slice.call(tree.querySelectorAll('[data-row]'));
+
+  function rowOf(el) { return el.closest('[data-row]'); }
+  function parentOf(row) { return row.closest('[data-node]'); }
+
+  /* ---------- 选中 ---------- */
+  function setActive(row) {
+    rows.forEach(function (r) { r.classList.remove('active'); });
+    row.classList.add('active');
+    var p = parentOf(row);
+    if (p && !p.classList.contains('expanded')) toggle(p, true);
+  }
+
+  /* ---------- 展开/收起 ---------- */
+  function toggle(node, force) {
+    var expand = (typeof force === 'boolean') ? force : !node.classList.contains('expanded');
+    node.classList.toggle('expanded', expand);
+    var btn = node.querySelector(':scope > .row .chev');
+    if (btn) btn.setAttribute('aria-expanded', String(expand));
+  }
+
+  tree.addEventListener('click', function (e) {
+    var chev = e.target.closest('.chev');
+    if (chev && !chev.classList.contains('leaf')) {
+      toggle(chev.closest('[data-node]'));
+      e.stopPropagation();
+      return;
+    }
+    var row = rowOf(e.target);
+    if (row) { setActive(row); row.scrollIntoView({ block: 'nearest' }); }
+  });
+
+  /* ---------- 过滤：命中行保留 + 祖先链自动展开 ---------- */
+  filter.addEventListener('input', function () {
+    var q = filter.value.trim().toLowerCase();
+    var filtering = q.length > 0;
+    tree.classList.toggle('filtering', filtering);
+    var any = false;
+
+    rows.forEach(function (row) {
+      var hit = !filtering || row.getAttribute('data-title').toLowerCase().indexOf(q) !== -1;
+      row.style.display = hit ? '' : 'none';
+      if (hit) any = true;
+      if (filtering && hit) {
+        var p = parentOf(row);
+        if (p) {
+          p.classList.add('expanded');
+          p.style.display = '';
+        }
+      }
+    });
+    if (filtering) {
+      // 有可见子级的父行保留（承担祖 chain 展示），其余父行隐藏
+      tree.querySelectorAll('[data-node]').forEach(function (node) {
+        var visibleChildren = Array.prototype.slice.call(node.querySelectorAll('.children [data-row]'))
+          .some(function (r) { return r.style.display !== 'none'; });
+        var selfHit = node.querySelector(':scope > .row').getAttribute('data-title').toLowerCase().indexOf(q) !== -1;
+        node.style.display = (visibleChildren || selfHit) ? '' : 'none';
+      });
+      document.querySelector('[data-orphan]').style.display =
+        '残差连接'.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+      document.getElementById('orphanLabel').style.display =
+        document.querySelector('[data-orphan]').style.display;
+    } else {
+      tree.querySelectorAll('[data-node], [data-orphan]').forEach(function (n) { n.style.display = ''; });
+      document.getElementById('orphanLabel').style.display = '';
+    }
+    empty.hidden = any || !filtering;
+  });
+
+  /* ---------- 键盘：↑↓ 移动 · → 展开 · ← 收起 ---------- */
+  function visibleRows() {
+    return rows.filter(function (r) {
+      return r.style.display !== 'none' && r.offsetParent !== null;
+    });
+  }
+  tree.addEventListener('keydown', function (e) {
+    var vis = visibleRows();
+    var cur = tree.querySelector('[data-row].active') || vis[0];
+    var i = vis.indexOf(cur);
+    if (e.key === 'ArrowDown' && i < vis.length - 1) { setActive(vis[i + 1]); e.preventDefault(); }
+    else if (e.key === 'ArrowUp' && i > 0) { setActive(vis[i - 1]); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') {
+      var p = parentOf(cur) || cur.closest('[data-node]');
+      var node = (cur.parentElement && cur.parentElement.closest('[data-node]')) || cur.closest('[data-node]');
+      if (node && node.contains(cur) && node.querySelector(':scope > .row') === cur) toggle(node, true);
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft') {
+      var myNode = cur.closest('[data-node]');
+      if (myNode && myNode.querySelector(':scope > .row') === cur) {
+        toggle(myNode, false);
+      } else if (myNode) {
+        setActive(myNode.querySelector(':scope > .row'));
+      }
+      e.preventDefault();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

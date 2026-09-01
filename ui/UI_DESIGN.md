@@ -281,6 +281,7 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 | Wikilink | `[[...]]` 黄色高亮 + 墨蓝字 | `归档·app-shell.html`（笔记正文） | `editor/` |
 | TutorPanel | 流式对话 + 抽屉 | v1 未建示例 | `components/tutor/` |
 | KnowledgePlanet | 点阵球 + 轨道卫星（无概念节点） | `home-hero.html` | `components/planet/` |
+| NoteTree | 左栏多层级笔记列表：主/副笔记单父树（层级=缩进唯一通道 · 橙只给选中 · 行/箭头双命中区 · 过滤命中分支自动展开 · orphan 保留+警告不删） | `note-tree.html` | `NoteListView`（回灌替换平铺列表；层级走 `resolve_hierarchy()`，ADR-024） |
 | Graph | 力导向/层级，d3-force | v1 未建示例（`归档·bento-dashboard.html` 有缩略） | `components/graph/` |
 | ReviewCard | 复习专注模式 | v1 未建示例 | `ReviewSessionView.tsx` |
 | MasteryRadar | SVG 雷达四维 | `归档·bento-dashboard.html`（雷达块） | M3 |

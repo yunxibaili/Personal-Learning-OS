@@ -15,6 +15,7 @@
 | `index.html` | **总览入口**（gallery：色板/字阶/间距 + 页面与组件导航） | 本目录全部示例 |
 | `graph-view.html` | **知识图谱规范页**（前后对照 + 规范表 9 条 + 已移除噪音 8 项 + ADR-023 裁决记录） | `web/src/components/graph/` · ADR-023 |
 | `note-workspace.html` | **笔记工作区（建议主界面）**：三栏（列表 / 编辑器 / 上下文），680px 行宽，可视化降为右栏标签 | `web/src/views/NoteEditor.tsx` |
+| `note-tree.html` | **多层级笔记列表规范页（2026-09-01 新增）**：主/副笔记单父树（层级=缩进 · 橙只给选中 · 过滤命中分支自动展开 · orphan 保留+警告不删），可交互演示 + 前后对照 + 交互/通道预算/业界对照规范表 | ADR-024 · 回灌替换 `NoteListView` 平铺列表 |
 | `home-hero.html` | 首页 Hero（大字 + 橙色渐变 CTA + 自包含点阵地球 + 轨道卫星 + 浮动芯片） | `docs/DESIGN.md` §3 |
 | `motion-primitives.html` | 动效基元（FadeInUp / CountUp / Skeleton / Toast / ProgressRing / WaveUnderline / SegmentedControl / Input） | 跨组件复用 |
 | `visual-engine.html` | **M9 视觉引擎原型页（样式定稿处）**：6 示例真实 TraceRun + 编码通道预算表 + 组件规格表 + 步进语义表 | `visual-engine/` · ADR-025 |
@@ -157,3 +158,4 @@ ADR-023 已同步修订，「禁止」条款补上唯一例外，并新增「编
 | 2026-09-01 | **M9 视觉引擎入库**：组件落 `visual-engine/`（6 组件 + 3 纯逻辑模块 + CSS，仅 ui 库不合并 `web/`），`visual-engine.html` 为样式定稿处（36 项冒烟 + 68 项单测 + tsc 全绿），定稿前 TSX 稿归档 `archive/visual-engine-tsx-2026-09-01/` |
 | 2026-09-01 | **旧画廊 HTML 归档**：`app-shell` / `bento-dashboard` / `spotlight-card` / `marquee` 四项与现行裁决冲突，移入 `archive/legacy-gallery-html-2026-09-01/`（含归档理由 README）；总览页 `index.html` 新增 M9 Visual Engine 卡片，归档项 `is-archived` 灰显并改指归档路径 |
 | 2026-09-01 | **M9 演示页落地**：新增 `visual-engine-demo.html`（ui 库规范页面壳 + 组件样式直引 `visual-engine/visual-engine.css`）与幂等同步脚本 `visual-engine/sync-demo-html.mjs`——数据与渲染脚本只从定稿处 `visual-engine.html` 注入，杜绝手抄漂移。无头浏览器自检：3 章节渲染/步进交互/编码通道/21 个导出符号全通过，零运行时错误 |
+| 2026-09-01 | **多层级笔记列表规范页**：新增 `note-tree.html`——主/副笔记单父树（V1 只渲染一层，星球/卫星）。行/箭头双命中区、过滤命中分支自动展开、键盘 ↑↓→←、orphan 进「未挂载」组保留+警告不删。无头浏览器自检：展开收起/选中切换/键盘/过滤/orphan 全过，零运行时错误。数据规则对齐 ADR-024 裁决链（Markdown 事实源 · resolve_hierarchy 统一消费） |
