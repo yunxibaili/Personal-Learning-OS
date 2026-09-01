@@ -204,6 +204,12 @@
     margin-top: 16px; display: inline-flex; align-items: center; gap: 4px;
     color: var(--brand); font-size: 13px; font-weight: 500;
   }
+  /* 已归档示例：降低视觉权重，与现行示例区分（2026-09-01） */
+  .card.is-archived { background: var(--bg-soft); }
+  .card.is-archived .thumb { opacity: .45; filter: saturate(.3); }
+  .card.is-archived h3, .card.is-archived p { color: var(--text-3); }
+  .card.is-archived .open { color: var(--text-3); }
+  .card .tag.is-archived { color: var(--text-3); background: #EFEFEF; }
 
   /* ==== 间距尺度 ==== */
   .spacing { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; }
@@ -307,7 +313,7 @@
 
   <div class="grid">
     <!-- 4 Spotlight -->
-    <a class="card" href="./spotlight-card.html">
+    <a class="card is-archived" href="./archive/legacy-gallery-html-2026-09-01/spotlight-card.html">
       <div class="thumb" style="background:radial-gradient(ellipse at 30% 20%, #FFE4D5 0%, #F5F5F5 60%)">
         <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
           <rect x="20" y="14" width="160" height="82" rx="10" fill="#fff" stroke="#ECECEC"/>
@@ -325,7 +331,7 @@
         </svg>
       </div>
       <div class="body">
-        <span class="tag">动效</span>
+        <span class="tag is-archived">动效 · 已归档</span>
         <h3>Spotlight Card</h3>
         <p>鼠标跟随聚光描边。灵感：Aceternity UI。</p>
         <span class="open">打开 →</span>
@@ -333,7 +339,7 @@
     </a>
 
     <!-- 5 Marquee -->
-    <a class="card" href="./marquee.html">
+    <a class="card is-archived" href="./archive/legacy-gallery-html-2026-09-01/marquee.html">
       <div class="thumb" style="background:linear-gradient(135deg,#FAFAFA,#F0F0F0)">
         <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
           <line x1="0" y1="55" x2="200" y2="55" stroke="#ECECEC"/>
@@ -348,7 +354,7 @@
         </svg>
       </div>
       <div class="body">
-        <span class="tag">动效</span>
+        <span class="tag is-archived">动效 · 已归档</span>
         <h3>Marquee</h3>
         <p>无缝横向滚动条。MiMo"共建生态"式样。</p>
         <span class="open">打开 →</span>
@@ -385,7 +391,7 @@
   <div class="sec-head">
     <div>
       <h2>页面 Pages</h2>
-      <div class="sub">笔记优先 · 三栏工作区 / Hero / 应用外壳 / Dashboard / 图谱规范</div>
+      <div class="sub">笔记优先 · 三栏工作区 / Hero / 图谱规范 / M9 视觉引擎（灰显为已归档示例）</div>
     </div>
   </div>
   <div class="grid">
@@ -454,7 +460,7 @@
     </a>
 
     <!-- 2 App Shell -->
-    <a class="card" href="./app-shell.html">
+    <a class="card is-archived" href="./archive/legacy-gallery-html-2026-09-01/app-shell.html">
       <div class="thumb" style="background:linear-gradient(135deg,#FAFAFA,#F0F0F0)">
         <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
           <rect x="0" y="0" width="200" height="18" fill="#fff" stroke="#ECECEC"/>
@@ -473,7 +479,7 @@
         </svg>
       </div>
       <div class="body">
-        <span class="tag">外壳</span>
+        <span class="tag is-archived">外壳 · 已归档</span>
         <h3>App Shell</h3>
         <p>细顶栏 + 侧边栏 + 内容区。MiMo 半透白 + 极简导航。</p>
         <span class="open">打开 →</span>
@@ -481,7 +487,7 @@
     </a>
 
     <!-- 3 Bento Dashboard -->
-    <a class="card" href="./bento-dashboard.html">
+    <a class="card is-archived" href="./archive/legacy-gallery-html-2026-09-01/bento-dashboard.html">
       <div class="thumb" style="background:linear-gradient(135deg,#FAFAFA,#F0F0F0)">
         <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="6" width="92" height="50" rx="6" fill="#fff" stroke="#ECECEC"/>
@@ -509,7 +515,7 @@
         </svg>
       </div>
       <div class="body">
-        <span class="tag">Dashboard</span>
+        <span class="tag is-archived">Dashboard · 已归档</span>
         <h3>Bento Dashboard</h3>
         <p>不等高网格：复习/掌握度/趋势/图谱，单屏一览。</p>
         <span class="open">打开 →</span>
@@ -543,6 +549,49 @@
         <span class="tag">规范</span>
         <h3>Graph View Spec</h3>
         <p>知识图谱简约化：2 级中性灰 + hover 橙，前后对照与出处。</p>
+        <span class="open">打开 →</span>
+      </div>
+    </a>
+
+    <!-- 6 Visual Engine（M9 · 2026-09-01 新增） -->
+    <a class="card" href="./visual-engine.html">
+      <div class="thumb" style="background:#FFFFFF">
+        <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
+          <!-- 调试工具栏：单步进入（橙）+ 步进按钮（灰）+ 步号 -->
+          <rect x="8" y="8" width="184" height="16" rx="4" fill="#F5F5F5" stroke="#ECECEC"/>
+          <rect x="13" y="12" width="20" height="8" rx="4" fill="#FF6B35"/>
+          <rect x="38" y="12" width="14" height="8" rx="4" fill="#E5E5E5"/>
+          <rect x="56" y="12" width="14" height="8" rx="4" fill="#E5E5E5"/>
+          <rect x="74" y="12" width="14" height="8" rx="4" fill="#E5E5E5"/>
+          <text x="184" y="19" text-anchor="end" font-size="6" fill="#A3A3A3">3 / 25</text>
+
+          <!-- 代码窗：gutter 热力条 + 当前行橙底 + 行内变量 -->
+          <rect x="8" y="30" width="100" height="72" rx="4" fill="#fff" stroke="#ECECEC"/>
+          <rect x="14" y="38" width="2" height="6" rx="1" fill="#FF6B35" opacity=".9"/>
+          <rect x="14" y="52" width="2" height="6" rx="1" fill="#FF6B35" opacity=".55"/>
+          <rect x="14" y="66" width="2" height="6" rx="1" fill="#FF6B35" opacity=".25"/>
+          <rect x="14" y="80" width="2" height="6" rx="1" fill="#E5E5E5"/>
+          <rect x="21" y="37" width="52" height="8" rx="2" fill="#ECECEC"/>
+          <rect x="21" y="51" width="66" height="8" rx="2" fill="#ECECEC"/>
+          <rect x="9" y="64" width="98" height="12" rx="3" fill="#FFF1EA"/>
+          <rect x="9" y="64" width="2" height="12" fill="#FF6B35"/>
+          <rect x="21" y="67" width="42" height="6" rx="2" fill="#F5C7B0"/>
+          <text x="70" y="72" font-size="5" fill="#D8501F">n = 3</text>
+          <rect x="21" y="81" width="58" height="8" rx="2" fill="#F0F0F0"/>
+
+          <!-- 可视化区：数值数组柱状图，变化项橙描边（非填充） -->
+          <rect x="116" y="30" width="76" height="72" rx="4" fill="#fff" stroke="#ECECEC"/>
+          <rect x="124" y="82" width="10" height="14" rx="2" fill="#E5E5E5"/>
+          <rect x="140" y="70" width="10" height="26" rx="2" fill="#E5E5E5"/>
+          <rect x="156" y="56" width="10" height="40" rx="2" fill="#E5E5E5"/>
+          <rect x="172" y="42" width="10" height="54" rx="2" fill="#FFF1EA" stroke="#FF6B35" stroke-width="1.5"/>
+          <line x1="120" y1="97" x2="188" y2="97" stroke="#ECECEC" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="body">
+        <span class="tag">M9 · 组件库</span>
+        <h3>Visual Engine</h3>
+        <p>算法执行轨迹可视化：IDE 步进（非播放器）、三 Renderer、6 示例真实 TraceRun。</p>
         <span class="open">打开 →</span>
       </div>
     </a>

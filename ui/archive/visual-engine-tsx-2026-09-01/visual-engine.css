@@ -1,0 +1,476 @@
+/* =============================================================================
+   Visual Engine（ADR-025 · M9-005/006）
+
+   约束来源：
+   - ADR-013：禁渐变 / backdrop-filter / 玻璃拟态 / 霓虹 / 过度阴影 / 装饰 SVG /
+     卡片套卡片（≤2 层）/ 图标库
+   - ADR-025 §3.6：当前执行行 = 品牌橙底纹（唯一）；变量变更 = 橙描边（≤0.3s）；
+     递归深度 = y 偏移（禁止颜色深浅）；数组元素值 = 条高（禁止条高+颜色双编码）
+   - P8 性能契约：容器定高（防 CLS）、contain、循环外不读 getComputedStyle
+   - 全部取值来自 styles/tokens.css，无裸值
+   ============================================================================= */
+
+.ve {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  contain: layout paint;
+  outline: none;
+}
+
+.ve:focus-visible {
+  border-color: var(--brand-line);
+}
+
+/* --- 头部 --- */
+
+.ve__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 24px;
+}
+
+.ve__title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-sb);
+  color: var(--text);
+  letter-spacing: var(--tracking-snug);
+}
+
+/* 非 completed：§4.4 要求渲染错误态，且仍回放部分轨迹 */
+.ve__notice {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+  color: var(--warn-text);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-sm);
+}
+
+/* --- 主体：左代码 / 右图形（6:4）--- */
+
+.ve__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 4fr);
+  gap: var(--sp-3);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .ve__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* =============================================================================
+   代码 pane
+   ============================================================================= */
+
+.ve-code {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.ve-code__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.ve-code__file {
+  font-family: var(--mono);
+  color: var(--text-2);
+}
+
+.ve-code__body {
+  /* 定高：异步加载源码时不跳动（CLS 铁律） */
+  max-height: 420px;
+  min-height: 200px;
+  overflow: auto;
+  padding: var(--sp-2) 0;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ve-code__body {
+    scroll-behavior: auto;
+  }
+}
+
+/* --- 行 --- */
+
+.ve-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding-right: var(--sp-3);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+  border-left: 2px solid transparent;
+}
+
+/* §3.6 当前执行行 = 品牌橙底纹（唯一通道，不同时改字号/加边框/加动画） */
+.ve-line--active {
+  background: var(--brand-soft);
+  border-left-color: var(--brand);
+}
+
+/* 调用栈里的调用者停在哪一行：中性淡底，不与「当前行」抢橙 */
+.ve-line--caller {
+  background: var(--ink-soft);
+  border-left-color: var(--ink-line);
+}
+
+.ve-line__gutter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: 0 0 auto;
+  width: 46px;
+  padding-left: var(--sp-2);
+  user-select: none;
+}
+
+/* 执行次数热力：静态全貌的唯一通道（越多次越实） */
+.ve-line__heat {
+  width: 3px;
+  height: 13px;
+  border-radius: var(--r-xs);
+  background: var(--brand);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.ve-line__no {
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  text-align: right;
+  min-width: 18px;
+}
+
+.ve-line__code {
+  flex: 1 1 auto;
+  white-space: pre;
+  color: var(--text);
+  tab-size: 4;
+}
+
+/* --- 语法着色（零依赖，全部项目令牌，不引入新色相）--- */
+
+.ve-t--keyword { color: var(--ink); font-weight: var(--fw-med); }
+.ve-t--string  { color: var(--ok-text); }
+.ve-t--comment { color: var(--text-3); font-style: italic; }
+.ve-t--number  { color: var(--brand-text); }
+.ve-t--defname { color: var(--ink-deep); font-weight: var(--fw-sb); }
+.ve-t--plain   { color: var(--text); }
+
+/* --- 行内值（VS Code inline values）--- */
+
+.ve-line__inline {
+  display: inline-flex;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  margin-left: var(--sp-3);
+  font-size: var(--fs-xs);
+}
+
+.ve-inline {
+  padding: 0 var(--sp-1);
+  font-family: var(--mono);
+  color: var(--text-3);
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  white-space: nowrap;
+  /* §3.6 变量变更 = 橙描边 + ≤0.3s */
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+
+.ve-inline--changed {
+  color: var(--brand-text);
+  border-color: var(--brand-line);
+}
+
+/* =============================================================================
+   右栏：图形 + 输出
+   ============================================================================= */
+
+.ve__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.ve__viz {
+  /* 定高：Renderer 切换/空态都不跳动 */
+  min-height: 220px;
+  max-height: 420px;
+  overflow: auto;
+  padding: var(--sp-3);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.ve-viz__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+/* --- 帧栈（递归深度 = y 偏移，不是颜色深浅）--- */
+
+.ve-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.ve-frame {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+/* 栈顶 = 注意力指针（品牌橙描边） */
+.ve-frame--top {
+  border-color: var(--brand);
+}
+
+.ve-frame__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-1);
+}
+
+.ve-frame__func {
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-sb);
+  color: var(--text);
+}
+
+.ve-frame__line {
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.ve-frame__locals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.ve-frame__none {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+/* 键值：变更 = 橙描边 */
+.ve-kv {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  padding: 1px var(--sp-1);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  transition: border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+
+.ve-kv--changed {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+}
+
+.ve-kv__k {
+  color: var(--text-3);
+}
+
+.ve-kv__v {
+  color: var(--text);
+}
+
+/* --- 数组（元素值 = 条高）--- */
+
+.ve-array__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+
+.ve-array__len {
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.ve-array__svg {
+  display: block;
+  width: 100%;
+  height: 168px;
+}
+
+.ve-bar {
+  fill: var(--surface-3);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  /* §3.6 变量变更 = 橙描边 + ≤0.3s */
+  transition: stroke var(--dur-fast) var(--ease-out),
+              stroke-width var(--dur-fast) var(--ease-out);
+}
+
+.ve-bar--changed {
+  stroke: var(--brand);
+  stroke-width: 2;
+}
+
+.ve-bar__val {
+  font-family: var(--font-num);
+  font-size: 10px;
+  fill: var(--text-2);
+}
+
+.ve-bar__idx {
+  font-family: var(--font-num);
+  font-size: 10px;
+  fill: var(--text-3);
+}
+
+/* --- GeneralView --- */
+
+.ve-general {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.ve-general__series {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.ve-general__vals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.ve-chip {
+  min-width: 24px;
+  padding: 1px var(--sp-1);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  text-align: center;
+  color: var(--text);
+  background: var(--surface-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.ve-chip--changed {
+  border-color: var(--brand);
+}
+
+/* --- 输出（终端风格）--- */
+
+.ve__out {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.ve__out-head {
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.ve__out-body {
+  /* 定高：输出从 0 行增长到多行时不推挤布局 */
+  height: 72px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-normal);
+  color: var(--text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ve__out-empty {
+  color: var(--text-3);
+}
+
+/* =============================================================================
+   步进控制条（调试器语义，非播放器）
+   ============================================================================= */
+
+.ve-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-soft);
+}
+
+.ve-toolbar__steps {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.ve-toolbar__status {
+  display: flex;
+  gap: var(--sp-3);
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.ve-toolbar__pos {
+  color: var(--text-2);
+  font-weight: var(--fw-med);
+}

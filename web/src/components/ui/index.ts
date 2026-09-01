@@ -19,28 +19,11 @@ export { ToastProvider, useToast } from "./Toast";
 
 /**
  * Visual Engine 组件集（M9，ADR-025）。
- * 纯逻辑模块（stepping/derive/highlight）与其单测同目录存放：
- * web/src/components/ui/visual-engine/，经深路径导入复用。
+ *
+ * **2026-09-01 所有者裁定：M9 组件不直接合入项目。**
+ * 样式与交互先在 `ui/visual-engine.html`（ui 库）定稿，再按定稿稿回灌本目录。
+ * 先前已合入的实现（35c3ef4）连同 58 项纯逻辑测试一并移出，归档在
+ * `ui/archive/visual-engine-tsx-2026-09-01/`，回灌时作为实现参考取回。
+ *
+ * 本文件**不再导出** M9 组件——避免出现「ui 库一套样式、项目里另一套」的双份来源。
  */
-export { VisualEngine } from "./visual-engine/VisualEngine";
-export { CodePane } from "./visual-engine/CodePane";
-export { DebugToolbar, KEY_BINDINGS } from "./visual-engine/DebugToolbar";
-export { FrameStackView } from "./visual-engine/FrameStackView";
-export { ArrayView } from "./visual-engine/ArrayView";
-export { GeneralView } from "./visual-engine/GeneralView";
-export {
-  canStep,
-  nextStepIndex,
-  stackDepth,
-  type StepAction,
-} from "./visual-engine/stepping";
-export {
-  computeHitCounts,
-  formatValue,
-  inlineValuesForLine,
-  changedKeys,
-  pickNumericArray,
-  changedIndices,
-  normalizeHeights,
-} from "./visual-engine/derive";
-export { tokenizePython, tokenizePythonLine } from "./visual-engine/highlight";
