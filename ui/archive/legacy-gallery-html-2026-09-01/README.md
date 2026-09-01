@@ -2,6 +2,10 @@
 
 > **本目录只读，不再维护。**
 > 这些示例仍可浏览器直接打开，但**不代表现行设计方向**，新工作不要以它们为模板。
+>
+> **2026-09-02 例外**：`spotlight-card.html` 以「空状态聚光引导」的**新形态**被解禁，
+> 新稿在根目录 `ui/spotlight-card.html`。此处保留的是**内容卡形态的旧稿**，仍被否决
+> ——两者不是同一件事，请勿把本文件当解禁版使用。
 
 ## 为什么归档
 
@@ -13,7 +17,7 @@
 | `app-shell.html` | 信息架构：笔记优先（2026-08-30） | 细顶栏 + 侧边栏 + 平级入口导航，正是「取消 7 个平级 tab」要推翻的形态；现行主界面是 `note-workspace.html` 三栏工作区 |
 | `bento-dashboard.html` | 同上：仪表盘删除 | 单屏 Bento 网格展示复习/掌握度/趋势/图谱；裁决为「学习数据分散到该出现处（复习徽章、右栏掌握度）」，不设独立仪表盘 |
 | `marquee.html` | ADR-013 硬约束 | 无缝横向滚动属纯装饰动效，项目禁装饰性动效；且 MiMo「共建生态」式营销段落与笔记应用无对应关系 |
-| `spotlight-card.html` | ADR-013 硬约束 | 鼠标跟随聚光描边（Aceternity UI 灵感）依赖光晕/半透层，与「禁 glassmorphism、橙只作注意力指针」冲突 |
+| `spotlight-card.html` | ADR-013 硬约束（**2026-09-02 部分解除**） | 鼠标跟随聚光依赖 gradient，与 §2.7「禁 gradient」冲突。**经裁定：以「空状态引导」限定形态解禁**，新稿见根目录 `ui/spotlight-card.html` 与 ADR-013 §2.13。本目录保留的旧稿是**内容卡形态**（笔记/反链/掌握度、今日复习/本周报告/薄弱概念）——该形态**仍然被否决**，保留作证据 |
 
 ## 为什么保留而不是删除
 
@@ -28,7 +32,8 @@
 |---|---|
 | App Shell | `note-workspace.html`（三栏 · 笔记优先） |
 | Bento Dashboard | `note-workspace.html` 右栏标签（掌握度/复习在此） |
-| Marquee / Spotlight | `motion-primitives.html`（FadeIn / CountUp / ProgressRing 等合规动效） |
+| Marquee | `motion-primitives.html`（FadeIn / CountUp / ProgressRing 等合规动效） |
+| Spotlight | `ui/spotlight-card.html`（已解禁 · 仅限空状态引导，见 ADR-013 §2.13） |
 
 ## 归档纪律
 

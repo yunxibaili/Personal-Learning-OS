@@ -17,14 +17,17 @@
 | `note-workspace.html` | **笔记工作区（建议主界面）**：三栏（列表 / 编辑器 / 上下文），680px 行宽，可视化降为右栏标签 | `web/src/views/NoteEditor.tsx` |
 | `note-tree.html` | **多层级笔记列表规范页（2026-09-01 新增）**：主/副笔记单父树（层级=缩进 · 橙只给选中 · 过滤命中分支自动展开 · orphan 保留+警告不删），可交互演示 + 前后对照 + 交互/通道预算/业界对照规范表 | ADR-024 · 回灌替换 `NoteListView` 平铺列表 |
 | `home-hero.html` | 首页 Hero（大字 + 橙色渐变 CTA + 自包含点阵地球 + 轨道卫星 + 浮动芯片） | `docs/DESIGN.md` §3 |
-| `motion-primitives.html` | 动效基元（FadeInUp / CountUp / Skeleton / Toast / ProgressRing / WaveUnderline / SegmentedControl / Input） | 跨组件复用 |
+| `motion-primitives.html` | 动效基元（FadeInUp / CountUp / Skeleton / Toast / ProgressRing / WaveUnderline / SegmentedControl / Input）+ **落点清单**（2026-09-02 新增，结论；完整判定表在 `empty-states.html` §④） | 跨组件复用 |
+| `spotlight-card.html` | **空状态聚光引导规范页（2026-09-02 解禁）**：鼠标跟随聚光。**仅限**「无内容可读 + 单一 CTA」的空状态 / 首次引导 / 加载失败兜底；三条门禁 + 实现约束 + 内容卡反例对照 | ADR-013 §2.13 · 首选落点 `GalaxyCanvas.tsx:741` 空态 |
+| `empty-states.html` | **空态与首次引导规范页（2026-09-02 新增）**：`web/` 全量 12 个空态分支逐条判定（1 允许 / 4 补 CTA 后允许 / 7 禁止）+ 4 个允许落点真实演示 + 反例对照 + 加载态 Skeleton 对照 + **动效基元落点清单（唯一来源）** + 编码通道 / 实现约束 / a11y 规范表 | ADR-013 §2.13 · `empty-states.smoke.js` |
+| `empty-states.smoke.js` | 空态页零依赖守护脚本（48 项断言）：门禁 2「卡内 button 数 = 1」/ 判定统计 / 聚光实现约束 / 单 rAF 30fps 节流 / 可撤销开关 / 令牌合规 | `empty-states.html` |
 | `visual-engine.html` | **M9 视觉引擎原型页（样式定稿处）**：6 示例真实 TraceRun + 编码通道预算表 + 组件规格表 + 步进语义表 | `visual-engine/` · ADR-025 |
 | `visual-engine.smoke.js` | 原型页零依赖 DOM 冒烟脚本（36 项断言，驱动内联的真实 TraceRun） | `visual-engine.html` |
 | `visual-engine/` | **M9 视觉引擎组件库**（TS/TSX）：6 组件 + 3 纯逻辑模块 + CSS。**仅 ui 库，未合并进 `web/`**，回灌归 M9-007 | `UI_DESIGN.md` §7.4 · ADR-025 v3 |
 | `visual-engine-demo.html` | **M9 视觉引擎演示页（组件跑起来的样子）**：页面壳按 ui 库规范，组件样式直接引用 `./visual-engine/visual-engine.css`（不复制不重写）；数据/渲染脚本由同步脚本从定稿处注入 | `visual-engine.html` · `visual-engine/` |
 | `visual-engine/sync-demo-html.mjs` | 演示页同步脚本（幂等）：把定稿处的 `#traceData`（6 示例真实 TraceRun）与主渲染脚本注入演示页占位块。改完 `visual-engine.html` 后重跑一次即可 | `visual-engine-demo.html` |
 | `archive/visual-engine-tsx-2026-09-01/` | **归档**：样式定稿前的 M9 TSX 稿，冻结不再维护 | 已被 `visual-engine/` 取代 |
-| `archive/legacy-gallery-html-2026-09-01/` | **归档**：`app-shell.html` · `bento-dashboard.html` · `spotlight-card.html` · `marquee.html`（与后续设计裁决冲突，理由见该目录 `README.md`） | `UI_DESIGN.md` §7.1/§7.2 已标 `归档·` / ⛔ |
+| `archive/legacy-gallery-html-2026-09-01/` | **归档**：`app-shell.html` · `bento-dashboard.html` · `marquee.html`（与后续设计裁决冲突，理由见该目录 `README.md`）；另有 `spotlight-card.html` **旧稿**——其「内容卡聚光」形态仍被否决，2026-09-02 以「空状态引导」限定形态解禁，新稿在根目录 `spotlight-card.html` | `UI_DESIGN.md` §7.1/§7.2 已标 `归档·` / ⛔ · ADR-013 §2.13 |
 | `assets/dots-world.png` | 点阵世界贴图（地球自转滚动用，2000×1049） | `home-hero.html` |
 
 ### M9 视觉引擎：`visual-engine/` 的三条边界
@@ -34,8 +37,48 @@
 2. **样式回溯**：任何样式疑问以 `visual-engine.html` 为准，组件 CSS 是它的等值转写。
 3. **旧稿归档**：`archive/` 只进不出——需要复用时 copy 到 `ui/` 根目录新文件并重新登记，不原地修改。
    两个归档目录：`visual-engine-tsx-2026-09-01/`（M9 样式定稿前 TSX 稿）、
-   `legacy-gallery-html-2026-09-01/`（4 个违背现行裁决的旧画廊 HTML）。
+   `legacy-gallery-html-2026-09-01/`（3 个违背现行裁决的旧画廊 HTML + 1 份
+   spotlight 旧稿——后者已于 2026-09-02 以「空状态引导」新形态解禁回根目录）。
    总览页 `index.html` 对归档项统一 `is-archived` 灰显并标注「已归档」。
+
+## 目录分层：启用 vs 归档（2026-09-02 所有者裁定，现行规则）
+
+**根目录 = 只放现行启用项；不用的全部收进 `ui/archive/<批次>-<日期>/`。**
+
+| 层 | 位置 | 判定 | 要求 |
+|---|---|---|---|
+| **启用** | `ui/` 根目录 | 现行设计方向的唯一来源，新工作以它为模板 | 必须在下方「文件索引」登记；配色走 `tokens.css`，不写裸值 |
+| **归档** | `ui/archive/<批次>-<日期>/` | 与现行裁决冲突、或已被取代的旧稿 | 目录内必须带 `README.md` 写清**为何归档**；`index.html` 中标 `is-archived` 灰显并指向归档路径 |
+| **支座** | `ui/assets/` · `ui/visual-engine/` | 被启用项引用的资源 / 组件库，本身不是示例页 | 随引用方一同维护 |
+
+**三条纪律**：
+
+1. **归档只进不出**：归档目录内的文件不再原地修改。需要复用就 copy 到根目录新文件并重新登记
+   ——2026-09-02 的 spotlight 解禁即照此办理：根目录新建合规形态，归档旧稿原样保留作否决证据。
+2. **解禁要改 ADR**：把归档项拿回来用，必须先在设计文档/ADR 里写清**新的适用范围**，
+   不能只挪文件。spotlight 的适用边界见 ADR-013 §2.13。
+3. **不留悬空引用**：任何文件移动/归档后，全库 grep 旧路径并同步
+   （`README.md` · `index.html` · `UI_DESIGN.md` · `docs/`）。
+
+## 规范 vs 接线（2026-09-02 所有者裁定）
+
+**ui 库只出规范，不做接线；`web/` 业务代码本轮不动。**
+
+`empty-states.html` 与 `motion-primitives.html` 里的落点清单是**接线任务的依据**，不是施工单。
+开工时直接按清单执行，不要重新盘点一遍。
+
+判定背景：全量 19 个 `web/src/components/ui/` 导出组件里，只有 5 个进了业务
+（`Progress` 2 · `Badge` 2 · `Tooltip` 1 · `Select` 1，以及 `ToastProvider` 仅挂载、
+`useToast()` 调用数 0）。**`Button` 的业务引用数是 0**——
+这不是「某几个基元找不到落点」，而是**整个组件层都没接线**，需要整体排期，不适合零散修补。
+
+| 基元/组件 | 落点 | 状态 |
+|---|---|---|
+| `Skeleton` | `NoteEditor.tsx:266` · `ReviewSessionView.tsx:158` · `GalaxyCanvas.tsx:727`（三处裸文字加载态） | 待接线 |
+| `Toast`（`useToast`） | Provider 已挂 `App.tsx:90`；落点：保存失败 / 同步冲突 / 复习提交反馈 | 待接线 |
+| `Tabs` | `ContextRail.tsx:79-95` 手写 tablist（语义逐项等价，需扩 Badge 槽位） | 待接线 |
+| Spotlight | `GalaxyCanvas.tsx:741` `!planet` 空态（**须先补一个 CTA**，否则门禁 2 不过） | 待接线 |
+| `SegmentedControl` / `WaveLink` | 不适用（`role="radiogroup"` 与 tab 语义冲突 / 反链是动作应留 button） | 不接线 |
 
 ## 信息架构：笔记优先（2026-08-29）
 
@@ -159,3 +202,10 @@ ADR-023 已同步修订，「禁止」条款补上唯一例外，并新增「编
 | 2026-09-01 | **旧画廊 HTML 归档**：`app-shell` / `bento-dashboard` / `spotlight-card` / `marquee` 四项与现行裁决冲突，移入 `archive/legacy-gallery-html-2026-09-01/`（含归档理由 README）；总览页 `index.html` 新增 M9 Visual Engine 卡片，归档项 `is-archived` 灰显并改指归档路径 |
 | 2026-09-01 | **M9 演示页落地**：新增 `visual-engine-demo.html`（ui 库规范页面壳 + 组件样式直引 `visual-engine/visual-engine.css`）与幂等同步脚本 `visual-engine/sync-demo-html.mjs`——数据与渲染脚本只从定稿处 `visual-engine.html` 注入，杜绝手抄漂移。无头浏览器自检：3 章节渲染/步进交互/编码通道/21 个导出符号全通过，零运行时错误 |
 | 2026-09-01 | **多层级笔记列表规范页**：新增 `note-tree.html`——主/副笔记单父树（V1 只渲染一层，星球/卫星）。行/箭头双命中区、过滤命中分支自动展开、键盘 ↑↓→←、orphan 进「未挂载」组保留+警告不删。无头浏览器自检：展开收起/选中切换/键盘/过滤/orphan 全过，零运行时错误。数据规则对齐 ADR-024 裁决链（Markdown 事实源 · resolve_hierarchy 统一消费） |
+| 2026-09-02 | **Spotlight 解禁（限定空状态引导）**：`spotlight-card.html` 以「空状态聚光引导」新形态回到 `ui/` 根目录——三条门禁（空状态 / 单一 CTA / 可撤销）+ 实现约束表 + 内容卡反例对照；可交互（真实 pointermove 跟随，单 rAF + 30fps 节流）。内容卡形态的旧稿保留在归档，作「为何否决内容卡聚光」的证据。ADR-013 新增 §2.13，为 §2.7「禁 gradient」的**唯一**例外 |
+| 2026-09-02 | **ui 库启用/归档分层清理**：根目录只留现行启用项，归档一律收进 `ui/archive/<批次>-<日期>/` 并各带理由 README；`index.html` 归档卡统一 `is-archived` 灰显且链接指向归档路径 |
+| 2026-09-02 | **空态与首次引导规范页**：新增 `empty-states.html` —— `web/` 全量 12 个空态分支按 ADR-013 §2.13 三门禁逐条判定（**1 直接允许** = `NoteEditor.tsx:278` 首篇 onboarding、**4 补 CTA 后允许** = Galaxy 空态/错误 · MindMap 空态 · Review 临界、**7 禁止** = 含 3 处加载态应走 Skeleton + 右栏/雷达/搜索浮层等有内容可读的界面）；4 个允许落点真实演示（可交互聚光 + 「模拟触摸/reduced-motion」开关）+ 内容卡与右栏反例对照 + Skeleton 加载态对照；另附**动效基元落点清单**（本库唯一来源） |
+| 2026-09-02 | **空态页守护脚本**：新增 `empty-states.smoke.js`（零依赖最小 DOM shim，48 项断言）—— 守住门禁 2「允许落点卡内 `button` 数 = 1」、判定统计 1/4/7、聚光强度与半径、30fps 节流、可撤销开关、令牌合规。回归验证已实跑：故意往卡里加第二个按钮 + 改坏聚光强度 → 立即 3 failed，回退后 48 全绿。修掉实现侧一处隐患：`lastWrite` 初值由 `0` 改 `-Infinity`（原写法会让页面加载后头 33ms 内的首次移动被误判为节流中） |
+| 2026-09-02 | **索引页补齐**：`index.html` 新增 Empty States / UI Preview / Visual Engine Demo 三张卡（后两张此前只在 README 登记、总览页缺失）；校验通过——17 个链接全部可达、13 张卡片无重复、根目录 10 个示例 HTML 全部登记 |
+| 2026-09-02 | **动效基元落点清单**：`motion-primitives.html` 新增落点区（可直接用 / 需调·限范围 / 不适用 三档），完整判定表指向 `empty-states.html` §④，不复制避免两处维护 |
+| 2026-09-02 | **所有者裁定：规范与接线分离**。Spotlight 与动效基元**只出规范，不写入 `web/` 业务代码**（沿用「组件先在 ui 库定稿」节奏，与 M9-007 回灌同一批）。背景：19 个 `components/ui/` 导出组件中仅 5 个进业务，`Button` 引用数为 0 —— 属整层未接线，需整体排期。裁定与接线状态表见本 README「规范 vs 接线」 |

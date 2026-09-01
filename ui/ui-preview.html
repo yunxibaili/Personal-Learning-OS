@@ -711,8 +711,10 @@ p_disease_given_pos = p_pos_given * p_disease / p_pos
   <p class="pv-sub">
     直接引用 <code style="font-family:var(--mono);font-size:13px">learning-os/ui/</code> 里的自包含组件，
     <b>原样展示，未做任何修改</b>。下面切换即可看到真实效果——这些就是现成的实现，不用另写。
-    <br><span style="color:var(--text-3)">标注「已归档」的 4 项（App Shell / 聚光卡片 / 无缝滚动 / Bento Dashboard）已于
-    2026-09-01 移入 <code style="font-family:var(--mono)">ui/archive/</code>，不再代表现行设计方向。</span>
+    <br><span style="color:var(--text-3)">标注「已归档」的 3 项（App Shell / 无缝滚动 / Bento Dashboard）已于
+    2026-09-01 移入 <code style="font-family:var(--mono)">ui/archive/</code>，不再代表现行设计方向。
+    <strong>聚光卡片已于 2026-09-02 解禁</strong>——以「空状态引导」限定形态回到根目录，
+    仅限「无内容 + 单一 CTA」场景，见 ADR-013 §2.13。</span>
   </p>
 
   <div class="lib-filters" id="compTabs">
@@ -720,20 +722,22 @@ p_disease_given_pos = p_pos_given * p_disease / p_pos
     <span class="tag" data-c="note-workspace.html">笔记工作区</span>
     <span class="tag" data-c="home-hero.html">Home Hero + 地球</span>
     <span class="tag" data-c="motion-primitives.html">动效基元</span>
+    <span class="tag" data-c="spotlight-card.html">空状态聚光引导</span>
     <span class="tag" data-c="graph-view.html">知识图谱规范</span>
     <span class="tag" data-c="visual-engine.html">M9 视觉引擎</span>
     <span class="tag" data-c="archive/legacy-gallery-html-2026-09-01/app-shell.html">App Shell（已归档）</span>
-    <span class="tag" data-c="archive/legacy-gallery-html-2026-09-01/spotlight-card.html">聚光卡片（已归档）</span>
     <span class="tag" data-c="archive/legacy-gallery-html-2026-09-01/marquee.html">无缝滚动（已归档）</span>
     <span class="tag" data-c="archive/legacy-gallery-html-2026-09-01/bento-dashboard.html">Bento Dashboard（已归档）</span>
   </div>
 
-  <iframe id="compFrame" title="ui 组件预览" src="_c/index.html"
+  <iframe id="compFrame" title="ui 组件预览" src="./index.html"
     style="width:100%;height:900px;border:1px solid var(--border);border-radius:var(--r-xl);background:#fff;display:block"></iframe>
 
   <div class="foot">
-    组件文件已从 <code style="font-family:var(--mono)">learning-os/ui/</code> 复制到本目录的 <code style="font-family:var(--mono)">_c/</code>（含 assets/dots-world.png），
-    以 iframe 原样嵌入。项目里的原始文件<b>一个字节都没动</b>。
+    <b>2026-09-02 修复</b>：本页 iframe 原先指向 <code style="font-family:var(--mono)">_c/</code> 子目录，
+    但该目录在 2026-08-30 从评审稿收编时未一并带入，导致组件预览全部 404。
+    现改为直接引用 <code style="font-family:var(--mono)">ui/</code> 根目录的同名文件（本页就在该目录内），
+    不再需要中间副本。星系 Tab 用到了 <code style="font-family:var(--mono)">home-hero.html</code> 的地球渲染逻辑，其他新视图（批注 / 知识库 / 模型设置）在 ui/ 里没有对应组件，仍需实现。
     星系 Tab 用到了 <code style="font-family:var(--mono)">home-hero.html</code> 的地球渲染逻辑，其他新视图（批注 / 知识库 / 模型设置）在 ui/ 里没有对应组件，仍需实现。
   </div>
 </section>
@@ -744,7 +748,7 @@ p_disease_given_pos = p_pos_given * p_disease / p_pos
     直接嵌入 <code style="font-family:var(--mono);font-size:13px">ui/graph-view.html</code> —— 它本身就是规范页：
     <b>前后对照 + 规范表 9 条 + 已移除噪音 8 项 + ADR-023 裁决记录</b>。原来我自己画的对比图是多余的。
   </p>
-  <iframe title="知识图谱规范" src="_c/graph-view.html" loading="lazy" style="width:100%;height:900px;border:1px solid var(--border);border-radius:var(--r-xl);background:#fff;display:block"></iframe>
+  <iframe title="知识图谱规范" src="./graph-view.html" loading="lazy" style="width:100%;height:900px;border:1px solid var(--border);border-radius:var(--r-xl);background:#fff;display:block"></iframe>
 </section>
 
 <!-- ══════════ Tab 4 复习专注 ══════════ -->
@@ -794,7 +798,7 @@ p_disease_given_pos = p_pos_given * p_disease / p_pos
     本身就有 <b>基础 Foundations（色板 / 字阶 / 间距）+ 组件 Components + 页面 Pages</b> 三部分。
     比我另抄一份令牌表更权威，也不会和 <code style="font-family:var(--mono)">tokens.css</code> 漂移。
   </p>
-  <iframe title="设计系统总览" src="_c/index.html" loading="lazy" style="width:100%;height:1500px;border:1px solid var(--border);border-radius:var(--r-xl);background:#fff;display:block"></iframe>
+  <iframe title="设计系统总览" src="./index.html" loading="lazy" style="width:100%;height:1500px;border:1px solid var(--border);border-radius:var(--r-xl);background:#fff;display:block"></iframe>
 </section>
 
 <!-- ══════════ Tab 6 星系 ══════════ -->
@@ -1796,7 +1800,7 @@ document.querySelectorAll('#compTabs .tag').forEach(function(t){
     document.querySelectorAll('#compTabs .tag').forEach(function(x){ x.classList.remove('tag-brand'); });
     t.classList.add('tag-brand');
     var f = document.getElementById('compFrame');
-    if (f) f.src = '_c/' + t.dataset.c;
+    if (f) f.src = t.dataset.c;
   });
 });
 </script>

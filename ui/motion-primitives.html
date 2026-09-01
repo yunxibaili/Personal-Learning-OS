@@ -195,10 +195,38 @@
     box-shadow: var(--shadow-glow);
   }
 
+  /* ---- 落点清单（2026-09-02 新增） ---- */
+  .landing { margin-top: var(--sp-16); padding-top: var(--sp-8); border-top: 1px solid var(--border); }
+  .landing h2 { font-size: 22px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 10px; }
+  .landing > p { color: var(--text-2); font-size: 14px; line-height: 1.8; max-width: 720px; margin: 0 0 10px; }
+  .landing > p strong { color: var(--text); font-weight: 600; }
+  .landing > p code, .landing-card code { font-family: var(--mono); font-size: 12.5px; }
+  .landing > p a { color: var(--brand-text); }
+  .landing .ruling-line {
+    border-left: 3px solid var(--brand-deep); background: var(--brand-soft);
+    padding: 10px 14px; border-radius: 0 var(--r-sm) var(--r-sm) 0; margin-top: 4px;
+  }
+  .landing .ruling-line strong { color: var(--text); }
+  .landing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: var(--sp-6); }
+  .landing-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 16px 18px;
+  }
+  .landing-card h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .landing-card p { margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.75; }
+  .landing-tag {
+    display: inline-block; font-size: 11.5px; font-weight: 600; line-height: 1.6;
+    padding: 1px 8px; border-radius: var(--r-pill); margin-bottom: 8px;
+  }
+  .landing-card.ok   .landing-tag { background: var(--ok-soft);   color: var(--ok-text);   border: 1px solid var(--ok-text); }
+  .landing-card.warn .landing-tag { background: var(--warn-soft); color: var(--warn-text); border: 1px solid var(--warn-text); }
+  .landing-card.no   .landing-tag { background: var(--err-soft);  color: var(--err-text);  border: 1px solid var(--err-text); }
+
   /* 响应 */
   @media (max-width: 720px) {
     .grid { grid-template-columns: 1fr; }
     .head h1 { font-size: 32px; }
+    .landing-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -370,6 +398,67 @@
           </div>
           <button class="btn btn-primary">+ 新建笔记</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 落点清单（2026-09-02 新增） ========== -->
+  <div class="landing">
+    <h2>落点清单</h2>
+    <p>
+      这 8 个基元在 <code>web/</code> 里<strong>已全部实现</strong>，但目前只有 <code>ToastProvider</code>
+      真在业务里（<code>App.tsx:90</code> 挂载）；其余 7 个全部只出现在
+      <code>web/src/dev/ComponentGallery.tsx</code>。问题不是「找不到地方用」，是<strong>造好了没接线</strong>。
+    </p>
+    <p>
+      完整判定表（含冲突项与不适用项）见
+      <a href="./empty-states.html#motion">空态规范页 §④ 动效基元落点清单</a>——那张表是唯一来源，
+      本页只放结论，不复制，避免两处维护。
+    </p>
+    <p class="ruling-line">
+      <strong>2026-09-02 所有者裁定：只出规范，不接线。</strong>
+      本清单是落点依据，不是施工单——<code>web/</code> 业务代码本轮不动。
+    </p>
+
+    <div class="landing-grid">
+      <div class="landing-card ok">
+        <span class="landing-tag">可直接用</span>
+        <h3>Skeleton</h3>
+        <p>三处加载态现在都是裸文字：<code>NoteEditor.tsx:266</code> · <code>ReviewSessionView.tsx:158</code> ·
+           <code>GalaxyCanvas.tsx:727</code>。组件现成，只差替换，顺带消除 CLS。</p>
+      </div>
+      <div class="landing-card ok">
+        <span class="landing-tag">可直接用</span>
+        <h3>Toast</h3>
+        <p><code>ToastProvider</code> 已在 App 根挂载，但业务侧零 <code>useToast()</code> 调用。
+           落点：保存失败 · 同步冲突 · 复习提交反馈。</p>
+      </div>
+      <div class="landing-card ok">
+        <span class="landing-tag">语义等价</span>
+        <h3>Tabs</h3>
+        <p><code>ContextRail.tsx:79-95</code> 的手写 tablist 与 <code>Tabs</code> 的
+           <code>role="tablist"</code> / <code>role="tab"</code> / <code>aria-selected</code> 逐项等价。
+           需给 <code>Tabs</code> 扩一个 Badge 槽位（反链计数）。</p>
+      </div>
+      <div class="landing-card warn">
+        <span class="landing-tag">需调 / 限范围</span>
+        <h3>CountUp · FadeInUp · ProgressRing</h3>
+        <p><strong>CountUp</strong> 只在首次进视口跑一次，数字随数据变化后不再动（需按值加 <code>key</code>）。
+           <strong>FadeInUp</strong> 限列表入场，<strong>编辑器与工具栏禁用</strong>。
+           <strong>ProgressRing</strong> 不要用在右栏掌握度——那里已有 <code>Progress</code> 条形，
+           是 mastery 的唯一视觉出口。</p>
+      </div>
+      <div class="landing-card no">
+        <span class="landing-tag">不适用</span>
+        <h3>SegmentedControl</h3>
+        <p>不要拿它换 ContextRail 的 tab：它渲染 <code>role="radiogroup"</code>，
+           而 ContextRail 是真 tab 面板，换了会丢语义并丢 Badge 计数。</p>
+      </div>
+      <div class="landing-card no">
+        <span class="landing-tag">不适用</span>
+        <h3>WaveLink</h3>
+        <p>反链是「打开笔记」的<strong>动作</strong>，button 语义正确；<code>WaveLink</code> 渲染成
+           <code>&lt;a&gt;</code>，换掉会丢语义与键盘行为。</p>
       </div>
     </div>
   </div>

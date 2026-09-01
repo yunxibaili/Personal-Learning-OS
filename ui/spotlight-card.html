@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>空状态聚光引导 · spotlight-card — Open Learning OS</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  /* =============================================================================
+     页面外壳（沿用 ui/ 规范页骨架）
+     约束 ADR-013：无渐变背景 / 无 backdrop-filter / 无装饰 SVG / 无图标库 / 无 emoji 图标
+     唯一例外：聚光层本身使用 radial-gradient，依据 ADR-013 §2.13（空状态引导豁免）
+     ============================================================================= */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg-soft); color: var(--text);
+    font-family: var(--font); font-size: 14px; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+  header {
+    position: sticky; top: 0; z-index: var(--z-nav);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  header .wrap { height: var(--nav-h); display: flex; align-items: center; gap: 16px; }
+  .brand { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  .brand i { color: var(--brand-text); font-style: normal; }
+  header nav { margin-left: auto; display: flex; gap: 20px; font-size: 13px; }
+  header nav a { color: var(--text-2); text-decoration: none; }
+  header nav a:hover { color: var(--text); }
+
+  .hero { padding: 56px 0 28px; }
+  .eyebrow {
+    display: inline-block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--brand-text); margin-bottom: 14px;
+  }
+  h1 { font-size: 40px; line-height: 1.15; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 600; }
+  h1 em { font-style: normal; color: var(--brand-text); }
+  .hero p { max-width: 660px; color: var(--text-2); font-size: 15px; line-height: 1.8; margin: 0; }
+  .hero code, td code, li code {
+    font-family: var(--mono); font-size: 13px;
+    background: var(--surface-2); border: 1px solid var(--border-soft);
+    padding: 1px 5px; border-radius: var(--r-xs);
+  }
+
+  section { padding: 40px 0 8px; }
+  h2 { font-size: 24px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 6px; }
+  .sec-sub { color: var(--text-2); font-size: 14px; margin: 0 0 24px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 28px;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 14px; border: 1px solid var(--border-soft); vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 600; color: var(--text-2); font-size: 12px; }
+  td { color: var(--text-2); line-height: 1.6; }
+  td strong { color: var(--text); font-weight: 600; }
+
+  footer { padding: 56px 0 72px; color: var(--text-3); font-size: 12px; }
+
+  /* =============================================================================
+     ① 组件：空状态聚光引导（Spotlight Empty State）
+     编码通道预算（一个维度 = 一个通道）：
+       引导     = 聚光（radial-gradient 跟随指针，仅 hover，强度 ≤ .13）
+       主 CTA   = brand-deep 底 + 白字（4.13:1，AA 达标）
+       次信息   = text-2 说明行（不抢 CTA）
+       分区     = border 1px（不靠阴影）
+     -------------------------------------------------------------------------------
+     三条硬门禁（缺一不可，见 ADR-013 §2.13）：
+       1. 空状态 / 首次引导 / Onboarding —— 界面无可读内容
+       2. 该界面只有一个主 CTA（唯一出口）
+       3. 仅 hover 触发；触摸设备与 prefers-reduced-motion 下完全不启用
+     ============================================================================= */
+
+  .stage {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    background: var(--bg-soft);
+  }
+  .stage > .sl:first-child { grid-column: 1 / -1; }
+
+  /* 聚光卡本体 */
+  .sl {
+    position: relative; isolation: isolate; overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-8);
+    display: flex; flex-direction: column; gap: var(--sp-3);
+    min-height: 148px;
+  }
+  /* 大号空状态（星系）：横向排布，左文右 CTA */
+  .sl--hero {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    gap: var(--sp-8); min-height: 180px; padding: var(--sp-10);
+  }
+
+  /* 聚光层 —— 默认不存在，仅在「可 hover + 未要求减少动效」时挂载 */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .sl::before {
+      content: "";
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(
+        320px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 107, 53, .13),
+        rgba(255, 107, 53, .04) 38%,
+        transparent 62%
+      );
+      opacity: 0;
+      transition: opacity var(--dur) var(--ease-out);
+    }
+    .sl:hover::before { opacity: 1; }
+    .sl--hero::before { background: radial-gradient(
+        460px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 107, 53, .13),
+        rgba(255, 107, 53, .04) 38%,
+        transparent 62%
+      ); }
+  }
+  .sl > * { position: relative; z-index: 1; }
+
+  /* 文案层级：标题 → 说明 → CTA，只有一个出口 */
+  .sl__eyebrow {
+    font-size: var(--fs-xs); letter-spacing: var(--tracking-caps);
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .sl__title { font-size: var(--fs-xl); font-weight: 600; letter-spacing: var(--tracking-snug); margin: 0; }
+  .sl--hero .sl__title { font-size: var(--fs-3xl); }
+  .sl__desc { color: var(--text-2); font-size: var(--fs-md); line-height: var(--lh-relaxed); margin: 0; max-width: 46ch; }
+  .sl__desc code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+
+  /* 唯一 CTA：brand-deep 底（白字 4.13:1 AA）；不用 gradient（§2.7） */
+  .sl__cta {
+    align-self: flex-start;
+    appearance: none; border: none; cursor: pointer;
+    font-family: var(--font); font-size: var(--fs-sm); font-weight: 600;
+    padding: 10px 18px; border-radius: var(--r-md);
+    background: var(--brand-deep); color: var(--text-inv);
+    transition: background var(--dur-fast) var(--ease-out);
+  }
+  .sl__cta:hover { background: var(--brand-text); }   /* 5.18:1 */
+  .sl__cta:focus-visible { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+
+  /* 大号卡里 CTA 右置、不拉伸 */
+  .sl--hero .sl__cta { align-self: center; flex-shrink: 0; }
+  .sl--hero .sl__body { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+  /* =============================================================================
+     ② 允许 / 禁止 对照
+     ============================================================================= */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .vs-col { border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+  .vs-col > h4 {
+    margin: 0; padding: 12px 18px; font-size: var(--fs-sm); font-weight: 600;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .vs-col.ok > h4 { background: var(--ok-soft); color: var(--ok-text); }
+  .vs-col.no > h4 { background: var(--err-soft); color: var(--err-text); }
+  .vs-col ul { margin: 0; padding: 14px 18px 18px 34px; color: var(--text-2); line-height: 1.85; font-size: var(--fs-sm); }
+  .vs-col li strong { color: var(--text); font-weight: 600; }
+
+  /* 反例卡：故意演示「内容卡上聚光」为什么不行 —— 有内容可读，聚光即干扰 */
+  .sl--bad { min-height: 0; }
+  .sl--bad .sl__title { font-size: var(--fs-md); }
+  .sl--bad::after {
+    content: "✕ 内容卡 · 禁用";
+    position: absolute; top: 10px; right: 12px; z-index: 2;
+    font-size: var(--fs-xs); font-weight: 600;
+    color: var(--err-text); background: var(--err-soft);
+    border: 1px solid var(--err-text); border-radius: var(--r-xs);
+    padding: 2px 8px;
+  }
+  .sl__list { margin: 0; padding-left: 18px; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.9; }
+
+  .note {
+    border-left: 2px solid var(--brand-line); background: var(--brand-soft);
+    padding: 12px 16px; border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    font-size: var(--fs-sm); color: var(--text-2); line-height: 1.7; margin: 20px 0 0;
+  }
+  .note strong { color: var(--text); }
+
+  @media (max-width: 860px) {
+    .stage, .vs { grid-template-columns: 1fr; }
+    .sl--hero { flex-direction: column; align-items: flex-start; }
+    .sl--hero .sl__cta { align-self: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">Open Learning <i>OS</i>.</div>
+    <nav>
+      <a href="./index.html">总览</a>
+      <a href="./note-workspace.html">工作区</a>
+      <a href="./UI_DESIGN.md">设计系统</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="eyebrow">M-SPOTLIGHT · 空状态聚光引导</span>
+    <h1>聚光是<em>引导</em>，不是装饰</h1>
+    <p>
+      鼠标经过时，一团很淡的暖光从指针位置溢出，把视线推向唯一的出口。
+      它<strong>只在空状态里成立</strong>——当界面没有内容可读、且用户只有一条路可走时，
+      聚光是功能；一旦界面有了要读的内容，聚光就变成了干扰阅读的装饰，那正是
+      ADR-013 §2.7 要禁的东西。本页把这条边界写死：下面三张卡可交互，把鼠标移上去看效果。
+    </p>
+  </div>
+
+  <!-- ==================================================== ① 交互演示 -->
+  <section>
+    <h2>交互演示</h2>
+    <p class="sec-sub">三张卡都处于「无内容 + 单一出口」状态。聚光仅在指针悬停时出现，移开即散。</p>
+    <div class="panel" style="background:var(--bg-soft); border:none; padding:0;">
+      <div class="stage">
+
+        <!-- A · 知识星系空状态（全宽） -->
+        <div class="sl sl--hero" data-spotlight>
+          <div class="sl__body">
+            <span class="sl__eyebrow">知识星系 · 空状态</span>
+            <h3 class="sl__title">还没有笔记——回工作区写第一篇</h3>
+            <p class="sl__desc">
+              星球由 <code>[[双链]]</code> 生长：链出去 ≥2 篇的笔记会成为星球，
+              被引用的成为它的卫星。写下第一篇，星系就有了第一颗星。
+            </p>
+          </div>
+          <button class="sl__cta" type="button">回工作区写笔记</button>
+        </div>
+
+        <!-- B · 首次引导 -->
+        <div class="sl" data-spotlight>
+          <span class="sl__eyebrow">首次引导 · Onboarding</span>
+          <h3 class="sl__title">先建一个 vault</h3>
+          <p class="sl__desc">
+            选一个文件夹作为笔记库。之后的所有笔记、双链与复习数据都留在这台机器上。
+          </p>
+          <button class="sl__cta" type="button">选择文件夹</button>
+        </div>
+
+        <!-- C · 空列表 -->
+        <div class="sl" data-spotlight>
+          <span class="sl__eyebrow">右栏 · 空列表</span>
+          <h3 class="sl__title">暂无反链</h3>
+          <p class="sl__desc">
+            还没有别的笔记引用这一篇。在别处用 <code>[[双链]]</code> 指向它，反链会自动出现在这里。
+          </p>
+          <button class="sl__cta" type="button">查看双链语法</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>为什么是这三张：</strong>它们都是「读无可读」的界面 —— 没有列表、没有正文、没有数据。
+      此时聚光承担的是<strong>指路</strong>，而不是<strong>装饰</strong>。
+      对比下面的反例：同一套效果放在内容卡上，立刻变成噪音。
+    </div>
+  </section>
+
+  <!-- ==================================================== ② 允许 / 禁止 -->
+  <section>
+    <h2>允许 / 禁止</h2>
+    <p class="sec-sub">右边那张卡刻意做了反例：内容一旦出现，聚光就该撤掉。</p>
+
+    <div class="vs">
+      <div class="vs-col ok">
+        <h4>✓ 允许 · 空状态引导（唯一出口）</h4>
+        <ul>
+          <li><strong>知识星系空态</strong>：还没有笔记</li>
+          <li><strong>首次引导 / Onboarding</strong>：建 vault、选文件夹</li>
+          <li><strong>空列表</strong>：暂无反链、暂无待复习、暂无记忆点</li>
+          <li><strong>加载失败兜底</strong>：只有「重试」一个出口时</li>
+        </ul>
+      </div>
+      <div class="vs-col no">
+        <h4>✕ 禁止 · 任何有内容可读的界面</h4>
+        <ul>
+          <li>笔记列表卡、复习卡、检索结果卡</li>
+          <li>右栏已有内容的面板（反链、掌握度、批注）</li>
+          <li>常亮聚光（非 hover 触发）</li>
+          <li>描边式聚光、玻璃态、霓虹发光</li>
+          <li>对外物料 / 落地页（另议，不属本例外）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px; background:var(--bg-soft); border:none; padding:0;">
+      <div class="stage">
+        <div class="sl sl--bad" data-spotlight style="grid-column:1 / -1;">
+          <span class="sl__eyebrow">反例 · 内容卡</span>
+          <h3 class="sl__title">今日复习</h3>
+          <ul class="sl__list">
+            <li>线性代数 · 矩阵乘法</li>
+            <li>数据结构 · 二叉树的遍历</li>
+            <li>概率论 · 条件概率</li>
+          </ul>
+          <button class="sl__cta" type="button">开始复习</button>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>反例判据：</strong>这张卡有三行要读的列表。聚光从字底下滑过时，
+      读者的注意力被从<em>内容</em>拉到<em>指针</em>上 —— 这直接违背「内容优先」，
+      也把橙从「注意力指针」降级成了「会动的背景」。因此禁用。
+    </div>
+  </section>
+
+  <!-- ==================================================== ③ 规范 -->
+  <section>
+    <h2>规范</h2>
+    <p class="sec-sub">三条门禁 + 实现约束。任一条不满足就回到普通卡片（无聚光）。</p>
+
+    <h3>三条门禁（缺一不可）</h3>
+    <table>
+      <thead>
+        <tr><th style="width:120px">条件</th><th>要求</th><th style="width:38%">判据</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>空状态</strong></td>
+          <td>界面无内容列表、无正文、无数据图表</td>
+          <td>渲染分支是 <code>empty</code> / <code>onboarding</code> / <code>error</code>，不是 <code>loaded</code></td>
+        </tr>
+        <tr>
+          <td><strong>单一出口</strong></td>
+          <td>该界面只有一个主 CTA，没有并列动作</td>
+          <td>卡内 <code>button</code> 数量为 1（关闭 / 辅助链接不计）</td>
+        </tr>
+        <tr>
+          <td><strong>可撤销</strong></td>
+          <td>仅 hover 触发；触摸设备与 <code>prefers-reduced-motion</code> 下完全不启用</td>
+          <td>整段包在 <code>@media (hover:hover) and (prefers-reduced-motion:no-preference)</code> 内</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>实现约束</h3>
+    <table>
+      <thead>
+        <tr><th style="width:120px">项</th><th>取值</th><th style="width:38%">理由</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>聚光强度</strong></td>
+          <td><code>rgba(255,107,53,.13)</code> 中心，38% 处衰减到 .04，62% 全透明</td>
+          <td>叠加在白底上不产生可见色块；不承载文字，因此不受对比度约束</td>
+        </tr>
+        <tr>
+          <td><strong>半径</strong></td>
+          <td>普通卡 320px / 大号卡 460px</td>
+          <td>覆盖卡片主体即可，不外溢到相邻卡片</td>
+        </tr>
+        <tr>
+          <td><strong>过渡</strong></td>
+          <td><code>opacity var(--dur) var(--ease-out)</code>（250ms）</td>
+          <td>ADR-013 §2.6 微交互 150–250ms 上限</td>
+        </tr>
+        <tr>
+          <td><strong>指针跟随</strong></td>
+          <td>事件委托 + 单 rAF + 30fps 节流；只写 <code>--mx/--my</code> 两个自定义属性</td>
+          <td>性能契约：单 rAF、30fps 节流、循环内不重建 DOM</td>
+        </tr>
+        <tr>
+          <td><strong>CTA 对比度</strong></td>
+          <td><code>--brand-deep</code> 底 + 白字 = <strong>4.13:1</strong>（AA）；hover 转 <code>--brand-text</code> 5.18:1</td>
+          <td><code>--brand</code> 配白字仅 2.84:1，不达标；故按钮不用 <code>--brand</code></td>
+        </tr>
+        <tr>
+          <td><strong>禁止</strong></td>
+          <td>gradient 描边、conic 流光、常亮光晕、box-shadow 动画</td>
+          <td>ADR-013 §2.7 / §2.10 完整有效，本例外只豁免「hover 时的背景光晕」</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>与 ADR-013 的关系：</strong>本组件是 §2.7「禁 gradient」的<strong>唯一例外</strong>，
+      依据 <code>docs/adr/ADR-013-frontend-design-system.md</code> §2.13（2026-09-02 所有者裁定）。
+      例外范围严格限定为「空状态引导的背景光晕」，不扩及渐变背景、按钮渐变、描边渐变或任何常亮效果。
+    </div>
+  </section>
+
+</div>
+
+<footer class="wrap">
+  Open Learning OS · 空状态聚光引导规范 · 2026-09-02 ·
+  例外依据 ADR-013 §2.13
+</footer>
+
+<script>
+  /* =========================================================================
+     聚光跟随：事件委托 + 单 rAF + 30fps 节流（性能契约）
+     只在支持 hover 且未要求减少动效时挂载；只写两个 CSS 自定义属性。
+     ========================================================================= */
+  (function () {
+    var canHover = window.matchMedia('(hover: hover)').matches;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!canHover || reduce) return;            // 不满足门禁 3 → 完全不启用
+
+    var FRAME_MS = 1000 / 30;                   // 30fps 节流
+    var rafId = 0, lastAt = 0, pending = null;
+
+    function flush() {
+      rafId = 0;
+      if (!pending) return;
+      var el = pending.el, x = pending.x, y = pending.y;
+      pending = null;
+      var r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', (x - r.left) + 'px');
+      el.style.setProperty('--my', (y - r.top) + 'px');
+    }
+
+    document.addEventListener('pointermove', function (e) {
+      var el = e.target.closest ? e.target.closest('[data-spotlight]') : null;
+      if (!el) return;
+      pending = { el: el, x: e.clientX, y: e.clientY };
+      var now = performance.now();
+      if (now - lastAt < FRAME_MS) {
+        if (!rafId) rafId = requestAnimationFrame(flush);
+        return;
+      }
+      lastAt = now;
+      flush();
+    }, { passive: true });
+
+    // 指针离开卡片：清掉坐标，避免下次进入时从旧位置闪一下
+    document.addEventListener('pointerleave', function () {
+      pending = null;
+    }, { passive: true });
+  })();
+</script>
+
+</body>
+</html>

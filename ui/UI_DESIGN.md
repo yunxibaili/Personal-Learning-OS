@@ -249,6 +249,11 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 > `marquee.html` 四个示例页已归档至 `archive/legacy-gallery-html-2026-09-01/`，下表以
 > `归档·<文件名>` 简写指代该目录下的同名文件。它们不再代表现行设计方向，
 > 仅作历史参考——归档理由见该目录 `README.md`。
+>
+> **2026-09-02 修正**：其中 `spotlight-card.html` 已以「空状态聚光引导」的**新形态解禁**，
+> 新稿回到 `ui/` 根目录。归档目录里保留的是**内容卡形态的旧稿**，该形态仍被否决。
+> 二者同名但不同物：本文件提到 `spotlight-card.html` 时指根目录解禁版，
+> 提到 `归档·spotlight-card.html` 时指被否决的旧稿。依据 ADR-013 §2.13。
 
 | 组件 | 视觉 | 示例 | 实现映射 |
 |---|---|---|---|
@@ -275,7 +280,7 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 | AppShell | 顶栏 64（半透白 blur）+ 内容区；视图切换为浮层态，**无平级侧边栏** | `note-workspace.html` · `ui-preview.html` | ✅ `components/shell/AppShell.tsx`（Phase 2 已实现）<br>⚠️ 旧示例 `归档·app-shell.html` 的**平级侧栏导航**已否决，仅顶栏尺寸/层次仍沿用 |
 | Hero | 12 列，左文 6 / 右图 6，地球 | `home-hero.html` | `components/planet/`（待建） |
 | ~~BentoGrid~~ | 不等高网格（1+1+2 / 1+3 等） | `归档·bento-dashboard.html` | ⛔ **已否决**：裁决 A 删除独立仪表盘，学习数据分散到该出现处 |
-| ~~SpotlightCard~~ | 鼠标跟随聚光描边（开源 Aceternity 风） | `归档·spotlight-card.html` | ⛔ **已否决**：ADR-013 禁 glassmorphism 与装饰性光晕 |
+| SpotlightCard | 鼠标跟随聚光（开源 Aceternity 风）；**仅限空状态引导** | `spotlight-card.html`<br>旧稿 `归档·spotlight-card.html` | ✅ **2026-09-02 解禁 · 限定范围**：仅用于「无内容可读 + 单一 CTA」的空状态 / 首次引导 / 加载失败兜底，三条门禁见 ADR-013 §2.13。**在内容卡上使用聚光仍 ⛔ 否决**——旧稿正是该形态 |
 | ~~Marquee~~ | 无缝横向滚动（开源 Magic UI 风） | `归档·marquee.html` | ⛔ **已否决**：ADR-013 禁装饰性动效 |
 | CommandPalette | Ctrl+K，浮层居顶 | v1 未建示例 | `stores/ui.ts` |
 | Wikilink | `[[...]]` 黄色高亮 + 墨蓝字 | `归档·app-shell.html`（笔记正文） | `editor/` |
@@ -370,7 +375,40 @@ cd ui/visual-engine && ../../web/node_modules/.bin/tsc --noEmit -p tsconfig.chec
 
 # HTML 原型冒烟（36 项断言，跑真实 tracer 产出的 TraceRun）
 node ui/visual-engine.smoke.js
+
+# 空态规范页冒烟（48 项断言，守门禁 2 与聚光实现约束）
+node ui/empty-states.smoke.js
 ```
+
+### 7.5 空态与首次引导（2026-09-02 新增 · 仅 ui 库）
+
+> **规范页**：[`empty-states.html`](./empty-states.html)（唯一来源）。
+> **组件规格**：[`spotlight-card.html`](./spotlight-card.html)（聚光卡本体 + 内容卡反例）。
+> **约束来源**：ADR-013 §2.13（Spotlight 例外 — 仅限空状态引导）。
+
+**空状态分两类，处理方式不同**：
+
+| 类型 | 特征 | 处理 |
+|---|---|---|
+| **加载中** | 数据未到 | **Skeleton 骨架屏**（容器定高 → 零 CLS） |
+| **真的没有内容** | 数据已到且为空 | 纯文字说明；仅当**同时**满足「无内容可读 + 唯一出口 + 可 hover」时才允许聚光引导 |
+
+**三条门禁（缺一不可）**：① 界面无内容列表/正文/图表（分支为 `empty`/`onboarding`/`error`，非 `loaded`）
+② 卡内 `button` 数 = 1（关闭与辅助链接不计）③ 仅 hover 触发，整段包在
+`@media (hover:hover) and (prefers-reduced-motion:no-preference)` 内。
+
+**全量审计结论**（`web/src` 12 个空态分支）：**1 个直接允许**（`NoteEditor.tsx:278` 首篇 onboarding）、
+**4 个补一个 CTA 后允许**（Galaxy 空态/错误 · MindMap 空态 · Review 临界）、**7 个禁止**
+（其中 3 处是加载态应走 Skeleton；其余为右栏 / 知识雷达 / 搜索浮层等有内容可读的界面）。
+完整逐条判定见 `empty-states.html` ①。
+
+**编码通道预算**：引导 = 聚光（中心 `rgba(255,107,53,.13)`、38% 处 .04、62% 全透明；半径 320/460px）·
+主 CTA = `--brand-deep` 底 + 白字（4.13:1 AA，**不用** `--brand` 的 2.84:1）·
+次信息 = `--text-2` 说明行 · 分区 = 1px 描边（不用阴影）。
+
+**接线状态（2026-09-02 所有者裁定）**：**只出规范，不写入 `web/` 业务代码**。
+首选落点 `galaxy/GalaxyCanvas.tsx:741`（`!planet`）当前**无 CTA**，接线时须先补唯一按钮，否则门禁 2 不过。
+动效基元落点清单见 `empty-states.html` ④，同为本轮只出规范。
 
 ---
 
@@ -441,8 +479,10 @@ node ui/visual-engine.smoke.js
 | 组件活文档 | `dev/ComponentGallery.tsx`（`#gallery`，dev-only） | ✅ Phase 1 |
 
 **作废**：`bento-dashboard.html`（裁决 A 删除仪表盘，§8；2026-09-01 归档）·
-`app-shell.html`（平级侧栏违背笔记优先 IA）· `spotlight-card.html` · `marquee.html`
-（ADR-013 禁装饰）——四者均归档至 `archive/legacy-gallery-html-2026-09-01/`，理由见该目录 `README.md`；
+`app-shell.html`（平级侧栏违背笔记优先 IA）· `marquee.html`（ADR-013 禁装饰动效）
+——三者归档至 `archive/legacy-gallery-html-2026-09-01/`，理由见该目录 `README.md`。
+`spotlight-card.html` **部分作废**：内容卡形态作废（旧稿留档作证据），
+空状态引导形态已于 2026-09-02 解禁回根目录，见 §7.2 与 ADR-013 §2.13；
 `components/universe/` 旧星系与 `components/planet/` 已被 `components/galaxy/` 取代
 （代码待项目所有者决定是否删除）。
 
@@ -478,6 +518,7 @@ node ui/visual-engine.smoke.js
 | v1 | 2026-08-29 | 初版。统一令牌到 MiMo 橙白体系；新增 5 个组件页（Home Hero / App Shell / Bento Dashboard / Spotlight / Marquee）+ 1 个动效基元页 + 总览导航页。`ui/README.md` 索引同步。 |
 | v1.1 | 2026-08-31 | **a11y 与一致性收口**：① §2.2 对比度改为**实测表**（原「品牌橙 3.6:1」为笔误，实测 2.84:1）；② 新增 `--brand-text #C2410C`（5.18:1）供品牌色作文字/白字底；`--brand` 降级为仅图形/填充；`--text-3` 由 `#A3A3A3`(2.52:1) 改为 `#737373`(4.74:1)；③ §11 映射表由「待同步」改为「已落地」真实状态，并补组件落地位置；④ §8 已按裁决 A 改写为笔记优先（原「六页面骨架」）。 |
 | v1.2 | 2026-09-01 | **新增 §7.4 M9 视觉引擎组件**：6 个组件 + 3 个纯逻辑模块落地 `visual-engine/`，**仅入 ui 库不合并 `web/`**（`web/src/components/ui/index.ts` 按裁定不导出）；旧 TSX 归档至 `archive/visual-engine-tsx-2026-09-01/`；登记心智模型（调试器非播放器）、7 条编码通道预算、键位偏离 VS Code 的理由、三条验证命令。**旧画廊 HTML 归档**：`app-shell.html` / `bento-dashboard.html` / `spotlight-card.html` / `marquee.html` 移入 `archive/legacy-gallery-html-2026-09-01/`（四项与设计裁决冲突，§7.1/§7.2 已标 `归档·` 与 ⛔ 已否决）；总览页 `index.html` 对归档项加 `is-archived` 灰显 + 新增 M9 Visual Engine 卡片。 |
+| v1.3 | 2026-09-02 | **Spotlight 解禁（限定范围）**：`spotlight-card.html` 以「空状态聚光引导」新形态回到 `ui/` 根目录——仅限「无内容可读 + 单一 CTA」的空状态 / 首次引导 / 加载失败兜底；内容卡形态仍 ⛔ 否决（旧稿留档作证据）。ADR-013 新增 **§2.13**，为 §2.7「禁 gradient」的**唯一**例外，写明三条门禁（空状态 / 单一出口 / 可撤销）与实现约束（聚光强度 ≤ .13、250ms、单 rAF + 30fps 节流、CTA 用 `--brand-deep` 白字 4.13:1）。§7.1 路径注、§7.2 组件表、§11 作废清单同步。**ui 库启用/归档分层清理**：`index.html` 拆为「组件 / 页面 / 归档」三区——前两区只放现行启用项，归档区集中 3 张 `is-archived` 卡片并指向 `ui/archive/<批次>-<日期>/`；导航加入口。修复归档文件内 8 处返回链接死链（`./index.html` / `./UI_DESIGN.md` → `../../`），全库扫描 14 个 HTML 零死链。 |
 
 ---
 
