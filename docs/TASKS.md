@@ -1568,6 +1568,21 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 |---|---|---|
 | T0 | ADR-026 v3 批准 + Q1–Q3 裁决 | `[x]`（2026-09-01） |
 | T1 | 契约 `NoteTreeNode`/`NoteTreeResponse`（shared/types/note.ts）+ `GET /notes/tree`（depth 校验/剪枝 + root_id 懒加载 + created_at 升序，经 resolve_hierarchy） | `[ ]` |
+
+**T1 实现要点（2026-09-01 已对照代码逐条核实，动工前必读）**：
+
+1. **路由顺序**：`GET /notes/tree` 是静态单段路径，必须注册在
+   `@router.get("/{note_id}")` **之前**（否则 `tree` 被当作 note_id 解析 → 422）。
+   既有先例：`/batch`、`/import` 都排在 `/{note_id}` 前（`notes.py`）。
+2. **排序字段现成**：`notes.created_at` 列已存在（`migrations/001_init.sql`，
+   `datetime('now')` 默认值）——created_at 升序零 migration；同值按 id 兜底。
+3. **契约含 `truncated`**：`NoteTreeNode` 需第四字段 `truncated: boolean`
+   （depth 截断处=true），前端靠它渲染「…」懒加载入口（ADR-026 v3 §3.2）。
+4. **参数校验手工做**：`depth` 越界（<1 或 >10）在 handler 内手工返回
+   422 `invalid_depth`——全局 RequestValidationError handler 会把 422 转 400
+   （与 `trace.py` 同模式），pydantic 自动校验靠不住。
+5. **orphan/cycle 零新代码**：`resolve_hierarchy()` 已把环上节点弹出 `parent_of`
+   并记入 `invalid`，树构建只消费其 `roots`/`children` 输出即可，禁再自行过滤。
 | T2 | 前端 `NoteTreeList`：默认展开 3 层 · 「…」懒加载展开 · 折叠箭头 · 展开状态本地偏好 | `[ ]` |
 | T3 | 守护测试（多级链 / forest / orphan·cycle 不进树且走 `_detect_cycles` / depth 剪枝 / root_id 子树 / created_at 升序 / depth>10 校验 / 前端展开策略与偏好纯函数）+ Gate 全绿 + 真实 vault ≥3 层端到端验证 | `[ ]` |
 

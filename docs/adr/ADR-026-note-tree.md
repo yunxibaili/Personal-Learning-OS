@@ -77,8 +77,10 @@
 ### 3.2 树端点设计
 
 - `GET /notes/tree?depth=&root_id=` → `NoteTreeResponse { trees: NoteTreeNode[] }`，
-  `NoteTreeNode { note: NoteSummary, children: NoteTreeNode[] }`。
-  `root_id` 缺省 = 全森林（顶层）；指定 = 该节点为根的子树（懒加载入口）。
+  `NoteTreeNode { note: NoteSummary, children: NoteTreeNode[], truncated: boolean }`。
+  **`truncated`**：该节点是否存在被剪枝的更深层子树（depth 截断处为 true）——前端
+  据此刻画「…」懒加载入口，否则无从得知「…」该出现在哪。`root_id` 缺省 = 全森林
+  （顶层）；指定 = 该节点为根的子树（懒加载入口）。
 - 构建**必须**经 `resolve_hierarchy()`（ADR-024 红线 2：禁止直读
   `links(relation='parent')` 自行拼树）。
 - **循环防护**：`resolve_hierarchy()` 内建 `_detect_cycles`——parent 链成环
