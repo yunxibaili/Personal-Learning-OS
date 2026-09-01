@@ -63,10 +63,14 @@
   /* =============================================================================
      ① 组件：多层级笔记列表（NoteTree · 左栏 280px）
      编码通道预算（一个维度 = 一个通道）：
-       层级   = 缩进 + 父行/子行字体层级（唯一层级通道）
-       选中   = 品牌橙（brand-soft 底 + 2px brand 左缘，唯一橙色出口）
-       计数   = 父行右侧徽章
-       警告   = warn-text（仅 orphan 组）
+       层级     = 缩进 + 父/子两级字重
+       笔记类型 = 左侧 6px 状态点（主=brand 实心/子级无/orphan=warn 描边空心）
+       元数据   = 行末 tabular-nums（时间·链数）
+       选中     = brand-soft 底 + 2px brand 左缘 + brand-text 字
+       计数     = 父行右侧 font-num 数字（去 pill）
+       警告     = warn-soft 行底 + 2px warn 左缘（orphan 组）
+       hover    = brand-tint（5% brand 叠加）
+       focus    = 1.5px inset brand-line ring（键盘）
      ============================================================================= */
   .demo-grid { display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start; }
 
@@ -89,85 +93,183 @@
     border-radius: var(--r-xs);
   }
   .rail-head button:hover { color: var(--brand-text); background: var(--surface-2); }
-  .rail-filter {
-    margin: 0 var(--sp-4) var(--sp-3);
-    width: calc(100% - var(--sp-8));
-    padding: 6px 10px; font-size: var(--fs-sm); font-family: var(--font);
-    border: 1px solid var(--border); border-radius: var(--r-sm);
-    background: var(--surface-2); color: var(--text);
-  }
-  .rail-filter:focus { outline: none; border-color: var(--border-strong); background: var(--surface); }
-  .rail-filter::placeholder { color: var(--text-3); }
 
-  .tree { outline: none; padding-bottom: var(--sp-3); }
+  /* 搜索框：包一层以便放 icon prefix；focus 时 brand-tint 描边 */
+  .rail-filter-wrap { position: relative; margin: 0 var(--sp-4) var(--sp-3); }
+  .rail-filter-wrap::before {
+    content: "⌕"; position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3); font-size: 14px; line-height: 1;
+    pointer-events: none;
+  }
+  .rail-filter {
+    width: 100%; margin: 0;
+    padding: 7px 10px 7px 30px;
+    font-size: var(--fs-sm); font-family: var(--font);
+    border: 1px solid transparent; border-radius: var(--r-sm);
+    background: var(--bg-soft); color: var(--text);
+    transition: background 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
+  }
+  .rail-filter::placeholder { color: var(--text-3); }
+  .rail-filter:focus { outline: none; background: var(--surface); }
+  .rail-filter-wrap:focus-within { border-radius: var(--r-sm); }
+  .rail-filter-wrap:focus-within::before { color: var(--brand-text); }
+  .rail-filter-wrap:focus-within .rail-filter {
+    border-color: var(--brand-line);
+    box-shadow: 0 0 0 3px var(--brand-tint);
+  }
+
+  .tree {
+    outline: none; padding: var(--sp-1) 0 var(--sp-3);
+    max-height: 560px; overflow-y: auto;
+  }
   .tree:focus-visible { box-shadow: inset 0 0 0 2px var(--brand-line); }
 
   /* --- 行（父行与子行共用基座） --- */
   .row {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px var(--sp-4) 7px 10px;
+    display: flex; align-items: center; gap: 8px;
+    min-height: 40px;                                  /* 业界 40-48px */
+    padding: 6px var(--sp-4) 6px 14px;
     border-left: 2px solid transparent;
     cursor: pointer; user-select: none;
+    position: relative;
+    transition: background 100ms ease;
   }
-  .row:hover { background: var(--surface-2); }
+  .row:hover { background: var(--brand-tint); }
+  .row:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1.5px var(--brand-line);
+  }
   .row.active { background: var(--brand-soft); border-left-color: var(--brand); }
+  .row.active:hover { background: var(--brand-tint); }
   .row .t {
+    flex: 1; min-width: 0;
     font-size: var(--fs-base); color: var(--text);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    letter-spacing: -0.005em;
   }
-  .row.active .t { font-weight: var(--fw-med); }
+  .row.active .t { color: var(--brand-text); font-weight: var(--fw-sb); }
 
-  /* --- 父行：展开钮 + 计数徽章 --- */
+  /* 状态点：主笔记实心橙 · 无子级主笔记稍暗 · 子级无点 · orphan 描边空心 */
+  .row .dot {
+    flex-shrink: 0;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--brand);
+    margin: 0 -2px 0 0;
+  }
+  .row.leaf > .row .dot, .parent:not(.expanded) > .row .dot { background: var(--brand); }
+  .row.leaf.orphan .dot { background: transparent; border: 1.5px solid var(--warn-text); width: 7px; height: 7px; }
+  .child .row .dot { display: none; }                  /* 子级无点（层级靠缩进） */
+  .row.orphan .dot {
+    background: transparent;
+    border: 1.5px solid var(--warn-text);
+    width: 7px; height: 7px;
+  }
+  .row.active .dot { box-shadow: 0 0 0 2px var(--brand-soft); }
+
+  /* --- 父行：展开钮 + 元数据 + 计数 --- */
   .chev {
     appearance: none; border: none; background: transparent; cursor: pointer;
     flex-shrink: 0; width: 18px; height: 18px; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    color: var(--text-3); font-size: 14px; line-height: 1; font-family: var(--font);
-    transform: rotate(0deg); transition: transform var(--dur-fast) var(--ease);
+    color: var(--text-3); font-size: 12px; line-height: 1; font-family: var(--font);
+    transform: rotate(0deg);
+    transition: color 100ms ease, transform 180ms ease, background 100ms ease;
     border-radius: var(--r-xs);
   }
   .chev:hover { color: var(--text); background: var(--surface-3); }
   .parent.expanded > .row .chev { transform: rotate(90deg); }
-  .chev.leaf { visibility: hidden; }              /* 无子级：占位对齐，不可点 */
+  .chev.leaf { visibility: hidden; pointer-events: none; }
   .parent > .row .t { font-weight: var(--fw-med); }
-  .count {
-    margin-left: auto; flex-shrink: 0;
-    font-family: var(--font-num); font-size: var(--fs-xs); color: var(--text-3);
-    background: var(--surface-2); border: 1px solid var(--border-soft);
-    padding: 0 6px; border-radius: var(--r-pill); line-height: 16px;
+  .row.active.parent > .row .t { font-weight: var(--fw-sb); }
+
+  /* 元数据：行末微信息（时间 + 链数）— tabular-nums 数字稳 */
+  .row .meta {
+    display: flex; gap: 6px; align-items: baseline;
+    flex-shrink: 0;
+    font-family: var(--font-num);
+    font-size: 11px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
   }
-  .row.active .count { background: var(--brand-tint); border-color: var(--brand-line); color: var(--brand-text); }
+  .row .meta .sep { color: var(--border); }
+  .row.active .meta { color: var(--brand-text); opacity: 0.85; }
+
+  /* 计数：去 pill 改极简数字，节省行高 */
+  .count {
+    margin-left: 6px; flex-shrink: 0;
+    font-family: var(--font-num);
+    font-size: 11px; font-weight: var(--fw-med);
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+    min-width: 18px; text-align: right;
+    line-height: 1;
+  }
+  .row.active .count { color: var(--brand-text); }
 
   /* --- 子行：缩进即层级（唯一层级通道），前置短线承接父级 --- */
   .children { display: none; }
   .parent.expanded > .children { display: block; }
   .child { display: flex; }
-  .child::before {                                /* 树线：竖线 + 短横，颜色恒为 border */
+  .child::before {                                /* 树线：竖线 + 短横，border-soft 更轻 */
     content: ""; flex-shrink: 0;
-    width: 22px; align-self: stretch;
+    width: 24px; align-self: stretch;
     background:
-      linear-gradient(var(--border), var(--border)) 0 0 / 1px 100% no-repeat,
-      linear-gradient(var(--border), var(--border)) 0 50% / 12px 1px no-repeat;
+      linear-gradient(var(--border-soft), var(--border-soft)) 0 0 / 1px 100% no-repeat,
+      linear-gradient(var(--border-soft), var(--border-soft)) 0 50% / 10px 1px no-repeat;
   }
-  .child .row { flex: 1; padding-left: 2px; }
-  .child .row .t { font-size: var(--fs-sm); color: var(--text-2); }
-  .child .row.active .t { color: var(--text); }
+  .child .row {
+    flex: 1; min-height: 36px;                    /* 子级略矮 36px */
+    padding-left: 4px;
+  }
+  .child .row .t { font-size: var(--fs-sm); color: var(--text-2); font-weight: var(--fw-reg); }
+  .child .row.active .t { color: var(--brand-text); font-weight: var(--fw-med); }
 
   /* --- 未挂载组（orphan：parent 指向不存在的笔记） --- */
   .group-label {
-    padding: var(--sp-3) var(--sp-4) var(--sp-1);
-    font-size: var(--fs-xs); color: var(--text-3);
+    padding: var(--sp-4) var(--sp-4) var(--sp-1);
+    font-size: 11px; font-weight: var(--fw-sb);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-3);
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 8px;
+  }
+  .group-label .group-count {
+    font-family: var(--font-num);
+    letter-spacing: 0; text-transform: none;
+    font-size: 11px; font-weight: var(--fw-reg);
+    color: var(--text-3);
   }
   .group-label.warn { color: var(--warn-text); }
+  .group-label.warn .group-count { color: var(--warn-text); opacity: 0.8; }
+  .row.orphan { background: var(--warn-soft); border-left-color: var(--warn-text); }
+  .row.orphan:hover { background: var(--warn-soft); filter: brightness(0.97); }
   .row.orphan .t { color: var(--warn-text); }
+  .row.orphan.active .t { color: var(--warn-text); }
   .row.orphan .flag {
     margin-left: auto; flex-shrink: 0;
-    font-size: var(--fs-xs); color: var(--warn-text);
-    background: var(--warn-soft); border: 1px solid var(--warn-soft);
-    padding: 0 6px; border-radius: var(--r-pill); line-height: 16px;
+    font-family: var(--mono);
+    font-size: 11px; font-weight: var(--fw-med);
+    color: var(--warn-text);
+    font-variant-numeric: tabular-nums;
+    background: transparent; border: none; padding: 0;
   }
 
-  .tree-empty { padding: var(--sp-4); font-size: var(--fs-sm); color: var(--text-3); }
+  .tree-empty {
+    padding: var(--sp-5) var(--sp-4);
+    font-size: var(--fs-sm);
+    color: var(--text-3);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .tree-empty::before {
+    content: "—";
+    display: block;
+    font-size: 20px;
+    color: var(--border);
+    margin-bottom: 4px;
+  }
   .filtering .count, .filtering .group-label { display: none; }
 
   /* --- 演示区右侧说明 --- */
@@ -236,14 +338,18 @@
             <h2>笔记</h2>
             <button type="button" title="新建笔记" aria-label="新建笔记">+</button>
           </div>
-          <input class="rail-filter" id="filter" type="text" placeholder="搜索笔记…" aria-label="过滤笔记">
+          <div class="rail-filter-wrap">
+            <input class="rail-filter" id="filter" type="text" placeholder="搜索笔记…" aria-label="过滤笔记">
+          </div>
 
           <nav class="tree" id="tree" tabindex="0" aria-label="笔记树">
             <!-- 主笔记 1 -->
             <div class="parent expanded" data-node>
               <div class="row" data-row data-title="优化器">
                 <button class="chev" type="button" aria-expanded="true" aria-label="展开/收起 优化器">›</button>
+                <span class="dot" aria-hidden="true"></span>
                 <span class="t">优化器</span>
+                <span class="meta">2天前<span class="sep">·</span>5链</span>
                 <span class="count">3</span>
               </div>
               <div class="children">
@@ -257,7 +363,9 @@
             <div class="parent expanded" data-node>
               <div class="row" data-row data-title="注意力机制">
                 <button class="chev" type="button" aria-expanded="true" aria-label="展开/收起 注意力机制">›</button>
+                <span class="dot" aria-hidden="true"></span>
                 <span class="t">注意力机制</span>
+                <span class="meta">1周前<span class="sep">·</span>8链</span>
                 <span class="count">2</span>
               </div>
               <div class="children">
@@ -270,7 +378,9 @@
             <div class="parent" data-node>
               <div class="row" data-row data-title="卷积神经网络">
                 <button class="chev" type="button" aria-expanded="false" aria-label="展开/收起 卷积神经网络">›</button>
+                <span class="dot" aria-hidden="true"></span>
                 <span class="t">卷积神经网络</span>
+                <span class="meta">3天前<span class="sep">·</span>12链</span>
                 <span class="count">1</span>
               </div>
               <div class="children">
@@ -282,17 +392,23 @@
             <div class="parent" data-node>
               <div class="row" data-row data-title="反向传播">
                 <button class="chev leaf" type="button" tabindex="-1" aria-hidden="true">›</button>
+                <span class="dot" aria-hidden="true"></span>
                 <span class="t">反向传播</span>
+                <span class="meta">5天前</span>
               </div>
               <div class="children"></div>
             </div>
 
             <!-- 未挂载组：parent 指向不存在的笔记（保留原值 + 警告，绝不自动删除） -->
-            <div class="group-label warn" id="orphanLabel">未挂载 · parent 指向不存在的笔记</div>
+            <div class="group-label warn" id="orphanLabel">
+              <span>未挂载 · parent 指向不存在</span>
+              <span class="group-count">1</span>
+            </div>
             <div class="child" data-orphan>
               <div class="row orphan" data-row data-title="残差连接">
+                <span class="dot" aria-hidden="true"></span>
                 <span class="t">残差连接</span>
-                <span class="flag">[[ResNet]] 缺失</span>
+                <span class="flag">[[ResNet]]</span>
               </div>
             </div>
 
@@ -301,7 +417,7 @@
         </aside>
 
         <div class="demo-note">
-          <p><b>这条左栏在演示什么。</b>「优化器」「注意力机制」是主笔记（星球），缩进的 Adam、SGD 是挂在它们下面的副笔记（卫星）。层级只用了<strong>一个通道</strong>：缩进 + 父/子两级字重；品牌橙<strong>只出现在选中行</strong>；右侧徽章是副笔记计数；「未挂载」组单独用警告色——因为 <code>parent: "[[ResNet]]"</code> 指向的笔记不存在，按裁决<strong>保留原值并标记，绝不自动删除</strong>。</p>
+          <p><b>这条左栏在演示什么。</b>「优化器」「注意力机制」是主笔记（星球），缩进的 Adam、SGD 是挂在它们下面的副笔记（卫星）。层级只用了<strong>一个通道</strong>：缩进 + 父/子两级字重。视觉编码：<strong>左侧 6px 圆点</strong>标识笔记类型——主笔记 brand 实心、orphan warn 描边空心、子级无点；<strong>右侧元数据</strong>用 tabular-nums 显示「时间·链数」；<strong>brand-soft + 2px brand 左缘</strong>只在选中行；warn 仅出现在未挂载组。</p>
           <p><b>交互。</b>
             整行点击打开笔记；<span class="kbd">›</span> 箭头是独立命中区，只管展开/收起。
             键盘：聚焦树后 <span class="kbd">↑</span><span class="kbd">↓</span> 移动，
@@ -339,16 +455,18 @@
       </div>
       <div class="panel flat">
         <h3>层级树 <span class="tag-good">本组件 · 层级即结构</span></h3>
-        <div class="row" style="display:flex;gap:6px;align-items:center;padding:7px 16px 7px 10px;background:var(--surface-2);">
-          <span style="color:var(--text-3);font-size:14px;transform:rotate(90deg);width:18px;text-align:center;">›</span>
-          <span style="font-size:14px;font-weight:500;">优化器</span>
-          <span style="margin-left:auto;font-family:var(--font-num);font-size:12px;color:var(--text-3);background:var(--surface);border:1px solid var(--border-soft);padding:0 6px;border-radius:999px;line-height:16px;">3</span>
+        <div class="row" style="display:flex;align-items:center;gap:8px;min-height:40px;padding:6px 16px 6px 14px;background:var(--surface-2);">
+          <span style="color:var(--text-3);font-size:12px;width:18px;display:inline-flex;justify-content:center;">›</span>
+          <span style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--brand);"></span>
+          <span style="font-size:14px;font-weight:500;flex:1;">优化器</span>
+          <span style="font-family:var(--font-num);font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;flex-shrink:0;">2天前<span style="color:var(--border);margin:0 4px;">·</span>5链</span>
+          <span style="font-family:var(--font-num);font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:6px;min-width:18px;text-align:right;">3</span>
         </div>
-        <div class="child"><div class="row" style="display:flex;padding:7px 16px 7px 2px;"><span class="t" style="font-size:13px;color:var(--text-2);">Adam</span></div></div>
-        <div class="child"><div class="row" style="display:flex;padding:7px 16px 7px 2px;"><span class="t" style="font-size:13px;color:var(--text-2);">SGD</span></div></div>
+        <div class="child"><div class="row" style="display:flex;min-height:36px;padding:6px 16px 6px 4px;"><span class="t" style="font-size:13px;color:var(--text-2);">Adam</span></div></div>
+        <div class="child"><div class="row" style="display:flex;min-height:36px;padding:6px 16px 6px 4px;"><span class="t" style="font-size:13px;color:var(--text-2);">SGD</span></div></div>
         <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
-          主副关系一眼可见；收起时主笔记行即目录；
-          徽章回答「这颗星球有几颗卫星」；过滤时结构自动让位于命中。
+          主副关系一眼可见；状态点标识笔记类型；元数据补全上下文；
+          收起时主笔记行即目录；过滤时结构自动让位于命中。
         </p>
       </div>
     </div>
@@ -384,11 +502,14 @@
     <h3>编码通道预算（一个维度 = 一个通道）</h3>
     <table>
       <tr><th style="width:160px;">维度</th><th style="width:200px;">通道</th><th>取值</th></tr>
-      <tr><td>层级</td><td>缩进 + 字体层级</td><td>父行 14px/med · 子行 13px/reg + 22px 树线缩进；<strong>不用颜色区分层级</strong></td></tr>
-      <tr><td>选中</td><td>品牌橙</td><td><code>--brand-soft</code> 底 + 2px <code>--brand</code> 左缘（全组件唯一橙色出口）</td></tr>
-      <tr><td>副笔记计数</td><td>徽章</td><td><code>--surface-2</code> 底 pill；active 时 <code>--brand-tint</code></td></tr>
-      <tr><td>警告（orphan）</td><td>warn 文字</td><td>仅「未挂载」组：<code>--warn-text</code> + <code>--warn-soft</code> 徽标</td></tr>
-      <tr><td>hover</td><td>中性灰</td><td><code>--surface-2</code>，不引入橙色</td></tr>
+      <tr><td>层级</td><td>缩进 + 字体层级</td><td>父行 40px/med · 子行 36px/reg + 24px 树线缩进；<strong>不用颜色区分层级</strong></td></tr>
+      <tr><td>笔记类型</td><td>状态点</td><td>6px 圆点：主笔记 <code>--brand</code> 实心 · 子级无点 · orphan <code>--warn-text</code> 描边空心</td></tr>
+      <tr><td>元数据</td><td>行末 meta</td><td><code>--font-num</code> 11px <code>--text-3</code>，tabular-nums；active 时 <code>--brand-text</code></td></tr>
+      <tr><td>选中</td><td>品牌橙</td><td><code>--brand-soft</code> 底 + 2px <code>--brand</code> 左缘 + <code>--brand-text</code> 字（fw-sb）</td></tr>
+      <tr><td>副笔记计数</td><td>数字</td><td><code>--font-num</code> 11px，去 pill 改纯数字，节省行高</td></tr>
+      <tr><td>警告（orphan）</td><td>warn 整行</td><td>行底 <code>--warn-soft</code> + 2px <code>--warn-text</code> 左缘；<code>--flag</code> 用 mono</td></tr>
+      <tr><td>hover</td><td>brand-tint</td><td><code>--brand-tint</code>（5% brand 叠加），与选中 <code>--brand-soft</code> 形成两档</td></tr>
+      <tr><td>focus</td><td>brand-line ring</td><td>1.5px inset <code>--brand-line</code>（键盘）</td></tr>
     </table>
 
     <h3>业界对照（为什么这么做）</h3>
