@@ -65,10 +65,47 @@
 | 方向 | 说明 | 前置/风险 |
 |---|---|---|
 | **A. UI 视觉打磨** | 层次 ✅ / 状态色 a11y ✅ / 按钮字体 ✅ / 空态 ✅ / 微交互 ✅；MiSans 已裁定 C 收尾 | **已收尾**（浮层目视按需） |
-| **B. 主/副笔记层级（T-NOTE-HIER）** | ✅ **P0+P1 完成（2026-09-01）**：P0（resolver + reindex + graph）+ P1-1（左侧层级树 `buildNoteTree` + `NoteTreeList` + CSS + `NoteCreate.parent` 一步创建副笔记）；遗留：稳定 note ID（独立 ADR） | — |
+| **B. 主/副笔记层级（T-NOTE-HIER）** | ✅ **P0+P1 完成（2026-09-01）**：P0（resolver + reindex + graph）+ P1-1（左侧层级树 + NoteCreate.parent）+ Vault Rebuild Test + Doc Audit；遗留：P1-2 稳定 note ID（独立 ADR） | — |
 | **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
 | **D. M9 Visual Engine / M10 AI 生成可视化** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
 | 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |
+
+## 下一步计划：v0.1.0-rc.1 Release Hardening（GPT 评审建议）
+
+> GPT 评审结论：**🟢 有条件批准 v0.1.0-rc.1**。不要因 M8/M9/M10 未完成而阻塞 RC。
+> 现在应从"继续堆功能"切换到 **release hardening**。
+
+### RC.1 必过 Gate（GPT 列出）
+
+#### P0（必过）
+
+- [x] `resolve_hierarchy()` cycle-safe（已验证：test_hierarchy + vault_rebuild）
+- [x] missing parent 行为固定（orphan 保留原值 + 标 invalid）
+- [x] self-parent 固定（保存原值 + 标 invalid）
+- [x] cycle 检测固定（环上节点全部 invalid）
+- [x] parent 类校验（NoteCreate.parent / NotePatch.parent）
+- [x] hierarchy API contract 固定（4 端点返回 parent_id）
+- [x] SQLite 不是 hierarchy truth（Vault Rebuild Test 验证）
+- [x] 删除 SQLite 后可以 rebuild（Vault Rebuild Test 12 项）
+- [x] `buildNoteTree()` 不重复定义 domain semantics（纯展示投影）
+
+#### P1（RC 前补充）
+
+- [ ] **依赖审计**（AGENTS §11 里程碑收尾四件事之一）
+- [ ] **环境删除测试**（删 .venv/node_modules/dist 后重建）
+- [ ] **CHANGELOG 条目**（v0.1.0-rc.1）
+- [ ] **Git tag**（`v0.1.0-rc.1`）
+- [ ] **_parent_map profiling**（大库场景性能基线）
+- [ ] **frontmatter round-trip 边界测试**（特殊字符 key/value、超长 parent 标题）
+
+### 执行顺序建议
+
+```
+1. v0.1.0-rc.1 Release Hardening（依赖审计 + 环境测试 + CHANGELOG + tag）
+2. M6 Tauri 桌面打包（Rust 工具链，唯一未闭环正式里程碑）
+3. P1-2 稳定 note ID（独立 ADR，解决 rename 断链）
+4. M9 Visual Engine / M10 AI 可视化（规格完备，体量最大）
+```
 
 ## 待所有者决策
 
