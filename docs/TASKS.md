@@ -36,10 +36,11 @@
    M9-001 ✅ ADR 批准 + 文档同步 → M9-002 ✅ 契约 + 往返校验 → M9-003 ✅ PoC 四步全绿（2026-09-01，含独立审核修复）
    → M9-004 ✅ API 路由（2026-09-01）→ M9-005 IDE 步进壳（2026-09-01 裁定否决播放器，组件入 ui 库）
    → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
-10. [ ] T-NOTE-DOMAIN 笔记学科（domain）+ 五级层级树（ADR-026 Proposed，2026-09-01 登记）
-   **前置**：所有者批准 ADR-026 + 拍板 Q1（词表）/ Q2（继承）/ Q3（展开深度）
-   → D1 migration 010 + domain 读写链路 → D2 API（domain 过滤 / domains 聚合 / tree）
-   → D3 前端（创建下拉 / 列表 badge / Graph tooltip / 树接入）→ D4 守护测试 + Gate 全绿
+10. [ ] T-NOTE-TREE 主笔记五级层级树（ADR-026 v2 Proposed，2026-09-01 登记）
+   所有者澄清：「数学」只是示例，核心 = 主笔记下 3–5 层文件夹式子层级；domain 降级 P1
+   **前置**：所有者批准 ADR-026 + 拍板 Q1（展开深度）/ Q2（domain 保留否）/ Q3（树排序）
+   → T1 `GET /notes/tree`（经 resolve_hierarchy，零 migration）→ T2 前端树深度放开（默认 3 层/上限 5 层）
+   → T3 守护测试 + Gate 全绿 + 真实 vault ≥3 层端到端
 ```
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
@@ -1525,55 +1526,48 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 - `src-tauri/` 结构完整
 - `cargo tauri build` 生成 MSI + NSIS 安装包
 
-## T-NOTE-DOMAIN 笔记学科（domain）+ 五级层级树（ADR-026 · 2026-09-01 登记）
+## T-NOTE-TREE 主笔记五级层级树（ADR-026 v2 · 2026-09-01 登记）
 
-### 背景与来源
+> v1 原名 T-NOTE-DOMAIN（以学科 domain 为主线）。所有者澄清：「数学」只是示例，
+> **核心 = 主笔记下面挂最多五级、至少三层的子层级，像文件夹一样**，并要求调研业界
+> 其他组织结构。v2 据此重构：层级树为主诉求，domain 降级 P1。
+> v1 内容存档于 git `7f297f9`（ADR-026-note-domain.md / 本节 v1 全文）。
 
-项目所有者 2026-09-01 提出「Subject (Domain) + 5-Level Hierarchy」计划：按学科
-（数学/物理/编程/…）组织笔记，左侧列表展示最多五级层级树。技术方案经与实际代码
-核对后落地为 **ADR-026**（Proposed，待批准）。
+### 业界结构调研结论（2026-09-01，详见 ADR-026 §2）
 
-**与实际代码核对时修正计划的三处事实**：
+文件夹式树（位置）· 标签（分类）· 双链网络（关联）三者正交互补是业界共识；
+本项目已有标签与双链，只缺「位置」层——用 ADR-024 单父 forest 的树投影补齐。
+否决：多父层级（Breadcrumbs，ADR-024 已否决维持）· 大纲式块编辑器（与 TipTap
+长文形态冲突）· Notion 式数据库多视图（第二套数据模型）。**零 migration 零新表**。
 
-1. 原计划 migration 文件名 `005_notes_domain.sql`——005 已被占用
-   （`005_events_quality.sql`），实际为 **`010_notes_domain.sql`**（001–009 已存在）。
-2. 原计划「NotePatch 加 domain 字段」——Python 侧 `NotePatch` 已存在可加；
-   但 `shared/types/note.ts` **没有 PATCH body 契约类型**，需补 `NotePatchBody`。
-3. 前提已就绪：frontmatter round-trip（ADR-024 P0-1）已完成，新增任意
-   frontmatter key 不会被保存时静默丢弃；`resolve_hierarchy()`、`buildNoteTree`、
-   `NoteTreeList` 均已存在。`/graph` 笔记节点 domain 硬编码 `None`
-   （`knowledge.py:502`）属实，纳入 D2 修复。
+### 核心设计（详见 ADR-026 v2）
 
-### 核心设计（详见 ADR-026）
+- **深度契约**：数据层不限深（ADR-024 不变）· API `GET /notes/tree` 不截断 ·
+  前端**默认展开 3 层（所有者硬要求「至少 3 层」）、上限 5 层**，第 5 层以下
+  「…」聚焦入口（进入文件夹心智）。
+- **树端点**：`GET /notes/tree` 必须经唯一 `resolve_hierarchy()` 构建
+  （ADR-024 红线 2，禁止直读 links 拼树）；forest 多树并存；orphan/cycle 不进树。
+- **Galaxy 维持两层**（星球+卫星，呈现层决策不变）；树/标签/双链数据源独立，
+  禁止互相推导。
 
-- **存储**：frontmatter `domain: 数学` 为唯一事实源；SQLite `notes.domain`
-  缓存列（migration 010，additive）——镜像 tags 双存储模式。删 SQLite 后
-  reindex 必须能凭 frontmatter 完整恢复。
-- **树端点**：`GET /notes/tree?domain=X` 必须经唯一 `resolve_hierarchy()` 构建
-  （ADR-024 红线 2，禁止直读 links 拼树）；后端不限深度，五级是前端展示上限；
-  **Galaxy 维持两层**（星球+卫星，呈现层决策不变）。
-- **与 concepts.domain 双轨独立**，不自动 join、不做强关联推导。
-
-### 开放问题（实现前必须由所有者拍板，ADR-026 §4）
+### 开放问题（实现前必须由所有者拍板，ADR-026 v2 §7）
 
 | # | 问题 | 计划内建议（未裁定） |
 |---|---|---|
-| Q1 | 学科词表：预定义列表 or 自由文本？ | 自由文本 + `GET /notes/domains` 聚合（与 concepts.domain 一致） |
-| Q2 | 子笔记自动继承父 domain？ | 创建时前端预填父值、可覆盖；后端不强制 |
-| Q3 | 树默认展开几级？ | 默认 2 级，更深折叠；展示上限 5 级 |
+| Q1 | 默认展开深度 | 默认展开 3 层，4/5 层点击展开 |
+| Q2 | domain 学科字段随树保留为 P1，还是彻底砍掉？ | 保留设计、P1 排期（migration 重新编号） |
+| Q3 | 树排序 | 沿用同层 `updated_at` 降序；手动排序依赖稳定 note ID，P1 |
 
 ### 执行计划（批准后启动）
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| D0 | ADR-026 批准 + Q1–Q3 拍板（所有者） | `[ ]` |
-| D1 | migration `010_notes_domain.sql` + 读写链路（create/patch/reindex 提取缓存）+ `parse_domain`/`set_meta_domain` | `[ ]` |
-| D2 | API：`GET /notes?domain=` · `GET /notes/domains` · `GET /notes/tree`（经 resolve_hierarchy）· `/graph` 笔记节点 domain 读缓存列 | `[ ]` |
-| D3 | 契约：`NoteSummary.domain` · `NoteCreateBody.domain` · 新增 `NotePatchBody` · `NoteTreeNode`/`NoteTreeResponse`/`NoteDomainListResponse` | `[ ]` |
-| D4 | 前端：创建学科下拉（预填父值）· 列表 badge · `GraphNoteNode` tooltip · `NoteTreeList` 接入树数据源 + 领域过滤/深度 | `[ ]` |
-| D5 | 守护测试（契约往返 · domain 过滤 · tree 含 orphan/cycle 不进树 · round-trip）+ Gate 全绿 | `[ ]` |
+| T0 | ADR-026 v2 批准 + Q1–Q3 拍板（所有者） | `[ ]` |
+| T1 | 契约 `NoteTreeNode`/`NoteTreeResponse`（shared/types/note.ts）+ `GET /notes/tree`（经 resolve_hierarchy，不截断） | `[ ]` |
+| T2 | 前端 `NoteTreeList` 深度放开：默认展开 3 层 · 上限 5 层 · 折叠箭头 · 「…」聚焦入口 | `[ ]` |
+| T3 | 守护测试（多级链 / forest / orphan·cycle 不进树 / 深度不截断 / 前端展开策略纯函数）+ Gate 全绿 + 真实 vault ≥3 层端到端验证 | `[ ]` |
 
-**验收纪律**：pytest + vitest + tsc + vite build 全绿；完成后同步
-`DATA_MODEL.md`（DDL）与 `PROJECT_STATE.md` §6.3（migration 历史）；
-`buildNoteTree` 若因树端点切换而零引用，按废弃纪律直接删除。
+**验收纪律**：pytest + vitest + tsc + vite build 全绿；真实 vault 验证只动 `parent`
+字段或先备份（禁 PATCH content_md）。domain 若被拍板保留，另起 T-NOTE-TREE-P1
+并按 v1 设计（git `7f297f9`）执行，migration 重新编号。
 

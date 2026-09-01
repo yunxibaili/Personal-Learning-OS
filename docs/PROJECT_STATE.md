@@ -661,15 +661,16 @@ web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `N
 `test_notes` 5 项。**Gate：pytest 853 · vitest 36 · tsc PASS · build PASS**。
 遗留（P1）：稳定 note ID（独立 ADR）。
 
-**T-NOTE-DOMAIN 已登记、未裁决（2026-09-01）**：项目所有者提出「Subject (Domain) +
-5-Level Hierarchy」计划——笔记按学科组织 + 左侧五级层级树。技术方案经与实际代码
-核对后落地为 **ADR-026（Proposed，待批准）**：frontmatter `domain` 为事实源 +
-SQLite `notes.domain` 缓存列（migration 010，镜像 tags 双存储模式）；
-`GET /notes/tree` 经唯一 `resolve_hierarchy()` 构建（ADR-024 红线 2），后端不限深、
-前端展示≤5 级；Galaxy 维持两层不变；与 concepts.domain 双轨独立不 join。
-实现前待所有者拍板 3 问（ADR-026 §4）：Q1 学科词表（预定义 vs 自由文本）、
-Q2 子笔记是否继承父 domain、Q3 树默认展开深度。执行计划见 `docs/TASKS.md`
-§T-NOTE-DOMAIN；当前未开始任何实现。
+**T-NOTE-TREE 已登记、未裁决（2026-09-01，v2）**：所有者提出层级组织需求并澄清——
+**「数学」只是学科示例，核心 = 主笔记下面挂最多五级、至少三层的子层级，像文件夹一样**；
+并要求调研业界组织结构。落地为 **ADR-026 v2（Proposed，待批准）**：
+业界调研（ADR-026 §2）确认树（位置）/标签（分类）/双链（关联）正交互补，本项目
+只缺「位置」层；方案 = ADR-024 单父 forest 的**展示层放开**——`GET /notes/tree`
+经唯一 `resolve_hierarchy()` 构建（红线 2），API 不截断；前端默认展开 3 层、上限 5 层，
+第 5 层以下「…」聚焦入口；Galaxy 维持两层；**零 migration 零新表**（v1 的
+notes.domain migration 010 取消，domain 降级 P1 待拍板保留否）。
+实现前待所有者拍板 3 问（ADR-026 §7）：Q1 默认展开深度 · Q2 domain 保留否 ·
+Q3 树排序。执行计划见 `docs/TASKS.md` §T-NOTE-TREE；当前未开始任何实现。
 
 ---
 
