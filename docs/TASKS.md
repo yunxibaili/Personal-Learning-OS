@@ -36,10 +36,10 @@
    M9-001 ✅ ADR 批准 + 文档同步 → M9-002 ✅ 契约 + 往返校验 → M9-003 ✅ PoC 四步全绿（2026-09-01，含独立审核修复）
    → M9-004 ✅ API 路由（2026-09-01）→ M9-005 IDE 步进壳（2026-09-01 裁定否决播放器，组件入 ui 库）
    → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
-10. [ ] T-NOTE-TREE 主笔记五级层级树（ADR-026 v2 Proposed，2026-09-01 登记）
-   所有者澄清：「数学」只是示例，核心 = 主笔记下 3–5 层文件夹式子层级；domain 降级 P1
-   **前置**：所有者批准 ADR-026 + 拍板 Q1（展开深度）/ Q2（domain 保留否）/ Q3（树排序）
-   → T1 `GET /notes/tree`（经 resolve_hierarchy，零 migration）→ T2 前端树深度放开（默认 3 层/上限 5 层）
+10. [ ] T-NOTE-TREE 主笔记多级层级树（ADR-026 v3 **Accepted**，2026-09-01 批准 + 三处修订）
+   核心 = 主笔记下 ≥3 层文件夹式子层级；domain 保留设计 P1 排期（语义边界 domain≠parent）
+   → T1 契约 + `GET /notes/tree?depth=&root_id=`（经 resolve_hierarchy，depth 默认 3/上限 10 后端剪枝）
+   → T2 前端默认展开 3 层 + 懒加载展开 + 展开状态本地偏好（无产品硬上限）
    → T3 守护测试 + Gate 全绿 + 真实 vault ≥3 层端到端
 ```
 
@@ -1526,48 +1526,51 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 - `src-tauri/` 结构完整
 - `cargo tauri build` 生成 MSI + NSIS 安装包
 
-## T-NOTE-TREE 主笔记五级层级树（ADR-026 v2 · 2026-09-01 登记）
+## T-NOTE-TREE 主笔记多级层级树（ADR-026 v3 Accepted · 2026-09-01 批准）
 
-> v1 原名 T-NOTE-DOMAIN（以学科 domain 为主线）。所有者澄清：「数学」只是示例，
-> **核心 = 主笔记下面挂最多五级、至少三层的子层级，像文件夹一样**，并要求调研业界
-> 其他组织结构。v2 据此重构：层级树为主诉求，domain 降级 P1。
-> v1 内容存档于 git `7f297f9`（ADR-026-note-domain.md / 本节 v1 全文）。
+> v1 原名 T-NOTE-DOMAIN（以学科 domain 为主线）→ v2 依所有者澄清重构（层级树为主，
+> domain 降级 P1）→ **v3 = 所有者 2026-09-01 批准 v2，同日采纳外部评审三处修订**：
+> ① API 加 `depth` 参数后端剪枝（弃 full forest 一次性传输）；② 取消 5 层产品硬上限，
+> 改默认 3 层 + 懒加载；③ 排序改 `created_at` 升序 + domain 语义边界明确。
+> v1/v2 存档：git `7f297f9`（v1）/ 本节历史（v2，git 历史）。
+> **批准时实测输入**：vault 20 篇（百级以下）· 左栏树常驻三栏工作区 · 拖拽 P1 ·
+> domain 使用率 0。环检测实测已有（`hierarchy.py::_detect_cycles`），补守护测试固化。
 
-### 业界结构调研结论（2026-09-01，详见 ADR-026 §2）
+### 核心设计（详见 ADR-026 v3 §3）
 
-文件夹式树（位置）· 标签（分类）· 双链网络（关联）三者正交互补是业界共识；
-本项目已有标签与双链，只缺「位置」层——用 ADR-024 单父 forest 的树投影补齐。
-否决：多父层级（Breadcrumbs，ADR-024 已否决维持）· 大纲式块编辑器（与 TipTap
-长文形态冲突）· Notion 式数据库多视图（第二套数据模型）。**零 migration 零新表**。
-
-### 核心设计（详见 ADR-026 v2）
-
-- **深度契约**：数据层不限深（ADR-024 不变）· API `GET /notes/tree` 不截断 ·
-  前端**默认展开 3 层（所有者硬要求「至少 3 层」）、上限 5 层**，第 5 层以下
-  「…」聚焦入口（进入文件夹心智）。
-- **树端点**：`GET /notes/tree` 必须经唯一 `resolve_hierarchy()` 构建
-  （ADR-024 红线 2，禁止直读 links 拼树）；forest 多树并存；orphan/cycle 不进树。
+- **深度契约**：数据层不限深（ADR-024 不变）· API `GET /notes/tree?depth=N`
+  **后端剪枝**（默认 3，安全上限 10）· 展开被剪枝子树时
+  `?root_id=<id>&depth=2` 懒加载——**无产品层硬上限**。
+- **树端点**：必须经唯一 `resolve_hierarchy()` 构建（ADR-024 红线 2，禁止直读
+  links 拼树）；forest 多树并存；orphan/cycle 不进树（环防护走既有
+  `_detect_cycles`，原始值保留在 frontmatter）。
+- **排序**：同层 `created_at` 升序（大纲式自然生长；弃 `updated_at` 降序——
+  改错别字不应导致整棵树同级重排）。
+- **前端**：默认展开 3 层全展开（所有者硬要求 ≥3）· 「…」懒加载展开 ·
+  折叠箭头 · **展开状态 localStorage 本地偏好**。
+- **domain 语义边界（P1）**：domain = 知识领域（Galaxy planet 维度），
+  parent = 层级位置（树导航）；二者正交，不得互相推导、不得合并字段。
 - **Galaxy 维持两层**（星球+卫星，呈现层决策不变）；树/标签/双链数据源独立，
   禁止互相推导。
 
-### 开放问题（实现前必须由所有者拍板，ADR-026 v2 §7）
+### 裁决记录（2026-09-01 批准时落定，ADR-026 v3 §7）
 
-| # | 问题 | 计划内建议（未裁定） |
+| # | 问题 | 裁决 |
 |---|---|---|
-| Q1 | 默认展开深度 | 默认展开 3 层，4/5 层点击展开 |
-| Q2 | domain 学科字段随树保留为 P1，还是彻底砍掉？ | 保留设计、P1 排期（migration 重新编号） |
-| Q3 | 树排序 | 沿用同层 `updated_at` 降序；手动排序依赖稳定 note ID，P1 |
+| Q1 | 默认展开深度 | 默认 3 层全展开 + 展开状态本地偏好；更深懒加载无上限 |
+| Q2 | domain 去留 | 保留设计、P1 排期；语义边界 domain≠parent（ADR-026 §5） |
+| Q3 | 树排序 | 同层 `created_at` 升序；手动排序待稳定 note ID，P1 |
 
-### 执行计划（批准后启动）
+### 执行计划
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| T0 | ADR-026 v2 批准 + Q1–Q3 拍板（所有者） | `[ ]` |
-| T1 | 契约 `NoteTreeNode`/`NoteTreeResponse`（shared/types/note.ts）+ `GET /notes/tree`（经 resolve_hierarchy，不截断） | `[ ]` |
-| T2 | 前端 `NoteTreeList` 深度放开：默认展开 3 层 · 上限 5 层 · 折叠箭头 · 「…」聚焦入口 | `[ ]` |
-| T3 | 守护测试（多级链 / forest / orphan·cycle 不进树 / 深度不截断 / 前端展开策略纯函数）+ Gate 全绿 + 真实 vault ≥3 层端到端验证 | `[ ]` |
+| T0 | ADR-026 v3 批准 + Q1–Q3 裁决 | `[x]`（2026-09-01） |
+| T1 | 契约 `NoteTreeNode`/`NoteTreeResponse`（shared/types/note.ts）+ `GET /notes/tree`（depth 校验/剪枝 + root_id 懒加载 + created_at 升序，经 resolve_hierarchy） | `[ ]` |
+| T2 | 前端 `NoteTreeList`：默认展开 3 层 · 「…」懒加载展开 · 折叠箭头 · 展开状态本地偏好 | `[ ]` |
+| T3 | 守护测试（多级链 / forest / orphan·cycle 不进树且走 `_detect_cycles` / depth 剪枝 / root_id 子树 / created_at 升序 / depth>10 校验 / 前端展开策略与偏好纯函数）+ Gate 全绿 + 真实 vault ≥3 层端到端验证 | `[ ]` |
 
 **验收纪律**：pytest + vitest + tsc + vite build 全绿；真实 vault 验证只动 `parent`
-字段或先备份（禁 PATCH content_md）。domain 若被拍板保留，另起 T-NOTE-TREE-P1
-并按 v1 设计（git `7f297f9`）执行，migration 重新编号。
+字段或先备份（禁 PATCH content_md）。domain 实现为 P1 另起 T-NOTE-TREE-P1，
+按 v1 设计（git `7f297f9`）执行，migration 重新编号。
 

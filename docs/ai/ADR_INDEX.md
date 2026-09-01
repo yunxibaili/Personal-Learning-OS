@@ -31,7 +31,7 @@
 | ADR-023 | Visualization Boundary（可视化边界冻结） | P8 前端可视化 | Accepted |
 | ADR-024 | Note Hierarchy（主/副笔记 parent 关系） | 笔记层级 / frontmatter / 图谱消费 | Accepted |
 | ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Proposed |
-| ADR-026 | Note Hierarchy Tree（主笔记五级层级树，v2：树为主诉求，domain 降级 P1） | `GET /notes/tree` 经 resolve_hierarchy / 前端默认展开 3 层上限 5 层 / 零 migration / 星系维持两层 / 树·标签·双链正交分工 | Proposed（待批准 + Q1–Q3 拍板） |
+| ADR-026 | Note Hierarchy Tree（主笔记多级层级树，v3：批准 + 评审三修订） | `GET /notes/tree?depth=&root_id=` 经 resolve_hierarchy（depth 默认 3/安全上限 10，后端剪枝 + 懒加载）/ 默认展开 3 层 + 展开状态本地偏好，无产品硬上限 / 同层 `created_at` 升序 / 零 migration / 星系维持两层 / domain≠parent 语义边界（P1）/ 树·标签·双链正交分工 | Accepted（2026-09-01 批准，Q1–Q3 已裁决） |
 
 ## 快速查阅指南
 
@@ -56,8 +56,8 @@
 - 产品模式 / UX 方向 → 读 ADR-022
 - P8 可视化边界（Universe/Graph/MindMap） → 读 ADR-023
 - 笔记层级 / 主副笔记 / frontmatter parent → 读 ADR-024 + ADR-001
-- 主笔记层级树 / 五级树 / 层级树端点 → 读 ADR-026（v2，待批准）+ ADR-024（单父 parent 数据层地基）
-- 笔记学科 domain（P1 可选，待拍板） → 读 ADR-026 §5（v1 设计存档于 git 7f297f9）
+- 主笔记层级树 / 多级树 / 层级树端点 → 读 ADR-026（v3 Accepted）+ ADR-024（单父 parent 数据层地基）
+- 笔记学科 domain（P1 排期） → 读 ADR-026 §5（语义边界 domain≠parent；v1 设计存档于 git 7f297f9）
 - 改 frontmatter 读写 → 读 ADR-024 §3（round-trip 是地基，先修）
 - M9 算法轨迹可视化 / trace 契约 / 代码执行安全 → 读 ADR-025
 - 改可视化（第四类：非图谱） → 读 ADR-025 §2.5（与 ADR-023 的边界裁决）

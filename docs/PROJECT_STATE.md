@@ -661,16 +661,19 @@ web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `N
 `test_notes` 5 项。**Gate：pytest 853 · vitest 36 · tsc PASS · build PASS**。
 遗留（P1）：稳定 note ID（独立 ADR）。
 
-**T-NOTE-TREE 已登记、未裁决（2026-09-01，v2）**：所有者提出层级组织需求并澄清——
-**「数学」只是学科示例，核心 = 主笔记下面挂最多五级、至少三层的子层级，像文件夹一样**；
-并要求调研业界组织结构。落地为 **ADR-026 v2（Proposed，待批准）**：
+**T-NOTE-TREE 已批准（2026-09-01，ADR-026 v3 Accepted）**：所有者提出层级组织需求并澄清——
+**「数学」只是学科示例，核心 = 主笔记下面挂至少三层的子层级，像文件夹一样**；
 业界调研（ADR-026 §2）确认树（位置）/标签（分类）/双链（关联）正交互补，本项目
-只缺「位置」层；方案 = ADR-024 单父 forest 的**展示层放开**——`GET /notes/tree`
-经唯一 `resolve_hierarchy()` 构建（红线 2），API 不截断；前端默认展开 3 层、上限 5 层，
-第 5 层以下「…」聚焦入口；Galaxy 维持两层；**零 migration 零新表**（v1 的
-notes.domain migration 010 取消，domain 降级 P1 待拍板保留否）。
-实现前待所有者拍板 3 问（ADR-026 §7）：Q1 默认展开深度 · Q2 domain 保留否 ·
-Q3 树排序。执行计划见 `docs/TASKS.md` §T-NOTE-TREE；当前未开始任何实现。
+只缺「位置」层。方案 = ADR-024 单父 forest 的**展示层放开**，零 migration 零新表。
+**批准时采纳外部评审三处修订**（v2→v3）：① `GET /notes/tree` 加 `depth` 参数
+**后端剪枝**（默认 3，安全上限 10）+ `root_id` 懒加载子树，弃 full forest 一次性传输；
+② 取消 5 层产品硬上限——默认展开 3 层 + 懒加载无上限 + 展开状态本地偏好；
+③ 同层排序改 **`created_at` 升序**（弃 `updated_at` 降序，树导航需稳定）。
+**Q1–Q3 已裁决**：展开深度（3 层默认+偏好记忆）· domain 保留设计 P1 排期
+（语义边界 **domain=知识领域/Galaxy 维度 ≠ parent=层级位置**，不互相推导）·
+排序（created_at 升序）。批准时实测：vault 20 篇（百级以下）；环防护复用既有
+`hierarchy.py::_detect_cycles`，补守护测试固化。执行计划见 `docs/TASKS.md`
+§T-NOTE-TREE（T0 已完成，T1–T3 待实施）。
 
 ---
 

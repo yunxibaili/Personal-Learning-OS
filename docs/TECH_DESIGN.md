@@ -830,8 +830,8 @@ Concept 页预置示例 → example_id → Trusted Examples → POST /trace/run
 | ❌ `GET /sync/pair` | 配对码 → LAN bearer token | S2 |
 | ❌ `POST /sync/manifest` · `/sync/fetch` · `/sync/push` | 三态差异交换与差量传输（E2E 已验证传输协议，HTTP 层未建） | S2 |
 | ❌ `POST /trace/run` | 运行并返回 TraceEvent[]（M9） | M9 |
-| ❌ `GET /notes/tree` | 主笔记五级层级树投影：经 `resolve_hierarchy()` 构建 forest（ADR-024 红线 2），API 不截断深度；前端默认展开 3 层、上限 5 层（≥3 为所有者硬要求），Galaxy 维持两层。**零 migration 零新表**（数据层 = ADR-024 单父 parent 不变） | ADR-026 v2（Proposed，待批准） |
-| ❌ `GET /notes?domain=X` · `GET /notes/domains` | 笔记学科（domain）过滤/聚合——**降级 P1 可选**（所有者澄清学科只是示例）：frontmatter 事实源 + notes.domain 缓存列（届时 migration 重新编号），镜像 tags 双存储模式 | ADR-026 v2 §5（P1，待拍板保留否） |
+| ❌ `GET /notes/tree?depth=&root_id=` | 主笔记多级层级树投影：经 `resolve_hierarchy()` 构建 forest（ADR-024 红线 2），**`depth` 后端剪枝**（默认 3，安全上限 10）+ `root_id` 懒加载子树（无产品硬上限）；前端默认展开 3 层 + 展开状态本地偏好，同层 `created_at` 升序；环防护走既有 `_detect_cycles`；Galaxy 维持两层。**零 migration 零新表**（数据层 = ADR-024 单父 parent 不变） | ADR-026 v3（Accepted，2026-09-01 批准） |
+| ❌ `GET /notes?domain=X` · `GET /notes/domains` | 笔记学科（domain）过滤/聚合——**P1 排期**（语义边界：domain=知识领域/Galaxy 维度 ≠ parent=层级位置，不互相推导；ADR-026 §5）：frontmatter 事实源 + notes.domain 缓存列（届时 migration 重新编号），镜像 tags 双存储模式 | ADR-026 §5（P1） |
 | ❌ `GET /api/v1/home` | Mobile 聚合读（recent_notes + weak_concepts + review_count） | Mobile API Preparation，仅确有需求时补 |
 
 错误约定：`{error: {code, message}}`；业务异常 HTTP 400，内部错误 500 不泄露堆栈。
