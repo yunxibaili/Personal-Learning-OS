@@ -21,7 +21,7 @@
 | 后端 backlog（§9 B1–B29） | ✅ 清零 |
 | Phase 0–4 前端阶段 | ✅ 收口 |
 | **BUG-1（P0 数据不锁死）/ BUG-2 / BUG-3 / BUG-4 / BUG-5** | ✅ |
-| **M6 Tauri 桌面打包** | ❌ 未开始（唯一标「未闭环」正式里程碑） |
+| **M6 Tauri 桌面打包** | ✅ 完成（2026-09-01，GNU 工具链，MSI 65MB + NSIS 102MB） |
 | **M8 Mobile / M9 Visual Engine / M10 AI 可视化** | ❌ 未开始 |
 | P8-Mode-001（ADR-022 附录 A） | ⏳ 挂起（等所有者显式发起） |
 

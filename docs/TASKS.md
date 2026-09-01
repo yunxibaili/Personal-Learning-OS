@@ -51,7 +51,7 @@
 | M3.5-B | Full Omniscience（全知领域 Phase B：+mastery+review+mistakes，前置 M3/M5） | `[x]` 完成（2026-08-31） | 见下方 M3.5-B 拆解 |
 | M4 | AI Tutor（provider/流式/上下文管线/extractor/AI导图） | `[x]` 完成（M4-A~E + Gate 1，ADR-014/015/016） | 见 CURRENT_STATE |
 | M5 | 复习闭环（队列/测验/时间线） | `[x]` 完成 | [T-M5](#t-m5-m5-复习闭环完成2026-08-27) |
-| M6 | Tauri 桌面打包 | `[ ]` | — |
+| M6 | Tauri 桌面打包 | `[x]` 完成（2026-09-01，GNU 工具链，MSI 65MB + NSIS 102MB） | [T-M6](#t-m6-m6-tauri-桌面打包完成2026-09-01) |
 | M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[x]` 完成（M7-001~008 全链路闭环，2026-08-31 核实回填） | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
 | M9 | Visual Engine V1（trace/StepPlayer/三模板） | `[ ]` | — |
@@ -1381,3 +1381,48 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 - `npx tsc --noEmit` · `npx vitest run`（36 passed）· `npx vite build` 全绿
 - export → rebuild → query：parent 关系不丢
 - 与 links 派生冲突时，显式 parent 恒优先
+
+---
+
+## T-M6 M6 Tauri 桌面打包 完成（2026-09-01）
+
+### 做了什么
+
+- 安装 Rust 工具链到 D 盘（`D:\RustToolchain\rustup` + `D:\RustToolchain\cargo`）
+- 安装 Tauri CLI 2.11.4（GNU 工具链，避免 MSVC 依赖）
+- 创建 `web/src-tauri/` 项目结构（Cargo.toml、tauri.conf.json、src/main.rs、src/lib.rs、icons）
+- 生成应用图标（32x32、128x128、256x256、ICO、ICNS）
+- 构建 Windows 安装包：MSI 65MB + NSIS 102MB
+
+### 改动文件
+
+| 文件 | 变化 |
+|---|---|
+| `web/src-tauri/Cargo.toml` | 新增（Rust 依赖配置） |
+| `web/src-tauri/tauri.conf.json` | 新增（Tauri 配置） |
+| `web/src-tauri/build.rs` | 新增（构建脚本） |
+| `web/src-tauri/src/main.rs` | 新增（入口） |
+| `web/src-tauri/src/lib.rs` | 新增（应用逻辑） |
+| `web/src-tauri/icons/` | 新增（6 个图标文件） |
+| `web/package.json` | 新增 `"tauri": "tauri"` 脚本 |
+
+### 测试了什么
+
+| 测试 | 预期 | 实际 |
+|---|---|---|
+| `cargo tauri build` | 构建成功，生成 MSI/NSIS | ✅ 通过 |
+| `rustc --version` | 1.98.0 | ✅ 通过 |
+| `cargo tauri --version` | 2.11.4 | ✅ 通过 |
+
+### 遗留问题
+
+- 服务器端 .venv 被删除时锁定（node 进程占用），需重启后重建
+- 应用图标为简单橙色圆形（占位符），后续可替换为正式设计
+- 仅验证构建产物，未测试实际安装运行（需用户双击 MSI/NSIS 测试）
+
+### 验收
+
+- Rust 工具链安装在 D 盘，PATH 持久化
+- Tauri CLI 安装成功
+- `src-tauri/` 结构完整
+- `cargo tauri build` 生成 MSI + NSIS 安装包

@@ -489,7 +489,7 @@ Minimal · Clean · Professional · Scientific
 |---|---|---|
 | Python | 3.12.10 | venv 隔离于 `server/.venv`（不入库） |
 | Node.js | 24.18.1（npm 11.16） | 依赖锁 `web/package-lock.json` 必须提交 |
-| Rust | **未安装** | M6 前不需要；届时 rustup 安装并更新此行 |
+| Rust | 1.98.0 (GNU 工具链) | `D:\RustToolchain`（rustup + cargo），Tauri CLI 2.11.4 |
 
 ### 二、安装与启动（唯一权威来源 = README.md）
 

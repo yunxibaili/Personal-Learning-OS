@@ -36,7 +36,7 @@ Data      workspace/    Markdown 文件 + SQLite（仅经 core 触达）
 | Frontend | React 18 · TypeScript · Vite · Zustand · TipTap v3 · React Flow · KaTeX |
 | Backend | Python 3.12 · FastAPI · uvicorn |
 | Storage | sqlite3(stdlib) + FTS5 · Markdown · JSON sidecar |
-| Desktop | Tauri（M6 起） |
+| Desktop | Tauri v2（M6 已完成，Windows MSI/NSIS 安装包） |
 | Mobile | React Native + Expo（M8 起） |
 
 禁止：ORM · CSS 框架 · LangChain · 向量数据库 · D3 全家桶（d3-force 例外，M3b）
