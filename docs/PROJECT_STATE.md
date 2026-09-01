@@ -671,7 +671,9 @@ web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `N
 ③ 同层排序改 **`created_at` 升序**（弃 `updated_at` 降序，树导航需稳定）。
 **Q1–Q3 已裁决**：展开深度（3 层默认+偏好记忆）· domain 保留设计 P1 排期
 （语义边界 **domain=知识领域/Galaxy 维度 ≠ parent=层级位置**，不互相推导）·
-排序（created_at 升序）。批准时实测：vault 20 篇（百级以下）；环防护复用既有
+排序（created_at 升序）。**Galaxy 侧 2026-09-01 最终裁定：零改动零新交互**——
+卫星=直接子笔记（depth-1），第 3 层以下不上图（卫星计数提示已提议并否决）。
+批准时实测：vault 20 篇（百级以下）；环防护复用既有
 `hierarchy.py::_detect_cycles`，补守护测试固化。执行计划见 `docs/TASKS.md`
 §T-NOTE-TREE（T0 已完成，T1–T3 待实施）。
 
