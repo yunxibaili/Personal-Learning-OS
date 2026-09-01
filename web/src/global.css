@@ -194,6 +194,77 @@ button, input, select, textarea {
 .note-list li:hover { color: var(--text-primary); background: var(--bg-secondary); }
 .note-list li.active { color: var(--text-primary); background: var(--bg-secondary); }
 
+/* ── ADR-024 P1-1：左栏层级树（主/副笔记）────────────────────────── */
+.note-tree { flex: 1; min-height: 0; }
+.note-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.note-tree .note-tree__children {
+  /* 副笔记缩进：层级感用缩进表达，不用竖线装饰（ADR-013 克制） */
+  padding-left: 16px;
+}
+.note-tree__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 6px 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.note-tree__row:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.note-tree__row.active { color: var(--text-primary); background: var(--bg-secondary); }
+
+.note-tree__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* UI 文字 13–14px（字号双尺度）；主笔记（有子级）用主文字色区分 */
+  font-size: 13.5px;
+}
+
+/* 分支标记：4px 橙点=有子级（注意力指针语义）；叶子=同尺寸灰点占位对齐 */
+.note-tree__branch,
+.note-tree__leaf {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex: none;
+}
+.note-tree__branch { background: var(--brand); }
+.note-tree__leaf { background: var(--border); }
+
+.note-tree__add-child {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0;                       /* hover 行时才浮现，不干扰阅读 */
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.note-tree__row:hover .note-tree__add-child { opacity: 1; }
+.note-tree__add-child:hover {
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+
 .editor-pane {
   flex: 1;
   display: flex;
