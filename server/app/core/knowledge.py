@@ -54,8 +54,46 @@ def is_safe_attachment_name(name: str) -> bool:
 
 # ---------- Frontmatter / 哈希 ----------
 
+# YAML 标量安全：以下字符开头的值必须加引号，否则解析器会当成结构/类型。
+_YAML_UNSAFE_LEAD = "-?:,[]{}#&*!|>'\"%@`"
+# 值内部出现 ": " 或 " #" 也必须引号包裹。
+_YAML_UNSAFE_INNER = (": ", " #")
+# 会被 YAML 解析成布尔/空的字面量。
+_YAML_RESERVED = {"true", "false", "null", "yes", "no", "on", "off", "~", ""}
+
+
+def _unquote(v: str) -> str:
+    """去掉 YAML 标量的包裹引号（单/双）；双引号内做基本反转义。"""
+    v = v.strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+        inner = v[1:-1]
+        if v[0] == '"':
+            inner = inner.replace('\\"', '"').replace("\\\\", "\\")
+        return inner
+    return v
+
+
+def _needs_quote(v: str) -> bool:
+    if v.strip() != v or v.lower() in _YAML_RESERVED:
+        return True
+    if v[0] in _YAML_UNSAFE_LEAD:
+        return True
+    return any(s in v for s in _YAML_UNSAFE_INNER)
+
+
+def _quote(v: str) -> str:
+    if not _needs_quote(v):
+        return v
+    return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 def parse_frontmatter(text: str) -> tuple[dict[str, str], list[str], str]:
-    """返回 (meta, tags, body)。仅支持顶层 key: value 与逗号分隔 tags。"""
+    """返回 (meta, tags, body)。支持任意顶层 `key: value` 与逗号分隔 tags。
+
+    **round-trip 契约（ADR-024 §3）**：`meta` 保留文件里的**原始 key 顺序与全部
+    未知 key**，供 `compose_file` 原样回写。加新字段不必再改本函数——
+    旧版只提取 tags，导致其余 key 保存时被静默丢弃。
+    """
     meta: dict[str, str] = {}
     body = text
     m = _FRONT_RE.match(text)
@@ -63,17 +101,78 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], list[str], str]:
         for line in m.group(1).splitlines():
             if ":" in line:
                 k, v = line.split(":", 1)
-                meta[k.strip()] = v.strip()
+                k = k.strip()
+                if k:
+                    meta[k] = _unquote(v)
         body = text[m.end():]
     tags = [t.strip() for t in meta.get("tags", "").split(",") if t.strip()]
     return meta, tags, body.lstrip("\n")
 
 
-def compose_file(tags: list[str], body: str) -> str:
-    """组合完整 .md 文件内容；无 tags 时不写 frontmatter。"""
-    if not tags:
+def compose_file(meta: dict[str, str], body: str) -> str:
+    """组合完整 .md 文件内容：frontmatter + body。
+
+    **round-trip 契约（ADR-024 §3）**：
+      - 回写**任意** meta key（不只 tags），未知 key 不丢；
+      - 删除 = 调用方从 meta 里 `pop` 掉 → 不会残留空值行（「真删除」）；
+      - 无任何 key 时不写 `---` 块（保持纯文本笔记干净）；
+      - 保持 meta 插入顺序（parse 时为文件原序），避免无意义 diff。
+
+    签名变更（2026-09-01）：原为 `compose_file(tags, body)`，只能写 tags。
+    """
+    items = [
+        (k, v) for k, v in (meta or {}).items()
+        if str(k).strip() and str(v).strip()
+    ]
+    if not items:
         return body
-    return "---\ntags: " + ", ".join(tags) + "\n---\n\n" + body
+    lines = "".join(f"{k}: {_quote(str(v))}\n" for k, v in items)
+    return "---\n" + lines + "---\n\n" + body
+
+
+def set_meta_tags(meta: dict[str, str], tags: list[str] | None) -> dict[str, str]:
+    """返回新 meta：写回 tags（逗号分隔）；空/None 则删除该 key。"""
+    out = dict(meta or {})
+    clean = [t.strip() for t in (tags or []) if t.strip()]
+    if clean:
+        out["tags"] = ", ".join(clean)
+    else:
+        out.pop("tags", None)
+    return out
+
+
+# ---------- 主/副笔记 parent 关系（ADR-024） ----------
+
+PARENT_KEY = "parent"
+_PARENT_ANCHORED_RE = re.compile(r"^\[\[(.+?)\]\]$")
+
+
+def parse_parent(meta: dict[str, str]) -> str | None:
+    """从 frontmatter meta 取 parent 标题；兼容 `[[标题]]` 与裸标题两种写法。
+
+    返回 None 表示未声明 parent。调用方负责校验目标是否存在
+    （不存在 → orphan，见 ADR-024 §2.3）。
+    """
+    raw = (meta or {}).get(PARENT_KEY, "").strip()
+    if not raw:
+        return None
+    m = _PARENT_ANCHORED_RE.match(raw)
+    title = (m.group(1).strip() if m else raw).strip()
+    return title or None
+
+
+def set_meta_parent(meta: dict[str, str], parent_title: str | None) -> dict[str, str]:
+    """返回新 meta：写 `parent: "[[标题]]"`；None/空则**真删除**该 key。
+
+    ADR-024 §2.2 铁规则 2：只在 child 写 parent，永不持久化 children。
+    """
+    out = dict(meta or {})
+    title = (parent_title or "").strip()
+    if title:
+        out[PARENT_KEY] = f"[[{title}]]"
+    else:
+        out.pop(PARENT_KEY, None)
+    return out
 
 
 def atomic_write_file(path: Path, content: str) -> None:
@@ -592,6 +691,17 @@ def read_note_file(rel_path: str) -> tuple[list[str], str]:
     return tags, body
 
 
+def read_note_meta(rel_path: str) -> tuple[dict[str, str], list[str], str]:
+    """读文件并解析回 (meta, tags, body)，**保留全部 frontmatter key**。
+
+    改文件前必须走这个入口而不是 `read_note_file`——后者丢弃 meta，
+    回写时会导致未知 key（含 `parent`）被静默删除（ADR-024 §3）。
+    """
+    return parse_frontmatter(
+        resolve_vault_file(rel_path).read_text(encoding="utf-8")
+    )
+
+
 def extract_snippet(body: str, query: str | None = None, max_chars: int = 600) -> str:
     """从笔记正文提取确定性片段（P8-003D）。
 
@@ -623,8 +733,9 @@ def get_note_row(conn, note_id: int):
 __all__ = [
     "sanitize_title", "vault_root", "attachments_dir", "resolve_vault_file",
     "is_safe_attachment_name", "parse_frontmatter", "compose_file",
+    "set_meta_tags", "PARENT_KEY", "parse_parent", "set_meta_parent",
     "body_hash", "upsert_note_index", "drop_note_index", "search_notes",
-    "read_note_file", "get_note_row", "connect",
+    "read_note_file", "read_note_meta", "get_note_row", "connect",
     "extract_wikilinks", "has_forbidden_media_path", "resolve_title",
     "ensure_entity_by_title", "promote_stub_to_note", "rebuild_note_links",
     "cascade_drop_entity", "local_graph", "backlinks_of_note",

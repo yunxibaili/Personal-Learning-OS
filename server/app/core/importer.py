@@ -121,7 +121,7 @@ def _import_one(conn, vault_rel: str, title: str, content: str) -> str:
     note_id = cur.lastrowid
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        K.atomic_write_file(target, K.compose_file([], content))
+        K.atomic_write_file(target, K.compose_file({}, content))
         mtime = time.time()
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=vault_rel, title=title,

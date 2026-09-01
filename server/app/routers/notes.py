@@ -55,6 +55,8 @@ class NotePatch(BaseModel):
     title: str | None = None
     content_md: str | None = None
     tags: list[str] | None = None
+    # ADR-024：parent 事实源在 frontmatter。None=未传不改；""=真删；"[[X]]"/"X"=设置。
+    parent: str | None = None
 
 
 @router.get("")
@@ -95,7 +97,7 @@ def _create_note_vault(conn, title: str, content_md: str) -> tuple[str, int | No
     )
     note_id = cur.lastrowid
     try:
-        K.atomic_write_file(target, K.compose_file([], content_md))
+        K.atomic_write_file(target, K.compose_file({}, content_md))
         mtime = time.time()
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
         K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
@@ -210,13 +212,24 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
             ).fetchone():
                 return _err(409, "duplicate_title", f"已存在同名笔记:{new_title}")
 
-        cur_tags, cur_body = K.read_note_file(old_path)
+        cur_meta, cur_tags, cur_body = K.read_note_meta(old_path)
         new_tags = sorted(set(body.tags)) if body.tags is not None else cur_tags
         new_body = body.content_md if body.content_md is not None else cur_body
 
+        # ADR-024：parent 事实源在 frontmatter；未显式传则不改（None 与「未传」区分）。
+        # 红线 4：自指/不存在**不阻断保存**（保留原值，由 resolve_hierarchy 标 invalid）。
+        parent_changed = "parent" in body.model_fields_set
+        if parent_changed:
+            raw_parent = (body.parent or "").strip()
+            new_meta = K.set_meta_parent(cur_meta, raw_parent or None)
+        else:
+            new_meta = cur_meta
+        new_meta = K.set_meta_tags(new_meta, new_tags)
+
         target = K.resolve_vault_file(new_rel)
         changed_file = (
-            new_rel != old_path or new_body != cur_body or new_tags != cur_tags
+            new_rel != old_path or new_body != cur_body
+            or new_tags != cur_tags or new_meta != cur_meta
         )
         mtime = time.time()
         if changed_file:
@@ -224,7 +237,7 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
                 conn.rollback()
                 return _err(400, "bad_attachment_path",
                             "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
-            K.atomic_write_file(target, K.compose_file(new_tags, new_body))
+            K.atomic_write_file(target, K.compose_file(new_meta, new_body))
             if new_rel != old_path:
                 os.unlink(K.resolve_vault_file(old_path))
 
@@ -232,6 +245,10 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
                             tags=new_tags, body=new_body, mtime=mtime)
         if changed_file:
             K.rebuild_note_links(conn, note_id, new_body)
+            # ADR-024 §2.4：parent 边是派生索引，随写同步该笔记的父边（镜像权威 resolver）
+            if parent_changed:
+                from ..core.hierarchy import sync_note_parent
+                sync_note_parent(conn, note_id)
         conn.commit()
     except OSError as exc:
         conn.rollback()

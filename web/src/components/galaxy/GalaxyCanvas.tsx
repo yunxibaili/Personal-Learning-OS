@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiGet } from "../../lib/api";
 import { useUi } from "../../stores/ui";
-import type { GraphResponse } from "@shared/types/graph";
+import type { GraphNode, GraphResponse } from "@shared/types/graph";
 import type { NoteDetailResponse } from "@shared/types/note";
 
 /**
@@ -90,8 +90,9 @@ function addTo(m: Map<number, Set<number>>, k: number, v: number) {
 }
 
 /**
- * 从图拓扑推断星球与卫星。纯函数，便于单测。
- * @param g `/graph` 响应
+ * 生成星球/卫星。纯函数，便于单测。
+ * ADR-024：`relation='parent'` 为**权威**层级（显式主/副）；无 parent 边时回退到
+ * wikilink 拓扑推断（legacy）。@param g `/graph` 响应
  */
 export function derivePlanets(g: GraphResponse): Planet[] {
   const byKey = new Map(g.nodes.map((n) => [n.id, n]));
@@ -103,6 +104,75 @@ export function derivePlanets(g: GraphResponse): Planet[] {
     noteMastery.set(n.ref_id, n.learning?.mastery ?? null);
   }
 
+  // 权威 parent 关系（ADR-024 §2.2 铁规则 4）：child -> parent
+  const parentEdges: Array<[number, number]> = [];
+  for (const e of g.edges) {
+    if (e.relation !== "parent") continue;
+    const a = byKey.get(e.source);
+    const b = byKey.get(e.target);
+    if (!a || !b || a.type !== "note" || b.type !== "note") continue;
+    parentEdges.push([a.ref_id, b.ref_id]);
+  }
+  if (parentEdges.length > 0) {
+    return derivePlanetsExplicit(parentEdges, noteTitle, noteMastery);
+  }
+  return derivePlanetsHeuristic(g, byKey, noteTitle, noteMastery);
+}
+
+/** 显式 parent（权威）：星球 = 有孩子的笔记（或孤立根），卫星 = 其 direct child。 */
+function derivePlanetsExplicit(
+  parentEdges: Array<[number, number]>,
+  noteTitle: Map<number, string>,
+  noteMastery: Map<number, number | null>,
+): Planet[] {
+  const satsOf = new Map<number, number[]>();
+  for (const [c, p] of parentEdges) {
+    const arr = satsOf.get(p);
+    if (arr) arr.push(c);
+    else satsOf.set(p, [c]);
+  }
+  const hasParent = new Set(parentEdges.map(([c]) => c));
+  const isPlanet = new Set<number>();
+  for (const pid of satsOf.keys()) isPlanet.add(pid); // 有孩子的 = 星球
+  for (const id of noteTitle.keys()) {
+    // 孤立根（既无 parent 也无 child）= 独立小星球
+    if (!hasParent.has(id) && !satsOf.has(id)) isPlanet.add(id);
+  }
+
+  const mkPlanet = (id: number): Planet => ({
+    id,
+    title: noteTitle.get(id) ?? "未命名",
+    sats: [],
+    overflow: 0,
+    mastery: null,
+  });
+  const planets = [...isPlanet].map(mkPlanet);
+  for (const p of planets) {
+    const ids = (satsOf.get(p.id) ?? []).sort((a, b) => a - b);
+    p.overflow = Math.max(0, ids.length - MAX_SATS);
+    const ms = ids.map((i) => noteMastery.get(i) ?? null).filter((v): v is number => v !== null);
+    p.mastery = ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : noteMastery.get(p.id) ?? null;
+    p.sats = ids.slice(0, MAX_SATS).map((id, i) => ({
+      id,
+      title: noteTitle.get(id) ?? "未命名",
+      words: 0,
+      size: MIN_SAT_PX,
+      orbit: i % ORBITS.length,
+      phase: (i * 137.5 * Math.PI) / 180,
+      speed: (Math.PI * 2) / SAT_PERIOD,
+      mastery: noteMastery.get(id) ?? null,
+    }));
+  }
+  return planets.sort((a, b) => b.sats.length - a.sats.length || a.title.localeCompare(b.title));
+}
+
+/** legacy：从 wikilink 拓扑推断星球/卫星（无显式 parent 边时使用）。 */
+function derivePlanetsHeuristic(
+  g: GraphResponse,
+  byKey: Map<string, GraphNode>,
+  noteTitle: Map<number, string>,
+  noteMastery: Map<number, number | null>,
+): Planet[] {
   const out = new Map<number, Set<number>>();
   const inn = new Map<number, Set<number>>();
   for (const e of g.edges) {

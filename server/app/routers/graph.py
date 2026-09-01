@@ -5,10 +5,33 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from ..core.knowledge import local_graph, connect
+from ..core import hierarchy as H
 
 router = APIRouter(prefix="/api/v1/graph", tags=["graph"])
 
 _ALLOWED_TYPES = {"note", "concept"}
+
+
+def _merge_parent_edges(graph: dict, conn) -> dict:
+    """把权威 parent 关系并入 graph 响应（红线 2：视图经由唯一 resolver）。
+
+    `local_graph` 读的是 links 派生索引（可能含已物化的 parent 边，也可能滞后），
+    这里以 `resolve_hierarchy()` 为准**补齐**——显式父优先、推断兜底，且不产生重复边。
+    """
+    present = {
+        (e["source"], e["target"])
+        for e in graph.get("edges", [])
+        if e.get("relation") == H.PARENT_RELATION
+    }
+    for child, parent in H.resolve_hierarchy(conn)["parent_of"].items():
+        src, tgt = f"note-{child}", f"note-{parent}"
+        if (src, tgt) in present:
+            continue
+        graph["edges"].append({
+            "source": src, "target": tgt, "relation": H.PARENT_RELATION,
+        })
+        present.add((src, tgt))
+    return graph
 
 
 @router.get("")
@@ -32,6 +55,6 @@ def get_graph(
 
     conn = connect()
     try:
-        return local_graph(conn, root_type, root_id, depth)
+        return _merge_parent_edges(local_graph(conn, root_type, root_id, depth), conn)
     finally:
         conn.close()

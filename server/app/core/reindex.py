@@ -32,6 +32,7 @@ import logging
 from pathlib import Path
 
 from . import knowledge as K
+from .hierarchy import materialize_parent_links
 from .mastery import restore_concepts_and_mastery
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ def reindex_vault(
         "concepts_restored": 0,
         "mastery_restored": 0,
         "events_replayed": 0,
+        "parent_edges": 0,
     }
 
     if not vault_root.exists():
@@ -125,6 +127,11 @@ def reindex_vault(
     ws_root = vault_root.parent  # workspace root（vault 的上级）
     restore_stats = restore_concepts_and_mastery(conn, ws_root)
     stats.update(restore_stats)
+
+    # 4. parent 派生索引（ADR-024 §2.4 + 红线 1）：全量用 resolve_hierarchy() 重算
+    #    links(relation='parent')。权威仍是 resolver，这里只是可重建的镜像缓存。
+    parent_stats = materialize_parent_links(conn)
+    stats["parent_edges"] = parent_stats.get("explicit", 0) + parent_stats.get("inferred", 0)
 
     return stats
 

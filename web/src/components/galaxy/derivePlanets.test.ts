@@ -179,4 +179,34 @@ describe("derivePlanets", () => {
     expect(planets[0].id).toBe(2);
     expect(planets[0].sats.length).toBeGreaterThan(planets[1].sats.length);
   });
+
+  it("显式 parent 优先于 wikilink 推断（ADR-024 铁规则 4）", () => {
+    const g = graph(
+      [note(1, "主"), note(2, "副一"), note(3, "副二")],
+      [
+        edge(2, 1, "parent"),   // 副一 的父 = 主
+        edge(3, 1, "parent"),   // 副二 的父 = 主
+        edge(3, 2),             // 冲突：wikilink 3→2（推断会误判 3 属于 2）
+      ],
+    );
+    const planets = derivePlanets(g);
+    expect(planets).toHaveLength(1);
+    expect(planets[0].id).toBe(1);
+    expect(planets[0].sats.map((s) => s.id).sort()).toEqual([2, 3]); // 3 归主，非 2
+  });
+
+  it("forest 链：A→B→C，B 既是其父的卫星也自成星球（一层展示）", () => {
+    const g = graph(
+      [note(1, "A"), note(2, "B"), note(3, "C")],
+      [
+        edge(2, 1, "parent"),
+        edge(3, 2, "parent"),
+      ],
+    );
+    const planets = derivePlanets(g);
+    const a = planets.find((p) => p.id === 1)!;
+    const b = planets.find((p) => p.id === 2)!;
+    expect(a.sats.map((s) => s.id)).toEqual([2]);
+    expect(b.sats.map((s) => s.id)).toEqual([3]);
+  });
 });
