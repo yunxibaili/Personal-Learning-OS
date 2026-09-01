@@ -1,15 +1,14 @@
 # Active Task
 
 > AI 工作记忆：当前正在做什么。权威源：`docs/PROJECT_STATE.md`（状态唯一来源）· `docs/TASKS.md`（任务与报告）。
-> 上次更新：2026-09-01 · HEAD `3182465`（190 commits）· Gate：pytest **836** · vitest **28** · tsc PASS · build PASS · CI 双绿
+> 上次更新：2026-09-01 · HEAD `6ba3260`（192 commits）· Gate：pytest **848**（含 T-NOTE-HIER 12）· vitest **30** · tsc PASS · build PASS · CI 双绿
 
 ---
 
 ## Task ID
 
-**T-NOTE-HIER 主/副笔记层级（进行中 · ADR-024）** —— 用户提出「主笔记 / 副笔记」
-并明确「左边也要出现」。经 GPT-5.5 Pro 评审后裁决落地为 ADR-024。
-**地基先行**：先做 frontmatter round-trip + 显式 parent + 统一 resolver，UI 后置。
+**T-NOTE-HIER 主/副笔记层级（ADR-024）P0 完成**（2026-09-01 · pytest 848 · vitest 30 · tsc/build PASS）。
+**当前无进行中任务**——项目处于 P8 收尾阶段（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
 
 ### 核心裁决（ADR-024，不可协商）
 
@@ -25,11 +24,11 @@
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| P0-1 | frontmatter round-trip（保任意 key · 真删除 · 稳定顺序） | `[ ]` 待施工 |
-| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | `[ ]` 待施工 |
-| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | `[ ]` 待施工 |
-| P0-4 | `/graph`、`/universe` 统一消费 resolver | `[ ]` 待施工 |
-| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | `[ ]` 待施工 |
+| P0-1 | frontmatter round-trip（保任意 key · 真删除 · 稳定顺序） | ✅ 完成（`compose_file(meta,body)`） |
+| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | ✅ 完成（`parse_parent`/`set_meta_parent` + `NotePatch.parent`；自指走「保存+标 invalid」，红线 4） |
+| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | ✅ 完成（`hierarchy.py`；**修复原 `_detect_cycles` 无限循环**） |
+| P0-4 | `/graph`、`/universe` 统一消费 resolver | ✅ 完成（reindex 物化 `links(relation='parent')` + `/graph` 并入权威父边；web `derivePlanets` 显式优先） |
+| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | ✅ 完成（`tests/unit/test_hierarchy.py` 12 项 + galaxy 2 项） |
 
 **不在 P0**：左侧嵌套树 UI（用户原始诉求，地基后做）· 稳定 note ID（独立 ADR，P1）· 星系视觉改造。
 
@@ -66,7 +65,7 @@
 | 方向 | 说明 | 前置/风险 |
 |---|---|---|
 | **A. UI 视觉打磨** | 层次 ✅ / 状态色 a11y ✅ / 按钮字体 ✅ / 空态 ✅ / 微交互 ✅；MiSans 已裁定 C 收尾 | **已收尾**（浮层目视按需） |
-| **B. 主/副笔记层级（T-NOTE-HIER）** | **进行中** — ADR-024 地基先行（P0-1~P0-5） | 无新表；rename 耦合待 P1 稳定 ID |
+| **B. 主/副笔记层级（T-NOTE-HIER）** | ✅ **P0 完成（2026-09-01）**；遗留 P1：左侧嵌套树 UI · 稳定 note ID | — |
 | **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
 | **D. M9 Visual Engine / M10 AI 生成可视化** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
 | 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |

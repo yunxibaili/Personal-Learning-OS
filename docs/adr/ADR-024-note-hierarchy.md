@@ -82,6 +82,16 @@ tags: 机器学习
 | 持久化 `children` | 反向声明必然产生双写不一致；children 应派生 |
 | 多父 | 与既有 `links.relation` 语义重叠，造成双写 |
 
+### 2.6 工程红线（Development Red Lines，开发不可误读）
+
+> GPT 评审（2026-08-31）明确：架构决策已定，但需把原则转成**开发者不能误读的工程红线**。以下每条均为强制约束，违反视同违反 AGENTS 宪法。
+
+1. **`links(relation='parent')` 是可重建派生索引，不是事实存储**。任何业务结果不得依赖 links 中不可从 Markdown 重建的状态；删 SQLite / 清空 `links` 后，reindex 必须能仅凭 vault Markdown 完整恢复 parent 关系。
+2. **消费者不得自行读 `links(relation='parent')` 判定主/副**。`/graph`、`/universe`、review 的一切 hierarchy 语义必须经唯一 `resolve_hierarchy()`；`links` 仅允许作为 resolver / 查询层的派生索引或性能优化。
+3. **派生 links 缺失、过期或与 Markdown 不一致，不得改变 hierarchy 权威结果**。以 Markdown + resolver 为准；reindex 是**派生索引的恢复机制**，而非事实数据恢复机制（对应 BUG-1 教训）。
+4. **关系校验失败统一失败语义**：不得静默修改用户输入，也**不得以 4xx 阻断 Markdown 保存**；应保留用户原始值并标记 `invalid`，由 resolver 拒绝建立无效关系（自指 / orphan / cycle 三者一致）。
+5. **P0-4 属 `[ARCHITECTURE WARNING]` 协议范围**：写码前必须逐一确认——Markdown authority · 唯一 resolver · links 派生性 · reindex 可重建 · 冲突时 Markdown 优先 · 禁止视图自行推断。
+
 ## 3. Frontmatter Round-Trip（地基，P0-1）
 
 本 ADR 的**前置条件**，不是可选项。
@@ -98,11 +108,13 @@ tags: 机器学习
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| **P0-1** | frontmatter round-trip（保任意 key + 真删除 + 稳定顺序） | 待施工 |
-| **P0-2** | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | 待施工 |
-| **P0-3** | 统一 `resolve_hierarchy()`（explicit > inferred） | 待施工 |
-| **P0-4** | `/graph`、`/universe` 统一消费 resolver | 待施工 |
-| **P0-5** | round-trip / rebuild 守护测试——**升为 P0 验收标准** | 待施工 |
+| **P0-1** | frontmatter round-trip（保任意 key + 真删除 + 稳定顺序） | ✅ 已完成（`compose_file(meta,body)`） |
+| **P0-2** | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | ✅ 已完成（`parse_parent`/`set_meta_parent` + notes PATCH 写 parent） |
+| **P0-3** | 统一 `resolve_hierarchy()`（explicit > inferred） | ✅ 已完成（`hierarchy.py`；已接入 reindex 物化 + /graph 合并） |
+| **P0-4** | `/graph`、`/universe` 统一消费 resolver | ✅ 已完成（`/graph` 经 `_merge_parent_edges` 并入权威父边；`/universe` 仅 concept↔concept，天然不涉及） |
+| **P0-5** | round-trip / rebuild 守护测试——**升为 P0 验收标准** | ✅ 已完成（`tests/unit/test_hierarchy.py` 12 项 + web `derivePlanets` 显式优先 2 项） |
+
+> ⚠️ P0-4 属 `[ARCHITECTURE WARNING]` 协议范围（见 §2.6 红线 5）：写码前须确认 Markdown authority · 唯一 resolver · links 派生性 · reindex 可重建 · 冲突 Markdown 优先 · 禁视图自行推断。
 
 **不在 P0 范围**：左侧嵌套树 UI、稳定 note ID、星系视图改造（P0-4 只统一消费，不改视觉）。
 
@@ -111,7 +123,7 @@ tags: 机器学习
 1. 无 parent 正常
 2. parent 指向存在笔记 → 成功
 3. parent 不存在 → 保留原值 + 标记 invalid
-4. parent 自指 → 拒绝 / invalid
+4. parent 自指 → **保存原值 + 标记 invalid + 不建立关系（不以 4xx 阻断保存）**
 5. A→B→A → 检出 cycle
 6. 两个 child 同 parent → 正常
 7. 改 parent → 旧关系消失

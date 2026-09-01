@@ -6,7 +6,7 @@
 > 基线：2026-08-31 · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
 > · License Apache-2.0
 > 验证：`pytest` / `vitest` / `tsc --noEmit` / `vite build` 以最近一次全量 Gate 实测为准
-> （2026-08-31 Gate：pytest 832+2 守护 · vitest 28 · tsc PASS · build PASS）
+> （2026-09-01 Gate：pytest **848**（含 T-NOTE-HIER 12）· vitest **30** · tsc PASS · build PASS）
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，
 > 工程约束见根 `AGENTS.md`。
@@ -646,6 +646,15 @@ migration，`links(relation='parent')` 仅作派生索引。**地基先行**（f
 round-trip → 显式 parent + 校验 → 统一 `resolve_hierarchy()` → graph/universe
 统一消费 → 12 项守护测试）；左侧嵌套树 UI 与稳定 note ID（独立 ADR，P1）不在
 P0 范围。计划与验收见 `docs/TASKS.md` §T-NOTE-HIER。
+
+**T-NOTE-HIER P0 已完成（2026-09-01）**：frontmatter round-trip（`compose_file(meta,body)`
+保任意关键）→ 显式 parent 读写+校验（`parse_parent`/`set_meta_parent` + notes PATCH，
+自指/orphan/cycle 统一「保存原值 + 标 invalid，不阻断保存」）→ 统一
+`resolve_hierarchy()`（`hierarchy.py`，explicit>inferred，含 cycle 环检测）→
+reindex 物化 `links(relation='parent')` 派生索引 + `/graph` 并入权威父边 →
+`derivePlanets` 显式优先（无 parent 边时回退 wikilink 推断）。守护测试
+`tests/unit/test_hierarchy.py` 12 项 + web 2 项全过。**Gate：pytest 848 · vitest 30 ·
+tsc PASS · build PASS**。遗留（P1）：左侧嵌套树 UI · 稳定 note ID（独立 ADR）。
 
 ---
 
