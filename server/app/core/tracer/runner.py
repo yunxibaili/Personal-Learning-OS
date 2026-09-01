@@ -21,6 +21,7 @@ from .limits import (
     MAX_TRACE_EVENTS,
     MAX_STDERR_BYTES,
     MAX_STDOUT_BYTES,
+    MAX_RECURSION_DEPTH,
 )
 
 # Import 白名单（ADR-025 §5.4）
@@ -45,6 +46,11 @@ MAX_TRACE_EVENTS = {max_trace_events}
 MAX_RECURSION_DEPTH = {max_recursion_depth}
 MAX_STDOUT_BYTES = {max_stdout_bytes}
 REMOVED_BUILTINS = ("open", "exec", "eval", "compile", "input", "breakpoint")
+
+# 用户代码的 compile 文件名。trace 以此判定「是否用户自己的帧」——
+# runner 自身的帧（_StdoutCap.write / tracer 脚本模块帧）一律不得进入轨迹，
+# 否则会产出越界行号（示例只有 11 行却能出现 L118）并泄漏内部变量。
+USER_FILENAME = "<sandbox>"
 
 
 def safe_import(name, *args, **kwargs):
@@ -90,6 +96,11 @@ class Tracer:
         self.cap = cap
 
     def trace_callback(self, frame, event, arg):
+        # 非用户帧（runner 自身 / _StdoutCap / 被允许的库）一律不追踪：
+        # 返回 None 表示「此帧及其内部都不 trace」，从源头杜绝噪声事件——
+        # 否则会产出越界行号（示例 11 行却出现 L118）并泄漏 runner 内部变量。
+        if frame.f_code.co_filename != USER_FILENAME:
+            return None
         if event == "call":
             self._recursion_depth += 1
             if self._recursion_depth > MAX_RECURSION_DEPTH:
@@ -99,6 +110,10 @@ class Tracer:
         if self.step >= MAX_TRACE_EVENTS:
             return None
         if event in ("call", "line", "return"):
+            # module 帧的初始 call 事件 f_lineno == 0（尚未执行任何行）——
+            # 无信息量，且会让代码 pane 高亮一个不存在的行号，直接跳过。
+            if frame.f_lineno == 0:
+                return self.trace_callback
             self.step += 1
             self._record_event(frame)
         return self.trace_callback
@@ -108,11 +123,21 @@ class Tracer:
         frames = []
         current = frame
         while current:
-            try:
-                loc = safe_snapshot(dict(current.f_locals))
-            except Exception:
-                loc = {{}}
-            frames.append({{"func": current.f_code.co_name, "line": current.f_lineno, "locals": loc}})
+            # 调用栈同样只保留用户帧：runner 的 module 帧 / 捕获器帧不得混入，
+            # 否则栈里会同时出现两个 <module>（L10 与 L118）。
+            if current.f_code.co_filename == USER_FILENAME:
+                try:
+                    raw = dict(current.f_locals)
+                except Exception:
+                    raw = {{}}
+                # 过滤 dunder（__builtins__ / __name__ / __loader__ …）：
+                # 用户变量不会以 __ 开头，留着只会把执行环境泄给前端。
+                visible = {{k: v for k, v in raw.items() if not k.startswith("__")}}
+                try:
+                    loc = safe_snapshot(visible)
+                except Exception:
+                    loc = {{}}
+                frames.append({{"func": current.f_code.co_name, "line": current.f_lineno, "locals": loc}})
             current = current.f_back
         self.events.append({{
             "step": self.step,

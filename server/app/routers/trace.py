@@ -16,7 +16,13 @@ from typing import Any
 from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
-from ..core.tracer import UnknownExampleError, run_trace
+from ..core.tracer import (
+    UnknownExampleError,
+    describe_example,
+    list_examples,
+    read_example_source,
+    run_trace,
+)
 from ..core.tracer.limits import MAX_CONCURRENT_TRACES
 
 router = APIRouter(prefix="/api/v1/trace", tags=["trace"])
@@ -77,3 +83,34 @@ def run_trace_endpoint(payload: dict = Body(...)) -> Any:
         })
     finally:
         _trace_semaphore.release()
+
+
+# --- 只读：示例清单与源码（ADR-025 §3.3）---
+#
+# 源码是随代码发布的静态资产，不随每次 run 回传（否则每帧都背着整份源码）。
+# 前端单独取一次即可缓存；代码 pane 与 trace 事件按行号对齐。
+
+@router.get("/examples")
+def list_examples_endpoint() -> Any:
+    """示例清单（不含源码）：供示例选择器与 template 路由使用。"""
+    examples = [describe_example(ex.example_id) for ex in list_examples()]
+    return {"examples": examples}
+
+
+@router.get("/examples/{example_id}")
+def get_example_endpoint(example_id: str) -> Any:
+    """单个示例条目 + 源码。未知 example_id → 404（与 /run 同一套枚举键解析）。"""
+    entry = describe_example(example_id)
+    if entry is None:
+        return JSONResponse(status_code=404, content={
+            "error": {"code": "unknown_example",
+                      "message": f"Unknown example_id: {example_id}"},
+        })
+    source = read_example_source(example_id)
+    if source is None:
+        # 清单有条目但文件缺失 = 应用资产损坏，属服务端故障
+        return JSONResponse(status_code=500, content={
+            "error": {"code": "source_unavailable",
+                      "message": f"Source file missing for example_id: {example_id}"},
+        })
+    return {**entry, "source": source}

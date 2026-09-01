@@ -21,6 +21,31 @@ class UnknownExampleError(LookupError):
     """example_id 不在示例清单内（ADR-025 §3.3）。路由层映射 HTTP 404。"""
 
 
+def describe_example(example_id: str) -> dict[str, Any] | None:
+    """清单条目摘要（不含源码）——供 `GET /trace/examples` 列表用。"""
+    example = get_example(example_id)
+    if example is None:
+        return None
+    return {
+        "example_id": example.example_id,
+        "title": example.title,
+        "concept_title": example.concept_title,
+        "template": example.template,
+    }
+
+
+def read_example_source(example_id: str) -> str | None:
+    """读取示例源码（ADR-025 §3.3：示例是随代码发布的应用资产，只读）。
+
+    与 run_trace 同源的枚举键解析——未知 example_id 返回 None，绝不路径拼接。
+    源码是静态资产，不随每次 run 回传，由前端单独获取后可缓存。
+    """
+    example = get_example(example_id)
+    if example is None:
+        return None
+    return example.path.read_text(encoding="utf-8")
+
+
 def run_trace(example_id: str) -> dict[str, Any]:
     """编排入口（ADR-025 §3.2）：唯一可执行来源是示例清单。
 
@@ -54,4 +79,6 @@ __all__ = [
     "run_trace",
     "get_example",
     "list_examples",
+    "describe_example",
+    "read_example_source",
 ]

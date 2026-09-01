@@ -7,7 +7,7 @@ from pathlib import Path
 
 from app.core.tracer.runner import run_example
 from app.core.tracer.snapshot import safe_snapshot
-from app.core.tracer.examples.manifest import get_example, EXAMPLES_DIR
+from app.core.tracer.examples.manifest import EXAMPLES, EXAMPLES_DIR, get_example
 
 
 # --- PoC-1: factorial（ADR-025 §7.1 PoC-1）---
@@ -279,3 +279,68 @@ def test_safe_snapshot_no_repr_call():
 
     safe_snapshot(Spy())
     assert call_count == 0, f"repr() was called {call_count} times"
+
+
+# --- 轨迹数据卫生（M9-005 前置）---
+#
+# runner 的子进程脚本、_StdoutCap、被允许的库，一律不得出现在轨迹里。
+# 一旦泄漏，代码 pane 会高亮越界行号、变量面板会泄出执行环境内部符号。
+
+# runner 内部符号：只要有一个出现在任何帧的 locals 里即判定污染。
+# 只列 runner 专有名——`result` / `code` / `data` 之类是合法用户变量名，
+# 列进来会误伤（factorial 示例本体就有 `result = factorial(5)`）。
+_RUNNER_INTERNALS = {
+    "_StdoutCap", "_exec", "OutputLimitExceeded", "Tracer", "REMOVED_BUILTINS",
+    "safe_import", "safe_snapshot", "trace_callback",
+    "USER_FILENAME", "MAX_TRACE_EVENTS", "MAX_STDOUT_BYTES", "MAX_RECURSION_DEPTH",
+    "original_import", "originals", "original_stdout", "compiled",
+}
+
+
+def _source_line_count(example) -> int:
+    return len(example.path.read_text(encoding="utf-8").splitlines())
+
+
+@pytest.mark.parametrize("example", EXAMPLES, ids=lambda e: e.example_id)
+def test_trace_lines_within_source_range(example):
+    """所有事件行号必须落在源码行范围内——越界说明混入了 runner 自身的帧"""
+    result = run_example(str(example.path))
+    assert result["status"] == "completed", result.get("error")
+    n_lines = _source_line_count(example)
+    for event in result["events"]:
+        assert 1 <= event["line"] <= n_lines, (
+            f"step={event['step']} line={event['line']} out of 1..{n_lines}"
+        )
+        for frame in event["frames"]:
+            assert 1 <= frame["line"] <= n_lines, (
+                f"frame {frame['func']} line={frame['line']} out of 1..{n_lines}"
+            )
+
+
+@pytest.mark.parametrize("example", EXAMPLES, ids=lambda e: e.example_id)
+def test_trace_frames_are_user_frames_only(example):
+    """帧栈里只有用户自己的帧：不得混入第二个 <module>（runner 的模块帧）"""
+    result = run_example(str(example.path))
+    assert result["status"] == "completed", result.get("error")
+    for event in result["events"]:
+        modules = [f for f in event["frames"] if f["func"] == "<module>"]
+        assert len(modules) <= 1, (
+            f"step={event['step']} has {len(modules)} <module> frames"
+        )
+
+
+@pytest.mark.parametrize("example", EXAMPLES, ids=lambda e: e.example_id)
+def test_trace_locals_free_of_runner_internals(example):
+    """帧变量里不得出现 runner 内部符号，也不得出现 dunder"""
+    result = run_example(str(example.path))
+    assert result["status"] == "completed", result.get("error")
+    for event in result["events"]:
+        for frame in event["frames"]:
+            leaked = _RUNNER_INTERNALS.intersection(frame["locals"])
+            assert not leaked, (
+                f"step={event['step']} frame={frame['func']} leaked {sorted(leaked)}"
+            )
+            dunder = [k for k in frame["locals"] if k.startswith("__")]
+            assert not dunder, (
+                f"step={event['step']} frame={frame['func']} leaked dunder {sorted(dunder)}"
+            )

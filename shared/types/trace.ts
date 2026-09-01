@@ -90,10 +90,20 @@ export interface TraceRunRequest {
 
 // --- Example Manifest（ADR-025 §3.3）---
 
+/** `GET /api/v1/trace/examples` 的清单条目（不含源码） */
 export interface ExampleEntry {
   example_id: string;
   title: string;
   concept_title: string;
   template: "FrameStackView" | "ArrayView" | "GeneralView";
-  path: string;
+}
+
+/** `GET /api/v1/trace/examples/{example_id}` 的响应：条目 + 源码 */
+export interface ExampleDetail extends ExampleEntry {
+  /** 示例源码全文，代码 pane 与 trace 事件按行号对齐（1-based） */
+  source: string;
+}
+
+export interface ExampleListResponse {
+  examples: ExampleEntry[];
 }

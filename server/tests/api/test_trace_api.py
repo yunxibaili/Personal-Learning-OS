@@ -155,3 +155,71 @@ def test_non_completed_status_is_http_200(client, monkeypatch):
     r = _post(client, example_id="factorial")
     assert r.status_code == 200
     assert r.json()["status"] == "timeout"
+
+
+# --- 只读端点：示例清单与源码（ADR-025 §3.3）---
+
+def test_list_examples_returns_manifest_without_source(client):
+    """清单不含源码：源码是静态资产，由单条端点单独取、前端可缓存"""
+    r = client.get("/api/v1/trace/examples")
+    assert r.status_code == 200
+    body = r.json()
+    examples = body["examples"]
+    assert len(examples) == 6
+    ids = {e["example_id"] for e in examples}
+    assert ids == {
+        "quicksort-basic", "binary-search", "bubble-sort",
+        "factorial", "fibonacci", "linear-search",
+    }
+    for e in examples:
+        assert set(e) == {"example_id", "title", "concept_title", "template"}
+        assert e["template"] in ("FrameStackView", "ArrayView", "GeneralView")
+        assert "source" not in e
+        # path 属服务端内部结构，不得外泄
+        assert "path" not in e
+
+
+def test_get_example_detail_returns_source(client):
+    r = client.get("/api/v1/trace/examples/factorial")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["example_id"] == "factorial"
+    assert body["template"] == "FrameStackView"
+    assert "def factorial" in body["source"]
+    assert body["source"].splitlines(), "source must be non-empty"
+
+
+def test_example_source_lines_cover_all_trace_lines(client):
+    """源码行数必须覆盖轨迹里出现的每个行号——代码 pane 才能对齐高亮"""
+    detail = client.get("/api/v1/trace/examples/factorial").json()
+    n_lines = len(detail["source"].splitlines())
+    run = _post(client, example_id="factorial").json()
+    assert run["status"] == "completed"
+    lines = {e["line"] for e in run["events"]}
+    lines |= {f["line"] for e in run["events"] for f in e["frames"]}
+    assert lines, "expected at least one traced line"
+    assert max(lines) <= n_lines, f"trace line {max(lines)} exceeds {n_lines} source lines"
+    assert min(lines) >= 1
+
+
+def test_unknown_example_detail_404(client):
+    assert client.get("/api/v1/trace/examples/nope").status_code == 404
+    body = client.get("/api/v1/trace/examples/nope").json()
+    assert body["error"]["code"] == "unknown_example"
+
+
+def test_path_traversal_on_detail_404(client):
+    """清单是枚举键映射，路径穿透查不到条目 → 404，绝不触达文件系统"""
+    for probe in ("../../etc/passwd", "..%2F..%2Fetc%2Fpasswd", "manifest", "runner"):
+        r = client.get(f"/api/v1/trace/examples/{probe}")
+        assert r.status_code == 404, f"{probe} should be 404, got {r.status_code}"
+
+
+def test_detail_source_missing_is_500(client, monkeypatch):
+    """清单有条目但示例文件缺失 = 应用资产损坏，属服务端故障"""
+    from app.routers import trace as trace_router
+
+    monkeypatch.setattr(trace_router, "read_example_source", lambda example_id: None)
+    r = client.get("/api/v1/trace/examples/factorial")
+    assert r.status_code == 500
+    assert r.json()["error"]["code"] == "source_unavailable"
