@@ -30,8 +30,15 @@ dist-verify*/
 coverage/
 *.log
 
+# vite 加载配置文件时产生的临时时间戳文件
+vite.config.ts.timestamp-*
+
 # 打包产物（M6 起）
-src-tauri/target/
+# 注意：含内部斜杠的模式会被锚定到 .gitignore 所在目录，
+# 因此必须显式写出 web/ 前缀，否则匹配不到 web/src-tauri/target/。
+# （此前只写 src-tauri/target/，导致 1.4GB 构建产物一直显示为未跟踪。）
+web/src-tauri/target/
+web/src-tauri/gen/
 
 # OS
 .DS_Store
