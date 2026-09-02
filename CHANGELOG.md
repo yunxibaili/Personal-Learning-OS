@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **T-NOTE-TREE 主笔记多级层级树（ADR-026 v3，T1+T2+T3）**：
+  - `GET /api/v1/notes/tree?depth=&root_id=`：经唯一 `resolve_hierarchy()` 构建森林
+    （红线 2），depth 默认 3 / 安全上限 10 **后端剪枝**（越界手工 422），
+    `root_id` 懒加载子树入口，`truncated` 标剪枝处，同层 `created_at` 升序（v3 修订）；
+    cycle/orphan 复用既有 `_detect_cycles` 零新代码
+  - 前端左栏：默认展开 3 层 +「…更多子层级」懒加载入口 + 折叠箭头（aria-expanded）+
+    折叠偏好 localStorage 持久化；数据源切换 `/notes/tree`，
+    本地建树 `buildNoteTree` 退役删除（单一树数据路径）
+  - 真实 vault 4 层临时链 E2E 16/16（懒加载/折叠偏好跨刷新/物理清理）
 - **M9 Visual Engine 接入（M9-007）+ 验收关闭（M9-008）**（ADR-025 §7 最后一环）：
   - `ui/visual-engine/` 16 文件逐字节回灌 `web/src/components/ui/visual-engine/`，
     `components/ui/index.ts` 解冻导出（M9-007 前按 2026-09-01 裁定不导出）

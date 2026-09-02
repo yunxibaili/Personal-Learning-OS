@@ -12,6 +12,14 @@
 ## 当前任务
 
 ### ✅ [0] 项目整理 / 状态收口——已完成（2026-09-02，所有者确认通过）
+### ✅ [5]-[7] T-NOTE-TREE T1/T2/T3——已完成（2026-09-02）
+
+多级层级树全量交付：GET /notes/tree（depth 剪枝 + root_id 懒加载 + truncated）+
+前端 3 层默认展开/折叠偏好/「…」懒加载 + Gate 全绿（pytest 977 · vitest 161 ·
+tsc 0 · build PASS）+ 真实 vault 4 层链 E2E 16/16。
+报告：`TASKS.md` §T-NOTE-TREE。语义注记：orphan/cycle「不进树」落地为
+「不悬挂为 child、以根保持可见」（供所有者复核，见报告）。
+
 ### ✅ [2]-[4] M9-007 接入 / M9-008 验收 / M9 关闭——已完成（2026-09-02）
 
 **M9-007/008 已交付**（详细报告：`TASKS.md` §T-M9-007/008）：
@@ -19,8 +27,8 @@ ui 库逐字节回灌 web/ + 图谱 Inspector 入口 + VisualizeOverlay 业务�
 + pytest 967 / vitest 155 / tsc PASS / build PASS / 无头自检 17/17。
 ADR-025 状态 → Accepted。M9 正式关闭。
 
-**当前无进行中任务**——下一项为路线 [5] T-NOTE-TREE T1（ADR-026 v3 Accepted），
-开工等所有者指令；路线 [1] 技术债处置（`PROJECT_STATE.md` §12）可与 T1 并行评估。
+**当前无进行中任务**——路线剩余：[1] 技术债处置（`PROJECT_STATE.md` §12 P1/P2 清单）
+与 [8] P8 正式收尾 / v0.1.x；下一步等所有者指令。
 
 <details>
 <summary>历史：[0] 收口任务定义（已完成，存档）</summary>

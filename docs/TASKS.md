@@ -1703,3 +1703,61 @@ ui 库：`visual-engine/index.ts`（注释同步解冻）
   等真实需求，未做（符合 V1 范围锁定）。
 - StrictMode 双挂载的两次坑（取数 429 / 事件双记）已在业务壳以模块级去重解决；
   线上生产构建无 StrictMode 双跑，但 dev 是日常环境，必须防。
+
+## T-NOTE-TREE 多级层级树完成（2026-09-02）
+
+### 做了什么（T1 后端 + T2 前端 + T3 验收）
+
+- **T1 后端**：`GET /api/v1/notes/tree?depth=&root_id=`（`notes.py`，注册在 `/{note_id}`
+  **之前**——路由顺序陷阱）；`depth` 默认 3 / 安全上限 10，越界**手工 422**
+  （全局 RequestValidationError handler 会把 422 转 400，不能用 Query 校验）；
+  `root_id` 懒加载子树入口；`truncated` 标剪枝处；同层 `created_at` 升序（v3 修订）。
+- **Core**：`hierarchy.py::build_note_forest`（纯结构构建，输入强制来自
+  `resolve_hierarchy()`——红线 2；cycle/orphan 零新代码走既有 `_detect_cycles` 路径）。
+- **契约**：`shared/types/note.ts` +`NoteTreeNode`（note/children/**truncated**）+
+  `NoteTreeResponse`。
+- **T2 前端**：NoteEditor 数据源切换 `/notes/tree?depth=3`；`treeView.ts` 纯函数
+  （mergeSubtree 懒加载合并 + 折叠偏好 localStorage 读写）；NoteTreeList 折叠箭头
+  （aria-expanded）+「…更多子层级」入口；加载骨架（CLS 铁律定高）。
+  **buildNoteTree 本地建树退役删除**（含 6 项测试）——单一树数据路径，杜绝第二套 hierarchy。
+- **T3**：守护测试 pytest 10 项（多级链/forest/orphan/cycle/depth 剪枝/root_id/
+  created_at 升序/越界 422/路由顺序）+ vitest 8 项（mergeSubtree/偏好 roundtrip）；
+  真实 vault 4 层临时链 E2E（见下）。
+
+### 改动文件
+
+server：`core/hierarchy.py`（+build_note_forest）· `routers/notes.py`（+/tree）·
+`tests/api/test_note_tree.py`（新增 10 项）
+shared：`types/note.ts`（+2 接口）
+web：`components/notes/treeView.ts`+`treeView.test.ts`（新增）·
+`components/notes/buildNoteTree.ts`+`.test.ts`（**删除**）· `views/NoteEditor.tsx` · `global.css`
+
+### 测试了什么
+
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `pytest -q` | 全绿 | **977 passed**（+10 树守护） |
+| `npx vitest run` | 全绿 | **161 passed / 9 files**（-6 buildNoteTree +8 treeView +4 wiringM9 已计入前次） |
+| `tsc --noEmit` | 0 | PASS |
+| `vite build --outDir dist-treecheck` | PASS | PASS（4.45s） |
+| 无头 E2E `web/sandbox/tree-check.cjs`（真实 vault） | 全绿 | **16/16 · 0 控制台错误** |
+
+### E2E 覆盖（真实 vault，4 层临时链 A→B→C→D，测后物理删除）
+
+默认 3 层全展开（A/B/C 可见、D 被后端剪枝）· 第 3 层出现「…」入口 ·
+点击懒加载 D 出现且入口消失 · 折叠箭头（aria-expanded）· 折叠偏好跨刷新保持 ·
+再次展开恢复。
+
+### 语义解释（供所有者复核）
+
+ADR-026 §3.2「orphan/cycle 不进树」落地为：**不作为任何节点的 child 悬挂**
+（resolver 已判 invalid、`children` 中不出现），**以根身份保持可见**（parent_id=null）——
+与 `resolve_hierarchy()` 的 roots 语义（明文含 invalid）及 ADR-024 P1-1 前端
+「orphan 按根渲染避免丢笔记」一致；完全隐藏会违反「用户不丢笔记」产品原则。
+守护测试按此断言（`test_orphan_visible_as_root_never_hanging` /
+`test_cycle_nodes_never_hanging_visible_as_roots`）。
+
+### 遗留
+
+- 手动排序 / 拖拽改父依赖稳定 note ID（ADR-024 P1-2），未做（ADR-026 §3.3 既定）。
+- domain 维度 P1 排期（ADR-026 §5，语义边界 domain≠parent）。
