@@ -3,10 +3,19 @@
 > **项目唯一状态来源**（Single Source of Truth for current state）。
 > 第一次接触项目、或 AI 会话启动时，从这里开始。
 >
-> 基线：2026-08-31 · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
+> **单一真相源原则（2026-09-02 项目所有者裁定）**：全项目**只允许本文件定义
+> 「现在做到哪了」**。其他任何文档（TASKS / ACTIVE_TASK / CURRENT_STATE / README /
+> CHANGELOG / ADR）只能引用或补充本文件，**不得各自维护进度真相**。
+> 若发现他处与本文件冲突：先 `git log` + 实际代码核实，再回改他处，本文件为准。
+>
+> 基线：**2026-09-02 状态收口**（收口任务：对齐全部文档至 HEAD `12030ff` 实际状态）
+> · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
 > · License Apache-2.0
 > 验证：`pytest` / `vitest` / `tsc --noEmit` / `vite build` 以最近一次全量 Gate 实测为准
-> （2026-09-01 Gate：pytest **865**（含 T-NOTE-HIER 29）· vitest **36** · tsc PASS · build PASS）
+> （2026-09-01 Gate：pytest **873** · vitest **36**；2026-09-02 复测：vitest **87**（6 文件，
+> 含组件接线测试 51 项）· tsc PASS · build PASS（707 modules）。
+> **pytest 本机 venv 未装 dev 依赖（pytest/httpx）无法复跑**，最近实测值以 CHANGELOG
+> v0.1.0-rc.1 记载的 873 为准，安装 `requirements-dev.txt` 后即可复跑。）
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，
 > 工程约束见根 `AGENTS.md`。
@@ -119,8 +128,9 @@ UI 不承担核心业务逻辑/图计算/SM-2/同步核心 · 无理由不新增
 | 项 | 值 |
 |---|---|
 | 产品名 | **Open Learning OS**（中文：个人学习操作系统） |
-| 前端包名 | `plos-web`（`web/package.json`，version `0.1.0-dev`） |
+| 前端包名 | `plos-web`（`web/package.json`，version `0.1.0-rc.1`） |
 | 许可证 | Apache-2.0（`LICENSE` 已入库） |
+| 已发布 | tag `v0.1.0-rc.1`（2026-09-01，指向 `13fa1bc`） |
 
 ### 1.2 一句话定位
 
@@ -254,39 +264,44 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 - Layer 2 本地重建：`concepts` / `links` / `concept_mastery` / `review_queue`
 - Layer 3 永不同步：`settings` / API keys / SQLite
 
-### 2.6 前端（§0 政策下冻结）
+### 2.6 前端
 
 | 维度 | 实现 |
 |---|---|
-| 框架 | React 18.3 + TypeScript 5.6 + Vite 5.4 |
+| 框架 | React 18.3 + TypeScript 5.9 + Vite 5.4 |
 | 状态管理 | Zustand 5（唯一状态库，`AGENTS.md` §2.2 禁止增加第二个） |
-| 可视化 | 三套独立管线（ADR-023 边界冻结）：**Universe**（d3-force 聚类 + 中央 Planet）/ **Graph**（dagre 层级）/ **Planet**（Cobe WebGL 点阵地球） |
-| UI 架构 | 单一 `global.css`（无 CSS 框架、无 UI 组件库、无图标库）；顶部 tabbar + 单页切换 |
-| 编辑器 | TipTap v3 + KaTeX |
-| 样式策略 | 手写 CSS 变量，ADR-013 前端设计系统冻结 |
-| 代码规模 | TS/TSX ≈ 6,432 行 |
+| 可视化 | 三套独立管线（ADR-023 边界冻结）：**Universe/星系**（自研 Canvas 2D，`GalaxyCanvas.tsx`，主笔记=星球/副笔记=卫星）· **Graph**（React Flow + dagre 层级）· **MindMap**（React Flow）。~~d3-force / Cobe~~ 已于 v0.1.0-rc.1 移除（`dd4f40c`/`13fa1bc`） |
+| UI 架构 | 单一 `global.css`（无 CSS 框架、无 UI 组件库、无图标库）；**无 tabbar**——笔记优先三栏 + 浮层视图（裁决 A，`008ea4e`） |
+| 编辑器 | TipTap v3 + KaTeX + tiptap-markdown |
+| 样式策略 | 手写 CSS 变量（`ui/tokens.css` 为权威源，`web/src/styles/tokens.css` 为镜像），ADR-013 前端设计系统冻结 |
+| 代码规模 | TS/TSX ≈ 6,168 行（2026-09-02 实测，非测试 5,275 + 测试 893） |
 
 ---
 
 ## §3 Technology Stack
 
-**Frontend**：React 18.3 · TypeScript 5.6 · Vite 5.4 · Zustand 5 · @xyflow/react 12.11 ·
-dagre 0.8.5（Graph 布局）· d3-force 3.0.0（Universe 聚类，ADR-007 唯一批准例外）·
-cobe 0.6.5（WebGL 地球）· TipTap 3.30 · KaTeX 0.16
+**Frontend**：React 18.3 · TypeScript 5.9 · Vite 5.4 · Zustand 5 · @xyflow/react 12.11 ·
+dagre 0.8.5（Graph 布局）· TipTap 3.30 + tiptap-markdown + @aarkue/tiptap-math-extension ·
+KaTeX 0.16 · Tauri 2.x（桌面壳，M6）。
+~~d3-force 3.0.0~~（已于 v0.1.0-rc.1 移除——唯一消费者 P8-001B Universe V2 已删 `dd4f40c`，
+现 Universe/星系 = 自研 Canvas 2D）· ~~cobe 0.6.5~~（同批移除）· ~~marked~~（从未安装；
+Markdown 序列化由 tiptap-markdown 的传递依赖 markdown-it 承担）
 
-**Backend**：Python 3.12 · FastAPI 0.115 · uvicorn 0.30 · python-multipart ·
-标准库 `sqlite3` 直写 SQL（无 ORM）· 递归 CTE · Pydantic ·
+**Backend**：Python 3.12 · FastAPI 0.141 · uvicorn 0.52 · python-multipart ·
+标准库 `sqlite3` 直写 SQL（无 ORM）· 递归 CTE · Pydantic 2 ·
 `atomic_write_file`（write → fsync → rename）
 
-**Database**：SQLite 3 + FTS5（默认 unicode61 分词，中文检索走 B9 bigram 回退）· migration runner（001~008）·
+**Database**：SQLite 3 + FTS5（默认 unicode61 分词，中文检索走 B9 bigram 回退）· migration runner（001~009）·
 无 ORM / 图数据库 / 向量数据库
 
-**AI**：`LLMProvider` Protocol + `MockProvider`（唯一实现）· 手写 `build_prompt()` ·
-Token 截断 + 双重敏感字段过滤。设计目标：OpenAI-compatible HTTP 接口
-（DeepSeek/Qwen/OpenAI/Ollama 任一，settings 驱动）——**当前未落地**
+**AI**：`LLMProvider` Protocol 三实现（`MockProvider` 默认 · `openai_compat` 真实实现，
+DeepSeek 端到端实测（B1b）+ Ollama qwen3-14b 本地实测（B10），均 2026-08-30）·
+手写 `build_prompt()` · Token 截断 + 双重敏感字段过滤 · **SSE 流式已落地**（B2）
 
-**Testing**：pytest 8 + httpx（FastAPI TestClient）→ **853 passed**（2026-09-01）·
-vitest 2.1 → **36 passed**（4 文件：ui 2 / universe layout 14 / graph layout 7 / galaxy 15 / buildNoteTree 6）
+**Testing**：pytest 8 + httpx（FastAPI TestClient）→ 最近全量 Gate **873 passed**（v0.1.0-rc.1，2026-09-01；
+本机 venv 未装 dev 依赖，复跑需先 `pip install -r requirements-dev.txt`）·
+vitest 2.1 → **87 passed**（2026-09-02 实测，6 文件：ui store 8 / buildNoteTree 6 /
+derivePlanets 15 / graph layout 7 / ui components 21 / ui wiring 30）
 
 **Build**：Vite 5.4 · `tsc --noEmit` 门禁 · `scripts/test.ps1` · `scripts/seed_demo.py`
 
@@ -301,19 +316,22 @@ vitest 2.1 → **36 passed**（4 文件：ui 2 / universe layout 14 / graph layo
 `content_hash` 增量索引 · 原子写入（write → fsync → rename）· `[[wikilink]]` 三级解析 + 自动建桩 ·
 附件路径守卫 · Vault → SQLite 索引恢复（`POST /api/v1/admin/reindex`）
 
-未实现：批量导入 · Vault 自动监听（watcher）· 外部格式导入 · 笔记模板 · 增量 reindex
-（`changed_paths` 接口已预留，MVP 退化为全量）
+未实现：笔记模板。（批量导入 B15 · Vault 自动监听 B16 · 外部格式导入 B19 ·
+增量 reindex B17 均已实现，见 §9.2）
 
 ### 4.2 知识理解
 
-**Universe**：`GET /api/v1/universe` 投影端点 · `lib/universe/layout.ts` 布局纯函数
-（domain 径向分组 + d3-force 确定性输出）· PlanetNode 中央聚合星球 ·
-ConceptNode hover 抬升 + weak 虚线环（mastery < 0.3）· Floating Inspector ·
-拖动位置 + viewport 持久化（localStorage）· Focus 模式周边渐隐
+**Universe（现 = Galaxy 多星球系统）**：`GET /api/v1/universe` 投影端点（保留）·
+前端渲染 **`GalaxyView`**（`components/galaxy/GalaxyCanvas.tsx`，自研 Canvas 2D）——
+主笔记=星球、副笔记=卫星（层级消费 `resolve_hierarchy()` 权威 parent 边，
+无 parent 边时回退 wikilink 拓扑启发式）· 全屏巡览 4s 可暂停 / 右栏 GalaxyMini 272px 静止 ·
+卫星 ≤16 聚合「+N」· 30fps 节流 + dpr 上限 + 离屏暂停 + reduced-motion 全停。
+~~d3-force Universe V2（`lib/universe/layout.ts` + PlanetNode/ConceptNode）~~ 已删除（`dd4f40c`，2026-08-31）
 
 **Graph**：`GET /api/v1/graph` 读模型（递归 CTE，depth 1~3）· dagre 层级布局 ·
 Concept（圆形）/ Note（方形）双视觉 · Layer Toggle（Mixed / Concept / Note）·
-Edge 视觉层次（9 种 relation）· MiniMap + hover relation label + domain 过滤
+Edge 视觉层次（9 种 relation）· hover relation label + domain 过滤 · Floating Inspector ·
+~~MiniMap~~ 已移除（2026-08-29）
 
 **Concept**：`/api/v1/concepts` CRUD（无 DELETE，ADR-023 边界）· `origin` 唯一来源字段
 （manual / markdown / ai_suggested，ADR-023 冻结）· `status` 生命周期
@@ -362,15 +380,14 @@ Concept Binding（引用 concept，不改 mastery/event）· Export/Import（`.m
 
 ### 4.6 AI Tutor
 
-已实现：上下文构建（白名单 6 类）· Prompt 组装 + 截断 + 敏感过滤 ·
-ProviderProtocol + MockProvider · `TutorService.ask()` / `build_prompt_only()` ·
-`TutorPanel` 多模式 + 上下文透视面板 · `GET /tutor/context/{concept_id}` ·
-`POST /tutor/test`（全链路 Smoke）· 掌握度感知（读衰减后值）·
-**P8-003D 显式笔记引用**（`POST /tutor/context`，复用 `search_notes()` + `suggest_for_context()`，
-死 tab 复活）· M4-E 评估体系
+已实现：上下文构建（白名单 6 类 + memories B8 + 显式笔记引用 P8-003D）· Prompt 组装 + 截断 + 敏感过滤 ·
+ProviderProtocol 三实现（Mock / openai_compat / 剥 `<think>`）· `TutorService.ask()` / `build_prompt_only()` ·
+`TutorPanel` 多模式 + 上下文透视面板 + **SSE 流式渲染 + Stop**（P8-007）· `GET /tutor/context/{concept_id}` ·
+`POST /tutor/context`（显式笔记引用）· `POST /tutor/test`（全链路 Smoke）· 掌握度感知（读衰减后值）·
+**Extractor**（B3 回合后抽取，失败不影响主回答）· **对话持久化**（B7 conversations/messages）·
+**用户记忆**（B8 注入 + B28 管理面）· **Tutor 三入口**（P8-006：Note→Explain / Weak→Tutor / Review 错答→Hint + Graph 概念→Tutor）· M4-E 评估体系
 
-未实现：真实 LLM Provider · 流式输出 · 自动笔记检索（仅支持用户显式引用）·
-Extractor（回合后二次 LLM 调用）· 对话持久化 · 用户记忆
+未实现：自动笔记检索（仅用户显式引用 ≤2 篇 + FTS 自动补齐的 auto_notes）
 
 ### 4.7 同步
 
@@ -503,18 +520,19 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 | 视图 | 组件 | 说明 |
 |---|---|---|
 | **笔记工作区**（默认主界面） | `NoteEditorView` + `ContextRail` | TipTap 编辑器 + 笔记列表 + 反链 + FTS 搜索 + 附件上传 + 右栏（大纲/反链/关联/掌握度/雷达 + 迷你星系） |
-| 图谱（浮层） | `GraphView` | dagre 层级布局 · Concept/Note 双节点 · Layer Toggle · MiniMap · Floating Inspector |
+| 图谱（浮层） | `GraphView` | dagre 层级布局 · Concept/Note 双节点 · Layer Toggle · Floating Inspector（~~MiniMap~~ 已移除 2026-08-29） |
 | Universe（浮层） | **`GalaxyView`**（`components/galaxy/`） | **多星球系统**：主笔记=星球、副笔记=卫星，层级从 `/graph` 边拓扑推断；全屏巡览 4s 可暂停 / 右栏单颗静止 |
 | 导图（浮层） | `MindMapCanvas` | React Flow 思维导图 · 节点 CRUD · Concept Binding · 导入导出 |
 | AI Tutor（右栏抽屉） | `TutorPanel` | 多模式 AI 问答 + 上下文透视面板（**SSE 流式** POST /chat stream=true：增量渲染 + Stop 中止，P8-007） |
 | 复习（浮层） | `ReviewSessionView` | SM-2 复习会话状态机 · 键盘驱动 |
 
 **已移除**：~~7 个平级 tab~~ · ~~`DashboardView` 仪表盘~~（裁决 A）·
-~~`KnowledgeUniverse`（d3-force 旧实现）~~（已被 `GalaxyView` 取代，代码待删）·
+~~`KnowledgeUniverse`（d3-force 旧实现）~~（已被 `GalaxyView` 取代，代码已删 `dd4f40c`）·
 ~~`#preview` / `#planet` 原型入口~~（Phase 4 已清理）。
 
-保留的 dev 入口：`#gallery` → `dev/ComponentGallery.tsx`（组件活文档，仅 DEV 生效，
-生产构建被 tree-shake）。
+⚠️ dev 入口 `#gallery` → `dev/ComponentGallery.tsx`：**实际未接线**（全库零 import，
+App 无 hash 路由分发），并非「DEV 生效」——该文件当前为无引用的孤立文件
+（技术债清单见 §12）。
 
 > 浮层态经右栏「关联」标签进入，顶栏「← 返回笔记」返回。
 
@@ -541,7 +559,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B6 | AI 生成思维导图 | ✅ 已实现（2026-08-30：`POST /mindmaps/suggest`，**只建议不自动写库**，ADR-019） |
 | B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（CRUD + POST /chat） |
 | B8 | 用户记忆（`memories` 接入 tutor_context） | ✅ 已实现（B3 生产者 + 复合排序 + 敏感排除） |
-| B9 | 中文 FTS 分词优化 | ✅ 部分（2026-08-30：CJK bigram 检索回退，不引 jieba；FTS 自身仍 unicode61，ADR-011 边界） |
+| B9 | 中文 FTS 分词优化 | ✅ 已闭环（2026-08-30：**B9 范围 = CJK bigram 检索回退**，不引 jieba；FTS 本体仍 unicode61——该限制不是未完成的 backlog 项，而是 §12 登记的持续风险，ADR-011 边界内） |
 | B10 | 本地 LLM（Ollama）实测验证 | ✅ 已实现（2026-08-30：qwen3-14b 端到端——`/tutor/test` 非流式 · `/chat` SSE 流式 · extractor 提取 memory/概念桩/learning_event → mastery 更新全通。附带修复：openai_compat 剥离思考型模型内联的 `<think>` 推理段（非流式 `_strip_think`；流式按模型名提示 qwen3/r1/think 缓冲，其余模型逐增量透传），`think:false` 实测不被 Ollama /v1 遵守） |
 | B28 | Memories 管理面 API | ✅ 已实现（GET/PATCH/DELETE + `/memories/maintenance`） |
 | — | Memory Agent（智能记忆管理） | ✅ 已实现（2026-08-30：`/memories/maintenance` 按 value=importance×新近度 排序 + 保留建议，只建议不删除） |
@@ -585,35 +603,37 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 ## §10 Verification & Scale
 
-### 10.1 验证状态（2026-08-30 实测）
+### 10.1 验证状态（最近全量 Gate：v0.1.0-rc.1，2026-09-01；前端复测 2026-09-02）
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **815 passed**（M7-008 后；基线 730 + 新增 85，约 8.5 min） |
-| `npx vitest run` | **36 passed**（4 files） |
-| `tsc --noEmit` | **PASS** |
-| `vite build` | **PASS**（729 modules，1,317.67 kB JS / 81.34 kB CSS） |
+| `pytest -q` | **873 passed**（v0.1.0-rc.1 Gate 实测，2026-09-01；⚠️ 本机 venv 未装 dev 依赖，复跑先 `pip install -r requirements-dev.txt`。Windows 绕 safe-delete 守卫：`CODEBUDDY_SAFE_DELETE_ENABLED=0`，见 `docs/TESTING.md`） |
+| `npx vitest run` | **87 passed（6 文件）**（2026-09-02 实测；v0.1.0-rc.1 Gate 时为 36/4，组件接线测试 +51 后增长） |
+| `tsc --noEmit` | **PASS**（2026-09-02 复测） |
+| `vite build` | **PASS**（2026-09-02 复测：707 modules / 4.12s / 10 chunk，主包 179kB；TiptapEditor chunk 807KB 为已知警告） |
+
+> 历史登记值（815/826/836/853/865/873）为各阶段 Gate 快照，全量数字以 CHANGELOG 对应版本为准。
+> **计数类冲突已在 2026-09-02 收口清理**：本文此后是唯一登记处，其他文档只引用。
 
 > Windows 环境注意：跑 pytest 需绕过 safe-delete 守卫——
 > `cd server && CODEBUDDY_SAFE_DELETE_ENABLED=0 ./.venv/Scripts/python.exe -m pytest -q`
 > 前端构建需绕过 `web/dist` 清空守卫——`npx vite build --outDir dist-verify`
->
-> ⚠️ 全量 pytest 实测 8.5 分钟（同步与 watcher 用例含真实 I/O 与超时等待），
-> 勿以「跑得久」误判为卡死。
+> （2026-09-02 实测：环境删除守卫曾整体故障，复用旧 outDir 也会触发 bulk guard；
+> 遇 `[SAFE_DELETE_FAIL_CLOSED]` 时改用**全新 outDir**。）
 
-### 10.2 代码规模（2026-08-30 实测）
+### 10.2 代码规模（2026-09-02 实测）
 
 | 项 | 数值 |
 |---|---|
-| git 追踪文件 | 222 |
-| 提交数 | 107（单分支 main + origin/main） |
+| git 追踪文件 | 405 |
+| 提交数 | 230（单分支 main 线性历史，2026-08-26 → 09-02） |
 | 后端 Python | ≈ 9,722 行（`server/app`） |
-| 前端 TS/TSX | ≈ 6,432 行（`web/src` + `shared`） |
-| APIRouter / 端点 | **20 / 89** | |
-| Migration | **8** |
-| ADR | 23 |
+| 前端 TS/TSX | ≈ 6,168 行（`web/src`，非测试 5,275 + 测试 893） |
+| APIRouter / 端点 | **20 / 89**（路由装饰器实测 91 行，含非端点装饰） |
+| Migration | **9**（001~009） |
+| ADR | **26**（ADR-001~026，另有 principles/separation/upmark 三个非编号文件） |
 
-> 计数以 OpenAPI schema 实测为准，勿沿用旧值（曾长期写 14/47、migration 7）。
+> 计数以 OpenAPI schema 实测为准，勿沿用旧值（曾长期写 14/47、migration 7、commits 107/184/193）。
 
 ### 10.3 核心闭环完成度
 
@@ -629,7 +649,8 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 **后端闭环状态（2026-08-30）**：§9 全部条目已闭环（B10 于 2026-08-30 以本机
 Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外。
 
-**仍未闭环（非后端范围）**：桌面/移动分发闭环（M6/M8）。
+**仍未闭环（非后端范围）**：移动分发（M8）。桌面分发（M6）已于 2026-09-01 完成
+（`3db327a`，MSI 65MB + NSIS 102MB）。
 前端视觉打磨（P8-FE-001）已于 2026-08-31 解冻并完成 Round 1–3（`907ff74` /
 `888ecd2` / `3182465`）：层次（body 灰底 + 编辑器白纸面 + 列表内边距）· 状态色
 a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字体继承 ·
@@ -638,44 +659,51 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 **FE-001 收尾**。唯一遗留为 ADR-013 §2.12 记录的「ADR 与设计资产」政策冲突
 （待所有者显式裁决，代码不动）。
 
-**当前任务（2026-09-01 起）**：**T-NOTE-HIER 主/副笔记层级**（ADR-024 已批准）。
-用户提出「主笔记 / 副笔记」并明确「左边也要出现」；核查确认当前无任何主/副关系
-字段（星系的星球/卫星是从 wikilink 拓扑推断的假层级）。经 GPT 评审裁决：
-child-side 单父 `parent: "[[父标题]]"`，事实源在 Markdown frontmatter，零新表零
-migration，`links(relation='parent')` 仅作派生索引。**地基先行**（frontmatter
-round-trip → 显式 parent + 校验 → 统一 `resolve_hierarchy()` → graph/universe
-统一消费 → 12 项守护测试）；左侧嵌套树 UI 与稳定 note ID（独立 ADR，P1）不在
-P0 范围。计划与验收见 `docs/TASKS.md` §T-NOTE-HIER。
+### 当前任务与路线（2026-09-02 项目所有者裁定「先收口，后开发」）
 
-**T-NOTE-HIER P1-1 已完成（2026-09-01）**：`buildNoteTree` 纯函数（平铺列表→森林，
-含 orphan 兜底 + 深度防御 + 同层 `updated_at` 降序）→ `NoteTreeList` 递归渲染
-（缩进 + branch/leaf 图标 + 「＋」创建副笔记按钮）→ `NoteCreate.parent` 一步到位
-（后端 `_create_note_vault` 写 frontmatter + `sync_note_parent` 镜像）→
-CSS `.note-tree__*` 样式。守护：`buildNoteTree.test.ts` 6 项 + `test_notes.py` 5 项。
+所有者裁定：**下一步先项目整理 / 状态收口，再决定 M9 或 T-NOTE-TREE**。
+原则：**只允许本文件定义「现在做到哪了」**，其他文档只能引用/补充（见文首）。
 
-**T-NOTE-HIER P0+P1 已完成（2026-09-01）**：P0（frontmatter round-trip → 显式 parent
-读写+校验 → 统一 `resolve_hierarchy()` → reindex 物化 + `/graph` 并入权威父边 →
-web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `NoteTreeList`
-递归渲染层级树 + `NoteCreate.parent` 一步创建副笔记）。守护测试
-`tests/unit/test_hierarchy.py` 12 项 + galaxy 2 项 + `buildNoteTree` 6 项 +
-`test_notes` 5 项。**Gate：pytest 853 · vitest 36 · tsc PASS · build PASS**。
-遗留（P1）：稳定 note ID（独立 ADR）。
+```text
+[0] 项目整理 / 状态收口（当前任务）
+    ├─ Git / HEAD / tag / branch 确认
+    ├─ README / PROJECT_STATE / TASKS / ACTIVE_TASK / CURRENT_STATE / AGENTS 全面对齐
+    ├─ ADR 007/013/016/018/022/025/026 状态对齐
+    └─ 删除/废弃项统一标记（P8-001B/C、Dashboard、d3-force/cobe/marked）
+[1] 技术债重新分级（按 §12 新分级执行）
+[2] M9-007 Visual Engine 接入 web/
+[3] M9-008 真实验收
+[4] M9 正式关闭
+[5] T-NOTE-TREE T1（契约 + GET /notes/tree）
+[6] T-NOTE-TREE T2（前端三级展开 + 懒加载）
+[7] T-NOTE-TREE T3（守护测试 + 真实 vault ≥3 层 E2E）
+[8] P8 正式收尾 / v0.1.x
+[9] 再决定 M8 Mobile / 其他方向
+```
 
-**T-NOTE-TREE 已批准（2026-09-01，ADR-026 v3 Accepted）**：所有者提出层级组织需求并澄清——
-**「数学」只是学科示例，核心 = 主笔记下面挂至少三层的子层级，像文件夹一样**；
-业界调研（ADR-026 §2）确认树（位置）/标签（分类）/双链（关联）正交互补，本项目
-只缺「位置」层。方案 = ADR-024 单父 forest 的**展示层放开**，零 migration 零新表。
-**批准时采纳外部评审三处修订**（v2→v3）：① `GET /notes/tree` 加 `depth` 参数
-**后端剪枝**（默认 3，安全上限 10）+ `root_id` 懒加载子树，弃 full forest 一次性传输；
-② 取消 5 层产品硬上限——默认展开 3 层 + 懒加载无上限 + 展开状态本地偏好；
-③ 同层排序改 **`created_at` 升序**（弃 `updated_at` 降序，树导航需稳定）。
-**Q1–Q3 已裁决**：展开深度（3 层默认+偏好记忆）· domain 保留设计 P1 排期
-（语义边界 **domain=知识领域/Galaxy 维度 ≠ parent=层级位置**，不互相推导）·
-排序（created_at 升序）。**Galaxy 侧 2026-09-01 最终裁定：零改动零新交互**——
-卫星=直接子笔记（depth-1），第 3 层以下不上图（卫星计数提示已提议并否决）。
-批准时实测：vault 20 篇（百级以下）；环防护复用既有
-`hierarchy.py::_detect_cycles`，补守护测试固化。执行计划见 `docs/TASKS.md`
-§T-NOTE-TREE（T0 已完成，T1–T3 待实施）。
+### 已完成的近期里程碑（存档）
+
+**T-NOTE-HIER 主/副笔记层级（ADR-024）——已完成（2026-09-01，P0+P1）**：
+P0（frontmatter round-trip → 显式 parent 读写+校验 → 统一 `resolve_hierarchy()` →
+reindex 物化 + `/graph` 并入权威父边 → web `derivePlanets` 显式优先）+
+P1-1（`buildNoteTree` 纯函数建树 + `NoteTreeList` 递归渲染层级树 + `NoteCreate.parent`
+一步创建副笔记）。守护测试 hierarchy 12 + galaxy 2 + buildNoteTree 6 + notes 5 +
+boundary 8 + Vault Rebuild 12 = 45 项。遗留（P1-2）：稳定 note ID（独立 ADR）。
+
+**M9 Visual Engine（ADR-025）——M9-002~006 已完成（2026-09-01），待 007 接入 / 008 验收**：
+tracer 子进程隔离 PoC（`6636e07`）→ 契约（`shared/types/trace.ts`）→ API 路由
+（`0b6b316`）→ IDE 步进组件（`35c3ef4`，范式裁定：否决播放器）→ 组件入 ui 库
+`ui/visual-engine/`（`3d13b4b`，**刻意不进 web/**，`web/src/components/ui/index.ts`
+不导出 M9 组件）→ 演示页 + 幂等同步脚本（`8c053f1`）。
+
+**M6 Tauri 桌面打包——已完成（2026-09-01，`3db327a`）**：Windows MSI 65MB +
+NSIS 102MB，GNU 工具链。
+
+**T-NOTE-TREE（ADR-026 v3 Accepted，2026-09-01）——T1–T3 未开工**：
+所有者澄清核心 = 主笔记下 ≥3 层文件夹式子层级；方案 = ADR-024 单父 forest 的
+展示层放开，零 migration 零新表。v2→v3 采纳评审三修订（depth 后端剪枝默认 3 上限 10 +
+`root_id` 懒加载 / 取消 5 层硬上限 / 同层 `created_at` 升序）。
+**Galaxy 侧最终裁定：零改动零新交互**（卫星=直接子笔记，第 3 层以下不上图）。
 
 ---
 
@@ -720,30 +748,61 @@ web `derivePlanets` 显式优先）+ P1-1（`buildNoteTree` 纯函数建树 + `N
 
 ---
 
-## §12 Known Risks
+## §12 技术债分级（2026-09-02 收口重分级，取代旧「Known Risks」罗列）
 
-- 中文 FTS 分词未解决（unicode61 按字切分，长句检索受限，ADR-011）
-- 移动端同步未启动（M7/M8，ADR-005/006）
-- 本地 LLM 未实测（Ollama 路径理论通，未验证）
-- Trace 引擎推迟（M9+）
+> 原则：只列真实存在、可从代码/测试/文档确认的问题；「可以优化」不算债。
+> 执行顺序见 §10.3 路线 [1]（技术债重新分级后逐项处置）。
+
+### P1（建议在 M9-007 前后处置）
+
+| # | 项 | 位置 | 说明 |
+|---|---|---|---|
+| P1-1 | MindMap 6 处裸 `fetch` 绕过统一 API 层 | `web/src/components/mindmap/MindMapCanvas.tsx:113/132/179/214/273/299` | 无 `ApiError` 归一化；`:179` 拖拽存坐标每 change 都发、无防抖 |
+| P1-2 | 活跃 UI **18 处硬编码英文**（中英混排） | `MindMapCanvas.tsx`(Maps/Create/Import/Concept Binding/Select or create a map) · `MapNode.tsx`(Concept Ref/Temporary) · `TutorPanel.tsx`(Tutor/Concept/Mastery/Past Mistakes/Related/Action) · `MemoryList.tsx`(Memories/Loading...) · `SuggestionList.tsx`(AI Suggestions/Loading.../AI suggested) | 5 个组件全部用户可达（App.tsx 懒加载 / Tutor 抽屉内）；同文件 `<h1>` 为中文 → 判翻译遗漏 |
+| P1-3 | 中文 FTS 分词（unicode61 按字切分） | `core/knowledge.py`（B9 仅做 CJK bigram 回退） | ADR-011 边界内；完整分词（jieba 等）需依赖立项 |
+| P1-4 | 默认 MockProvider → Tutor 开箱不可真实演示 | `core/ai/providers/` | 契约与链路已实测（B1b DeepSeek / B10 Ollama qwen3），只差默认配置与引导 |
+| P1-5 | 后端已就绪能力的 UI 取舍 | `/review/history` `/review/stats` `/mistakes/*` `/study/*` `/conversations` 管理 `/export` `/admin/watcher` `/trace/*` `/sync/peers` | **待所有者逐项裁决**：接 UI 或明确标记 backend-only（不做假设） |
+
+### P2（低风险，顺手修）
+
+| # | 项 | 位置 |
+|---|---|---|
+| P2-1 | 死代码：`SyncStatusPanel.tsx` 全库零引用（随 Dashboard 退场未清理） | `web/src/components/sync/` |
+| P2-2 | 死代码：`ComponentGallery.tsx` 零引用，且 `#gallery` dev 入口实际不生效（App 无 hash 路由） | `web/src/dev/` |
+| P2-3 | 死 CSS：`.dashboard-view`（`global.css:714`）· `.tabbar`（`global.css:89-114`） | `web/src/global.css` |
+| P2-4 | `lazy(GalaxyView)` 分包失效——`ContextRail.tsx:7` 静态 import 同模块 `GalaxyMini`，Galaxy 代码打进入口 chunk | `web/src/App.tsx:14` / `ContextRail.tsx:7` |
+| P2-5 | TiptapEditor chunk 807KB 超限警告（已有挂载预热，体验可接受） | `web/src/components/editor/` |
+| P2-6 | 过期注释/残留：`App.tsx:8` 注释提 cobe · `ui.ts` 的 `MindMapCanvas.tsx:81` `searchingConcept` 有 setter 无消费方 · 同一次开笔记 `NoteEditor:132` 与 `ContextRail:59` 重复请求 `GET /notes/{id}` | 各处 |
+| P2-7 | git 追踪引用 `[gone]`（本地 `origin/main` 跟踪引用失效，远端实际同步） | 一次 `git fetch origin` 即恢复 |
+
+### 持续风险（非债，边界内接受）
+
+- 本地 LLM 默认路径未配置（B10 Ollama qwen3 实测通过，但需用户自行配 settings）
 - TipTap 数学扩展为社区维护（@aarkue），非官方
-- AI 第一目标「记忆感知 Tutor」在运行时不可演示（仅 MockProvider）——对外开源需明确标注
-  「契约就绪、实现待接入」，避免贡献者预期落差
+- UI 无 jsdom 交互测试（现有策略 = renderToStaticMarkup + 源码审计 + 无头浏览器自检）
+- `pytest` 本机 venv 缺 dev 依赖（CI 现场安装不受影响）
+- AI 第一目标「记忆感知 Tutor」开箱为 MockProvider——对外需明确标注配置方法（README 已写）
+
+### 待所有者裁决（维持原登记）
+
+- ADR-013 §2.12「ADR 与设计资产」政策冲突（`.topbar` 毛玻璃 vs §2.10 禁 glassmorphism）
+- §13 开源就绪度的路线问题（i18n / 块级引用 / FSRS / 是否吸引外部贡献）
 
 ---
 
 ## §13 Open Source Readiness
 
 > 基线：OpenSSF Scorecard 20 项 + GitHub 社区标准 + 同类项目对标。
-> 完整整改清单与优先级见 `TASKS.md` §3。
+> **2026-09-02 更新：原 P0 清单已全部完成**（CI `.github/workflows/ci.yml` ·
+> README 重写 · tag `v0.1.0-rc.1` + CHANGELOG 条目 · `SECURITY.md` · 前端路由级代码分割）。
+> RC 收尾状态见 CHANGELOG v0.1.0-rc.1。
 
 **当前缺口**：
 
 | 级别 | 项 |
 |---|---|
-| P0 | 无 CI 流水线 · README 与实际进度严重脱节 · 无版本 tag/Release · 无 `SECURITY.md` |
-| P1 | 无依赖更新自动化 · 无 SAST · 无覆盖率度量 · 无 Issue/PR 模板与 CoC · 无分支保护 · 前端产物未代码分割 |
-| P2 | T-EXPORT 未实现（闭合产品第一原则）· 真实 LLM Provider 未接入（闭合 AI 闭环）· 块级引用 / FSRS 待评估 |
+| P1 | 无依赖更新自动化 · 无 SAST · 无覆盖率度量 · 无 Issue/PR 模板与 CoC · 无分支保护 |
+| P2 | 真实 LLM Provider 默认路径（见 §12 P1-4）· 块级引用 / FSRS 待评估 · M9 接入后补文档 |
 
 **待项目所有者裁决的路线问题**（非技术判断）：
 
