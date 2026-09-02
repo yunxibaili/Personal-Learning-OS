@@ -406,18 +406,23 @@
   <div class="landing">
     <h2>落点清单</h2>
     <p>
-      这 8 个基元在 <code>web/</code> 里<strong>已全部实现</strong>，但目前只有 <code>ToastProvider</code>
-      真在业务里（<code>App.tsx:90</code> 挂载）；其余 7 个全部只出现在
-      <code>web/src/dev/ComponentGallery.tsx</code>。问题不是「找不到地方用」，是<strong>造好了没接线</strong>。
+      <strong>2026-09-02 已完成接线。</strong>这 8 个基元在 <code>web/</code> 里已全部实现，
+      清单定稿时只有 <code>ToastProvider</code> 真在业务里（<code>App.tsx</code> 挂载），
+      其余 7 个全部只出现在 <code>web/src/dev/ComponentGallery.tsx</code>——问题不是「找不到地方用」，
+      是<strong>造好了没接线</strong>。同日按清单接线后，动效层 4 个基元中
+      <strong>3 个已进业务</strong>（<code>ProgressRing</code> · <code>FadeInUp</code> · <code>CountUp</code>），
+      <code>WaveLink</code> 判不适用维持零接线；基础层的 <code>Skeleton</code> · <code>Toast</code> ·
+      <code>Tabs</code> 也一并接上。
     </p>
     <p>
       完整判定表（含冲突项与不适用项）见
       <a href="./empty-states.html#motion">空态规范页 §④ 动效基元落点清单</a>——那张表是唯一来源，
-      本页只放结论，不复制，避免两处维护。
+      本页只放结论，不复制，避免两处维护。<strong>接线状态以该表为准</strong>，本页不再另立一份。
     </p>
     <p class="ruling-line">
-      <strong>2026-09-02 所有者裁定：只出规范，不接线。</strong>
-      本清单是落点依据，不是施工单——<code>web/</code> 业务代码本轮不动。
+      <strong>2026-09-02 所有者裁定（已执行完毕）：落点清单照单执行，不重新盘点。</strong>
+      接线时现场判断只在「清单没料到的事实」时才成立（例：某处已有常驻指示器 → 不重复反馈），
+      偏离清单的三处及理由记在该表内。
     </p>
 
     <div class="landing-grid">

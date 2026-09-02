@@ -285,11 +285,24 @@
     </p>
 
     <div class="ruling">
-      <span class="ruling__tag">2026-09-02 所有者裁定</span>
+      <span class="ruling__tag">2026-09-02 所有者裁定（已执行完毕）</span>
       <p>
-        <strong>本页是规范，不是施工单。</strong>Spotlight 与动效基元<strong>暂不写入 <code>web/</code> 业务代码</strong>，
-        沿用「组件先在 ui 库定稿」的既有裁定（与 M9-007 回灌同一节奏）。
-        接线另开任务，开工时以本页的落点清单为准——不要重新盘点一遍。
+        <strong>本页落点清单已于 2026-09-02 执行完毕</strong>——所有者解除冻结后按清单接线，
+        <code>web/</code> 业务代码已改。接线时的铁律是<strong>照单执行，不重新盘点</strong>：
+        清单判「不适用」的（<code>SegmentedControl</code> · <code>WaveLink</code>）保持零接线，
+        判「限范围」的只落清单内的点，判「可直接用」的三处加载态全换。
+      </p>
+      <p>
+        实测结果（<code>ui/audit-component-wiring.mjs</code> 重跑，31 个业务文件）：
+        组件层 21 个导出符号从 <strong>3 个接线 → 10 个接线</strong>；
+        基础层 17 个中 7 接线 / 10 零接线，动效层 4 个中 3 接线 / 1 零接线。
+        接线状态见本节 ④ 表格的「判定」列（<span class="tag tag--ok">已接入</span> 为本轮完成）。
+      </p>
+      <p>
+        <strong>回归门禁</strong>：<code>web/src/components/ui/wiring.test.ts</code>（30 项）与
+        <code>components.test.tsx</code>（21 项）守住接线不回退——
+        把 <code>&lt;Skeleton&gt;</code> 换回裸文案、删掉 <code>CountUp</code> 的 <code>key</code>、
+        把 <code>.btn-primary</code> 改回渐变、把 <code>SegmentedControl</code> 手滑接进右栏，都会红。
       </p>
     </div>
   </section>
@@ -526,7 +539,11 @@
     <p class="sec-sub">
       审计表第 10–12 行是<strong>加载态</strong>，不是空态。它们现在都是一行裸文字，
       换成骨架屏有两个收益：容器定高后<strong>零 CLS</strong>，且用户能预判内容结构。
-      <code>Skeleton</code> 已在 <code>web/src/components/ui/primitives.tsx:101</code> 实现，只是没人用。
+      <code>Skeleton</code> 在 <code>web/src/components/ui/primitives.tsx</code>，
+      <strong>2026-09-02 三处已全部接入</strong>（下方三张卡即接线后的形态）。
+      接入时补的两条约束，后续任何骨架都要照做：
+      ① <strong>容器定高</strong>——<code>min-height</code> 不能省，否则 chunk 到达即跳变（CLS 铁律）；
+      ② <code>Skeleton</code> 是 <code>aria-hidden</code>，故每处都补了 <code>.sr-only</code> 文案，读屏用户不能只听到一片空白。
     </p>
 
     <div class="skel-grid">
@@ -575,15 +592,19 @@
   <section id="motion">
     <h2>④ 动效基元落点清单</h2>
     <p class="sec-sub">
-      8 个基元在 <code>web/</code> 里<strong>已全部实现</strong>，但<strong>一个都没进业务页面</strong>——
-      它们全部只躺在 <code>web/src/dev/ComponentGallery.tsx</code>（<code>ToastProvider</code> 只挂在
-      <code>App.tsx:90</code>，<code>useToast()</code> 业务调用数为 0）。
+      8 个基元在 <code>web/</code> 里<strong>已全部实现</strong>。
+      清单定稿时（2026-09-02 上午）它们<strong>一个都没进业务页面</strong>——
+      全部只躺在 <code>web/src/dev/ComponentGallery.tsx</code>（<code>ToastProvider</code> 只挂在
+      <code>App.tsx</code>，<code>useToast()</code> 业务调用数为 0）。
+      <strong>同日已按本清单接线完毕</strong>，下表「判定」列标
+      <span class="tag tag--ok">已接入</span> 的即为落地点。
     </p>
     <p>
-      顺带一个更大的发现：全量 <strong>19 个</strong> <code>components/ui/</code> 导出组件里，
+      当时的背景判断（保留作接线前的状态快照）：全量 <strong>19 个</strong> <code>components/ui/</code> 导出组件里，
       只有 <code>Progress</code>(3 处) · <code>Badge</code>(1 处) 进了业务，
       <strong><code>Button</code> 的业务引用数是 0</strong>。
-      所以这不是「动效基元找不到落点」，是<strong>整个组件层都没接线</strong>——接线要整体排期，不是补几个点。
+      所以问题不是「动效基元找不到落点」，而是<strong>整个组件层都没接线</strong>。
+      2026-09-02 接线完成后实测：21 个导出符号中 <strong>10 个已接线</strong>。
     </p>
 
     <div class="note">
@@ -613,7 +634,20 @@
     </div>
 
     <div class="note">
-      <strong>⚠ 接线阻塞项：<code>.btn-primary</code> 与 §2.13 冲突</strong>。
+      <strong>✅ 阻塞项已解除（2026-09-02）：<code>.btn-primary</code> 已改纯色实底。</strong>
+      解除方式 = <strong>就地修</strong>。选它的依据不是偏好，是实测影响面：
+      <code>.btn-primary</code> 全项目只有 <code>primitives.tsx</code> 一处引用（<code>variant === "primary"</code>
+      映射），而 <code>Button</code> 的<strong>业务引用数为 0</strong>——
+      也就是说这个类名当时没有任何一处真实渲染，改它<strong>视觉影响面为零</strong>。
+      因此没有新增变体、也没有加空态专用类（那两条会留下第二套按钮来源）。
+      现在 <code>&lt;Button variant="primary"&gt;</code> 可直接使用：
+      <code>--brand-deep</code> 底 + <code>--text-inv</code> 白字（4.13:1，AA），
+      hover 改走 <code>background</code> 而非 <code>filter: brightness</code>
+      ——后者会让整块（含白字）一起变暗。
+      <br><br>
+      <span class="mono">以下是接线前的原始记录，留作决策依据：</span>
+      <br><br>
+      <strong>原阻塞项：<code>.btn-primary</code> 与 §2.13 冲突</strong>。
       空态规范（本页 ⑤）要求主 CTA 为 <code>--brand-deep</code> 纯色底 + <code>--text-inv</code> 白字；
       但 <code>web/src/global.css</code> 的 <code>.btn-primary</code> 实为
       <code>linear-gradient(135deg,var(--brand),var(--brand-2))</code> +
@@ -639,66 +673,81 @@
       <tbody>
         <tr>
           <td><strong>Skeleton</strong></td>
-          <td class="nowrap"><code>ui/primitives.tsx:101</code></td>
-          <td>仅 dev 画廊</td>
-          <td><strong>最高优先</strong>：审计表第 10–12 行的三处加载态。组件现成，只差替换</td>
-          <td><span class="tag tag--ok">可直接用</span></td>
+          <td class="nowrap"><code>ui/primitives.tsx</code></td>
+          <td><strong>已接入</strong>：<code>views/NoteEditor.tsx</code>（Suspense fallback
+              <code>EditorSkeleton</code>）· <code>views/ReviewSessionView.tsx</code> ·
+              <code>components/galaxy/GalaxyCanvas.tsx</code>。容器一律定高，各配 <code>.sr-only</code></td>
+          <td>审计表第 10–12 行的三处加载态，见本节 ③</td>
+          <td><span class="tag tag--ok">已接入</span></td>
         </tr>
         <tr>
           <td><strong>Toast</strong><br><span class="mono">useToast</span></td>
           <td class="nowrap"><code>ui/Toast.tsx</code></td>
-          <td>Provider 已挂载<br><strong>业务零调用</strong></td>
-          <td>保存失败 · 同步冲突 · 复习提交反馈。<code>ToastProvider</code> 已在 App 根挂载，接线即用</td>
-          <td><span class="tag tag--ok">可直接用</span></td>
+          <td><strong>已接入</strong>：<code>views/NoteEditor.tsx</code> 自动保存失败 ·
+              <code>views/ReviewSessionView.tsx</code> 评分提交失败</td>
+          <td><strong>只接两处，不是清单原列的三处</strong>。同步冲突<strong>没接</strong>：
+              <code>TopBar</code> 已有常驻冲突指示器（<code>topbar__sync--conflict</code>），
+              同一事件再弹 toast 属重复反馈。瞬时 toast 与持久 error banner 并存，各管一件事</td>
+          <td><span class="tag tag--ok">已接入</span></td>
         </tr>
         <tr>
           <td><strong>Tabs</strong></td>
-          <td class="nowrap"><code>ui/controls.tsx:117</code></td>
-          <td>仅 dev 画廊</td>
-          <td><code>ContextRail.tsx:79-95</code> 的手写 tablist —— <code>role="tablist"</code> /
-              <code>role="tab"</code> / <code>aria-selected</code> 与 <code>Tabs</code> <strong>逐项等价</strong>。
-              需给 <code>Tabs</code> 扩一个 Badge 槽位（反链计数）</td>
-          <td><span class="tag tag--ok">语义等价</span></td>
+          <td class="nowrap"><code>ui/controls.tsx</code></td>
+          <td><strong>已接入</strong>：<code>components/shell/ContextRail.tsx</code>，
+              替换原手写 tablist</td>
+          <td>已给 <code>Tabs</code> 扩两个槽位：<code>badge</code>（装反链计数，否则计数丢了）与
+              容器 <code>className</code>。<strong>子项仍是 <code>.ui-tabs__item</code></strong>，
+              320px 窄栏的等分/小字号由 <code>global.css</code> 用后代选择器覆盖——
+              不给组件加 <code>size</code> 变体，避免第二套来源</td>
+          <td><span class="tag tag--ok">已接入</span></td>
         </tr>
         <tr>
           <td><strong>CountUp</strong></td>
-          <td class="nowrap"><code>motion/index.tsx:65</code></td>
-          <td>仅 dev 画廊</td>
-          <td>TopBar 复习徽章 · <code>ContextRail.tsx:169</code>「今日待复习 N 个概念」。
-              <strong>注意</strong>：实现只在首次进视口跑一次，数字随数据变化后不再动 —— 需按值加 <code>key</code></td>
-          <td><span class="tag tag--warn">需调</span></td>
+          <td class="nowrap"><code>motion/index.tsx</code></td>
+          <td><strong>已接入</strong>：<code>ContextRail.tsx</code>「今日待复习 N 个概念」。
+              TopBar 复习徽章<strong>没接</strong>——那是个 20px 小圆点，数字滚动看不清，且已是常驻可见</td>
+          <td>清单提示的坑已规避：实现只在首次进视口跑一次，故按值加了
+              <code>key={home.review_due}</code>。<strong>这个 <code>key</code> 是必需的</strong>，
+              删掉后数字会永久停在旧值（门禁会红）</td>
+          <td><span class="tag tag--ok">已接入</span></td>
         </tr>
         <tr>
           <td><strong>FadeInUp</strong></td>
-          <td class="nowrap"><code>motion/index.tsx:36</code></td>
-          <td>仅 dev 画廊</td>
-          <td>笔记列表 / 反链列表 / MemoryList 的入场。
-              <strong>编辑器与工具栏禁用</strong>——写作时任何入场动画都是干扰</td>
-          <td><span class="tag tag--warn">限范围</span></td>
+          <td class="nowrap"><code>motion/index.tsx</code></td>
+          <td><strong>已接入</strong>：<code>ContextRail</code> 反链列表（<code>key={activeNoteId}</code>）·
+              <code>components/memories/MemoryList.tsx</code>（整列表包一层）</td>
+          <td>笔记列表<strong>没接</strong>——它常驻可见且高频切换，入场动画会变成干扰。
+              <strong>编辑器与工具栏保持禁用</strong>。包裹粒度选「整列表一个 observer」而非「每项一个」：
+              非滚动列表里 N 个 observer 只换来 N 倍开销，没有收益</td>
+          <td><span class="tag tag--ok">已接入</span></td>
         </tr>
         <tr>
           <td><strong>ProgressRing</strong></td>
-          <td class="nowrap"><code>motion/index.tsx:9</code></td>
-          <td>仅 dev 画廊</td>
-          <td>复习会话顶部综合进度。
-              <strong>不要用在右栏掌握度</strong>——那里已有 <code>Progress</code> 条形，
-              是 mastery 的唯一视觉出口，再加一套圆环即违反编码通道预算</td>
-          <td><span class="tag tag--warn">限范围</span></td>
+          <td class="nowrap"><code>motion/index.tsx</code></td>
+          <td><strong>已接入</strong>：<code>views/ReviewSessionView.tsx</code> 的<strong>完成页</strong>
+              （正确率环形图）</td>
+          <td><strong>没落在清单原建议的「顶部综合进度」</strong>：那里已有
+              <code>Progress</code> 条 + 「1/N」文字，再加圆环即<strong>同一数字三种编码</strong>。
+              完成页恰好相反——它是一次性的结果，只有数字没有条，圆环才成立。
+              <strong>右栏掌握度仍不接</strong>（那里已有 <code>Progress</code>）</td>
+          <td><span class="tag tag--ok">已接入</span></td>
         </tr>
         <tr>
           <td><strong>SegmentedControl</strong></td>
-          <td class="nowrap"><code>ui/controls.tsx:73</code></td>
-          <td>仅 dev 画廊</td>
+          <td class="nowrap"><code>ui/controls.tsx</code></td>
+          <td><strong>保持零接线</strong></td>
           <td>—。<strong>不要换 ContextRail 的 tab</strong>：它渲染
-              <code>role="radiogroup"</code>，而 ContextRail 是真 tab 面板，换了会丢语义并丢 Badge</td>
+              <code>role="radiogroup"</code>，而 ContextRail 是真 tab 面板，换了会丢语义并丢 Badge。
+              <span class="mono">2026-09-02：本判定已固化为门禁断言（业务文件里出现即红）</span></td>
           <td><span class="tag tag--no">不适用</span></td>
         </tr>
         <tr>
           <td><strong>WaveLink</strong></td>
-          <td class="nowrap"><code>motion/index.tsx:101</code></td>
-          <td>仅 dev 画廊</td>
+          <td class="nowrap"><code>motion/index.tsx</code></td>
+          <td><strong>保持零接线</strong></td>
           <td>—。反链是「打开笔记」的<strong>动作</strong>，button 语义正确；
-              <code>WaveLink</code> 渲染成 <code>&lt;a&gt;</code>，换掉会丢语义与键盘行为</td>
+              <code>WaveLink</code> 渲染成 <code>&lt;a&gt;</code>，换掉会丢语义与键盘行为。
+              <span class="mono">2026-09-02：本判定已固化为门禁断言</span></td>
           <td><span class="tag tag--no">不适用</span></td>
         </tr>
         <tr>
@@ -712,12 +761,21 @@
     </table>
 
     <div class="note">
-      <strong>一句话总结</strong>：动效基元的问题不是「找不到地方用」，而是
-      <strong>上表 9 项（8 个基元 + 额外补入的 <code>Tabs</code>）全部零业务接线</strong>——
-      不是「8 个里 7 个」，<code>Toast</code> 的 Provider 挂载不算接线，<code>useToast()</code> 调用数是 0。
-      真正值得先做的是三个——
-      <code>Skeleton</code>（三处加载态）、<code>Toast</code>（Provider 已挂载只差调用）、
-      <code>Tabs</code>（替换 ContextRail 手写 tablist）。其余要么限范围用，要么本来就不适用。
+      <strong>接线结果（2026-09-02 实测，非计划）</strong>：上表 9 项（8 个基元 + 额外补入的
+      <code>Tabs</code>）中 <strong>6 项已接线</strong>——
+      <code>Skeleton</code> · <code>Toast</code> · <code>Tabs</code> · <code>CountUp</code> ·
+      <code>FadeInUp</code> · <code>ProgressRing</code>。
+      未接的 3 项及理由：
+      <code>SegmentedControl</code> / <code>WaveLink</code> 判<strong>不适用</strong>（维持零接线，已写入门禁断言）；
+      <code>Input</code> 判<strong>低优先</strong>（TopBar 搜索框影响面仅为 error 态，留待后续）。
+      <br><br>
+      三处偏离原清单建议，均为现场判断，理由已写进上表：
+      ① <code>ProgressRing</code> 落完成页而非顶部进度（避免同一数字三重编码）；
+      ② <code>Toast</code> 接两处而非三处（同步冲突已有常驻指示器，不重复反馈）；
+      ③ <code>FadeInUp</code> 不落笔记列表（常驻高频，动画即干扰）。
+      <br><br>
+      口径提醒：<code>ToastProvider</code> 挂载<strong>不算</strong>接线，
+      计的是 <code>useToast()</code> 真实调用数。
     </div>
   </section>
 

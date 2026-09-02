@@ -30,7 +30,7 @@
 | `visual-engine/` | **M9 视觉引擎组件库**（TS/TSX）：6 组件 + 3 纯逻辑模块 + CSS。**仅 ui 库，未合并进 `web/`**，回灌归 M9-007 | `UI_DESIGN.md` §7.4 · ADR-025 v3 |
 | `visual-engine-demo.html` | **M9 视觉引擎演示页（组件跑起来的样子）**：页面壳按 ui 库规范，组件样式直接引用 `./visual-engine/visual-engine.css`（不复制不重写）；数据/渲染脚本由同步脚本从定稿处注入 | `visual-engine.html` · `visual-engine/` |
 | `visual-engine/sync-demo-html.mjs` | 演示页同步脚本（幂等）：把定稿处的 `#traceData`（6 示例真实 TraceRun）与主渲染脚本注入演示页占位块。改完 `visual-engine.html` 后重跑一次即可 | `visual-engine-demo.html` |
-| `audit-component-wiring.mjs` | **组件层接线审计**：扫 `web/src` 统计 21 个导出符号的业务引用，排除组件层/`motion/`·`dev/`·`ComponentGallery`·测试。产出「已接线 / 零接线」清单，是 §「组件层没接线」结论的证据，可重跑复核 | `empty-states.html` §④ |
+| `audit-component-wiring.mjs` | **组件层接线审计**：扫 `web/src` 统计 21 个导出符号的业务引用，排除组件层/`motion/`·`dev/`·`ComponentGallery`·测试。产出「已接线 / 零接线」清单。2026-09-02 接线前给出「组件层没接线」的证据，接线后用于复核（21 个符号 3 接线 → 10 接线），可随时重跑 | `empty-states.html` §④ |
 | `audit-ui-health.mjs` | **ui 库健康审计**：① 全库 `href="./..."` 死链 ② 根目录 html 是否登记进 `index.html` ③ 是否被 `README`/`UI_DESIGN` 提及 ④ 体积排序。整理 ui 库（启用留根目录 / 不用进 `archive/`）时的判定依据 | 本库 |
 | `archive/visual-engine-tsx-2026-09-01/` | **归档**：样式定稿前的 M9 TSX 稿，冻结不再维护 | 已被 `visual-engine/` 取代 |
 | `archive/legacy-gallery-html-2026-09-01/` | **归档**：`app-shell.html` · `bento-dashboard.html` · `marquee.html`（与后续设计裁决冲突，理由见该目录 `README.md`）；另有 `spotlight-card.html` **旧稿**——其「内容卡聚光」形态仍被否决，2026-09-02 以「空状态引导」限定形态解禁，新稿在根目录 `spotlight-card.html` | `UI_DESIGN.md` §7.1/§7.2 已标 `归档·` / ⛔ · ADR-013 §2.13 |
@@ -66,25 +66,52 @@
 3. **不留悬空引用**：任何文件移动/归档后，全库 grep 旧路径并同步
    （`README.md` · `index.html` · `UI_DESIGN.md` · `docs/`）。
 
-## 规范 vs 接线（2026-09-02 所有者裁定）
+## 规范 vs 接线（2026-09-02 所有者裁定，同日已执行完毕）
 
-**ui 库只出规范，不做接线；`web/` 业务代码本轮不动。**
+> **状态更新（2026-09-02 下午）**：所有者解除冻结，落点清单**已按单执行**，`web/` 业务代码已改。
+> 下方保留的是接线前的裁定与依据；接线结果见本节末尾的「接线后实测」。
+
+**原裁定：ui 库只出规范，不做接线；`web/` 业务代码本轮不动。**
 
 `empty-states.html` 与 `motion-primitives.html` 里的落点清单是**接线任务的依据**，不是施工单。
-开工时直接按清单执行，不要重新盘点一遍。
+开工时直接按清单执行，不要重新盘点一遍——这条在接线时同样有效，
+现场判断只有「清单没料到的事实」才算数（例：某处已有常驻指示器 → 不重复反馈）。
 
-判定背景：全量 19 个 `web/src/components/ui/` 导出组件里，只有 5 个进了业务
+判定背景（接线前快照）：全量 19 个 `web/src/components/ui/` 导出组件里，只有 5 个进了业务
 （`Progress` 2 · `Badge` 2 · `Tooltip` 1 · `Select` 1，以及 `ToastProvider` 仅挂载、
 `useToast()` 调用数 0）。**`Button` 的业务引用数是 0**——
 这不是「某几个基元找不到落点」，而是**整个组件层都没接线**，需要整体排期，不适合零散修补。
 
-| 基元/组件 | 落点 | 状态 |
+### 接线前落点表（原计划）
+
+| 基元/组件 | 落点 | 原状态 |
 |---|---|---|
-| `Skeleton` | `NoteEditor.tsx:266` · `ReviewSessionView.tsx:158` · `GalaxyCanvas.tsx:727`（三处裸文字加载态） | 待接线 |
-| `Toast`（`useToast`） | Provider 已挂 `App.tsx:90`；落点：保存失败 / 同步冲突 / 复习提交反馈 | 待接线 |
-| `Tabs` | `ContextRail.tsx:79-95` 手写 tablist（语义逐项等价，需扩 Badge 槽位） | 待接线 |
-| Spotlight | `GalaxyCanvas.tsx:741` `!planet` 空态（**须先补一个 CTA**，否则门禁 2 不过） | 待接线 |
+| `Skeleton` | `NoteEditor.tsx` · `ReviewSessionView.tsx` · `GalaxyCanvas.tsx`（三处裸文字加载态） | 待接线 |
+| `Toast`（`useToast`） | Provider 已挂 `App.tsx`；落点：保存失败 / 同步冲突 / 复习提交反馈 | 待接线 |
+| `Tabs` | `ContextRail.tsx` 手写 tablist（语义逐项等价，需扩 Badge 槽位） | 待接线 |
+| Spotlight | `GalaxyCanvas.tsx` `!planet` 空态（**须先补一个 CTA**，否则门禁 2 不过） | 待接线 |
 | `SegmentedControl` / `WaveLink` | 不适用（`role="radiogroup"` 与 tab 语义冲突 / 反链是动作应留 button） | 不接线 |
+
+### 接线后实测（`ui/audit-component-wiring.mjs` 重跑，31 个业务文件）
+
+组件层 21 个导出符号：**3 个接线 → 10 个接线**。
+
+- **基础层 17 个：7 接线 / 10 零接线**
+  - 接线：`Button`（本轮首落：`GalaxyCanvas` 空态 CTA）· `Badge` · `Skeleton` · `Progress` · `Tabs` · `ToastProvider` · `useToast`
+  - 零接线：`Input` · `Tag` · `Select` · `Textarea` · `Checkbox` · `Avatar` · `Modal` · `Tooltip` · `SegmentedControl` · `Switch`
+- **动效层 4 个：3 接线 / 1 零接线**
+  - 接线：`ProgressRing`（复习完成页）· `FadeInUp`（反链列表 · MemoryList）· `CountUp`（右栏待复习数）
+  - 零接线：`WaveLink`（判不适用）
+
+三处**刻意偏离**原清单建议（理由见 `empty-states.html` ④ 表内）：
+`ProgressRing` 落完成页而非顶部进度（避免同一数字三重编码）、
+`Toast` 接两处而非三处（同步冲突已有常驻指示器）、
+`FadeInUp` 不落笔记列表（常驻高频，动画即干扰）。
+
+**回归门禁**（`web/` 内，`npm test` 已覆盖）：
+`src/components/ui/wiring.test.ts`（30 项，接线不回退 + 不越界）+
+`src/components/ui/components.test.tsx`（21 项，组件结构与派生值）。
+两处均零新增依赖：`renderToStaticMarkup` 测结构，`import.meta.glob(..., { query: "?raw" })` 读源码做门禁。
 
 ## 信息架构：笔记优先（2026-08-29）
 
@@ -231,4 +258,5 @@ ADR-023 已同步修订，「禁止」条款补上唯一例外，并新增「编
 | 2026-09-02 | **文档与实现对齐（点阵地球）**：`EARTH_D` 改 0.50 后，① 的三档「地球直径 / 点距」与 ⑤ 的结论仍停在 0.60 的数字（120/156/192px · 1.7/2.2/2.7px），已按公式 `直径 ÷ 1049 × 15` 重算为 **100/130/160px · 1.43/1.86/2.29px**（贴图实测 2000×1049）；卫星由 5 颗减到 4 颗（删掉杜撰的「贝叶斯定理的直觉」）后 aria-label 与文案仍写 5 颗；§②/④/⑤ 仍写「笔记里继续用 88px Mini Star」，与已交付状态直接冲突 —— 三类共 15 处旧文案全部改写，并把「尺寸建议」由 ≥260px 上调到 **≥320px**（260px 的点距只有 1.86px，未过可辨下限 2.2px） |
 | 2026-09-02 | **ui 文档补齐**：`README.md` 登记 `dot-earth.html` / `mini-star.html` / `bento-dashboard.html` / 四个 smoke 脚本 / `sync-dot-earth.mjs`，并补两条「不可回退」约束（点阵地球用 60fps 是 30fps 契约的**唯一登记例外**；卫星不做真遮挡，而 `home-hero.html` 保留真遮挡，两处不必强行统一）；`UI_DESIGN.md` 新增 **§8.1「页面 × 组件坐标表」**——1264 视口下逐区实测坐标与触发条件（`note-workspace` 7 区 / `ui-preview` 9 区）+ 4 条落位裁决；顺带修掉 §8 抬头里「`bento-dashboard.html` 作废」这条已被解禁推翻的表述 |
 | 2026-09-02 | **总览页登记**：`index.html` 新增 Dot Earth 卡片（点阵 pattern + 三色卫星的 SVG 缩略图），Mini Star 卡片补注「2026-09-02 起笔记区不再使用，退为规范页」并互链。全库重跑：7 个 smoke 脚本全绿（dot-earth 137 · ui-preview 148 · orbit-tree 72 · note-workspace 63 · bento-dashboard 47 · empty-states 48 · mini-star 46 · visual-engine 36），`audit-ui-health.mjs` **零死链** + 13/13 根目录 html 全部登记 |
-| 2026-09-02 | **所有者裁定：规范与接线分离**。Spotlight 与动效基元**只出规范，不写入 `web/` 业务代码**（沿用「组件先在 ui 库定稿」节奏，与 M9-007 回灌同一批）。背景：19 个 `components/ui/` 导出组件中仅 5 个进业务，`Button` 引用数为 0 —— 属整层未接线，需整体排期。裁定与接线状态表见本 README「规范 vs 接线」 |
+| 2026-09-02 | **所有者裁定：规范与接线分离**。Spotlight 与动效基元**只出规范，不写入 `web/` 业务代码**（沿用「组件先在 ui 库定稿」节奏，与 M9-007 回灌同一批）。背景：19 个 `components/ui/` 导出组件中仅 5 个进业务，`Button` 引用数为 0 —— 属整层未接线，需整体排期。裁定与接线状态表见本 README「规范 vs 接线」（**注：同日所有者解除冻结，下一条为执行结果**） |
+| 2026-09-02 | **组件层接线执行完毕**（上一条裁定的解除与落地）。按 `empty-states.html` ④ 落点清单照单执行，未重新盘点。实测（`audit-component-wiring.mjs` 重跑，31 个业务文件）：21 个导出符号 **3 接线 → 10 接线**（基础层 7/17，动效层 3/4）。落点：`Skeleton`×3 加载态（容器定高 + `.sr-only`）· `useToast()` 自动保存失败与评分提交失败 · `Tabs` 替换 ContextRail 手写 tablist（扩 `badge` 与容器 `className` 两个槽位）· `CountUp` 右栏待复习数（带 `key`）· `FadeInUp` 反链列表与 MemoryList · `ProgressRing` 复习完成页 · `Button` 星系空态 CTA（**本轮首落，此前业务引用数为 0**）。**解锁点**：`.btn-primary` 由渐变改 `--brand-deep` 纯色实底——选「就地修」而非新增变体/覆盖类，依据是影响面实测为零（该类名当时仅 `primitives.tsx` 一处引用、零处真实渲染）。三处刻意偏离原清单（理由见 `empty-states.html` ④）：`ProgressRing` 落完成页避三重编码、`Toast` 不接同步冲突（TopBar 已有常驻指示器）、`FadeInUp` 不落笔记列表。**门禁**：新增 `web/src/components/ui/wiring.test.ts`（30 项）+ `components.test.tsx`（21 项），零新增依赖（`renderToStaticMarkup` + `import.meta.glob(?raw)`）；另加 `web/vitest.config.ts` 开 `css: true`（Vitest 默认会把 CSS 替换为空串，样式门禁会对空串判定）。验收：`vitest` **87 passed / 6 files**、`tsc --noEmit` 0、`vite build` 0 |
