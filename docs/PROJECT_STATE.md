@@ -682,11 +682,9 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 ── 2026-09-02 所有者第二次裁定：先 P1 技术债收敛，M8 不启动（避免把 Web 架构问题复制到 RN）──
 [9]  ✅ P1-1 MindMap API 边界治理（2026-09-02 完成：6 处裸 fetch → lib/api.ts +
      拖拽 drag-end flush + 1s trailing debounce；报告见 TASKS §P1-1）
-[9b] P1-MINDMAP-TRUTH（2026-09-02 所有者裁定单独立项，**P0/P1 架构修复 · M8 前置**）：
-     `*.mindmap.json` 旁车（ADR-002/019 声明的事实源）全库零生产者，
-     MindMap 数据只在 SQLite → 跨设备无同步闭环。核心验收 = 创建/修改/删除 MindMap →
-     sidecar 正确变化 → SQLite 可从文件重建 → Sync 发现 sidecar → 另一设备 Apply →
-     重建 cache。**本任务完成前不进入 M8。**
+[9b] ✅ P1-MINDMAP-TRUTH（2026-09-02 完成：恢复 MindMap sidecar producer，
+     *.mindmap.json = 结构事实源（ADR-002），SQLite 三表降为可重建缓存，
+     /sync/receive 落盘后重建——跨设备同步闭环闭合。报告见 TASKS §P1-MINDMAP-TRUTH）
 [10] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力；
      **M8 前必须完成**）
 [11] P1-3 MockProvider 演示路径

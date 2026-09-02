@@ -31,12 +31,12 @@
      范围裁定：不修 N1 sidecar、不新增 shared/types/mindmap.ts（契约治理候选，
      现有 lib/api.ts 类型可安全承载）、不动 GET /mindmaps wrapper。
 
-[9b] [ ] P1-MINDMAP-TRUTH（P0/P1 架构修复，**M8 前置**，2026-09-02 所有者裁定单独立项）
+[9b] [x] P1-MINDMAP-TRUTH（2026-09-02 完成，报告见下文）
      恢复 MindMap sidecar producer：*.mindmap.json（ADR-002/019 声明的事实源）
-     全库零生产者，MindMap 数据只在 SQLite → 不同步、多端必丢。
-     核心验收链：创建/修改/删除 MindMap → *.mindmap.json 正确变化 →
-     SQLite 可从文件重建 → Sync 能发现 sidecar → 另一设备 Apply → 重建 SQLite cache。
-     **本任务完成前不进入 M8。**
+     此前全库零生产者，MindMap 数据只在 SQLite → 不同步、多端必丢。
+     落地：core/mindmap.py 增删改后整体重写 sidecar + rebuild_mindmaps()
+     从文件重建 SQLite 三表 + /sync/receive 落盘后触发重建。
+     **M8 前置条件已满足。**
 
 [10] [ ] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力）
 [11] [ ] P1-3 MockProvider 演示路径
@@ -1807,3 +1807,63 @@ ADR-026 §3.2「orphan/cycle 不进树」落地为：**不作为任何节点的 
   新实现 drop 帧入队并立即 flush——修复了一个潜在丢点。
 - 队列 flush 闭包经 `activeMapIdRef` 读当前 map：切换 Map 时挂起的尾批
   仍会存到**正确**的 map（以 flush 时刻的 ref 为准），队列实例不随渲染重建。
+
+## P1-MINDMAP-TRUTH MindMap sidecar producer 完成（2026-09-02）
+
+### 做了什么（所有者裁定单独立项，P0/P1 架构修复 · M8 前置）
+
+恢复 ADR-002「结构真相 = *.mindmap.json 旁车」——此前实现只在 SQLite
+（实现事实源 ≠ 架构规定事实源，评审 Q7），M7 Sync 对 `mind_maps/**/*.mindmap.json`
+的 scan/apply 管线早已就绪却无任何生产者。SQLite 三表降级为**可重建缓存**
+（与 notes/vault 同一教义，ADR-001/005）：
+
+- **Producer**（`core/mindmap.py`）：create/delete map、add/update/delete node、
+  add/delete edge、bind/unbind concept、import——每个成功 mutation 提交后
+  **整体重写**该 map 的 sidecar（幂等）；`delete_map` 删文件；sidecar 缺失时
+  下一次 mutation 自愈重建；写失败 `logger.warning` 不阻断 API。
+- **Sidecar 契约**：`workspace/mind_maps/<map_id>.mindmap.json`，
+  schema = `{version, type:"mindmap_state", map, nodes, edges}` **状态快照**
+  （含 id 全列）。文件名用 id：改名不产生文件 churn、跨设备稳定。
+  **刻意不用 ADR-021 交换格式**（交换格式重分配 id，无法承担「从文件重建」）。
+  **与 ADR-002 字面偏离登记**：ADR-002 写的是 `<笔记名>.mindmap.json`（按笔记树模型），
+  M2b 实际是独立 Map（ADR-019 三表）→ 以 `<map_id>` 命名，待所有者复核是否补 ADR 修订。
+- **Rebuild**：`rebuild_mindmaps(conn, workspace, prune_missing=True)`——
+  逐文件整体替换（id 保留，纯 INTEGER PRIMARY KEY 无需修 sequence）；
+  concept_id 本地不存在 → NULL（FK 硬约束，与 import_map 语义一致；
+  跨设备 concept id 对齐属稳定 ID 债务 ADR-024 P1-2）；
+  坏 JSON / 重复 id 跳过计数；prune 无 sidecar 的 DB 行；幂等可反复执行。
+- **接线**：`db.py` WORKSPACE_SUBDIRS += `mind_maps`；
+  `/sync/receive`（sync.py）落盘后 reindex_vault 旁边调 rebuild_mindmaps
+  ——「另一设备 Apply → 重新建立 SQLite cache」闭环闭合。
+
+### 改动文件
+
+- `server/app/core/mindmap.py`（producer + rebuild + 各 mutation 钩子）
+- `server/app/db.py`（+mind_maps 子目录）
+- `server/app/routers/sync.py`（receive 后重建 cache）
+- `server/tests/api/test_mindmap_sidecar.py`（新增 17 项）
+
+### 测试了什么
+
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `pytest server/tests/api/test_mindmap_sidecar.py` | 全绿 | **17 passed**（producer 7 / Sync 发现 1 / rebuild 6 / 跨设备闭环 1 / 防御 2） |
+| mindmap/sync/rebuild/m2_smoke 既有面 | 无回归 | **80 passed** |
+| `pytest server/tests`（全量） | 全绿 | **994 passed**（122.1s，977 基线 + 17 新增） |
+
+### 验收链核对（所有者裁定原文 → 实测）
+
+```text
+创建/修改/删除 MindMap → *.mindmap.json 正确变化   ✅ producer 7 项
+SQLite 可从文件重建                                ✅ rebuild 6 项（含 id 保留 / 幂等 / prune）
+Sync 能发现 sidecar                                ✅ scan_workspace 白名单命中（test_scan_workspace_includes_sidecar）
+另一设备 Apply → 重新建立 SQLite cache             ✅ test_sidecar_rebuilds_on_fresh_device
+                                                     （Apply 落盘本体由 M7 既有测试覆盖）
+```
+
+### 遗留 / 待所有者复核
+
+- ADR-002 命名偏离（`<笔记名>` → `<map_id>`）：见上，是否补 ADR 修订待裁决
+- 跨设备 concept_id 对齐：rebuild 时本地不存在 → NULL，稳定 note/concept ID
+  属 ADR-024 P1-2 既定债务，本任务不解决
+- M8 前置条件（[9b]）已满足；下一步 = [10] P1-5 Backend/UI 能力裁定（待所有者逐项裁决）
