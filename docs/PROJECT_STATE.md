@@ -685,8 +685,12 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [9b] ✅ P1-MINDMAP-TRUTH（2026-09-02 完成：恢复 MindMap sidecar producer，
      *.mindmap.json = 结构事实源（ADR-002），SQLite 三表降为可重建缓存，
      /sync/receive 落盘后重建——跨设备同步闭环闭合。报告见 TASKS §P1-MINDMAP-TRUTH）
-[10] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力；
-     **M8 前必须完成**）
+[10] ✅ P1-5 Backend/UI 能力裁定（2026-09-02 四组弹窗完成：A settings 接 UI /
+     B mistakes 接 UI / C conversations 最小 UI / D sync 延 M8 / E-H backend-only；
+     执行任务 = [10a][10b][10c]，M8 前置满足）
+[10a] P1-5-A 设置 UI：LLM Provider 配置页（GET/PUT /settings；P1-4 MockProvider 演示硬前置）
+[10b] P1-5-B 错题本 UI：列表/标记已解决/删除/统计（GET/PATCH/DELETE /mistakes/*）
+[10c] P1-5-C 会话历史最小 UI：Tutor 抽屉内历史列表+删除（GET/DELETE /conversations）
 [11] P1-3 MockProvider 演示路径
 [12] P1-4 中文 FTS
 [13] P1-2 国际化（18 处硬编码英文）
@@ -778,7 +782,7 @@ NSIS 102MB，GNU 工具链。
 | P1-2 | 活跃 UI **18 处硬编码英文**（中英混排） | `MindMapCanvas.tsx`(Maps/Create/Import/Concept Binding/Select or create a map) · `MapNode.tsx`(Concept Ref/Temporary) · `TutorPanel.tsx`(Tutor/Concept/Mastery/Past Mistakes/Related/Action) · `MemoryList.tsx`(Memories/Loading...) · `SuggestionList.tsx`(AI Suggestions/Loading.../AI suggested) | 5 个组件全部用户可达（App.tsx 懒加载 / Tutor 抽屉内）；同文件 `<h1>` 为中文 → 判翻译遗漏 |
 | P1-3 | 中文 FTS 分词（unicode61 按字切分） | `core/knowledge.py`（B9 仅做 CJK bigram 回退） | ADR-011 边界内；完整分词（jieba 等）需依赖立项 |
 | P1-4 | 默认 MockProvider → Tutor 开箱不可真实演示 | `core/ai/providers/` | 契约与链路已实测（B1b DeepSeek / B10 Ollama qwen3），只差默认配置与引导 |
-| P1-5 | 后端已就绪能力的 UI 取舍 | `/review/history` `/review/stats` `/mistakes/*` `/study/*` `/conversations` 管理 `/export` `/admin/watcher` `/trace/*` `/sync/peers` | **待所有者逐项裁决**：接 UI 或明确标记 backend-only（不做假设） |
+| P1-5 | ~~后端已就绪能力的 UI 取舍~~ | 见左 | **✅ 已裁定（2026-09-02 所有者四组弹窗）**：A `/settings` **接 UI**（P1-4 硬前置）· B `/mistakes/*` CRUD **接 UI** · C `/conversations` 历史管理 **接最小 UI** · D `/sync/pair`/`peers`/`plan`/`discover`/`resolve` **延到 M8** · E `/review/history`+`stats`+`/mastery/weak` · F `/study/*` · G `/export` · H 长尾（`/tutor/test`、`/memories` 写操作+maintenance、`/concepts/extract`、`/notes/batch`/`import`/`link-suggestions`）—— **全部 backend-only**。已接线面（notes/concepts/mindmaps/review-today/memories-GET/tutor/chat/trace/sync-status 等）不再列。勘误：`/admin/watcher` 端点不存在（admin_router 仅 `/reindex` 等），本行旧表述过时；`/trace/*` 已由 M9 接入 |
 
 ### P2（低风险，顺手修）
 

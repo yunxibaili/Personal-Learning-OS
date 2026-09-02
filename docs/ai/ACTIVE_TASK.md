@@ -44,10 +44,11 @@ tag `v0.1.0-rc.2`。
 （记为后续契约治理候选）、未动 wrapper/i18n/searchingConcept。
 完整报告见 `TASKS.md` §P1-1。
 
-**当前无进行中任务**——[9b] P1-MINDMAP-TRUTH 已完成（2026-09-02：sidecar producer +
-rebuild_mindmaps + /sync/receive 钩子，17 项守护测试；报告见 TASKS），
-M8 前置条件满足。下一任务 = **[10] P1-5 Backend/UI 能力裁定**（待所有者逐项裁决），
-其后：[11] MockProvider → [12] FTS → [13] i18n → [14] M8 可行性 → [15] M8 MVP。
+**当前无进行中任务**——[10] P1-5 已裁定（2026-09-02 所有者四组弹窗：A settings 接 UI /
+B mistakes 接 UI / C conversations 最小 UI / D sync 延 M8 / E-H backend-only；
+详见 PROJECT_STATE §12）。待执行 = **[10a] 设置 UI → [10b] 错题本 UI → [10c] 会话历史 UI**
+（A 是 P1-4 MockProvider 演示的硬前置，先做）。其后：[11] MockProvider → [12] FTS →
+[13] i18n → [14] M8 可行性（含 D 组 sync 管理 UI 形态裁定）→ [15] M8 MVP。
 
 <details>
 <summary>历史：[0] 收口任务定义（已完成，存档）</summary>

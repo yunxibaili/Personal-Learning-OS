@@ -38,7 +38,10 @@
      从文件重建 SQLite 三表 + /sync/receive 落盘后触发重建。
      **M8 前置条件已满足。**
 
-[10] [ ] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力）
+[10] [x] P1-5 Backend/UI 能力裁定（2026-09-02 四组弹窗完成，裁定结果见 PROJECT_STATE §12）
+[10a] [ ] P1-5-A 设置 UI：LLM Provider 配置页（GET/PUT /settings；P1-4 硬前置）
+[10b] [ ] P1-5-B 错题本 UI：列表/标记已解决/删除/统计（/mistakes/*）
+[10c] [ ] P1-5-C 会话历史最小 UI：Tutor 抽屉内列表+删除（/conversations）
 [11] [ ] P1-3 MockProvider 演示路径
 [12] [ ] P1-4 中文 FTS
 [13] [ ] P1-2 国际化（18 处硬编码英文）
