@@ -345,6 +345,13 @@ button, input, select, textarea {
   padding: 96px 16px 96px;
   width: 100%;
 }
+/* 编辑器 chunk 骨架（Suspense fallback）。定高 = CLS 铁律：chunk 到达后不让
+   正文位置跳变。240px ≈ 一篇短笔记的占位高度。 */
+.editor-skeleton {
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 240px;
+  padding: 8px 0 24px;
+}
 .editor-meta {
   display: flex; align-items: center; gap: var(--sp-3);
   font-size: var(--fs-xs); color: var(--text-3);
@@ -758,12 +765,19 @@ button, input, select, textarea {
   padding: 48px 0;
 }
 .review-session-idle h2 { margin-bottom: 4px; }
-.review-session-loading,
 .review-session-done {
   text-align: center;
   padding: 48px 0;
 }
+/* 加载态由 Skeleton 渲染，需列布局居中；与 done 态拆开，避免 flex 影响完成页排版 */
+.review-session-loading {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  text-align: center;
+  padding: 48px 0;
+}
 .review-session-done h2 { margin-bottom: 8px; }
+/* 记忆保持率圆环：与标题、计数行分隔开 */
+.review-session-done .pr-wrap { margin: 4px 0 20px; }
 
 .review-start-btn {
   margin-top: 16px;
@@ -1859,12 +1873,16 @@ button, input, select, textarea {
 }
 .btn:hover { background: var(--surface-2); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* 纯色实底（ui/empty-states.html ⑤：--brand-deep 底 + --text-inv 白字 = 4.13:1 AA）。
+   曾为 linear-gradient(--brand → --brand-2) + --shadow-glow，同时违反 ADR-013 §2.7 禁
+   gradient/glow 与 §2.13 line 291「按钮渐变、渐变背景——本例外不豁免」。
+   改纯色的视觉影响面为零：Button 的业务引用数为 0（ui/audit-component-wiring.mjs 实测）。
+   hover 走 background 而非 filter: brightness —— filter 会让整块（含文字）一起变暗。 */
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
-  color: #fff; border-color: transparent;
-  box-shadow: var(--shadow-glow);
+  background: var(--brand-deep);
+  color: var(--text-inv); border-color: var(--brand-deep);
 }
-.btn-primary:hover:not(:disabled) { filter: brightness(0.96); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-text); border-color: var(--brand-text); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--text-2); }
 .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
 .btn-danger { background: var(--err-soft); border-color: var(--err-text); color: var(--err-text); }
@@ -2282,21 +2300,31 @@ button, input, select, textarea {
   display: flex; flex-direction: column;
   min-height: 0;
 }
-.ctx-rail__tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.ctx-rail__tab {
+.ctx-rail__tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+/* 右栏 tab 现在由 ui 库 Tabs 渲染，子项类名是 .ui-tabs__item（不再是 .ctx-rail__tab）。
+   以下是原 .ctx-rail__tab 规则的等值迁移，四项差异都得显式覆盖——
+   .ui-tabs__item 基类是「宽版」：padding 0 16px、--fs-base、容器带 4px gap、
+   左对齐。而右栏 320px 要的是等分铺满、小字号、居中、紧贴（gap 归零，
+   两个 tab 之间不能漏出空隙，激活下划线才恰好占半栏）。
+   触控目标 44px 不用管：基类自带 min-height: 44px，未退化。 */
+.ctx-rail__tabs .ui-tabs__item {
   flex: 1;
-  appearance: none; border: 0; background: none;
-  min-height: 44px;
-  font-family: inherit; font-size: var(--fs-sm);
-  color: var(--text-2); cursor: pointer;
-  border-bottom: 2px solid transparent;
+  padding: 0;
+  font-size: var(--fs-sm);
   display: inline-flex; align-items: center; justify-content: center; gap: 4px;
   transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.ctx-rail__tab:hover { color: var(--text); }
-.ctx-rail__tab--active { color: var(--brand-text); border-bottom-color: var(--brand); font-weight: 500; }
+.ctx-rail__tabs .ui-tabs__item:hover { color: var(--text); }
+.ctx-rail__tabs .ui-tabs__item--active { color: var(--brand-text); border-bottom-color: var(--brand); font-weight: 500; }
+
 .ctx-rail__body { flex: 1; overflow: auto; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
+/* FadeInUp 的包裹层不能吃掉 .ctx-rail__body 的 flex gap——列表项之间会全贴死 */
+.ctx-rail__body > .fade-target { display: flex; flex-direction: column; gap: var(--sp-2); }
 .ctx-rail__muted { margin: 0; font-size: var(--fs-sm); color: var(--text-3); }
+/* CountUp 默认 .count 是 56px 大字（给统计页用的）；右栏这行是小字，
+   只继承字号并保留 tabular-nums 防数字滚动时抖动 */
+.ctx-rail__count { font-size: inherit; font-weight: 600; color: var(--brand-text); }
 .ctx-outline-item {
   display: flex; align-items: center; gap: 8px;
   font-size: var(--fs-sm); color: var(--text-2);

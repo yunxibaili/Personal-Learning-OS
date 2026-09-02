@@ -53,7 +53,7 @@ export function FadeInUp({ children }: { children: React.ReactNode }) {
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={ref} className={`fade-target ${inView ? "in" : ""}`}>
+    <div ref={ref} className={`fade-target${inView ? " in" : ""}`}>
       {children}
     </div>
   );

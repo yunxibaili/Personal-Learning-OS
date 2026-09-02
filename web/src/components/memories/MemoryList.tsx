@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiDelete, apiGet, apiPatch } from "../../lib/api";
 import type { MemoryAdmin, MemoryListResponse } from "@shared/types/memory";
+import { FadeInUp } from "../ui";
 import "./MemoryList.css";
 
 interface Props {
@@ -117,59 +118,64 @@ export function MemoryList({ refreshKey = 0 }: Props) {
 
       {loading && <div className="memory-loading">Loading...</div>}
 
-      <ul className="memory-items">
-        {memories.map((m) => (
-          <li key={m.id} className="memory-item">
-            <div className="memory-item-header">
-              <span className="memory-kind">{KIND_LABELS[m.kind] ?? m.kind}</span>
-              <span className="memory-importance">
-                {Math.round(m.importance * 100)}%
-              </span>
-            </div>
-
-            {editingId === m.id ? (
-              <div className="memory-edit">
-                <textarea
-                  className="memory-textarea"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  rows={3}
-                />
-                <div className="memory-item-actions">
-                  <button
-                    className="memory-save-btn"
-                    onClick={() => void saveEdit(m.id)}
-                    disabled={saving}
-                  >
-                    {saving ? "Saving..." : "Save"}
-                  </button>
-                  <button className="memory-cancel-btn" onClick={cancelEdit}>
-                    Cancel
-                  </button>
-                </div>
+      {/* FadeInUp 包整个列表而非逐条：一次淡入，一个观察器。
+          逐条包会产生 N 个 IntersectionObserver，而这里没有滚动长列表,
+          收益为零、成本是 N 倍。 */}
+      <FadeInUp>
+        <ul className="memory-items">
+          {memories.map((m) => (
+            <li key={m.id} className="memory-item">
+              <div className="memory-item-header">
+                <span className="memory-kind">{KIND_LABELS[m.kind] ?? m.kind}</span>
+                <span className="memory-importance">
+                  {Math.round(m.importance * 100)}%
+                </span>
               </div>
-            ) : (
-              <>
-                <div className="memory-content">{m.content}</div>
-                <div className="memory-item-actions">
-                  <button
-                    className="memory-edit-btn"
-                    onClick={() => startEdit(m)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="memory-delete-btn"
-                    onClick={() => void remove(m.id)}
-                  >
-                    Delete
-                  </button>
+
+              {editingId === m.id ? (
+                <div className="memory-edit">
+                  <textarea
+                    className="memory-textarea"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    rows={3}
+                  />
+                  <div className="memory-item-actions">
+                    <button
+                      className="memory-save-btn"
+                      onClick={() => void saveEdit(m.id)}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                    <button className="memory-cancel-btn" onClick={cancelEdit}>
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+              ) : (
+                <>
+                  <div className="memory-content">{m.content}</div>
+                  <div className="memory-item-actions">
+                    <button
+                      className="memory-edit-btn"
+                      onClick={() => startEdit(m)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="memory-delete-btn"
+                      onClick={() => void remove(m.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      </FadeInUp>
 
       {error && <div className="memory-error">{error}</div>}
     </div>

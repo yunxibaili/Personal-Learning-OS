@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiGet } from "../../lib/api";
 import { useUi } from "../../stores/ui";
+import { Button, Skeleton } from "../ui";
 import type { GraphNode, GraphResponse } from "@shared/types/graph";
 import type { NoteDetailResponse } from "@shared/types/note";
 
@@ -707,6 +708,7 @@ export function GalaxyView() {
   const [cursor, setCursor] = useState(0);
   const [paused, setPaused] = useState(false);
   const onSatelliteClick = useGalaxyOpenNote();
+  const setActiveView = useUi((s) => s.setActiveView);
 
   useEffect(() => {
     if (planets.length <= 1 || paused) return;
@@ -727,7 +729,13 @@ export function GalaxyView() {
     return (
       <div className="galaxy-view">
         <h1 className="sr-only">知识星系</h1>
-        <span className="galaxy-caption__title">载入星系…</span>
+        {/* 骨架形状对齐真实视图：560 星球 + 标题条 + eyebrow 条。
+            尺寸取自下方 <GalaxyCanvas size={560}>，故 chunk/数据到达后零位移
+            （CLS 铁律：GalaxyMini 0.0454→0.0003 的教训）。 */}
+        <span className="sr-only">载入星系…</span>
+        <Skeleton variant="circle" width={560} height={560} />
+        <Skeleton height={18} width={220} />
+        <Skeleton height={12} width={150} />
       </div>
     );
   if (error)
@@ -743,6 +751,12 @@ export function GalaxyView() {
         <h1 className="sr-only">知识星系</h1>
         <span className="galaxy-caption__title">还没有笔记——回工作区写第一篇</span>
         <span className="galaxy-caption__eyebrow">星球由 [[双链]] 生长：链出去 ≥2 篇的笔记会成为星球</span>
+        {/* 空态唯一出口（ui/empty-states.html ⑤ 门禁 2「卡内 button 数 = 1」）。
+            这是 Button 在本项目的第一个业务落点；此前之所以 0 接线，正是因为
+            .btn-primary 的渐变会违反 ADR-013 §2.13 line 291，现已改为纯色实底。 */}
+        <Button variant="primary" onClick={() => setActiveView("notes")}>
+          回工作区写第一篇
+        </Button>
       </div>
     );
 

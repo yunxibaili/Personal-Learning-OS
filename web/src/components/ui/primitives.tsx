@@ -7,7 +7,11 @@ import { useId } from "react";
 
 type BtnVariant = "primary" | "secondary" | "ghost" | "danger";
 
-/** 按钮（ui: .btn / .btn-primary 渐变 + glow） */
+/**
+ * 按钮（ui: .btn / .btn-primary）。
+ * primary = 纯色实底（--brand-deep + --text-inv），不是渐变：ADR-013 §2.13 line 291
+ * 明确「按钮渐变、渐变背景 —— 本例外不豁免」。
+ */
 export function Button({
   variant = "secondary",
   size,

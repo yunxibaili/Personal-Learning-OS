@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { apiGet } from "../../lib/api";
 import { useUi } from "../../stores/ui";
-import { Badge, Progress } from "../ui";
+import { Badge, CountUp, FadeInUp, Progress, Tabs } from "../ui";
 import { KnowledgeRadar } from "../KnowledgeRadar";
 import { GalaxyMini } from "../galaxy/GalaxyCanvas";
 import type { BacklinkItem } from "@shared/types/graph";
@@ -77,22 +77,20 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
   return (
     <aside className="ctx-rail">
       <GalaxyMini activeNoteId={activeNoteId} />
-      <div className="ctx-rail__tabs" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            role="tab"
-            aria-selected={tab === t.key}
-            className={`ctx-rail__tab ${tab === t.key ? "ctx-rail__tab--active" : ""}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-            {t.key === "backlinks" && backlinks.length > 0 && (
+      {/* 手写 tablist → ui 库 Tabs（语义逐项等价：role=tablist / role=tab /
+          aria-selected）。反链计数经 Tabs 的 badge 槽位传入，不丢信息。 */}
+      <Tabs
+        className="ctx-rail__tabs"
+        tabs={TABS.map((t) => ({
+          ...t,
+          badge:
+            t.key === "backlinks" && backlinks.length > 0 ? (
               <Badge tone="brand">{backlinks.length}</Badge>
-            )}
-          </button>
-        ))}
-      </div>
+            ) : undefined,
+        }))}
+        value={tab}
+        onChange={setTab}
+      />
 
       <div className="ctx-rail__body">
         {tab === "outline" && (
@@ -116,11 +114,15 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
           ) : backlinks.length === 0 ? (
             <p className="ctx-rail__muted">暂无反链——用 [[双链]] 建立连接</p>
           ) : (
-            backlinks.map((b) => (
-              <button key={`${b.note_id}`} className="ctx-link-item" onClick={() => openNote(b.note_id)}>
-                {b.title ?? `笔记 ${b.note_id}`}
-              </button>
-            ))
+            /* FadeInUp 只在列表入场跑一次；key=activeNoteId 让换笔记时重放，
+               否则切了笔记列表内容变了却不淡入（CountUp 同款「只跑一次」陷阱）。 */
+            <FadeInUp key={activeNoteId}>
+              {backlinks.map((b) => (
+                <button key={`${b.note_id}`} className="ctx-link-item" onClick={() => openNote(b.note_id)}>
+                  {b.title ?? `笔记 ${b.note_id}`}
+                </button>
+              ))}
+            </FadeInUp>
           )
         )}
 
@@ -166,7 +168,13 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
           ) : (
             <>
               {home.review_due > 0 && (
-                <p className="ctx-rail__muted">今日待复习 {home.review_due} 个概念</p>
+                <p className="ctx-rail__muted">
+                  今日待复习{" "}
+                  {/* key=review_due：CountUp 只在首次进视口跑一次，
+                      值变了不重挂载就永远停在旧数字上 */}
+                  <CountUp key={home.review_due} target={home.review_due} className="ctx-rail__count" />{" "}
+                  个概念
+                </p>
               )}
               {home.weak_concepts.length === 0 && <p className="ctx-rail__muted">暂无薄弱概念</p>}
               {home.weak_concepts.map((w) => (

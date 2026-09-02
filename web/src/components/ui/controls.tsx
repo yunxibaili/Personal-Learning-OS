@@ -113,28 +113,38 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-/** 标签页（P2）：受控 tab 切换。 */
+/**
+ * 标签页（P2）：受控 tab 切换。
+ *
+ * `badge` 槽位为右栏反链计数而加（ContextRail）：原手写 tablist 在「反链」标签后
+ * 挂 `<Badge>` 计数，换组件后这个信息不能丢——所以槽位进组件，不靠调用方拼 children。
+ * `className` 只作用于容器（右栏语境需要 `.ctx-rail__tabs` 覆盖等分窄栏样式），
+ * 子项类名固定为 `.ui-tabs__item`，改样式请用后代选择器，不要在调用方另起一套。
+ */
 export function Tabs<T extends string>({
   tabs,
   value,
   onChange,
+  className,
 }: {
-  tabs: Array<{ key: T; label: string }>;
+  tabs: Array<{ key: T; label: string; badge?: React.ReactNode }>;
   value: T;
   onChange: (v: T) => void;
+  className?: string;
 }) {
   return (
-    <div className="ui-tabs" role="tablist">
+    <div className={`ui-tabs ${className ?? ""}`.trim()} role="tablist">
       {tabs.map((t) => (
         <button
           key={t.key}
           type="button"
           role="tab"
           aria-selected={value === t.key}
-          className={`ui-tabs__item ${value === t.key ? "ui-tabs__item--active" : ""}`}
+          className={`ui-tabs__item ${value === t.key ? "ui-tabs__item--active" : ""}`.trimEnd()}
           onClick={() => onChange(t.key)}
         >
           {t.label}
+          {t.badge}
         </button>
       ))}
     </div>

@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiGet, apiPost } from "../lib/api";
 import { useUi } from "../stores/ui";
-import { Progress } from "../components/ui";
+import { Progress, ProgressRing, Skeleton, useToast } from "../components/ui";
 import type {
   AnswerResponse,
   ReviewItem,
@@ -63,6 +63,7 @@ export function ReviewSessionView() {
   );
   const setActiveView = useUi((s) => s.setActiveView);
   const openTutor = useUi((s) => s.openTutor);
+  const toast = useToast();
   // P8-006：最近一次评分（feedback 阶段判断 quality≤2）
   const [lastQuality, setLastQuality] = useState<number | null>(null);
 
@@ -119,10 +120,14 @@ export function ReviewSessionView() {
       if (quality >= 3) setSessionCorrect((c) => c + 1);
       setPhase("feedback");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      // 评分提交发生在会话中途（用户正盯着卡片），失败必须被立刻看见；
+      // banner 在卡片上方，但「提交中→回到 ready」的形态变化会盖过它，故补一条 toast。
+      toast.push("评分提交失败", "err", msg);
       setPhase("ready");
     }
-  }, [current]);
+  }, [current, toast]);
   submitAnswerRef.current = (q: number) => void submitAnswer(q);
 
   const goNext = useCallback(() => {
@@ -155,7 +160,14 @@ export function ReviewSessionView() {
   if (phase === "loading") {
     return (
       <section className="review-session">
-        <div className="review-session-loading">加载中...</div>
+        {/* 骨架形状对齐真实卡片：概念标题条 + 两行 mastery 信息条。
+            Skeleton 是 aria-hidden，补 sr-only 给读屏用户。 */}
+        <div className="review-session-loading" role="status">
+          <span className="sr-only">加载复习队列…</span>
+          <Skeleton variant="circle" width={72} height={72} />
+          <Skeleton height={18} width="52%" />
+          <Skeleton height={13} width="34%" />
+        </div>
       </section>
     );
   }
@@ -168,6 +180,14 @@ export function ReviewSessionView() {
           <h2>复习完成</h2>
           {sessionTotal > 0 ? (
             <>
+              {/* 记忆保持率：圆环给量感，下方文字给精确计数——两个通道各管一件事，
+                  不是同一维度的重复编码。不放顶部进度区：那里已有 Progress 条 + 1/N 文字，
+                  再加圆环就是三套编码同一个数（违反编码通道预算）。 */}
+              <ProgressRing
+                value={sessionCorrect / sessionTotal}
+                size={132}
+                label={`记忆保持率 ${sessionCorrect} / ${sessionTotal}`}
+              />
               <p>
                 复习了 <strong>{sessionTotal}</strong> 个概念
               </p>

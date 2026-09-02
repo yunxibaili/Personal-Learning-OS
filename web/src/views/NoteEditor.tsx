@@ -12,6 +12,7 @@ import type {
   OkResponse,
 } from "@shared/types/note";
 import { buildNoteTree, type NoteTreeNode } from "../components/notes/buildNoteTree";
+import { Skeleton, useToast } from "../components/ui";
 
 // 编辑器（TipTap/ProseMirror/KaTeX 全家桶 ~800kB）按需加载（BUG-4 代码分割）：
 // 首帧先渲染「选择笔记」骨架与列表，选中之/后台预取后再挂编辑器。
@@ -19,6 +20,25 @@ import { buildNoteTree, type NoteTreeNode } from "../components/notes/buildNoteT
 const TiptapEditor = lazy(() =>
   import("../components/editor/TiptapEditor").then((m) => ({ default: m.TiptapEditor })),
 );
+
+/**
+ * 编辑器 chunk 未就绪时的骨架（Suspense fallback）。
+ * 形状对齐真实编辑器：标题条 + 4 行正文、末行留短——一眼看出是「一段文字」，不是空白。
+ * 容器定高（CLS 铁律）：异步内容不 return null，也不让高度随 chunk 到达而跳变。
+ * Skeleton 是 aria-hidden，故补 sr-only 文案给读屏用户。
+ */
+function EditorSkeleton() {
+  return (
+    <div className="editor-skeleton">
+      <span className="sr-only">编辑器加载中…</span>
+      <Skeleton height={26} width="46%" />
+      <Skeleton height={14} width="94%" />
+      <Skeleton height={14} width="88%" />
+      <Skeleton height={14} width="91%" />
+      <Skeleton height={14} width="62%" />
+    </div>
+  );
+}
 
 /** ADR-024 P1-1：左栏层级树节点行。副笔记缩进于主笔记下，主笔记提供「＋副笔记」。 */
 function NoteTreeList(props: {
@@ -84,6 +104,7 @@ export function NoteEditorView() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusNoteId = useUi((s) => s.focusNoteId);
   const setActiveNoteId = useUi((s) => s.setActiveNoteId);
+  const toast = useToast();
 
   const refreshList = useCallback(async () => {
     const data = await apiGet<NoteListResponse>("/notes");
@@ -168,11 +189,16 @@ export function NoteEditorView() {
           setSaveState("saved");
           void refreshList();
         } catch (e) {
-          setError(e instanceof ApiError ? e.message : String(e));
+          const msg = e instanceof ApiError ? e.message : String(e);
+          setError(msg);
+          // 自动保存没有用户动作做因果锚点：用户正在打字，顶部 banner 未必被看见，
+          // 而这件事的代价是丢文字——所以额外推一条 toast（瞬时）+ banner（持久）。
+          // 其余失败（新建/删除/上传）都是用户主动触发，banner 就在手边，不再重复弹。
+          toast.push("自动保存失败", "err", msg);
         }
       }, 800);
     },
-    [activeId, refreshList],
+    [activeId, refreshList, toast],
   );
 
   const uploadAttachment = useCallback(    async (file: File) => {
@@ -262,9 +288,7 @@ export function NoteEditorView() {
               <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
             </div>
 
-            <Suspense
-                fallback={<div className="tutor-answer empty-hint">编辑器加载中…</div>}
-              >
+            <Suspense fallback={<EditorSkeleton />}>
               <TiptapEditor
                 key={detail.id}
                 initialMarkdown={detail.content_md}
