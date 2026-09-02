@@ -1949,3 +1949,29 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 ### 遗留
 
 - 无代码改动；P1-4 关闭。
+
+## T-P1-MINDMAP-TRUTH-HISTORY 定性完成（2026-09-02 · 架构确认，零代码）
+
+### 所有者之问
+
+现有 SQLite-only MindMap 数据，在什么时候、以什么机制、由谁生成 `*.mindmap.json`？
+
+### 答案：不存在存量——回填动作退化为 no-op，P1-MINDMAP-TRUTH 正式关闭
+
+| 核查项 | 实证 |
+|---|---|
+| 前向 producer | ✅ `core/mindmap.py` 全部 11 个 mutation 触发 `write_sidecar`（create/import/add_node/position/label/bind/unbind/delete_node/add_edge/delete_edge/delete_map），整体重写 + 原子替换（tmp.replace），失败仅告警不阻断 |
+| 反向 rebuild | ✅ `rebuild_mindmaps`（幂等，prune_missing mirror 语义），唯一调用点 `sync.py:200`（Sync Apply 后一致性钩子） |
+| **存量数据** | **`mind_maps` 表 maps=0 / nodes=0 / edges=0（真实库实测）**——用户从未在真实库创建导图，M2b 开发数据全在测试库 |
+| 回填机制 | **不需要**——无 SQLite-only 存量，「历史回填」退化为空集；a68bc3d 的原语（write_sidecar 单 map 幂等）已覆盖未来任何单库迁移需求 |
+
+### 结论
+
+按所有者裁定框架落标记：**历史数据回填 = 运维/首次迁移动作，不属于运行时 producer；
+本库为首次使用且无存量 → 该动作无操作。P1-MINDMAP-TRUTH 正式关闭。**
+
+### 一条长期注意点（登记，不行动）
+
+`rebuild_mindmaps` 默认 `prune_missing=True`：未来若出现「rc.2 之前创建且从未再编辑」
+的 map（无 sidecar），Sync Apply 会按 mirror 语义删除它。当前为零；producer 已生效，
+所有新 map 自动带 sidecar，窗口不会重新打开。
