@@ -621,43 +621,47 @@
       </div>
     </a>
 
-    <!-- 7 Note Tree（多层级笔记列表 · 2026-09-01 新增） -->
-    <a class="card" href="./note-tree.html">
+    <!-- 7 Orbit Tree（星系层级 · 2026-09-02 由 note-tree 更名重塑） -->
+    <a class="card" href="./orbit-tree.html">
       <div class="thumb" style="background:#FFFFFF">
         <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
           <!-- 过滤框 -->
           <rect x="8" y="8" width="184" height="14" rx="4" fill="#F7F7F7" stroke="#ECECEC"/>
 
-          <!-- 父行（选中：brand-soft 底 + 橙左缘 + 计数徽章） -->
+          <!-- 父行 · 已展开（选中：brand-soft 底 + 橙左缘 + 星球展开成轨道环） -->
           <rect x="8" y="28" width="184" height="14" rx="3" fill="#FFF1EA"/>
           <rect x="8" y="28" width="2" height="14" fill="#FF6B35"/>
-          <path d="M22 32 l3.5 3.5 l-3.5 3.5" stroke="#737373" fill="none" stroke-width="1.2"/>
-          <text x="33" y="38" font-size="7" font-weight="600" fill="#171717">优化器</text>
+          <circle cx="25" cy="35" r="6" fill="none" stroke="#F5C7B0" stroke-width="1.4"/>
+          <circle cx="25" cy="35" r="2.6" fill="#FF6B35"/>
+          <text x="37" y="38" font-size="7" font-weight="600" fill="#171717">优化器</text>
           <rect x="172" y="31" width="14" height="8" rx="4" fill="#FFE4D5"/>
           <text x="179" y="38" text-anchor="middle" font-size="6" fill="#C2410C">3</text>
 
-          <!-- 子行：树线 + 缩进（层级唯一通道） -->
-          <line x1="21" y1="42" x2="21" y2="70" stroke="#ECECEC" stroke-width="1"/>
-          <line x1="21" y1="49" x2="30" y2="49" stroke="#ECECEC" stroke-width="1"/>
-          <rect x="34" y="45" width="32" height="7" rx="2" fill="#ECECEC"/>
-          <line x1="21" y1="63" x2="30" y2="63" stroke="#ECECEC" stroke-width="1"/>
-          <rect x="34" y="59" width="24" height="7" rx="2" fill="#ECECEC"/>
+          <!-- 轨道：基准线自上而下生长，卫星依次入轨 -->
+          <line x1="25" y1="44" x2="25" y2="70" stroke="#ECECEC" stroke-width="1"/>
+          <line x1="25" y1="49" x2="33" y2="49" stroke="#ECECEC" stroke-width="1"/>
+          <circle cx="37" cy="49" r="1.8" fill="#737373"/>
+          <rect x="42" y="45.5" width="30" height="7" rx="2" fill="#ECECEC"/>
+          <line x1="25" y1="63" x2="33" y2="63" stroke="#ECECEC" stroke-width="1"/>
+          <circle cx="37" cy="63" r="1.8" fill="#737373"/>
+          <rect x="42" y="59.5" width="22" height="7" rx="2" fill="#ECECEC"/>
 
-          <!-- 第二父行（收起态） -->
-          <path d="M24 78 l3.5 3.5 l-3.5 3.5" stroke="#737373" fill="none" stroke-width="1.2"/>
-          <text x="35" y="85" font-size="7" fill="#171717">注意力机制</text>
-          <rect x="172" y="79" width="14" height="8" rx="4" fill="#F7F7F7" stroke="#ECECEC"/>
-          <text x="179" y="86" text-anchor="middle" font-size="6" fill="#737373">2</text>
+          <!-- 第二父行 · 收起态（6px 实心星球点，未展开） -->
+          <circle cx="25" cy="85" r="3" fill="#FF6B35"/>
+          <text x="37" y="88" font-size="7" fill="#171717">注意力机制</text>
+          <rect x="172" y="81" width="14" height="8" rx="4" fill="#F7F7F7" stroke="#ECECEC"/>
+          <text x="179" y="88" text-anchor="middle" font-size="6" fill="#737373">2</text>
 
-          <!-- 未挂载组（orphan 警告） -->
-          <rect x="8" y="97" width="46" height="8" rx="3" fill="#FFFBEB"/>
-          <rect x="60" y="98" width="30" height="6" rx="3" fill="#FFFBEB"/>
+          <!-- 未挂载组（orphan：warn 虚线环，形状即语义） -->
+          <rect x="8" y="97" width="184" height="8" rx="3" fill="#FFFBEB"/>
+          <circle cx="25" cy="101" r="4.6" fill="none" stroke="#B45309" stroke-width="1" stroke-dasharray="2 1.6"/>
+          <rect x="37" y="98" width="26" height="6" rx="2" fill="#F5E6C8"/>
         </svg>
       </div>
       <div class="body">
         <span class="tag">组件规范</span>
-        <h3>多层级笔记列表</h3>
-        <p>主/副笔记单父树：层级=缩进、橙只给选中、过滤自动展开、orphan 保留不删。</p>
+        <h3>星系层级 OrbitTree</h3>
+        <p>主/副笔记单父树：层级=轨道、星球展开成环、卫星 stagger 入轨、orphan 保留不删。</p>
         <span class="open">打开 →</span>
       </div>
     </a>

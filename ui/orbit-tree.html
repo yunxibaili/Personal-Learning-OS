@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>多层级笔记列表 · note-tree — Open Learning OS</title>
+<title>星系层级 · orbit-tree — Open Learning OS</title>
 <link rel="stylesheet" href="./tokens.css">
 <style>
   /* =============================================================================
      页面外壳（沿用 ui/ 规范页骨架）
      约束 ADR-013：无渐变 / 无 backdrop-filter / 无装饰 SVG / 无图标库 / 无 emoji 图标
+     唯一例外：空态引导聚光（ADR-013 §2.13），本页不使用，空轨道走虚线圈
      ============================================================================= */
   * { box-sizing: border-box; }
   body {
@@ -35,8 +36,8 @@
   }
   h1 { font-size: 40px; line-height: 1.15; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 600; }
   h1 em { font-style: normal; color: var(--brand-text); }
-  .hero p { max-width: 640px; color: var(--text-2); font-size: 15px; line-height: 1.8; margin: 0; }
-  .hero code, td code, li code {
+  .hero p { max-width: 660px; color: var(--text-2); font-size: 15px; line-height: 1.8; margin: 0; }
+  .hero code, td code, li code, p code {
     font-family: var(--mono); font-size: 13px;
     background: var(--surface-2); border: 1px solid var(--border-soft);
     padding: 1px 5px; border-radius: var(--r-xs);
@@ -58,26 +59,49 @@
   td { color: var(--text-2); line-height: 1.6; }
   td strong { color: var(--text); font-weight: 600; }
 
+  .kbd {
+    display: inline-block; font-family: var(--mono); font-size: 11px; color: var(--text-2);
+    background: var(--surface-2); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: var(--r-xs); padding: 0 5px; line-height: 16px; margin: 0 1px;
+  }
   footer { padding: 56px 0 72px; color: var(--text-3); font-size: 12px; }
 
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .vs h3 { margin-top: 0; }
+  .tag-good, .tag-bad {
+    display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: var(--r-pill);
+    margin-left: 8px; vertical-align: 2px;
+  }
+  .tag-bad { color: var(--text-3); background: var(--surface-2); border: 1px solid var(--border); }
+  .tag-good { color: var(--ok-text); background: var(--ok-soft); border: 1px solid var(--ok-soft); }
+
   /* =============================================================================
-     ① 组件：多层级笔记列表（NoteTree · 左栏 280px）
-     编码通道预算（一个维度 = 一个通道）：
+     ① 组件：星系层级（OrbitTree · 左栏 280px）
+     —— 本页 2026-09-02 由 note-tree.html 更名重塑，取代原「缩进 + chevron 旋转」的死板形态。
+        注意：后端契约 GET /notes/tree 与 web 组件 NoteTreeList / buildNoteTree 不随本次更名
+
+     三处动效改造（这是本版相对旧版的全部差异）：
+       A 展开：grid-template-rows 0fr → 1fr（纯 CSS，取代 display:none 硬跳变）
+       B 入轨：卫星 stagger 45ms 依次滑入（transition-delay: calc(var(--i) * 45ms)）
+       C 星球：6px 实心点 → 16px 轨道环（border + padding 过渡，非 SVG）
+
+     编码通道预算（一个维度 = 一个通道，与旧版一致，不新增通道）：
        层级     = 缩进 + 父/子两级字重
-       笔记类型 = 左侧 6px 状态点（主=brand 实心/子级无/orphan=warn 描边空心）
+       笔记类型 = 星球点（主=brand 实心 / 展开=brand-line 环 / orphan=warn 虚线环）
        元数据   = 行末 tabular-nums（时间·链数）
        选中     = brand-soft 底 + 2px brand 左缘 + brand-text 字
-       计数     = 父行右侧 font-num 数字（去 pill）
-       警告     = warn-soft 行底 + 2px warn 左缘（orphan 组）
-       hover    = brand-tint（5% brand 叠加）
-       focus    = 1.5px inset brand-line ring（键盘）
+       计数     = 行右 font-num 数字
+       警告     = warn-soft 行底 + 2px warn 左缘（orphan）
+       hover    = brand-tint
+       focus    = 1.5px inset brand-line ring
      ============================================================================= */
-  .demo-grid { display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start; }
+  .demo-grid { display: grid; grid-template-columns: 280px 1fr; gap: 28px; align-items: start; }
 
   .rail {
     width: var(--rail-w); background: var(--surface);
     border: 1px solid var(--border); border-radius: var(--r-lg);
     overflow: hidden; display: flex; flex-direction: column;
+    contain: layout paint;                       /* 性能契约 */
   }
   .rail-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -94,7 +118,6 @@
   }
   .rail-head button:hover { color: var(--brand-text); background: var(--surface-2); }
 
-  /* 搜索框：包一层以便放 icon prefix；focus 时 brand-tint 描边 */
   .rail-filter-wrap { position: relative; margin: 0 var(--sp-4) var(--sp-3); }
   .rail-filter-wrap::before {
     content: "⌕"; position: absolute; left: 10px; top: 50%;
@@ -108,11 +131,11 @@
     font-size: var(--fs-sm); font-family: var(--font);
     border: 1px solid transparent; border-radius: var(--r-sm);
     background: var(--bg-soft); color: var(--text);
-    transition: background 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
+    /* 性能契约：禁 box-shadow 动画 —— focus ring 用 border-color 过渡，box-shadow 只作静态环 */
+    transition: background 100ms ease, border-color 100ms ease;
   }
   .rail-filter::placeholder { color: var(--text-3); }
   .rail-filter:focus { outline: none; background: var(--surface); }
-  .rail-filter-wrap:focus-within { border-radius: var(--r-sm); }
   .rail-filter-wrap:focus-within::before { color: var(--brand-text); }
   .rail-filter-wrap:focus-within .rail-filter {
     border-color: var(--brand-line);
@@ -121,182 +144,390 @@
 
   .tree {
     outline: none; padding: var(--sp-1) 0 var(--sp-3);
-    max-height: 560px; overflow-y: auto;
+    max-height: 600px; overflow-y: auto;
   }
   .tree:focus-visible { box-shadow: inset 0 0 0 2px var(--brand-line); }
 
-  /* --- 行（父行与子行共用基座） --- */
-  .row {
+  /* --- 行 --- */
+  .orbit__row {
     display: flex; align-items: center; gap: 8px;
-    min-height: 40px;                                  /* 业界 40-48px */
+    min-height: 40px;
     padding: 6px var(--sp-4) 6px 14px;
     border-left: 2px solid transparent;
     cursor: pointer; user-select: none;
     position: relative;
-    transition: background 100ms ease;
+    transition: background var(--dur-fast) var(--ease-out);
   }
-  .row:hover { background: var(--brand-tint); }
-  .row:focus-visible {
+  .orbit__row:hover { background: var(--brand-tint); }
+  .orbit__row:focus-visible {
     outline: none;
     box-shadow: inset 0 0 0 1.5px var(--brand-line);
   }
-  .row.active { background: var(--brand-soft); border-left-color: var(--brand); }
-  .row.active:hover { background: var(--brand-tint); }
-  .row .t {
+  .orbit__row.active { background: var(--brand-soft); border-left-color: var(--brand); }
+  .orbit__row.active:hover { background: var(--brand-tint); }
+  .orbit__row .t {
     flex: 1; min-width: 0;
     font-size: var(--fs-base); color: var(--text);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     letter-spacing: -0.005em;
   }
-  .row.active .t { color: var(--brand-text); font-weight: var(--fw-sb); }
+  .orbit__row.active .t { color: var(--brand-text); font-weight: var(--fw-sb); }
 
-  /* 状态点：主笔记实心橙 · 无子级主笔记稍暗 · 子级无点 · orphan 描边空心 */
-  .row .dot {
+  /* --- C 星球：6px 实心 → 16px 轨道环（border + padding 过渡，无 SVG） --- */
+  .orb {
     flex-shrink: 0;
-    width: 6px; height: 6px;
+    width: 6px; height: 6px; padding: 0;
+    border: 0 solid transparent;
     border-radius: 50%;
     background: var(--brand);
-    margin: 0 -2px 0 0;
+    background-clip: content-box;                /* 背景只填 content box = 星球本体 */
+    transition-property: width, height, padding, border-width, border-color, transform;
+    transition-duration: var(--dur), var(--dur), var(--dur), var(--dur), var(--dur-fast), var(--dur-fast);
+    transition-timing-function: var(--ease-spring), var(--ease-spring), var(--ease-spring),
+                                var(--ease-spring), var(--ease-out), var(--ease-out);
   }
-  .row.leaf > .row .dot, .parent:not(.expanded) > .row .dot { background: var(--brand); }
-  .row.leaf.orphan .dot { background: transparent; border: 1.5px solid var(--warn-text); width: 7px; height: 7px; }
-  .child .row .dot { display: none; }                  /* 子级无点（层级靠缩进） */
-  .row.orphan .dot {
-    background: transparent;
-    border: 1.5px solid var(--warn-text);
-    width: 7px; height: 7px;
+  .orbit.expanded > .orbit__row .orb {
+    width: 16px; height: 16px;
+    padding: 2px;                                /* content = 16-4-4 = 8px 星球本体 */
+    border-width: 2px;
+    border-color: var(--brand-line);             /* 环 = 轨道 */
   }
-  .row.active .dot { box-shadow: 0 0 0 2px var(--brand-soft); }
+  .orbit__row:hover .orb { transform: scale(1.12); }
+  .orb { transition-property: width, height, padding, border-width, border-color, transform; }
+  .orbit__row.active .orb { box-shadow: 0 0 0 2px var(--brand-soft); }
 
-  /* --- 父行：展开钮 + 元数据 + 计数 --- */
+  /* orphan：warn 虚线环（形状即语义，与 brand 实心严格区分） */
+  .orbit__row.orphan .orb {
+    background: transparent;
+    border: 1.5px dashed var(--warn-text);
+    width: 9px; height: 9px;
+  }
+
   .chev {
     appearance: none; border: none; background: transparent; cursor: pointer;
     flex-shrink: 0; width: 18px; height: 18px; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
     color: var(--text-3); font-size: 12px; line-height: 1; font-family: var(--font);
     transform: rotate(0deg);
-    transition: color 100ms ease, transform 180ms ease, background 100ms ease;
+    transition: color 100ms ease, transform 200ms var(--ease-spring), background 100ms ease;
     border-radius: var(--r-xs);
   }
   .chev:hover { color: var(--text); background: var(--surface-3); }
-  .parent.expanded > .row .chev { transform: rotate(90deg); }
+  .orbit.expanded > .orbit__row .chev { transform: rotate(90deg); }
   .chev.leaf { visibility: hidden; pointer-events: none; }
-  .parent > .row .t { font-weight: var(--fw-med); }
-  .row.active.parent > .row .t { font-weight: var(--fw-sb); }
+  .orbit > .orbit__row .t { font-weight: var(--fw-med); }
 
-  /* 元数据：行末微信息（时间 + 链数）— tabular-nums 数字稳 */
-  .row .meta {
-    display: flex; gap: 6px; align-items: baseline;
-    flex-shrink: 0;
-    font-family: var(--font-num);
-    font-size: 11px;
-    color: var(--text-3);
+  .meta {
+    display: flex; gap: 6px; align-items: baseline; flex-shrink: 0;
+    font-family: var(--font-num); font-size: 11px; color: var(--text-3);
     font-variant-numeric: tabular-nums;
   }
-  .row .meta .sep { color: var(--border); }
-  .row.active .meta { color: var(--brand-text); opacity: 0.85; }
-
-  /* 计数：去 pill 改极简数字，节省行高 */
+  .meta .sep { color: var(--border); }
+  .orbit__row.active .meta { color: var(--brand-text); opacity: .85; }
   .count {
     margin-left: 6px; flex-shrink: 0;
-    font-family: var(--font-num);
-    font-size: 11px; font-weight: var(--fw-med);
-    color: var(--text-3);
-    font-variant-numeric: tabular-nums;
-    min-width: 18px; text-align: right;
-    line-height: 1;
+    font-family: var(--font-num); font-size: 11px; font-weight: var(--fw-med);
+    color: var(--text-3); font-variant-numeric: tabular-nums;
+    min-width: 18px; text-align: right; line-height: 1;
   }
-  .row.active .count { color: var(--brand-text); }
+  .orbit__row.active .count { color: var(--brand-text); }
 
-  /* --- 子行：缩进即层级（唯一层级通道），前置短线承接父级 --- */
-  .children { display: none; }
-  .parent.expanded > .children { display: block; }
-  .child { display: flex; }
-  .child::before {                                /* 树线：竖线 + 短横，border-soft 更轻 */
-    content: ""; flex-shrink: 0;
-    width: 24px; align-self: stretch;
-    background:
-      linear-gradient(var(--border-soft), var(--border-soft)) 0 0 / 1px 100% no-repeat,
-      linear-gradient(var(--border-soft), var(--border-soft)) 0 50% / 10px 1px no-repeat;
+  /* --- A 轨道展开：grid-template-rows 0fr → 1fr（取代 display:none） --- */
+  .orbit__track {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--dur) var(--ease-spring);
   }
-  .child .row {
-    flex: 1; min-height: 36px;                    /* 子级略矮 36px */
-    padding-left: 4px;
-  }
-  .child .row .t { font-size: var(--fs-sm); color: var(--text-2); font-weight: var(--fw-reg); }
-  .child .row.active .t { color: var(--brand-text); font-weight: var(--fw-med); }
+  .orbit.expanded > .orbit__track { grid-template-rows: 1fr; }
+  .track-in { overflow: hidden; min-height: 0; }
+  /* 折叠态轨道实测残留 8px，不是 0 —— 来源是下面 .track-in 的 padding-bottom。
+     border-box 下 height:0 压不掉 padding，所以「0fr」并非完全归零。
+     这 8px 顺带成了顶层父行之间的分隔（实测父行间距 8px；若强行归零，父行会贴死）。
+     因此保留，但须知它是 padding 的副作用：改 padding-bottom 会同时改行间距。 */
 
-  /* --- 未挂载组（orphan：parent 指向不存在的笔记） --- */
+  /* 轨道基准线：展开时从顶端 scaleY 生长 */
+  .track-in { position: relative; padding: 0 var(--sp-4) var(--sp-2) 23px; }
+  .track-in::before {
+    content: ""; position: absolute; left: 15px; top: 0; bottom: 10px;
+    width: 1px; background: var(--border-soft);
+    transform: scaleY(0); transform-origin: top;
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .orbit.expanded > .orbit__track .track-in::before { transform: scaleY(1); }
+
+  /* --- B 卫星 stagger 入轨：delay = 序号 × 45ms --- */
+  .sat-grid {
+    display: grid; gap: 6px;
+    grid-template-columns: repeat(var(--sat-cols, 2), minmax(0, 1fr));
+  }
+  .sat {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition:
+      opacity var(--dur-fast) var(--ease-out),
+      transform var(--dur) var(--ease-spring),
+      background var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
+    transition-delay: 0ms;
+  }
+  .orbit.expanded .sat {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(var(--i, 0) * 45ms);   /* 依次入轨 */
+  }
+  .sat[data-span="2"] { grid-column: span 2; }
+
+  .sat__row {
+    display: flex; align-items: center; gap: 6px;
+    min-height: 34px; padding: 4px 8px 4px 8px;
+    border: 1px solid var(--border-soft); border-radius: var(--r-sm);
+    background: var(--surface);
+    cursor: pointer; user-select: none;
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  }
+  .sat__row:hover { background: var(--brand-tint); border-color: var(--brand-line); }
+  .sat__row.active { background: var(--brand-soft); border-color: var(--brand-line); }
+  .sat__row .sn {
+    flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--text-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sat__row.active .sn { color: var(--brand-text); font-weight: var(--fw-med); }
+  .sat__row .ring { flex-shrink: 0; }
+
+  /* 空轨道：无卫星的主笔记展开后（不复制 spotlight 渐变，用虚线圈 = 空轨道） */
+  .orbit-empty {
+    display: none;
+    margin: 2px 0 4px; padding: 10px 12px 12px;
+    border: 1px dashed var(--border); border-radius: var(--r-md);
+    text-align: center;
+  }
+  .orbit.no-sat.expanded .orbit-empty { display: block; }
+  .orbit-empty .void {
+    width: 26px; height: 26px; margin: 0 auto 6px;
+    border: 1.5px dashed var(--border-strong); border-radius: 50%;
+  }
+  .orbit-empty p { margin: 0 0 8px; font-size: var(--fs-sm); color: var(--text-3); line-height: 1.6; }
+  .orbit-empty .void-cta {
+    appearance: none; border: none; cursor: pointer;
+    font-family: var(--font); font-size: var(--fs-sm); font-weight: 600;
+    padding: 7px 14px; border-radius: var(--r-md);
+    background: var(--brand-deep); color: var(--text-inv);
+    transition: background var(--dur-fast) var(--ease-out);
+  }
+  .orbit-empty .void-cta:hover { background: var(--brand-text); }
+
+  /* 未挂载组 */
   .group-label {
     padding: var(--sp-4) var(--sp-4) var(--sp-1);
     font-size: 11px; font-weight: var(--fw-sb);
-    letter-spacing: 0.06em; text-transform: uppercase;
+    letter-spacing: .06em; text-transform: uppercase;
     color: var(--text-3);
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 8px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
   }
   .group-label .group-count {
-    font-family: var(--font-num);
-    letter-spacing: 0; text-transform: none;
-    font-size: 11px; font-weight: var(--fw-reg);
-    color: var(--text-3);
+    font-family: var(--font-num); letter-spacing: 0; text-transform: none;
+    font-size: 11px; font-weight: var(--fw-reg); color: var(--text-3);
   }
   .group-label.warn { color: var(--warn-text); }
-  .group-label.warn .group-count { color: var(--warn-text); opacity: 0.8; }
-  .row.orphan { background: var(--warn-soft); border-left-color: var(--warn-text); }
-  .row.orphan:hover { background: var(--warn-soft); filter: brightness(0.97); }
-  .row.orphan .t { color: var(--warn-text); }
-  .row.orphan.active .t { color: var(--warn-text); }
-  .row.orphan .flag {
+  .orbit__row.orphan { background: var(--warn-soft); border-left-color: var(--warn-text); }
+  .orbit__row.orphan:hover { filter: brightness(.97); }
+  .orbit__row.orphan .t { color: var(--warn-text); }
+  .orbit__row.orphan .flag {
     margin-left: auto; flex-shrink: 0;
-    font-family: var(--mono);
-    font-size: 11px; font-weight: var(--fw-med);
-    color: var(--warn-text);
-    font-variant-numeric: tabular-nums;
-    background: transparent; border: none; padding: 0;
+    font-family: var(--mono); font-size: 11px; font-weight: var(--fw-med);
+    color: var(--warn-text); font-variant-numeric: tabular-nums;
   }
+  /* WaveLink：orphan 引用的悬停提示（ADR-013 合规：下划线位移，非颜色闪烁） */
+  .flag {
+    position: relative; text-decoration: none;
+    background-image: none;
+  }
+  .flag::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -2px;
+    height: 1px; background: var(--warn-text);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .flag:hover::after { transform: scaleX(1); }
 
   .tree-empty {
-    padding: var(--sp-5) var(--sp-4);
-    font-size: var(--fs-sm);
-    color: var(--text-3);
-    text-align: center;
-    line-height: 1.6;
+    padding: var(--sp-5) var(--sp-4); font-size: var(--fs-sm);
+    color: var(--text-3); text-align: center; line-height: 1.6;
   }
-  .tree-empty::before {
-    content: "—";
-    display: block;
-    font-size: 20px;
-    color: var(--border);
-    margin-bottom: 4px;
-  }
+  .tree-empty::before { content: "—"; display: block; font-size: 20px; color: var(--border); margin-bottom: 4px; }
   .filtering .count, .filtering .group-label { display: none; }
 
-  /* --- 演示区右侧说明 --- */
-  .demo-note { font-size: 13px; color: var(--text-2); line-height: 1.8; }
-  .demo-note b { color: var(--text); }
-  .kbd {
-    display: inline-block; font-family: var(--mono); font-size: 11px; color: var(--text-2);
-    background: var(--surface-2); border: 1px solid var(--border); border-bottom-width: 2px;
-    border-radius: var(--r-xs); padding: 0 5px; line-height: 16px; margin: 0 1px;
+  /* =============================================================================
+     ② 右侧：Bento 卫星系统（选中星球的卫星网格）
+     —— 网格体系取自 archive/legacy-gallery-html-2026-09-01/bento-dashboard.html
+        只取「尺寸 = 重要性」的网格原则与 tile col/row span，
+        弃用其「独立仪表盘」定位（裁决 A 已删）与 MiMo 风视觉。
+     密度自适应：--bento-cols 6（演示区）/ 2（左栏内嵌）
+     ============================================================================= */
+  .sys {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: var(--sp-5);
+    min-height: 268px;                            /* CLS 铁律：异步切换不留空 */
+    contain: layout paint;
+  }
+  .sys-head {
+    display: flex; align-items: baseline; gap: 10px;
+    padding-bottom: var(--sp-3); margin-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .sys-head h3 { margin: 0; font-size: var(--fs-md); font-weight: var(--fw-sb); }
+  .sys-head .sys-sub { font-size: var(--fs-xs); color: var(--text-3); margin-left: auto; }
+
+  .sys-stats { display: flex; gap: var(--sp-6); margin-bottom: var(--sp-4); }
+  .stat .sv {
+    font-family: var(--font-num); font-size: var(--fs-xl); font-weight: var(--fw-sb);
+    color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .stat .sl { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+  .stat.is-brand .sv { color: var(--brand-text); }
+
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(var(--bento-cols, 6), minmax(0, 1fr));
+    grid-auto-rows: 76px;
+    gap: 10px;
+    grid-auto-flow: dense;                        /* 自动补位，bento 实用技巧 */
+  }
+  .tile {
+    border: 1px solid var(--border); border-radius: var(--r-md);
+    background: var(--surface);
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer; overflow: hidden;
+    transition:
+      border-color var(--dur-fast) var(--ease-out),
+      background var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+  .tile:hover { border-color: var(--brand-line); transform: translateY(-2px); }
+  .tile.active { border-color: var(--brand); background: var(--brand-soft); }
+  .tile__t {
+    font-size: var(--fs-sm); font-weight: var(--fw-med); color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tile.active .tile__t { color: var(--brand-text); }
+  .tile__x {
+    font-size: 11px; color: var(--text-3); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tile__f {
+    margin-top: auto; display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-num); font-size: 11px; color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .tile__f .lk { margin-left: auto; }
+
+  /* 尺寸 = 重要性（三档，bento 原则：不超过 2-3 种尺寸） */
+  .tile[data-size="1x1"] { grid-column: span 2; grid-row: span 1; }
+  .tile[data-size="2x1"] { grid-column: span 3; grid-row: span 1; }
+  .tile[data-size="2x2"] { grid-column: span 3; grid-row: span 2; }
+  .tile[data-size="2x2"] .tile__t { font-size: var(--fs-base); }
+  .tile[data-size="2x2"] .tile__x { -webkit-line-clamp: 4; }
+
+  /* 掌握度环（ProgressRing 基元 · SVG circle，功能性非装饰） */
+  .ring { display: inline-block; flex-shrink: 0; vertical-align: middle; }
+  .ring:empty::before {                            /* 无 JS 降级：退化为小橙点，不跳动 */
+    content: ""; display: block; width: 6px; height: 6px; margin: 4px;
+    border-radius: 50%; background: var(--brand);
+  }
+  .ring circle { fill: none; stroke-width: 2.5; }
+  .ring .bg { stroke: var(--border); }
+  .ring .fg {
+    stroke: var(--brand); stroke-linecap: round;
+    transition: stroke-dashoffset var(--dur-slow) var(--ease-out);
   }
 
-  /* --- 前后对照 --- */
-  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .vs h3 { margin-top: 0; }
-  .vs .tag-good, .vs .tag-bad {
-    display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: var(--r-pill);
-    margin-left: 8px; vertical-align: 2px;
+  /* =============================================================================
+     ③ 动效分解演示
+     ============================================================================= */
+  .mfx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .mfx-card {
+    border: 1px solid var(--border); border-radius: var(--r-lg);
+    background: var(--surface); padding: var(--sp-4);
+    display: flex; flex-direction: column; gap: 10px;
   }
-  .vs .tag-bad { color: var(--text-3); background: var(--surface-2); border: 1px solid var(--border); }
-  .vs .tag-good { color: var(--ok-text); background: var(--ok-soft); border: 1px solid var(--ok-soft); }
-  .vs .flat .row .t { font-weight: var(--fw-reg); }
+  .mfx-card h4 {
+    margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-sb);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mfx-card h4 .src {
+    margin-left: auto; font-size: 10px; font-weight: var(--fw-reg);
+    color: var(--text-3); font-family: var(--mono);
+  }
+  .mfx-card p { margin: 0; font-size: 12px; color: var(--text-2); line-height: 1.7; }
+  .mfx-stage {
+    height: 90px; border: 1px solid var(--border-soft); border-radius: var(--r-md);
+    background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    overflow: hidden;
+  }
+  .mfx-btn {
+    appearance: none; cursor: pointer; align-self: flex-start;
+    font-family: var(--font); font-size: 12px;
+    padding: 5px 12px; border-radius: var(--r-sm);
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  }
+  .mfx-btn:hover { background: var(--brand-tint); color: var(--brand-text); border-color: var(--brand-line); }
 
-  @media (max-width: 900px) {
-    .demo-grid, .vs { grid-template-columns: 1fr; }
+  /* 舞台内的演示元素 */
+  .d-orb {
+    width: 6px; height: 6px; padding: 0; border: 0 solid transparent; border-radius: 50%;
+    background: var(--brand); background-clip: content-box;
+    transition: width var(--dur) var(--ease-spring), height var(--dur) var(--ease-spring),
+                padding var(--dur) var(--ease-spring), border-width var(--dur) var(--ease-spring),
+                border-color var(--dur-fast) var(--ease-out);
   }
+  .d-orb.on { width: 16px; height: 16px; padding: 2px; border-width: 2px; border-color: var(--brand-line); }
+
+  .d-track { width: 190px; display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur) var(--ease-spring); }
+  .d-track.on { grid-template-rows: 1fr; }
+  .d-track > div { overflow: hidden; min-height: 0; }
+  .d-sats { display: flex; flex-direction: column; gap: 5px; padding: 8px; }
+  .d-sat {
+    height: 22px; border: 1px solid var(--border-soft); border-radius: var(--r-xs);
+    background: var(--surface); display: flex; align-items: center; padding: 0 8px;
+    font-size: 11px; color: var(--text-2);
+    opacity: 0; transform: translateX(-10px);
+    transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur) var(--ease-spring);
+  }
+  .d-track.on .d-sat { opacity: 1; transform: none; transition-delay: calc(var(--i, 0) * 45ms); }
+
+  .d-sq {
+    width: 26px; height: 26px; border-radius: var(--r-sm);
+    border: 1px solid var(--border-soft); background: var(--surface);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-spring);
+    transition-delay: calc(var(--i, 0) * 60ms);
+  }
+  .d-sq.on { opacity: 1; transform: none; }
+
+  /* =============================================================================
+     响应式 + 无障碍
+     ============================================================================= */
+  @media (max-width: 1000px) {
+    .demo-grid { grid-template-columns: 1fr; }
+    .mfx { grid-template-columns: 1fr 1fr; }
+    .vs { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px) {
+    .mfx { grid-template-columns: 1fr; }
+    .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tile[data-size="1x1"], .tile[data-size="2x1"], .tile[data-size="2x2"] { grid-column: span 2; grid-row: span 1; }
+  }
+  /* reduced-motion：全停（性能契约硬要求） */
   @media (prefers-reduced-motion: reduce) {
-    .chev { transition: none; }
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      transition-delay: 0ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
   }
 </style>
 </head>
@@ -308,6 +539,7 @@
     <nav>
       <a href="./index.html">总览</a>
       <a href="./note-workspace.html">工作区</a>
+      <a href="./motion-primitives.html">动效基元</a>
       <a href="./UI_DESIGN.md">设计系统</a>
     </nav>
   </div>
@@ -316,20 +548,23 @@
 <div class="wrap">
 
   <div class="hero">
-    <span class="eyebrow">M-NOTE-TREE · 左栏多层级笔记列表</span>
-    <h1>层级是<em>视图</em>，不是目录</h1>
+    <span class="eyebrow">M-NOTE-TREE v2 · 星系层级</span>
+    <h1>层级是<em>轨道</em>，不是目录</h1>
     <p>
       主/副笔记是<strong>严格单父</strong>关系（子笔记 frontmatter 写 <code>parent: "[[父标题]]"</code>，
-      事实源在 Markdown）。左栏把它渲染成一棵<strong>一层树</strong>：主笔记 = 可展开行，
-      副笔记 = 缩进子行。底层允许 parent 链，但 V1 界面只渲染一层——星球 / 卫星。
-      本页组件可交互：点击、展开、过滤、键盘导航全部真实生效。
+      事实源在 Markdown）。左栏把它渲染成<strong>星系</strong>：主笔记 = 星球，副笔记 = 沿轨道入轨的卫星。
+      <strong>v2 相对 v1 只改了「怎么动」</strong>——数据规则、编码通道、键盘语义全部不变：
+      展开从 <code>display:none</code> 硬跳变改为轨道生长，卫星依次入轨，星球点展开成轨道环。
     </p>
   </div>
 
   <!-- ==================================================== ① 交互演示 -->
   <section>
     <h2>交互演示</h2>
-    <p class="sec-sub">整行点击 = 打开笔记；箭头独立命中区 = 展开/收起。试着在过滤框输入「卷积」，命中分支会自动展开。</p>
+    <p class="sec-sub">
+      左侧点箭头看轨道展开（卫星依次入轨），点星球名看右侧 Bento 卫星系统联动。
+      试着在过滤框输入「卷积」，命中分支会自动展开。
+    </p>
     <div class="panel" style="background:var(--bg-soft); border:none; padding:24px 0;">
       <div class="demo-grid">
 
@@ -342,73 +577,127 @@
             <input class="rail-filter" id="filter" type="text" placeholder="搜索笔记…" aria-label="过滤笔记">
           </div>
 
-          <nav class="tree" id="tree" tabindex="0" aria-label="笔记树">
-            <!-- 主笔记 1 -->
-            <div class="parent expanded" data-node>
-              <div class="row" data-row data-title="优化器">
+          <!-- 静态结构即单一事实源：JS 只读这里的 data-* 驱动右侧 Bento，不重渲染树 -->
+          <nav class="tree" id="tree" tabindex="0" aria-label="笔记星系">
+
+            <div class="orbit expanded" data-node data-star-node="优化器">
+              <div class="orbit__row active" data-row data-star-row data-title="优化器">
                 <button class="chev" type="button" aria-expanded="true" aria-label="展开/收起 优化器">›</button>
-                <span class="dot" aria-hidden="true"></span>
+                <span class="orb" aria-hidden="true"></span>
                 <span class="t">优化器</span>
                 <span class="meta">2天前<span class="sep">·</span>5链</span>
                 <span class="count">3</span>
               </div>
-              <div class="children">
-                <div class="child"><div class="row" data-row data-title="Adam"><span class="t">Adam</span></div></div>
-                <div class="child"><div class="row active" data-row data-title="SGD"><span class="t">SGD</span></div></div>
-                <div class="child"><div class="row" data-row data-title="学习率调度"><span class="t">学习率调度</span></div></div>
+              <div class="orbit__track">
+                <div class="track-in">
+                  <div class="sat-grid" style="--sat-cols:2">
+                    <div class="sat" style="--i:0" data-span="1">
+                      <div class="sat__row" data-row data-sat-row data-title="SGD"
+                           data-links="5" data-mastery="88"
+                           data-x="随机梯度下降，带动量与 Nesterov 加速。">
+                        <span class="sn">SGD</span><span class="ring" data-ring="88"></span>
+                      </div>
+                    </div>
+                    <div class="sat" style="--i:1" data-span="1">
+                      <div class="sat__row" data-row data-sat-row data-title="Adam"
+                           data-links="3" data-mastery="72"
+                           data-x="一阶矩 + 二阶矩自适应学习率。">
+                        <span class="sn">Adam</span><span class="ring" data-ring="72"></span>
+                      </div>
+                    </div>
+                    <div class="sat" style="--i:2" data-span="1">
+                      <div class="sat__row" data-row data-sat-row data-title="学习率调度"
+                           data-links="2" data-mastery="40"
+                           data-x="warmup、余弦退火、阶梯衰减。">
+                        <span class="sn">学习率调度</span><span class="ring" data-ring="40"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- 主笔记 2 -->
-            <div class="parent expanded" data-node>
-              <div class="row" data-row data-title="注意力机制">
+            <div class="orbit expanded" data-node data-star-node="注意力机制">
+              <div class="orbit__row" data-row data-star-row data-title="注意力机制">
                 <button class="chev" type="button" aria-expanded="true" aria-label="展开/收起 注意力机制">›</button>
-                <span class="dot" aria-hidden="true"></span>
+                <span class="orb" aria-hidden="true"></span>
                 <span class="t">注意力机制</span>
                 <span class="meta">1周前<span class="sep">·</span>8链</span>
                 <span class="count">2</span>
               </div>
-              <div class="children">
-                <div class="child"><div class="row" data-row data-title="Self-Attention"><span class="t">Self-Attention</span></div></div>
-                <div class="child"><div class="row" data-row data-title="Multi-Head"><span class="t">Multi-Head</span></div></div>
+              <div class="orbit__track">
+                <div class="track-in">
+                  <div class="sat-grid" style="--sat-cols:2">
+                    <div class="sat" style="--i:0" data-span="2">
+                      <div class="sat__row" data-row data-sat-row data-title="Self-Attention"
+                           data-links="7" data-mastery="91"
+                           data-x="Q·K^T 缩放点积，softmax 后加权 V。">
+                        <span class="sn">Self-Attention</span><span class="ring" data-ring="91"></span>
+                      </div>
+                    </div>
+                    <div class="sat" style="--i:1" data-span="1">
+                      <div class="sat__row" data-row data-sat-row data-title="Multi-Head"
+                           data-links="4" data-mastery="65"
+                           data-x="多头并行投影后拼接线性变换。">
+                        <span class="sn">Multi-Head</span><span class="ring" data-ring="65"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- 主笔记 3（有子级，默认收起） -->
-            <div class="parent" data-node>
-              <div class="row" data-row data-title="卷积神经网络">
+            <div class="orbit" data-node data-star-node="卷积神经网络">
+              <div class="orbit__row" data-row data-star-row data-title="卷积神经网络">
                 <button class="chev" type="button" aria-expanded="false" aria-label="展开/收起 卷积神经网络">›</button>
-                <span class="dot" aria-hidden="true"></span>
+                <span class="orb" aria-hidden="true"></span>
                 <span class="t">卷积神经网络</span>
                 <span class="meta">3天前<span class="sep">·</span>12链</span>
                 <span class="count">1</span>
               </div>
-              <div class="children">
-                <div class="child"><div class="row" data-row data-title="池化"><span class="t">池化</span></div></div>
+              <div class="orbit__track" inert>
+                <div class="track-in">
+                  <div class="sat-grid" style="--sat-cols:2">
+                    <div class="sat" style="--i:0" data-span="2">
+                      <div class="sat__row" data-row data-sat-row data-title="池化"
+                           data-links="6" data-mastery="55"
+                           data-x="最大池化与平均池化的平移不变性差异。">
+                        <span class="sn">池化</span><span class="ring" data-ring="55"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- 主笔记 4（无子级） -->
-            <div class="parent" data-node>
-              <div class="row" data-row data-title="反向传播">
+            <div class="orbit no-sat" data-node data-star-node="反向传播">
+              <div class="orbit__row" data-row data-star-row data-title="反向传播">
                 <button class="chev leaf" type="button" tabindex="-1" aria-hidden="true">›</button>
-                <span class="dot" aria-hidden="true"></span>
+                <span class="orb" aria-hidden="true"></span>
                 <span class="t">反向传播</span>
-                <span class="meta">5天前</span>
+                <span class="meta">5天前<span class="sep">·</span>2链</span>
               </div>
-              <div class="children"></div>
+              <div class="orbit__track" inert>
+                <div class="track-in">
+                  <div class="orbit-empty">
+                    <div class="void"></div>
+                    <p>这颗星球还没有卫星</p>
+                    <button class="void-cta" type="button" data-void-new="反向传播">新建副笔记</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <!-- 未挂载组：parent 指向不存在的笔记（保留原值 + 警告，绝不自动删除） -->
             <div class="group-label warn" id="orphanLabel">
               <span>未挂载 · parent 指向不存在</span>
               <span class="group-count">1</span>
             </div>
-            <div class="child" data-orphan>
-              <div class="row orphan" data-row data-title="残差连接">
-                <span class="dot" aria-hidden="true"></span>
+            <div class="orbit" data-node data-orphan data-star-node="残差连接">
+              <div class="orbit__row orphan" data-row data-title="残差连接">
+                <button class="chev leaf" type="button" tabindex="-1" aria-hidden="true">›</button>
+                <span class="orb" aria-hidden="true"></span>
                 <span class="t">残差连接</span>
-                <span class="flag">[[ResNet]]</span>
+                <span class="flag" title="parent 指向的笔记不存在">[[ResNet]]</span>
               </div>
             </div>
 
@@ -416,227 +705,565 @@
           </nav>
         </aside>
 
-        <div class="demo-note">
-          <p><b>这条左栏在演示什么。</b>「优化器」「注意力机制」是主笔记（星球），缩进的 Adam、SGD 是挂在它们下面的副笔记（卫星）。层级只用了<strong>一个通道</strong>：缩进 + 父/子两级字重。视觉编码：<strong>左侧 6px 圆点</strong>标识笔记类型——主笔记 brand 实心、orphan warn 描边空心、子级无点；<strong>右侧元数据</strong>用 tabular-nums 显示「时间·链数」；<strong>brand-soft + 2px brand 左缘</strong>只在选中行；warn 仅出现在未挂载组。</p>
-          <p><b>交互。</b>
-            整行点击打开笔记；<span class="kbd">›</span> 箭头是独立命中区，只管展开/收起。
-            键盘：聚焦树后 <span class="kbd">↑</span><span class="kbd">↓</span> 移动，
-            <span class="kbd">→</span> 展开，<span class="kbd">←</span> 收起（子行按 ← 回到父行）。
-            过滤时命中行保留、其祖先链自动展开，计数徽章与分组标签隐藏，避免「搜到 3 行却看到 3 个组头」的噪声。
-          </p>
-          <p><b>与数据层的接线。</b>树由关系解析层（<code>resolve_hierarchy()</code>）产出：
-            显式 <code>parent</code> 优先，wikilink 拓扑推断只作 legacy fallback；
-            一个笔记最多一个父级；无父级笔记按现有平铺顺序排在树后。
-            展开/收起状态属于<strong>视图状态</strong>，可存本地但不进 vault、不进 SQLite。</p>
+        <div class="sys" id="sys">
+          <div class="sys-head">
+            <h3 id="sysTitle">优化器</h3>
+            <span class="sys-sub">卫星系统 · 点任意星球切换</span>
+          </div>
+          <div class="sys-stats">
+            <div class="stat"><div class="sv" id="stSat">0</div><div class="sl">卫星</div></div>
+            <div class="stat is-brand"><div class="sv" id="stLink">0</div><div class="sl">总链数</div></div>
+            <div class="stat"><div class="sv" id="stMast">0</div><div class="sl">平均掌握度</div></div>
+          </div>
+          <div class="bento" id="bento" style="--bento-cols:6"></div>
         </div>
 
       </div>
     </div>
   </section>
 
-  <!-- ==================================================== ② 前后对照 -->
+  <!-- ==================================================== ② 动效分解 -->
+  <section>
+    <h2>动效分解</h2>
+    <p class="sec-sub">三条改造逐条拆开看。每张卡可单独重放，方便对照时长与缓动。</p>
+
+    <div class="mfx">
+      <div class="mfx-card">
+        <h4>轨道生长 <span class="src">grid-template-rows</span></h4>
+        <div class="mfx-stage">
+          <div class="d-track" id="dTrack">
+            <div>
+              <div class="d-sats">
+                <div class="d-sat" style="--i:0">Adam</div>
+                <div class="d-sat" style="--i:1">SGD</div>
+                <div class="d-sat" style="--i:2">学习率调度</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p>容器 <code>grid-template-rows: 0fr → 1fr</code>，内层 <code>overflow:hidden</code>。
+          取代 <code>display:none</code> 的瞬间跳变——高度平滑过渡且无需测量高度。</p>
+        <button class="mfx-btn" type="button" data-toggle="dTrack">重放</button>
+      </div>
+
+      <div class="mfx-card">
+        <h4>卫星入轨 <span class="src">stagger 45ms</span></h4>
+        <div class="mfx-stage">
+          <div class="d-track" id="dStag">
+            <div>
+              <div class="d-sats">
+                <div class="d-sat" style="--i:0">Adam</div>
+                <div class="d-sat" style="--i:1">SGD</div>
+                <div class="d-sat" style="--i:2">学习率调度</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p>每颗卫星 <code>transition-delay: calc(var(--i) * 45ms)</code>，
+          从左侧 10px 处滑入。序号由渲染层给，<strong>零 JS 逐帧</strong>。</p>
+        <button class="mfx-btn" type="button" data-toggle="dStag">重放</button>
+      </div>
+
+      <div class="mfx-card">
+        <h4>星球展开 <span class="src">border + padding</span></h4>
+        <div class="mfx-stage">
+          <span class="d-orb" id="dOrb"></span>
+        </div>
+        <p>6px 实心点 → 16px 轨道环：靠 <code>border-width</code> 与 <code>padding</code> 同时过渡，
+          <code>background-clip: content-box</code> 保证星球本体不跟着胀大。无 SVG。</p>
+        <button class="mfx-btn" type="button" data-toggle="dOrb">重放</button>
+      </div>
+
+      <div class="mfx-card">
+        <h4>数字滚动 <span class="src">CountUp</span></h4>
+        <div class="mfx-stage" style="gap:16px">
+          <div class="stat"><div class="sv" id="dCount">0</div><div class="sl">总链数</div></div>
+          <div class="stat is-brand"><div class="sv" id="dCount2">0</div><div class="sl">平均掌握度</div></div>
+        </div>
+        <p>切换星球时右侧三枚统计数字滚动到新值。rAF + 30fps 节流，
+          <code>prefers-reduced-motion</code> 下直接落终值。</p>
+        <button class="mfx-btn" type="button" data-replay-count>重放</button>
+      </div>
+
+      <div class="mfx-card">
+        <h4>掌握度环 <span class="src">ProgressRing</span></h4>
+        <div class="mfx-stage">
+          <span class="ring" data-ring="91" data-ring-size="56"></span>
+          <span class="ring" data-ring="65" data-ring-size="56"></span>
+          <span class="ring" data-ring="40" data-ring-size="56"></span>
+        </div>
+        <p>SVG circle 的 <code>stroke-dasharray</code>，描边橙只出现在进度弧上。
+          功能性图形，不是装饰 SVG（ADR-013 禁的是装饰）。</p>
+      </div>
+
+      <div class="mfx-card">
+        <h4>Bento 补位 <span class="src">grid-auto-flow: dense</span></h4>
+        <div class="mfx-stage">
+          <div class="bento" style="--bento-cols:6; width:100%; padding:0 10px" id="dBento"></div>
+        </div>
+        <p>尺寸 = 重要性：链数 ≥ 6 的卫星占 3 列 × 2 行。
+          <code>dense</code> 让小 tile 自动回填大 tile 留出的空洞。</p>
+        <button class="mfx-btn" type="button" data-replay-bento>重放</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== ③ Bento 卫星网格 -->
+  <section>
+    <h2>Bento 卫星网格</h2>
+    <p class="sec-sub">
+      网格体系取自归档稿
+      <code>archive/legacy-gallery-html-2026-09-01/bento-dashboard.html</code>——
+      只取「<strong>尺寸 = 重要性</strong>」的网格原则与 tile 跨列/跨行，
+      <strong>不</strong>取它的独立仪表盘定位（裁决 A 已删）与 MiMo 风视觉。
+    </p>
+
+    <h3>尺寸分档（三档上限，超过三种比例会破坏节奏）</h3>
+    <table>
+      <tr><th style="width:130px;">档位</th><th style="width:150px;">占位</th><th style="width:180px;">判定</th><th>承载内容</th></tr>
+      <tr><td><strong>主卫</strong><code>2x2</code></td><td>3 列 × 2 行</td><td>链数 ≥ 6</td><td>标题 + 4 行摘要 + 链数 + 掌握度环</td></tr>
+      <tr><td><strong>中卫</strong><code>2x1</code></td><td>3 列 × 1 行</td><td>链数 3–5</td><td>标题 + 2 行摘要 + 链数</td></tr>
+      <tr><td><strong>小卫</strong><code>1x1</code></td><td>2 列 × 1 行</td><td>链数 &lt; 3</td><td>标题 + 链数（无摘要）</td></tr>
+    </table>
+
+    <h3>响应式（4→2 断点，规划在先）</h3>
+    <table>
+      <tr><th style="width:160px;">视口</th><th>列数</th></tr>
+      <tr><td>≥ 1000px</td><td><code>--bento-cols: 6</code>，三档尺寸全部启用</td></tr>
+      <tr><td>620–1000px</td><td><code>--bento-cols: 4</code>，主卫降为 2 列 × 2 行</td></tr>
+      <tr><td>&lt; 620px</td><td><code>--bento-cols: 2</code>，全部 tile 退化为 span 2 × 1 行（单列堆叠）</td></tr>
+    </table>
+
+    <h3>为什么能用（与归档理由不冲突）</h3>
+    <table>
+      <tr><td>
+        bento 被归档的原因是「<strong>作为一个独立的学习仪表盘页面</strong>」——裁决 A 已决定
+        学习数据分散到该出现处（复习徽章、右栏掌握度），不设独立仪表盘。
+        本页取用的是<strong>纯布局层</strong>的网格体系，承载的是「选中星球的卫星」，
+        属于层级视图自身的展开内容，<strong>不引入任何新的数据域</strong>，
+        也不新建一个页面级入口。归档稿本身保持只读（<code>archive/</code> 只进不出）。
+      </td></tr>
+    </table>
+  </section>
+
+  <!-- ==================================================== ④ 前后对照 -->
   <section>
     <h2>前后对照</h2>
-    <p class="sec-sub">左：现状 note-workspace 平铺列表（分组标签 + 全部笔记顺序堆叠）。右：层级树。</p>
+    <p class="sec-sub">左：v1 缩进树（2026-09-01 前）。右：v2 星系轨道。数据、通道、键盘语义完全一致。</p>
     <div class="vs">
-      <div class="panel flat">
-        <h3>平铺 <span class="tag-bad">现状 · 层级不可见</span></h3>
-        <div class="group-label">优化器</div>
-        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:14px;">优化器</span></div>
-        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:13px;color:var(--text-2);">Adam</span></div>
-        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:13px;color:var(--text-2);">SGD</span></div>
-        <div class="group-label">注意力机制</div>
-        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:14px;">注意力机制</span></div>
-        <div class="row" style="display:flex;padding:7px 16px 7px 14px;"><span class="t" style="font-size:13px;color:var(--text-2);">Self-Attention</span></div>
-        <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
-          层级靠分组标签「猜」：主副关系每次都要在脑内重建；
-          笔记一多，同名子笔记（如多处的「笔记」）无法归属；展开状态无处安放。
-        </p>
-      </div>
-      <div class="panel flat">
-        <h3>层级树 <span class="tag-good">本组件 · 层级即结构</span></h3>
-        <div class="row" style="display:flex;align-items:center;gap:8px;min-height:40px;padding:6px 16px 6px 14px;background:var(--surface-2);">
-          <span style="color:var(--text-3);font-size:12px;width:18px;display:inline-flex;justify-content:center;">›</span>
-          <span style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--brand);"></span>
-          <span style="font-size:14px;font-weight:500;flex:1;">优化器</span>
-          <span style="font-family:var(--font-num);font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;flex-shrink:0;">2天前<span style="color:var(--border);margin:0 4px;">·</span>5链</span>
-          <span style="font-family:var(--font-num);font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;flex-shrink:0;margin-left:6px;min-width:18px;text-align:right;">3</span>
+      <div class="panel">
+        <h3>v1 缩进树 <span class="tag-bad">死板</span></h3>
+        <div style="font-size:12px;line-height:2;border:1px solid var(--border-soft);border-radius:var(--r-md);padding:12px;background:var(--surface-2)">
+          <div>› ● <b>优化器</b> <span style="color:var(--text-3)">3</span></div>
+          <div style="padding-left:28px;color:var(--text-2)">└─ Adam</div>
+          <div style="padding-left:28px;color:var(--text-2)">└─ SGD</div>
+          <div style="padding-left:28px;color:var(--text-2)">└─ 学习率调度</div>
         </div>
-        <div class="child"><div class="row" style="display:flex;min-height:36px;padding:6px 16px 6px 4px;"><span class="t" style="font-size:13px;color:var(--text-2);">Adam</span></div></div>
-        <div class="child"><div class="row" style="display:flex;min-height:36px;padding:6px 16px 6px 4px;"><span class="t" style="font-size:13px;color:var(--text-2);">SGD</span></div></div>
-        <p style="font-size:12px;color:var(--text-3);line-height:1.7;">
-          主副关系一眼可见；状态点标识笔记类型；元数据补全上下文；
-          收起时主笔记行即目录；过滤时结构自动让位于命中。
-        </p>
+        <ul style="font-size:12px;color:var(--text-3);line-height:1.9;padding-left:18px;margin:12px 0 0">
+          <li>展开 = <code>display:none</code> 切换，<strong>整块瞬间出现</strong>，视线丢失锚点</li>
+          <li>箭头只做 <code>rotate(90deg)</code>，是<strong>状态图标</strong>而非空间动作</li>
+          <li>子级是<strong>纯缩进列表</strong>，三颗卫星和十颗卫星长得一样</li>
+          <li>层级唯一表达 = 缩进，<strong>二维信息压成一维</strong></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>v2 星系轨道 <span class="tag-good">本组件</span></h3>
+        <div style="font-size:12px;line-height:2;border:1px solid var(--brand-line);border-radius:var(--r-md);padding:12px;background:var(--brand-soft)">
+          <div><span style="display:inline-block;width:16px;height:16px;border:2px solid var(--brand-line);border-radius:50%;background:var(--brand);background-clip:content-box;padding:2px;vertical-align:-3px"></span>
+            <b style="color:var(--brand-text)">优化器</b> <span style="color:var(--text-3)">3</span></div>
+          <div style="margin:6px 0 0 7px;border-left:1px solid var(--border-soft);padding-left:12px;display:flex;flex-direction:column;gap:5px">
+            <div style="border:1px solid var(--border-soft);border-radius:var(--r-xs);padding:3px 8px;background:var(--surface)">SGD</div>
+            <div style="border:1px solid var(--border-soft);border-radius:var(--r-xs);padding:3px 8px;background:var(--surface)">Adam</div>
+            <div style="border:1px solid var(--border-soft);border-radius:var(--r-xs);padding:3px 8px;background:var(--surface)">学习率调度</div>
+          </div>
+        </div>
+        <ul style="font-size:12px;color:var(--text-3);line-height:1.9;padding-left:18px;margin:12px 0 0">
+          <li>展开 = 轨道<strong>生长</strong>，高度连续过渡，锚点不丢</li>
+          <li>星球点<strong>展开成轨道环</strong>，状态变化自带空间语义</li>
+          <li>卫星<strong>依次入轨</strong>（45ms 递进），数量差异可感知</li>
+          <li>Bento 网格按<strong>链数分配尺寸</strong>，重要性一眼可见</li>
+        </ul>
       </div>
     </div>
   </section>
 
-  <!-- ==================================================== ③ 规范 -->
+  <!-- ==================================================== ⑤ 规范 -->
   <section>
     <h2>规范</h2>
     <p class="sec-sub">组件只做渲染与交互；层级来自关系解析层，本组件不做任何推断。</p>
 
-    <h3>数据规则（来自 ADR-024 裁决链）</h3>
+    <h3>数据规则（未变 · 来自 ADR-024 裁决链）</h3>
     <table>
       <tr><th style="width:220px;">规则</th><th>约定</th></tr>
       <tr><td><strong>事实源</strong></td><td>子笔记 frontmatter <code>parent: "[[父标题]]"</code>；Markdown 是唯一权威，DB <code>links(relation=parent)</code> 只是可重建的派生索引</td></tr>
       <tr><td><strong>单父</strong></td><td>一个笔记最多一个 parent；vault 可形成多棵树（forest）。底层允许 parent 链，<strong>V1 界面只渲染一层</strong>（星球/卫星）</td></tr>
       <tr><td><strong>权威优先</strong></td><td>显式 parent &gt; 拓扑推断；树数据统一来自 <code>resolve_hierarchy()</code>，本组件不自行推断</td></tr>
-      <tr><td><strong>orphan（无效父级）</strong></td><td>parent 指向不存在的笔记 → 子笔记进「未挂载」组，保留原值 + 警告标记，<strong>绝不自动删除 parent</strong>（用户写错一次不能毁掉原始意图）</td></tr>
+      <tr><td><strong>orphan（无效父级）</strong></td><td>parent 指向不存在的笔记 → 进「未挂载」组，保留原值 + 警告标记，<strong>绝不自动删除 parent</strong></td></tr>
       <tr><td><strong>展开状态</strong></td><td>纯视图状态：可存 localStorage，不进 vault、不进 SQLite</td></tr>
+      <tr><td><strong>卫星上限</strong></td><td>≤ 16（性能契约，与 Galaxy 一致）；超出折叠为「显示全部 N 颗」</td></tr>
     </table>
 
-    <h3>交互规则</h3>
+    <h3>交互规则（未变）</h3>
     <table>
       <tr><th style="width:220px;">操作</th><th>行为</th></tr>
-      <tr><td>点击行</td><td>打开笔记并置为 active（brand-soft 底 + 2px 橙左缘）；若该行处于收起的父级内，先展开祖先链（跟随打开笔记）</td></tr>
-      <tr><td>点击 <code>›</code> 箭头</td><td>仅展开/收起，<strong>不</strong>切换 active——两个命中区分离，消除「想展开却打开了笔记」的误触</td></tr>
-      <tr><td>无子级的父行</td><td>箭头占位但不可见可点（对齐网格），不显示计数徽章</td></tr>
-      <tr><td>过滤框输入</td><td>标题含关键词的行保留；命中行祖先自动展开并显示；无命中后代的分支隐藏；计数徽章与分组标签暂时隐藏；零命中显示「没有匹配的笔记」</td></tr>
-      <tr><td>清空过滤</td><td>恢复完整树；展开状态回到过滤前的用户选择</td></tr>
+      <tr><td>点击行</td><td>打开笔记并置为 active；若该行处于收起的父级内，先展开祖先链</td></tr>
+      <tr><td>点击 <code>›</code> 箭头</td><td>仅展开/收起，<strong>不</strong>切换 active——两个命中区分离，消除误触</td></tr>
+      <tr><td>无卫星的星球</td><td>箭头占位但不可点；展开后显示「空轨道」+ 新建副笔记 CTA（不用聚光渐变，用虚线圈）</td></tr>
+      <tr><td>过滤框输入</td><td>标题含关键词的行保留；命中行祖先自动展开；计数与分组标签隐藏；零命中显示「没有匹配的笔记」</td></tr>
       <tr><td><span class="kbd">↑</span> <span class="kbd">↓</span></td><td>在可见行间移动 active（循环）</td></tr>
-      <tr><td><span class="kbd">→</span> / <span class="kbd">←</span></td><td>展开 / 收起当前父行；子行按 ← 回到父行</td></tr>
+      <tr><td><span class="kbd">→</span> / <span class="kbd">←</span></td><td>展开 / 收起当前星球；卫星行按 ← 回到星球行</td></tr>
     </table>
 
-    <h3>编码通道预算（一个维度 = 一个通道）</h3>
+    <h3>编码通道预算（与 v1 完全一致，不新增通道）</h3>
     <table>
-      <tr><th style="width:160px;">维度</th><th style="width:200px;">通道</th><th>取值</th></tr>
-      <tr><td>层级</td><td>缩进 + 字体层级</td><td>父行 40px/med · 子行 36px/reg + 24px 树线缩进；<strong>不用颜色区分层级</strong></td></tr>
-      <tr><td>笔记类型</td><td>状态点</td><td>6px 圆点：主笔记 <code>--brand</code> 实心 · 子级无点 · orphan <code>--warn-text</code> 描边空心</td></tr>
+      <tr><th style="width:150px;">维度</th><th style="width:200px;">通道</th><th>取值</th></tr>
+      <tr><td>层级</td><td>缩进 + 字体层级</td><td>星球行 40px/med · 卫星 34px/reg + 23px 轨道缩进；<strong>不用颜色区分层级</strong></td></tr>
+      <tr><td>笔记类型</td><td>星球点</td><td>主笔记 <code>--brand</code> 实心 · 展开态加 <code>--brand-line</code> 轨道环 · orphan <code>--warn-text</code> 描边空心</td></tr>
+      <tr><td>卫星重要性</td><td>Bento tile 尺寸</td><td>链数 ≥6 → <code>3×2</code>；3–5 → <code>3×1</code>；&lt;3 → <code>2×1</code></td></tr>
       <tr><td>元数据</td><td>行末 meta</td><td><code>--font-num</code> 11px <code>--text-3</code>，tabular-nums；active 时 <code>--brand-text</code></td></tr>
-      <tr><td>选中</td><td>品牌橙</td><td><code>--brand-soft</code> 底 + 2px <code>--brand</code> 左缘 + <code>--brand-text</code> 字（fw-sb）</td></tr>
-      <tr><td>副笔记计数</td><td>数字</td><td><code>--font-num</code> 11px，去 pill 改纯数字，节省行高</td></tr>
-      <tr><td>警告（orphan）</td><td>warn 整行</td><td>行底 <code>--warn-soft</code> + 2px <code>--warn-text</code> 左缘；<code>--flag</code> 用 mono</td></tr>
-      <tr><td>hover</td><td>brand-tint</td><td><code>--brand-tint</code>（5% brand 叠加），与选中 <code>--brand-soft</code> 形成两档</td></tr>
-      <tr><td>focus</td><td>brand-line ring</td><td>1.5px inset <code>--brand-line</code>（键盘）</td></tr>
+      <tr><td>掌握度</td><td>ProgressRing</td><td>卫星行 14px 细环；Bento 主卫 56px；描边橙只在进度弧</td></tr>
+      <tr><td>选中</td><td>品牌橙</td><td><code>--brand-soft</code> 底 + 2px <code>--brand</code> 左缘 + <code>--brand-text</code> 字</td></tr>
+      <tr><td>卫星计数</td><td>数字</td><td><code>--font-num</code> 11px 纯数字</td></tr>
+      <tr><td>警告（orphan）</td><td>warn 整行</td><td>行底 <code>--warn-soft</code> + 2px <code>--warn-text</code> 左缘</td></tr>
+      <tr><td>hover</td><td>brand-tint</td><td><code>--brand-tint</code>，与选中 <code>--brand-soft</code> 形成两档</td></tr>
+      <tr><td>focus</td><td>brand-line ring</td><td>1.5px inset <code>--brand-line</code></td></tr>
     </table>
 
-    <h3>业界对照（为什么这么做）</h3>
+    <h3>动效预算（本次新增）</h3>
     <table>
-      <tr><th style="width:200px;">来源</th><th style="width:280px;">做法</th><th>本项目取舍</th></tr>
-      <tr><td>Notion 侧栏</td><td>整行点击打开页面；箭头独立区域只管展开；页面树一行一节点</td><td><strong>采纳</strong>「行/箭头双命中区」——这是展开类列表误触最低的范式</td></tr>
-      <tr><td>Obsidian · Nested Pages 插件</td><td>Notion 式树 + 过滤时命中分支自动展开 + 跟随 active 展开祖先 + 展开状态持久化</td><td><strong>采纳</strong>三条交互；持久化只存 localStorage（视图状态不进事实源）</td></tr>
-      <tr><td>Obsidian 原生文件树</td><td>文件夹即层级，扁平双链世界观</td><td>印证本项目「层级是视图不是目录」——不建真目录，vault 保持扁平</td></tr>
-      <tr><td>VS Code 资源管理器</td><td><span class="kbd">→</span><span class="kbd">←</span> 展开/收起、↑↓ 移动的树键盘语义</td><td><strong>采纳</strong>键位（与 M9 视觉引擎的方向键互不冲突：上下文不同）</td></tr>
+      <tr><th style="width:170px;">动效</th><th style="width:170px;">时长 / 缓动</th><th>约束</th></tr>
+      <tr><td>轨道生长</td><td><code>--dur</code> / <code>--ease-spring</code></td><td>只动 <code>grid-template-rows</code>；不测高度、不逐帧</td></tr>
+      <tr><td>卫星入轨</td><td><code>--dur</code> / <code>--ease-spring</code></td><td>delay = <code>--i × 45ms</code>；卫星 &gt; 8 颗时 delay 上限 200ms，避免尾部过久</td></tr>
+      <tr><td>星球展开</td><td><code>--dur</code> / <code>--ease-spring</code></td><td>只过渡 <code>width/height/padding/border-width</code>（可合成外的属性，限单节点）</td></tr>
+      <tr><td>数字滚动</td><td><code>--dur-slow</code> / <code>--ease-out</code></td><td>单 rAF + 30fps 节流；reduced-motion 直接落终值</td></tr>
+      <tr><td>tile hover</td><td><code>--dur-fast</code> / <code>--ease-out</code></td><td>仅 <code>translateY(-2px)</code> + 边框色；<strong>禁 box-shadow 动画</strong></td></tr>
+      <tr><td colspan="3"><strong>全部</strong>：<code>prefers-reduced-motion</code> 下统一降到 0.01ms；离屏（IntersectionObserver + visibilitychange）不触发；<code>contain: layout paint</code> 已加在 rail 与 sys 上</td></tr>
+    </table>
+
+    <h3>业界对照</h3>
+    <table>
+      <tr><th style="width:210px;">来源</th><th style="width:260px;">做法</th><th>本项目取舍</th></tr>
+      <tr><td>Sidebar Tree Navigation（2026-03）</td><td><code>grid-template-rows: 0fr→1fr</code> 做展开动画，配合 <code>inert</code> 同时管视觉与无障碍树</td><td><strong>采纳</strong>核心手法——这是目前唯一无需测高度、纯 CSS 的树展开方案</td></tr>
+      <tr><td>widgets_extended · SyncedSliverTree</td><td>插入生长 / 移除收缩 / 跨层级滑移；<code>isFirst/isLast</code> 让连接线绘制变简单</td><td><strong>部分采纳</strong>：只取「入场 stagger」；不做 drag-reorder（vault 是事实源，拖动会引入写路径）</td></tr>
+      <tr><td>Bento Grid（Apple / Notion / Linear）</td><td>12 列基础网格，tile 尺寸编码重要性，uniform gap，2–3 种尺寸上限，<code>dense</code> 补位</td><td><strong>采纳</strong>网格原则（本项目用 6 列）；弃独立仪表盘定位</td></tr>
+      <tr><td>Notion 侧栏</td><td>整行点击打开页面；箭头独立区域只管展开</td><td><strong>沿用</strong>——误触最低的范式</td></tr>
+      <tr><td>Obsidian · Nested Pages</td><td>过滤时命中分支自动展开 + 跟随 active 展开祖先</td><td><strong>沿用</strong></td></tr>
+      <tr><td>VS Code 资源管理器</td><td><span class="kbd">→</span><span class="kbd">←</span> 展开/收起、↑↓ 移动的树键盘语义</td><td><strong>沿用</strong>——与 M9 视觉引擎方向键上下文不同，不冲突</td></tr>
+      <tr><td>本项目 Galaxy（星系）</td><td>主笔记 = 星球、副笔记 = 卫星；层级从 <code>/graph</code> 边拓扑推断</td><td><strong>对齐心智模型</strong>：左栏用同一套「星球/卫星」词汇，只是从画布落回列表</td></tr>
     </table>
 
     <h3>与 note-workspace.html 的关系</h3>
     <table>
-      <tr><td>本页是<strong>组件规范页</strong>：只定义左栏树本体。回灌项目时替换
-        <code>NoteListView</code> 的平铺列表区，栏宽/过滤框/rail-head 沿用工作区现值，不改三栏布局。</td></tr>
+      <tr><td>本页是<strong>组件规范页</strong>：只定义左栏树本体与右侧卫星系统。回灌项目时替换
+        <code>NoteListView</code> 的平铺列表区，栏宽/过滤框/rail-head 沿用工作区现值，不改三栏布局。
+        右侧 Bento 卫星系统属于<strong>可选增强</strong>——若右栏已被掌握度占用，可只回灌左栏轨道树，
+        卫星网格降级为"展开后内嵌 2 列"（<code>--sat-cols: 2</code>，本页已同时实现）。</td></tr>
     </table>
   </section>
 
   <footer>
-    多层级笔记列表 · note-tree — 严格单父 · 层级是视图 · 品牌橙只给选中 · orphan 保留不删<br>
-    数据规则见 ADR-024；视觉约束见 UI_DESIGN.md §7 与 ADR-013
+    星系层级 · orbit-tree v2 — 严格单父 · 层级是轨道 · 品牌橙只给选中 · orphan 保留不删<br>
+    v2 变更：轨道生长取代 display 切换 · 卫星 stagger 入轨 · 星球展开成轨道环 · Bento 卫星网格<br>
+    数据规则见 ADR-024；视觉约束见 UI_DESIGN.md §7 与 ADR-013；动效预算详见本页「动效预算」
   </footer>
 
 </div>
 
 <script>
 (function () {
-  var tree = document.getElementById('tree');
-  var filter = document.getElementById('filter');
-  var empty = document.getElementById('empty');
-  var rows = Array.prototype.slice.call(tree.querySelectorAll('[data-row]'));
+  "use strict";
 
-  function rowOf(el) { return el.closest('[data-row]'); }
-  function parentOf(row) { return row.closest('[data-node]'); }
+  var tree = document.getElementById("tree");
+  var filter = document.getElementById("filter");
+  var empty = document.getElementById("empty");
 
-  /* ---------- 选中 ---------- */
+  /* ===========================================================================
+     数据：从左栏静态标记读取（HTML 是单一事实源，JS 不重渲染树）
+       星球的链数取 meta 里的「N链」；卫星取 sat__row 上的 data-*
+     =========================================================================== */
+  function readGalaxy() {
+    return Array.prototype.slice.call(tree.querySelectorAll("[data-star-node]"))
+      .filter(function (node) { return !node.hasAttribute("data-orphan"); })
+      .map(function (node) {
+        var row = node.querySelector(":scope > .orbit__row");
+        var meta = row.querySelector(".meta");
+        var m = meta ? meta.textContent.match(/(\d+)链/) : null;
+        var sats = Array.prototype.slice.call(node.querySelectorAll("[data-sat-row]")).map(function (sr) {
+          return {
+            t: sr.getAttribute("data-title"),
+            links: Number(sr.getAttribute("data-links")) || 0,
+            mastery: Number(sr.getAttribute("data-mastery")) || 0,
+            x: sr.getAttribute("data-x") || ""
+          };
+        });
+        return {
+          node: node,
+          row: row,
+          title: node.getAttribute("data-star-node"),
+          links: m ? Number(m[1]) : 0,
+          sats: sats
+        };
+      });
+  }
+
+  var GALAXY = readGalaxy();
+  var ORPHAN = { title: "残差连接" };
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // Bento 三档（链数 = 重要性代理）
+  function tileSize(links) {
+    if (links >= 6) return "2x2";
+    if (links >= 3) return "2x1";
+    return "1x1";
+  }
+
+  function ringHTML(value, size) {
+    var s = size || 14;
+    var r = (s - 3) / 2;
+    var c = 2 * Math.PI * r;
+    var off = c * (1 - Math.max(0, Math.min(100, value)) / 100);
+    return '<svg class="ring" width="' + s + '" height="' + s + '" viewBox="0 0 ' + s + ' ' + s + '" aria-hidden="true">' +
+      '<circle class="bg" cx="' + s / 2 + '" cy="' + s / 2 + '" r="' + r + '"></circle>' +
+      '<circle class="fg" cx="' + s / 2 + '" cy="' + s / 2 + '" r="' + r + '"' +
+      ' stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"' +
+      ' transform="rotate(-90 ' + s / 2 + ' ' + s / 2 + ')"></circle></svg>';
+  }
+
+  /* ===========================================================================
+     渲染：右侧 Bento 卫星系统
+     =========================================================================== */
+  var sys = document.getElementById("sys");
+  var sysTitle = document.getElementById("sysTitle");
+  var bento = document.getElementById("bento");
+
+  function renderBento(star, activeSat) {
+    sysTitle.textContent = star.title;
+    if (!star.sats.length) {
+      bento.innerHTML = '<div class="tile" data-size="2x2" style="grid-column:span 6;cursor:default">' +
+        '<div class="tile__t" style="color:var(--text-3)">还没有卫星</div>' +
+        '<div class="tile__x">新建一篇副笔记，在它的 frontmatter 写 ' +
+        'parent: "[[' + esc(star.title) + ']]"，它就会沿轨道入轨。</div></div>';
+      return;
+    }
+    bento.innerHTML = star.sats.map(function (s) {
+      var size = tileSize(s.links);
+      return '<div class="tile' + (s.t === activeSat ? " active" : "") + '" data-size="' + size + '"' +
+        ' data-sat-tile data-title="' + esc(s.t) + '">' +
+        '<div class="tile__t">' + esc(s.t) + "</div>" +
+        (size === "1x1" ? "" : '<div class="tile__x">' + esc(s.x) + "</div>") +
+        '<div class="tile__f">' + ringHTML(s.mastery, 16) + "<span>" + s.mastery + "%</span>" +
+        '<span class="lk">' + s.links + " 链</span></div></div>";
+    }).join("");
+  }
+
+  /* --- CountUp：单 rAF + 30fps 节流，reduced-motion 直接落终值 --- */
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var FRAME = 1000 / 30;
+  var countTimers = {};
+  function countUp(el, to) {
+    var key = el.id || (el.id = "cu" + Math.random().toString(36).slice(2));
+    if (countTimers[key]) cancelAnimationFrame(countTimers[key]);
+    var from = parseFloat(el.textContent) || 0;
+    if (reduce || from === to) { el.textContent = String(Math.round(to)); return; }
+    var t0 = 0, last = 0;
+    function step(ts) {
+      if (!t0) t0 = ts;
+      if (ts - last < FRAME) { countTimers[key] = requestAnimationFrame(step); return; }
+      last = ts;
+      var p = Math.min(1, (ts - t0) / 520);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = String(Math.round(from + (to - from) * eased));
+      if (p < 1) countTimers[key] = requestAnimationFrame(step);
+    }
+    countTimers[key] = requestAnimationFrame(step);
+  }
+
+  function selectStar(star, activeSat) {
+    if (!star) return;
+    renderBento(star, activeSat);
+    countUp(document.getElementById("stSat"), star.sats.length);
+    countUp(document.getElementById("stLink"), star.links);
+    var avg = star.sats.length
+      ? Math.round(star.sats.reduce(function (a, s) { return a + s.mastery; }, 0) / star.sats.length)
+      : 0;
+    countUp(document.getElementById("stMast"), avg);
+  }
+  function starOf(node) {
+    if (!node) return null;
+    return GALAXY.filter(function (g) { return g.node === node; })[0] || null;
+  }
+
+  /* ===========================================================================
+     交互：展开 / 收起 / 选中 / 过滤 / 键盘
+     =========================================================================== */
+  function allRows() { return Array.prototype.slice.call(tree.querySelectorAll("[data-row]")); }
+  function visibleRows() {
+    return allRows().filter(function (r) {
+      return r.style.display !== "none" && r.offsetParent !== null;
+    });
+  }
+
   function setActive(row) {
-    rows.forEach(function (r) { r.classList.remove('active'); });
-    row.classList.add('active');
-    var p = parentOf(row);
-    if (p && !p.classList.contains('expanded')) toggle(p, true);
+    allRows().forEach(function (r) { r.classList.remove("active"); });
+    row.classList.add("active");
+    var node = row.closest("[data-node]");
+    if (node) expand(node, true);
+    // 右侧卫星系统跟随：点星球行或卫星行，都切到所属星球，并高亮对应 tile
+    var star = starOf(node);
+    if (star) selectStar(star, row.hasAttribute("data-sat-row") ? row.getAttribute("data-title") : null);
   }
 
-  /* ---------- 展开/收起 ---------- */
-  function toggle(node, force) {
-    var expand = (typeof force === 'boolean') ? force : !node.classList.contains('expanded');
-    node.classList.toggle('expanded', expand);
-    var btn = node.querySelector(':scope > .row .chev');
-    if (btn) btn.setAttribute('aria-expanded', String(expand));
+  function expand(node, force) {
+    if (!node) return;
+    var on = (typeof force === "boolean") ? force : !node.classList.contains("expanded");
+    node.classList.toggle("expanded", on);
+    var track = node.querySelector(":scope > .orbit__track");
+    if (track) {
+      // inert：收起时同时从视觉与无障碍树移除，且作为 CSS 钩子
+      if (on) track.removeAttribute("inert"); else track.setAttribute("inert", "");
+    }
+    var btn = node.querySelector(":scope > .orbit__row .chev");
+    if (btn && !btn.classList.contains("leaf")) btn.setAttribute("aria-expanded", String(on));
   }
 
-  tree.addEventListener('click', function (e) {
-    var chev = e.target.closest('.chev');
-    if (chev && !chev.classList.contains('leaf')) {
-      toggle(chev.closest('[data-node]'));
+  tree.addEventListener("click", function (e) {
+    var cta = e.target.closest("[data-void-new]");
+    if (cta) { e.stopPropagation(); return; }
+
+    var chev = e.target.closest(".chev");
+    if (chev && !chev.classList.contains("leaf")) {
+      expand(chev.closest("[data-node]"));
       e.stopPropagation();
       return;
     }
-    var row = rowOf(e.target);
-    if (row) { setActive(row); row.scrollIntoView({ block: 'nearest' }); }
+    var row = e.target.closest("[data-row]");
+    if (!row) return;
+    setActive(row);
+    row.scrollIntoView({ block: "nearest" });
   });
 
-  /* ---------- 过滤：命中行保留 + 祖先链自动展开 ---------- */
-  filter.addEventListener('input', function () {
+  /* 点右侧 Bento tile → 反向定位左栏卫星行并选中 */
+  bento.addEventListener("click", function (e) {
+    var tile = e.target.closest("[data-sat-tile]");
+    if (!tile) return;
+    var title = tile.getAttribute("data-title");
+    var satRow = tree.querySelector('[data-sat-row][data-title="' + title.replace(/"/g, '\\"') + '"]');
+    if (satRow) { setActive(satRow); satRow.scrollIntoView({ block: "nearest" }); }
+  });
+
+  /* --- 过滤：命中行保留 + 祖先链自动展开 --- */
+  filter.addEventListener("input", function () {
     var q = filter.value.trim().toLowerCase();
-    var filtering = q.length > 0;
-    tree.classList.toggle('filtering', filtering);
+    var on = q.length > 0;
+    tree.classList.toggle("filtering", on);
     var any = false;
 
-    rows.forEach(function (row) {
-      var hit = !filtering || row.getAttribute('data-title').toLowerCase().indexOf(q) !== -1;
-      row.style.display = hit ? '' : 'none';
+    allRows().forEach(function (row) {
+      var hit = !on || row.getAttribute("data-title").toLowerCase().indexOf(q) !== -1;
+      row.style.display = hit ? "" : "none";
       if (hit) any = true;
-      if (filtering && hit) {
-        var p = parentOf(row);
-        if (p) {
-          p.classList.add('expanded');
-          p.style.display = '';
-        }
+      if (on && hit) {
+        var node = row.closest("[data-node]");
+        if (node) { expand(node, true); node.style.display = ""; }
       }
     });
-    if (filtering) {
-      // 有可见子级的父行保留（承担祖 chain 展示），其余父行隐藏
-      tree.querySelectorAll('[data-node]').forEach(function (node) {
-        var visibleChildren = Array.prototype.slice.call(node.querySelectorAll('.children [data-row]'))
-          .some(function (r) { return r.style.display !== 'none'; });
-        var selfHit = node.querySelector(':scope > .row').getAttribute('data-title').toLowerCase().indexOf(q) !== -1;
-        node.style.display = (visibleChildren || selfHit) ? '' : 'none';
+
+    if (on) {
+      tree.querySelectorAll("[data-node]").forEach(function (node) {
+        var visSat = Array.prototype.slice.call(node.querySelectorAll(".sat [data-row]"))
+          .some(function (r) { return r.style.display !== "none"; });
+        var selfHit = (node.getAttribute("data-star-node") || "").toLowerCase().indexOf(q) !== -1;
+        node.style.display = (visSat || selfHit) ? "" : "none";
       });
-      document.querySelector('[data-orphan]').style.display =
-        '残差连接'.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
-      document.getElementById('orphanLabel').style.display =
-        document.querySelector('[data-orphan]').style.display;
+      var orph = tree.querySelector("[data-orphan]");
+      var orphHit = ORPHAN.title.toLowerCase().indexOf(q) !== -1;
+      if (orph) orph.style.display = orphHit ? "" : "none";
+      document.getElementById("orphanLabel").style.display = orphHit ? "" : "none";
     } else {
-      tree.querySelectorAll('[data-node], [data-orphan]').forEach(function (n) { n.style.display = ''; });
-      document.getElementById('orphanLabel').style.display = '';
+      tree.querySelectorAll("[data-node]").forEach(function (n) { n.style.display = ""; });
+      var ol = document.getElementById("orphanLabel");
+      if (ol) ol.style.display = "";
     }
-    empty.hidden = any || !filtering;
+    empty.hidden = any || !on;
   });
 
-  /* ---------- 键盘：↑↓ 移动 · → 展开 · ← 收起 ---------- */
-  function visibleRows() {
-    return rows.filter(function (r) {
-      return r.style.display !== 'none' && r.offsetParent !== null;
-    });
-  }
-  tree.addEventListener('keydown', function (e) {
+  /* --- 键盘：↑↓ 移动 · → 展开 · ← 收起 --- */
+  tree.addEventListener("keydown", function (e) {
     var vis = visibleRows();
-    var cur = tree.querySelector('[data-row].active') || vis[0];
+    var cur = tree.querySelector("[data-row].active") || vis[0];
     var i = vis.indexOf(cur);
-    if (e.key === 'ArrowDown' && i < vis.length - 1) { setActive(vis[i + 1]); e.preventDefault(); }
-    else if (e.key === 'ArrowUp' && i > 0) { setActive(vis[i - 1]); e.preventDefault(); }
-    else if (e.key === 'ArrowRight') {
-      var p = parentOf(cur) || cur.closest('[data-node]');
-      var node = (cur.parentElement && cur.parentElement.closest('[data-node]')) || cur.closest('[data-node]');
-      if (node && node.contains(cur) && node.querySelector(':scope > .row') === cur) toggle(node, true);
+    if (e.key === "ArrowDown" && i < vis.length - 1) { setActive(vis[i + 1]); e.preventDefault(); }
+    else if (e.key === "ArrowUp" && i > 0) { setActive(vis[i - 1]); e.preventDefault(); }
+    else if (e.key === "ArrowRight") {
+      var n1 = cur.closest("[data-node]");
+      if (n1 && n1.querySelector(":scope > .orbit__row") === cur) expand(n1, true);
       e.preventDefault();
-    } else if (e.key === 'ArrowLeft') {
-      var myNode = cur.closest('[data-node]');
-      if (myNode && myNode.querySelector(':scope > .row') === cur) {
-        toggle(myNode, false);
-      } else if (myNode) {
-        setActive(myNode.querySelector(':scope > .row'));
-      }
+    } else if (e.key === "ArrowLeft") {
+      var n2 = cur.closest("[data-node]");
+      if (n2 && n2.querySelector(":scope > .orbit__row") === cur) expand(n2, false);
+      else if (n2) setActive(n2.querySelector(":scope > .orbit__row"));
       e.preventDefault();
     }
   });
+
+  /* ===========================================================================
+     动效分解区的重放按钮
+     =========================================================================== */
+  function replay(el) {
+    el.classList.remove("on");
+    void el.offsetWidth;                          // 强制回流，重启动画
+    el.classList.add("on");
+  }
+  document.querySelectorAll("[data-toggle]").forEach(function (btn) {
+    var t = document.getElementById(btn.getAttribute("data-toggle"));
+    btn.addEventListener("click", function () {
+      if (t.classList.contains("on")) { t.classList.remove("on"); btn.textContent = "展开"; }
+      else { t.classList.add("on"); btn.textContent = "收起"; }
+    });
+    requestAnimationFrame(function () { t.classList.add("on"); btn.textContent = "收起"; });
+  });
+
+  var dCount = document.getElementById("dCount");
+  var dCount2 = document.getElementById("dCount2");
+  document.querySelector("[data-replay-count]").addEventListener("click", function () {
+    dCount.textContent = "0"; dCount2.textContent = "0";
+    countUp(dCount, 17); countUp(dCount2, 68);
+  });
+
+  var dBento = document.getElementById("dBento");
+  var DEMO = [
+    { t: "SGD", links: 5, mastery: 88 }, { t: "Adam", links: 3, mastery: 72 },
+    { t: "调度", links: 2, mastery: 40 }
+  ];
+  function renderDemoBento() {
+    dBento.innerHTML = DEMO.map(function (s, i) {
+      return '<div class="d-sq" style="--i:' + i + ';grid-column:span ' + (tileSize(s.links) === "1x1" ? 2 : 3) +
+        ';width:auto;height:36px;display:flex;align-items:center;padding:0 8px;font-size:11px">' +
+        esc(s.t) + " · " + s.links + "链</div>";
+    }).join("");
+    requestAnimationFrame(function () {
+      dBento.querySelectorAll(".d-sq").forEach(function (el) { el.classList.add("on"); });
+    });
+  }
+  document.querySelector("[data-replay-bento]").addEventListener("click", renderDemoBento);
+
+  /* ===========================================================================
+     初始化
+     =========================================================================== */
+  document.querySelectorAll("[data-ring]").forEach(function (host) {
+    if (host.tagName.toLowerCase() === "svg") return;
+    var v = Number(host.getAttribute("data-ring"));
+    var s = Number(host.getAttribute("data-ring-size")) || 14;
+    host.outerHTML = ringHTML(v, s);
+  });
+
+  selectStar(GALAXY[0], null);
+  renderDemoBento();
+  countUp(dCount, 17);
+  countUp(dCount2, 68);
 })();
 </script>
 
