@@ -31,6 +31,9 @@ WORKSPACE_SUBDIRS = (
     "attachments",
     "metadata",
     "metadata/eventlogs",
+    # MindMap sidecar（P1-MINDMAP-TRUTH）：*.mindmap.json 是结构事实源（ADR-002），
+    # SQLite 三表是可重建缓存；目录入 Sync 白名单（M7 mind_maps/**/*.mindmap.json）
+    "mind_maps",
 )
 
 

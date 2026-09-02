@@ -191,10 +191,13 @@ async def post_receive(request: Request):
 
     # Post-sync consistency hook（P8-003C）：
     # SyncApply 只写文件不更新 SQLite，此处触发 reindex 保持索引一致。
+    # P1-MINDMAP-TRUTH：mindmap 侧同理——sidecar 落盘后重建 SQLite 三表缓存。
     from ..db import connect
+    from ..core.mindmap import rebuild_mindmaps
     conn = connect()
     try:
         reindex_vault(conn, workspace_root() / "vault")
+        rebuild_mindmaps(conn, workspace_root())
         conn.commit()
     except Exception:
         conn.rollback()

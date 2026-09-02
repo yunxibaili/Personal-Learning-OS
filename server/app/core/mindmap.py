@@ -6,13 +6,190 @@ ADR-019 冻结：
   - 不生成 learning_event
   - concept binding 是引用（concept_id nullable）
   - 用户布局属于用户数据
+
+P1-MINDMAP-TRUTH（2026-09-02）：sidecar producer——恢复 ADR-002「结构真相 =
+*.mindmap.json 旁车」。SQLite 三表降为可重建缓存（与 notes/vault 同一教义）：
+  - 路径：workspace/mind_maps/<map_id>.mindmap.json（M7 Sync 白名单
+    mind_maps/**/*.mindmap.json；文件名用 id——改名不产生文件 churn、跨设备稳定）
+  - schema：状态快照（version/type/map/nodes/edges 全列含 id），**不是**
+    ADR-021 交换格式（交换格式重分配 id，无法承担「从文件重建」）
+  - 每次 map 级 mutation 提交后整体重写该 map 的 sidecar；delete_map 删文件
+  - sidecar 写失败只 logger.warning，不阻断 API（下次 mutation 重写自愈；
+    DB 侧仍可由 rebuild_mindmaps 从文件反推修复）
 """
 from __future__ import annotations
 
 import json
+import logging
+from pathlib import Path
 from typing import Any
 
-from ..db import connect
+from ..db import connect, workspace_root
+
+logger = logging.getLogger(__name__)
+
+SIDECAR_VERSION = "1"
+SIDECAR_TYPE = "mindmap_state"
+SIDECAR_DIR = "mind_maps"
+
+
+# ── Sidecar producer（P1-MINDMAP-TRUTH）──────────────────────────
+
+def sidecar_relpath(map_id: int) -> str:
+    """sidecar 相对 workspace 的 POSIX 路径。"""
+    return f"{SIDECAR_DIR}/{map_id}.mindmap.json"
+
+
+def _dump_map_state(conn, map_id: int) -> dict[str, Any] | None:
+    """读 map 全量状态（含 id 的行快照），供 sidecar 序列化。"""
+    row = conn.execute(
+        "SELECT id, title, created_at, updated_at FROM mind_maps WHERE id=?",
+        (map_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "version": SIDECAR_VERSION,
+        "type": SIDECAR_TYPE,
+        "map": dict(row),
+        "nodes": _get_nodes(conn, map_id),
+        "edges": _get_edges(conn, map_id),
+    }
+
+
+def write_sidecar(conn, map_id: int, workspace: Path | None = None) -> bool:
+    """把 map 全量状态写入 sidecar 文件（整体重写，幂等）。
+
+    失败（磁盘/序列化）返回 False 并记日志，不抛异常——调用方在
+    mutation 主路径上，文件失败不得回滚已提交的 DB 变更。
+    """
+    try:
+        state = _dump_map_state(conn, map_id)
+        if state is None:
+            return False
+        ws = workspace or workspace_root()
+        out = ws / SIDECAR_DIR / f"{map_id}.mindmap.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tmp = out.with_suffix(".json.tmp")
+        tmp.write_text(
+            json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        tmp.replace(out)  # 原子替换（同盘 rename）
+        return True
+    except Exception:  # noqa: BLE001 — 文件失败不阻断主流程
+        logger.exception("mindmap sidecar write failed for map %s", map_id)
+        return False
+
+
+def delete_sidecar(map_id: int, workspace: Path | None = None) -> None:
+    """删除 map 对应的 sidecar 文件（不存在时静默）。"""
+    try:
+        ws = workspace or workspace_root()
+        out = ws / SIDECAR_DIR / f"{map_id}.mindmap.json"
+        out.unlink(missing_ok=True)
+    except Exception:  # noqa: BLE001
+        logger.exception("mindmap sidecar delete failed for map %s", map_id)
+
+
+def rebuild_mindmaps(
+    conn,
+    workspace: Path | None = None,
+    *,
+    prune_missing: bool = True,
+) -> dict[str, int]:
+    """从 workspace/mind_maps/*.mindmap.json 重建 SQLite 三表（DB=cache 教义）。
+
+    规则：
+      - 逐文件整体替换：delete 旧 map（CASCADE）→ 按文件内 id 重插（id 保留，
+        表为纯 INTEGER PRIMARY KEY，新 rowid 自动 = max+1，无需修 sequence）
+      - concept_id 本地不存在 → 置 NULL（FK 硬约束；与 import_map 语义一致；
+        跨设备 concept id 对齐属稳定 ID 债务，ADR-024 P1-2）
+      - 坏 JSON / 缺字段：跳过并计数，不中断
+      - prune_missing=True：DB 中存在但 sidecar 缺失的 map 删除（mirror 文件）
+      - 幂等：可反复执行
+    """
+    ws = workspace or workspace_root()
+    stats = {
+        "files_scanned": 0,
+        "maps_rebuilt": 0,
+        "maps_dropped": 0,
+        "nodes_restored": 0,
+        "edges_restored": 0,
+        "broken_files": 0,
+        "bindings_dropped": 0,
+    }
+    sidecar_dir = ws / SIDECAR_DIR
+    files = sorted(sidecar_dir.glob("*.mindmap.json")) if sidecar_dir.exists() else []
+
+    seen_ids: set[int] = set()
+    for f in files:
+        stats["files_scanned"] += 1
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            m = data["map"]
+            map_id = int(m["id"])
+            title = str(m["title"])
+            nodes = data.get("nodes", [])
+            edges = data.get("edges", [])
+        except Exception:  # noqa: BLE001 — 坏文件跳过
+            logger.warning("mindmap sidecar unreadable, skipped: %s", f)
+            stats["broken_files"] += 1
+            continue
+
+        if map_id in seen_ids:
+            logger.warning("duplicate mindmap sidecar id %s: %s", map_id, f)
+            stats["broken_files"] += 1
+            continue
+        seen_ids.add(map_id)
+
+        # 整体替换（CASCADE 清 nodes/edges）
+        conn.execute("DELETE FROM mind_maps WHERE id=?", (map_id,))
+        conn.execute(
+            "INSERT INTO mind_maps (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)",
+            (map_id, title, m.get("created_at"), m.get("updated_at")),
+        )
+        for n in nodes:
+            concept_id = n.get("concept_id")
+            if concept_id is not None:
+                exists = conn.execute(
+                    "SELECT id FROM concepts WHERE id=?", (concept_id,)
+                ).fetchone()
+                if exists is None:
+                    concept_id = None
+                    stats["bindings_dropped"] += 1
+            conn.execute(
+                "INSERT INTO mind_map_nodes "
+                "(id, map_id, concept_id, label, note, position_x, position_y, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    int(n["id"]), map_id, concept_id,
+                    str(n.get("label", "")), str(n.get("note") or ""),
+                    float(n.get("position_x", 0)), float(n.get("position_y", 0)),
+                    n.get("created_at"),
+                ),
+            )
+            stats["nodes_restored"] += 1
+        for e in edges:
+            conn.execute(
+                "INSERT INTO mind_map_edges "
+                "(id, map_id, source, target, relation, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    int(e["id"]), map_id, int(e["source"]), int(e["target"]),
+                    str(e.get("relation", "related")), e.get("created_at"),
+                ),
+            )
+            stats["edges_restored"] += 1
+        stats["maps_rebuilt"] += 1
+
+    # prune：DB 有、文件无 → 删（DB 是镜像缓存）
+    if prune_missing:
+        for row in conn.execute("SELECT id FROM mind_maps").fetchall():
+            if row["id"] not in seen_ids:
+                conn.execute("DELETE FROM mind_maps WHERE id=?", (row["id"],))
+                stats["maps_dropped"] += 1
+
+    return stats
 
 
 # ── Map CRUD ─────────────────────────────────────────────────────
@@ -25,7 +202,9 @@ def create_map(title: str, conn=None) -> dict[str, Any]:
             "INSERT INTO mind_maps (title) VALUES (?)", (title,)
         )
         conn.commit()
-        return get_map(cur.lastrowid, conn=conn)
+        result = get_map(cur.lastrowid, conn=conn)
+        write_sidecar(conn, cur.lastrowid)
+        return result
     finally:
         if close:
             conn.close()
@@ -68,7 +247,10 @@ def delete_map(map_id: int, conn=None) -> bool:
     try:
         cur = conn.execute("DELETE FROM mind_maps WHERE id=?", (map_id,))
         conn.commit()
-        return cur.rowcount > 0
+        deleted = cur.rowcount > 0
+        if deleted:
+            delete_sidecar(map_id)
+        return deleted
     finally:
         if close:
             conn.close()
@@ -101,6 +283,7 @@ def add_node(
         row = conn.execute(
             "SELECT * FROM mind_map_nodes WHERE id=?", (cur.lastrowid,)
         ).fetchone()
+        write_sidecar(conn, map_id)
         return dict(row)
     finally:
         if close:
@@ -117,7 +300,15 @@ def update_node_position(
             "UPDATE mind_map_nodes SET position_x=?, position_y=? WHERE id=?",
             (x, y, node_id),
         )
+        if cur.rowcount > 0:
+            conn.execute(
+                "UPDATE mind_maps SET updated_at=datetime('now') WHERE id="
+                "(SELECT map_id FROM mind_map_nodes WHERE id=?)",
+                (node_id,),
+            )
         conn.commit()
+        if cur.rowcount > 0:
+            write_sidecar(conn, _node_map_id(conn, node_id))
         return cur.rowcount > 0
     finally:
         if close:
@@ -132,7 +323,15 @@ def update_node_label(node_id: int, label: str, conn=None) -> bool:
             "UPDATE mind_map_nodes SET label=? WHERE id=?",
             (label, node_id),
         )
+        if cur.rowcount > 0:
+            conn.execute(
+                "UPDATE mind_maps SET updated_at=datetime('now') WHERE id="
+                "(SELECT map_id FROM mind_map_nodes WHERE id=?)",
+                (node_id,),
+            )
         conn.commit()
+        if cur.rowcount > 0:
+            write_sidecar(conn, _node_map_id(conn, node_id))
         return cur.rowcount > 0
     finally:
         if close:
@@ -143,10 +342,13 @@ def delete_node(node_id: int, conn=None) -> bool:
     close = conn is None
     conn = conn or connect()
     try:
+        map_id = _node_map_id(conn, node_id)
         cur = conn.execute(
             "DELETE FROM mind_map_nodes WHERE id=?", (node_id,)
         )
         conn.commit()
+        if cur.rowcount > 0 and map_id is not None:
+            write_sidecar(conn, map_id)
         return cur.rowcount > 0
     finally:
         if close:
@@ -188,6 +390,7 @@ def bind_concept(node_id: int, concept_id: int, conn=None) -> dict[str, Any] | N
         row = conn.execute(
             "SELECT * FROM mind_map_nodes WHERE id=?", (node_id,)
         ).fetchone()
+        write_sidecar(conn, _node_map_id(conn, node_id))
         return dict(row)
     finally:
         if close:
@@ -204,6 +407,8 @@ def unbind_concept(node_id: int, conn=None) -> bool:
             (node_id,),
         )
         conn.commit()
+        if cur.rowcount > 0:
+            write_sidecar(conn, _node_map_id(conn, node_id))
         return cur.rowcount > 0
     finally:
         if close:
@@ -248,6 +453,7 @@ def add_edge(
         row = conn.execute(
             "SELECT * FROM mind_map_edges WHERE id=?", (cur.lastrowid,)
         ).fetchone()
+        write_sidecar(conn, map_id)
         return dict(row)
     finally:
         if close:
@@ -258,10 +464,16 @@ def delete_edge(edge_id: int, conn=None) -> bool:
     close = conn is None
     conn = conn or connect()
     try:
+        row = conn.execute(
+            "SELECT map_id FROM mind_map_edges WHERE id=?", (edge_id,)
+        ).fetchone()
+        map_id = row["map_id"] if row else None
         cur = conn.execute(
             "DELETE FROM mind_map_edges WHERE id=?", (edge_id,)
         )
         conn.commit()
+        if cur.rowcount > 0 and map_id is not None:
+            write_sidecar(conn, map_id)
         return cur.rowcount > 0
     finally:
         if close:
@@ -378,6 +590,7 @@ def import_map(data: dict[str, Any], conn=None) -> dict[str, Any] | None:
                 )
 
         conn.commit()
+        write_sidecar(conn, new_map_id)
         return {
             "id": new_map_id,
             "title": map_data["title"],
@@ -393,6 +606,13 @@ def import_map(data: dict[str, Any], conn=None) -> dict[str, Any] | None:
 
 
 # ── Internal ─────────────────────────────────────────────────────
+
+def _node_map_id(conn, node_id: int) -> int | None:
+    row = conn.execute(
+        "SELECT map_id FROM mind_map_nodes WHERE id=?", (node_id,)
+    ).fetchone()
+    return row["map_id"] if row else None
+
 
 def _get_nodes(conn, map_id: int) -> list[dict[str, Any]]:
     rows = conn.execute(
