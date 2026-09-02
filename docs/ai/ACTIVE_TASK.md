@@ -27,8 +27,14 @@ ui 库逐字节回灌 web/ + 图谱 Inspector 入口 + VisualizeOverlay 业务�
 + pytest 967 / vitest 155 / tsc PASS / build PASS / 无头自检 17/17。
 ADR-025 状态 → Accepted。M9 正式关闭。
 
-**当前无进行中任务**——路线剩余：[1] 技术债处置（`PROJECT_STATE.md` §12 P1/P2 清单）
-与 [8] P8 正式收尾 / v0.1.x；下一步等所有者指令。
+### ✅ [8] P8 正式收尾 / v0.1.x——已完成（2026-09-02）
+
+删除优先检查（SyncStatusPanel/ComponentGallery/死 CSS 清除）· 依赖审计通过
+（零未使用零缺失，REGISTRY 更正 marked/d3-force/cobe 记录）· CHANGELOG v0.1.0-rc.2 ·
+tag `v0.1.0-rc.2`。
+
+**当前无进行中任务**——路线仅剩 [9] M8 Mobile 决策（所有者裁定事项）；
+技术债 P1 修复项（`PROJECT_STATE.md` §12）随时可点名开工。
 
 <details>
 <summary>历史：[0] 收口任务定义（已完成，存档）</summary>

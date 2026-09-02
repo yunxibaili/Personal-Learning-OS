@@ -12,8 +12,8 @@
 > · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
 > · License Apache-2.0
 > 验证：`pytest` / `vitest` / `tsc --noEmit` / `vite build` 以最近一次全量 Gate 实测为准
-> （2026-09-01 Gate：pytest **873** · vitest **36**；2026-09-02 复测：vitest **87**（6 文件，
-> 含组件接线测试 51 项）· tsc PASS · build PASS（707 modules）。
+> （2026-09-01 Gate：pytest **873** · vitest **36**；2026-09-02 P8 收尾 Gate：
+> pytest **977** · vitest **161**（9 文件）· tsc PASS · build PASS。
 > **pytest 本机 venv 未装 dev 依赖（pytest/httpx）无法复跑**，最近实测值以 CHANGELOG
 > v0.1.0-rc.1 记载的 873 为准，安装 `requirements-dev.txt` 后即可复跑。）
 >
@@ -677,7 +677,7 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [5] ✅ T-NOTE-TREE T1（2026-09-02，GET /notes/tree + 守护测试 10 项）
 [6] ✅ T-NOTE-TREE T2（2026-09-02，默认 3 层展开 + 懒加载 + 折叠偏好）
 [7] ✅ T-NOTE-TREE T3（2026-09-02，Gate 全绿 + 真实 vault 4 层链 E2E 16/16）
-[8] P8 正式收尾 / v0.1.x
+[8] ✅ P8 正式收尾（2026-09-02：删除优先检查 + 依赖审计 + CHANGELOG + tag v0.1.0-rc.2）
 [9] 再决定 M8 Mobile / 其他方向
 ```
 

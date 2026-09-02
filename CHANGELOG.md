@@ -15,6 +15,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     折叠偏好 localStorage 持久化；数据源切换 `/notes/tree`，
     本地建树 `buildNoteTree` 退役删除（单一树数据路径）
   - 真实 vault 4 层临时链 E2E 16/16（懒加载/折叠偏好跨刷新/物理清理）
+
+### Removed
+- 死代码：`SyncStatusPanel.tsx`（全库零引用，随 Dashboard 退场）、
+  `dev/ComponentGallery.tsx`（#gallery 入口从未接线）
+- 死 CSS：`.tabbar`、`.dashboard-view`/`.dash-section`（裁决 A 后无消费方）
+- 依赖审计更正：`marked` 从 REGISTRY 移除（从未安装）；
+  d3-force/cobe/@tiptap/pm 移入「已移除依赖」存档节（v0.1.0-rc.1 已移除）
+
+### Docs
+- **项目状态收口**：确立单一真相源原则（进度唯一登记于 PROJECT_STATE.md），
+  全部文档对齐至实际状态（详见 [v0.1.0-rc.1] 后的收口 commit 23c3eb3 系列）
+
+### Gate
+- pytest **977 passed** · vitest **161 passed / 9 files** · tsc PASS · vite build PASS ·
+  无头自检（M9 17/17 · 树 E2E 16/16 · 全 tab 14/14）· 依赖审计通过（零未使用零缺失）
 - **M9 Visual Engine 接入（M9-007）+ 验收关闭（M9-008）**（ADR-025 §7 最后一环）：
   - `ui/visual-engine/` 16 文件逐字节回灌 `web/src/components/ui/visual-engine/`，
     `components/ui/index.ts` 解冻导出（M9-007 前按 2026-09-01 裁定不导出）
