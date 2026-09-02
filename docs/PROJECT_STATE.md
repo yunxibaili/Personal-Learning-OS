@@ -699,6 +699,14 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      可行性是硬 Go/No-Go）；ADR-006 → Superseded as primary route, retained as
      fallback；**M8 全线暂停（含 spike），PC Stable Baseline 优先**）
 [15] ⏸ M8 Android MVP（暂停；顺序 = PC Stable → M8-000 → 再启动）
+
+── 2026-09-03 所有者裁定：PC Stable Baseline 优先（P0 启动与运行基线 → P1 UI 打磨 → P2 完整验收）──
+[16] ✅ P0-1 PC 开发环境完整启动（2026-09-03：uvicorn 重启至当前代码 → 真实 DB 自动应用
+     010_fts_bigram + FTS 重建（20 篇笔记保留）；vite 5173 页面 200 + /api 代理通；
+     中文短语/单字/rank 搜索真库生效；live-smoke 16/16 · 0 console errors）
+[17] P0-2 Tauri Desktop 启动/sidecar 验证
+[18] P0-3 真实 Vault CRUD + Search 重启持久化验证（守 vault 安全纪律）
+[19] P0-4 核心功能冒烟收口（Notes/Search/Graph/MindMap/Tutor/Review/Memory/Sync）
 ```
 
 ### 已完成的近期里程碑（存档）
