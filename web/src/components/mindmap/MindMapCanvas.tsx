@@ -29,9 +29,18 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { apiGet, searchConcepts, bindConcept, unbindConcept, type ConceptResult } from "../../lib/api";
+import {
+  apiGet,
+  apiPatch,
+  apiPost,
+  searchConcepts,
+  bindConcept,
+  unbindConcept,
+  type ConceptResult,
+} from "../../lib/api";
+import { PositionSaveQueue } from "./PositionSaveQueue";
 import { MapNode, type MapNodeData } from "./MapNode";
 
 /** API 响应 */
@@ -80,6 +89,7 @@ export function MindMapCanvas() {
   const [conceptResults, setConceptResults] = useState<ConceptResult[]>([]);
   // searchingConcept 值当前无消费方；仅保留 setter 供搜索流程置位
   const [, setSearchingConcept] = useState(false);
+  const saveQueueRef = useRef<PositionSaveQueue | null>(null);
 
   /** 加载 Map 列表 */
   const loadMaps = useCallback(async () => {
@@ -110,13 +120,7 @@ export function MindMapCanvas() {
   const handleCreateMap = useCallback(async () => {
     if (!newTitle.trim()) return;
     try {
-      const resp = await fetch(`/api/v1/mindmaps`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle.trim() }),
-      });
-      if (!resp.ok) throw new Error("create failed");
-      const data = await resp.json();
+      const data = await apiPost<{ id: number }>("/mindmaps", { title: newTitle.trim() });
       setNewTitle("");
       await loadMaps();
       await loadMap(data.id);
@@ -129,14 +133,10 @@ export function MindMapCanvas() {
   const handleAddNode = useCallback(async () => {
     if (!activeMapId || !newNodeLabel.trim()) return;
     try {
-      await fetch(`/api/v1/mindmaps/${activeMapId}/nodes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          label: newNodeLabel.trim(),
-          position_x: 100 + Math.random() * 200,
-          position_y: 100 + Math.random() * 200,
-        }),
+      await apiPost(`/mindmaps/${activeMapId}/nodes`, {
+        label: newNodeLabel.trim(),
+        position_x: 100 + Math.random() * 200,
+        position_y: 100 + Math.random() * 200,
       });
       setNewNodeLabel("");
       await loadMap(activeMapId);
@@ -144,6 +144,37 @@ export function MindMapCanvas() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }, [activeMapId, newNodeLabel, loadMap]);
+
+  // 拖拽坐标保存队列（P1-1）：drag-end flush + 1s trailing debounce 兜底。
+  // flush 闭包经 activeMapIdRef 读当前 map，队列实例与 map 切换解耦，不随渲染重建。
+  const activeMapIdRef = useRef<number | null>(activeMapId);
+  useEffect(() => {
+    activeMapIdRef.current = activeMapId;
+  }, [activeMapId]);
+
+  useEffect(() => {
+    const queue = new PositionSaveQueue(
+      async (items) => {
+        const mapId = activeMapIdRef.current;
+        if (!mapId) return;
+        await Promise.all(
+          items.map((it) =>
+            apiPatch(`/mindmaps/${mapId}/nodes/${it.nodeId}`, {
+              position_x: it.position.x,
+              position_y: it.position.y,
+            }),
+          ),
+        );
+      },
+      (e) => setError(e instanceof Error ? e.message : String(e)),
+      1000,
+    );
+    saveQueueRef.current = queue;
+    return () => {
+      saveQueueRef.current = null;
+      queue.dispose();
+    };
+  }, []);
 
   /** 节点拖动 → 保存坐标 */
   const onNodesChange: OnNodesChange = useCallback(
@@ -172,19 +203,17 @@ export function MindMapCanvas() {
           }),
         };
       });
-      // 保存坐标到后端
+      // 保存坐标到后端：入队，拖动结束立即 flush，拖动中靠 1s 兜底 debounce
+      const queue = saveQueueRef.current;
+      if (!queue) return;
       for (const ch of changes) {
-        if (ch.type === "position" && ch.position && ch.dragging) {
-          const nodeId = Number(ch.id);
-          void fetch(`/api/v1/mindmaps/${activeMapId}/nodes/${nodeId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ position_x: ch.position.x, position_y: ch.position.y }),
-          });
+        if (ch.type === "position" && ch.position && typeof ch.dragging === "boolean") {
+          queue.queue(Number(ch.id), { x: ch.position.x, y: ch.position.y });
+          if (!ch.dragging) queue.flushNow();
         }
       }
     },
-    [mapDetail, activeMapId],
+    [mapDetail],
   );
 
   /** 边变化 */
@@ -211,13 +240,9 @@ export function MindMapCanvas() {
     async (conn: Connection) => {
       if (!activeMapId || !conn.source || !conn.target) return;
       try {
-        await fetch(`/api/v1/mindmaps/${activeMapId}/edges`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            source: Number(conn.source),
-            target: Number(conn.target),
-          }),
+        await apiPost(`/mindmaps/${activeMapId}/edges`, {
+          source: Number(conn.source),
+          target: Number(conn.target),
         });
         await loadMap(activeMapId);
       } catch (e) {
@@ -270,9 +295,7 @@ export function MindMapCanvas() {
   const handleExport = useCallback(async () => {
     if (!activeMapId) return;
     try {
-      const resp = await fetch(`/api/v1/mindmaps/${activeMapId}/export`);
-      if (!resp.ok) throw new Error("export failed");
-      const data = await resp.json();
+      const data = await apiGet<unknown>(`/mindmaps/${activeMapId}/export`);
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -296,13 +319,7 @@ export function MindMapCanvas() {
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        const resp = await fetch("/api/v1/mindmaps/import", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (!resp.ok) throw new Error("import failed");
-        const result = await resp.json();
+        const result = await apiPost<{ id: number }>("/mindmaps/import", data);
         await loadMaps();
         await loadMap(result.id);
       } catch (e) {
