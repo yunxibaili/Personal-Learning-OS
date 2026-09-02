@@ -559,7 +559,7 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 | B6 | AI 生成思维导图 | ✅ 已实现（2026-08-30：`POST /mindmaps/suggest`，**只建议不自动写库**，ADR-019） |
 | B7 | 对话持久化（`conversations` / `messages`） | ✅ 已实现（CRUD + POST /chat） |
 | B8 | 用户记忆（`memories` 接入 tutor_context） | ✅ 已实现（B3 生产者 + 复合排序 + 敏感排除） |
-| B9 | 中文 FTS 分词优化 | ✅ 已闭环（2026-08-30：**B9 范围 = CJK bigram 检索回退**，不引 jieba；FTS 本体仍 unicode61——该限制不是未完成的 backlog 项，而是 §12 登记的持续风险，ADR-011 边界内） |
+| B9 | 中文 FTS 分词优化 | ✅ 已闭环（2026-08-30：**B9 范围 = CJK bigram 检索回退**，不引 jieba。2026-09-02 **升级**：ADR-027 裁定应用侧 bigram 预分词，`_cjk_search` 全表扫描退役，FTS 统一索引路径——B9 兜底使命完成） |
 | B10 | 本地 LLM（Ollama）实测验证 | ✅ 已实现（2026-08-30：qwen3-14b 端到端——`/tutor/test` 非流式 · `/chat` SSE 流式 · extractor 提取 memory/概念桩/learning_event → mastery 更新全通。附带修复：openai_compat 剥离思考型模型内联的 `<think>` 推理段（非流式 `_strip_think`；流式按模型名提示 qwen3/r1/think 缓冲，其余模型逐增量透传），`think:false` 实测不被 Ollama /v1 遵守） |
 | B28 | Memories 管理面 API | ✅ 已实现（GET/PATCH/DELETE + `/memories/maintenance`） |
 | — | Memory Agent（智能记忆管理） | ✅ 已实现（2026-08-30：`/memories/maintenance` 按 value=importance×新近度 排序 + 保留建议，只建议不删除） |
@@ -780,7 +780,7 @@ NSIS 102MB，GNU 工具链。
 |---|---|---|---|
 | P1-1 | ~~MindMap 6 处裸 `fetch` 绕过统一 API 层~~ | ~~`web/src/components/mindmap/MindMapCanvas.tsx:113/132/179/214/273/299`~~ | **✅ 已处置（2026-09-02，P1-1）**：全部走 `lib/api.ts` ApiError 归一化；拖拽改 `PositionSaveQueue`（drag-end flush + 1s trailing debounce）+ 失败显式上报。报告见 TASKS §P1-1 |
 | ~~P1-2~~ | ✅ 已闭环（2026-09-02）：46 处/5 组件用户可见英文清零（收口估计 18 处为抽查值，执行时逐文件盘点） | 见 TASKS §T-P1-2 |
-| P1-3 | 中文 FTS 分词（unicode61 按字切分） | `core/knowledge.py`（B9 仅做 CJK bigram 回退） | ADR-011 边界内；完整分词（jieba 等）需依赖立项 |
+| ~~P1-3~~ | ✅ 已闭环（2026-09-02）：ADR-027 裁定 **CJK bigram 应用侧预分词**（零新依赖，取代 ADR-011；trigram 路径经评审证伪），migration 010 + 启动自动 reindex + `search_notes` 统一 FTS + 单字 LIKE 兜底，`_cjk_search` 退役 | `core/cjk_bigram.py` · `migrations/010_fts_bigram.sql` | 见 TASKS §ADR-027 |
 | ~~P1-4~~ | ✅ 已闭环（2026-09-02）：P1-5-A 设置 UI + Ollama qwen3 端到端验证（Smoke/非流式/SSE），配置保留 openai_compat | `core/ai/providers/` | 见 TASKS §T-P1-4 |
 | P1-5 | ~~后端已就绪能力的 UI 取舍~~ | 见左 | **✅ 已裁定（2026-09-02 所有者四组弹窗）**：A `/settings` **接 UI**（P1-4 硬前置）· B `/mistakes/*` CRUD **接 UI** · C `/conversations` 历史管理 **接最小 UI** · D `/sync/pair`/`peers`/`plan`/`discover`/`resolve` **延到 M8** · E `/review/history`+`stats`+`/mastery/weak` · F `/study/*` · G `/export` · H 长尾（`/tutor/test`、`/memories` 写操作+maintenance、`/concepts/extract`、`/notes/batch`/`import`/`link-suggestions`）—— **全部 backend-only**。已接线面（notes/concepts/mindmaps/review-today/memories-GET/tutor/chat/trace/sync-status 等）不再列。勘误：`/admin/watcher` 端点不存在（admin_router 仅 `/reindex` 等），本行旧表述过时；`/trace/*` 已由 M9 接入 |
 

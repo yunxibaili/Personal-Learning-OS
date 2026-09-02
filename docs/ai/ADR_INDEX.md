@@ -16,7 +16,7 @@
 | ADR-008 | 知识图谱模型冻结（Entity + links） | M2+ 图谱相关 | Accepted |
 | ADR-009 | Entity vs Document 边界 | AI Tutor / 检索 | Accepted |
 | ADR-010 | AI Context Architecture（单一管线） | M4+ AI Tutor | Accepted |
-| ADR-011 | 中文搜索（unicode61 起步） | 搜索相关 | Accepted |
+| ADR-011 | 中文搜索（unicode61 起步） | 搜索相关 | **Superseded**（2026-09-02：触发条件达成且首选路径 trigram 经评审证伪，由 ADR-027 取代） |
 | ADR-012 | Omniscience Mode（上下文感知） | M3.5-A/B | Accepted |
 | ADR-013 | Frontend Design System（设计宪法） | M3b+ 前端 | Accepted |
 | ADR-014 | AI Tutor Architecture（AI Tutor 架构） | M4 AI Tutor | Accepted |
@@ -32,6 +32,7 @@
 | ADR-024 | Note Hierarchy（主/副笔记 parent 关系） | 笔记层级 / frontmatter / 图谱消费 | Accepted |
 | ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Accepted（2026-09-02 M9 验收通过关闭） |
 | ADR-026 | Note Hierarchy Tree（主笔记多级层级树，v3：批准 + 评审三修订） | `GET /notes/tree?depth=&root_id=` 经 resolve_hierarchy（depth 默认 3/安全上限 10，后端剪枝 + 懒加载）/ 默认展开 3 层 + 展开状态本地偏好，无产品硬上限 / 同层 `created_at` 升序 / 零 migration / 星系维持两层 / domain≠parent 语义边界（P1）/ 树·标签·双链正交分工 | Accepted（2026-09-01 批准，Q1–Q3 已裁决） |
+| ADR-027 | 中文 FTS——应用侧 CJK bigram 预分词（零新依赖） | 搜索相关（`core/cjk_bigram.py` 写入/查询共用切分 · `notes_fts` 检索文本 · migration 010 + 启动自动 reindex · 单字 LIKE 兜底 · `_cjk_search` 退役） | Accepted（2026-09-02 所有者裁定方案 A） |
 
 ## 快速查阅指南
 
@@ -39,7 +40,7 @@
 - 改图谱相关 → 读 ADR-008 + ADR-009
 - 加 AI 功能 → 读 ADR-003 + ADR-010
 - 加依赖 → 读 ADR-004 + REGISTRY.md
-- 改搜索 → 读 ADR-011
+- 改搜索 → 读 ADR-027（ADR-011 已 Superseded）
 - 改 Knowledge Radar → 读 ADR-012
 - M7+ 同步 → 读 ADR-005
 - M8+ 移动 → 读 ADR-006

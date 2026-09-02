@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **中文 FTS 架构选型 + CJK bigram 实现（ADR-027，取代 ADR-011）**：
+  - 选型评审（只读）四案加权：bigram 预分词 70 > trigram+LIKE 67 > jieba 58 >
+    ICU 44；证伪 ADR-011 原首选 trigram（<3 字符查询静默 0 命中）；
+    **零新增运行时依赖**（六连问 ③ 即止，无 DEPENDENCIES 登记义务）
+  - `app/core/cjk_bigram.py`：纯切分模块（segment/tokens/is_single_cjk/has_token），
+    FTS 写入与查询共用同一切分 ⇒ 短语匹配 ≈ 子串命中；autolink.tokenize 复用底层
+    规则（保留其过滤单字 CJK 的历史语义），依赖方向 autolink → cjk_bigram
+  - migration `010_fts_bigram`（DROP+CREATE notes_fts）+ 启动链路自动全量 reindex
+    （`db.FTS_REBUILD_VERSIONS` → `main.lifespan` 触发 reindex_vault）
+  - `search_notes` 统一 FTS MATCH（bm25 rank）；单字中文 LIKE 兜底（不再静默 0 命中）；
+    **删除 `_cjk_search` 全表扫描**（B9 兜底退役，无第二套搜索逻辑）
+  - 语义边界（有意为之）：短语 = 连续子串（与 Obsidian 子串搜索一致），bigram 不跨词边界
 - **T-NOTE-TREE 主笔记多级层级树（ADR-026 v3，T1+T2+T3）**：
   - `GET /api/v1/notes/tree?depth=&root_id=`：经唯一 `resolve_hierarchy()` 构建森林
     （红线 2），depth 默认 3 / 安全上限 10 **后端剪枝**（越界手工 422），

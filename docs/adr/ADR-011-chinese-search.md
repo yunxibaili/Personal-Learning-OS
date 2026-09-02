@@ -1,6 +1,9 @@
 # ADR-011: 中文搜索——unicode61 起步，分词增强延后
 
-日期：2026-08-26 · 状态：Accepted（延后型决策）
+日期：2026-08-26 · 状态：**Superseded by [ADR-027](ADR-027-chinese-fts-bigram.md)**
+（2026-09-02：触发条件达成；本 ADR 首选改进路径 trigram 经选型评审证伪——
+trigram 对 <3 字符查询静默 0 命中，2 字中文词必须永久 LIKE 回退。最终采用
+应用侧 CJK bigram 预分词，见 ADR-027。）
 
 ## Context
 
