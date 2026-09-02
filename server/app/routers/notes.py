@@ -209,6 +209,45 @@ def import_notes(body: ImportBody) -> dict:
         conn.close()
 
 
+@router.get("/tree")
+def get_note_tree(depth: int = 3, root_id: int | None = None) -> dict:
+    """主/副笔记层级树投影（ADR-026 §3.2）。
+
+    - 必须注册在 `/{note_id}` 之前（路由顺序，见 ADR-026 实施笔记）；
+    - `depth` 默认 3、安全上限 10；越界**手工 422**——不能用 Query(ge/le)，
+      main.py 的全局 RequestValidationError handler 会把 422 转 400；
+    - 构建经唯一 `resolve_hierarchy()`（红线 2），cycle/orphan 零新代码；
+    - 同层 `created_at` 升序（v3 修订）；`truncated` 标剪枝处（懒加载「…」入口）；
+    - `root_id` 指定时返回该节点为根的子树（懒加载）。
+    """
+    if depth < 1 or depth > 10:
+        return _err(422, "invalid_depth", "depth must be between 1 and 10")
+    conn = connect()
+    try:
+        rows = conn.execute(
+            "SELECT id, path, title, tags_json, updated_at, created_at FROM notes"
+        ).fetchall()
+        if root_id is not None and not any(r["id"] == root_id for r in rows):
+            return _err(404, "http_404", "笔记不存在")
+        h = H.resolve_hierarchy(conn)
+        created = {r["id"]: r["created_at"] for r in rows}
+        forest = H.build_note_forest(
+            created, h["parent_of"], h["children"], depth=depth, root_id=root_id,
+        )
+        by_id = {r["id"]: r for r in rows}
+
+        def serialize(node: dict) -> dict:
+            return {
+                "note": _summary(by_id[node["note_id"]], h["parent_of"]),
+                "children": [serialize(c) for c in node["children"]],
+                "truncated": node["truncated"],
+            }
+
+        return {"trees": [serialize(n) for n in forest]}
+    finally:
+        conn.close()
+
+
 @router.get("/{note_id}")
 def get_note(note_id: int) -> dict:
     conn = connect()

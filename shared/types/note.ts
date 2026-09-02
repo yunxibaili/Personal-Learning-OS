@@ -67,3 +67,18 @@ export interface OkResponse {
 export interface SettingsMapResponse {
   settings: Record<string, string>;
 }
+
+// --- Note Hierarchy Tree（ADR-026 v3，T1）---
+
+/** 树节点：`GET /notes/tree` 的投影单元。
+ *  `truncated` = 该节点存在被 depth 剪枝的更深层子树（前端「…」懒加载入口的依据）。 */
+export interface NoteTreeNode {
+  note: NoteSummary;
+  children: NoteTreeNode[];
+  truncated: boolean;
+}
+
+/** `GET /notes/tree?depth=&root_id=` 的响应；root_id 缺省 = 全森林 */
+export interface NoteTreeResponse {
+  trees: NoteTreeNode[];
+}

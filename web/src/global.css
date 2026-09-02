@@ -2565,3 +2565,39 @@ button, input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   .visualize-panel__close { transition: none; }
 }
+
+/* ---- ADR-026 T2：层级树折叠箭头 + 「…」懒加载入口 + 树加载骨架 ----
+   branch/leaf 小圆点语义由可点箭头取代（文件夹心智：有子层级即可折叠）。 */
+.note-tree__toggle {
+  flex-shrink: 0;
+  width: 16px; height: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-3);
+  font-size: 10px; line-height: 1;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.note-tree__toggle:hover { color: var(--brand-text); }
+.note-tree__more {
+  display: block;
+  margin: 2px 0 2px 22px;
+  padding: 2px 8px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.note-tree__more:hover:not(:disabled) { color: var(--brand-text); border-color: var(--brand); }
+.note-tree__more:disabled { cursor: default; opacity: 0.6; }
+.note-tree__loading {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  padding: var(--sp-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-tree__toggle, .note-tree__more { transition: none; }
+}

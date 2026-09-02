@@ -26,6 +26,7 @@ dist-verify/
 dist_verify*/
 dist-verify*/
 dist-m9check/
+dist-treecheck/
 
 # 构建与测试产物
 coverage/

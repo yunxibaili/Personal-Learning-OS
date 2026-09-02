@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
 import { useUi } from "../stores/ui";
@@ -7,11 +7,11 @@ import type {
   NoteCreateBody,
   NoteDetail,
   NoteDetailResponse,
-  NoteListResponse,
   NoteSummary,
   OkResponse,
 } from "@shared/types/note";
-import { buildNoteTree, type NoteTreeNode } from "../components/notes/buildNoteTree";
+import type { NoteTreeNode, NoteTreeResponse } from "@shared/types/note";
+import { loadCollapsed, mergeSubtree, saveCollapsed } from "../components/notes/treeView";
 import { Skeleton, useToast } from "../components/ui";
 
 // 编辑器（TipTap/ProseMirror/KaTeX 全家桶 ~800kB）按需加载（BUG-4 代码分割）：
@@ -40,62 +40,110 @@ function EditorSkeleton() {
   );
 }
 
-/** ADR-024 P1-1：左栏层级树节点行。副笔记缩进于主笔记下，主笔记提供「＋副笔记」。 */
+/**
+ * ADR-026 T2：左栏层级树节点行（文件夹心智）。
+ * 数据来自 /notes/tree（后端剪枝）；有 children 或 truncated 的节点显示可点箭头，
+ * 折叠偏好持久化；truncated 且展开时显示「…」懒加载入口（守护：无更深层则不出现）。
+ */
 function NoteTreeList(props: {
   nodes: NoteTreeNode[];
   activeId: number | null;
   onOpen: (id: number) => void;
   onCreateChild: (parent: NoteSummary) => void;
+  collapsedIds: Set<number>;
+  onToggle: (id: number) => void;
+  onLoadMore: (node: NoteTreeNode) => void;
+  loadingMore: number | null;
   depth?: number;
 }) {
-  const { nodes, activeId, onOpen, onCreateChild, depth = 0 } = props;
+  const {
+    nodes, activeId, onOpen, onCreateChild,
+    collapsedIds, onToggle, onLoadMore, loadingMore, depth = 0,
+  } = props;
   return (
     <ul className={depth === 0 ? undefined : "note-tree__children"}>
-      {nodes.map((node) => (
-        <li key={node.note.id}>
-          <div
-            className={`note-tree__row${node.note.id === activeId ? " active" : ""}`}
-            onClick={() => onOpen(node.note.id)}
-          >
-            {node.children.length > 0 ? (
-              <span className="note-tree__branch" aria-hidden="true" />
-            ) : (
-              <span className="note-tree__leaf" aria-hidden="true" />
-            )}
-            <span className="note-tree__title" title={node.note.title}>
-              {node.note.title}
-            </span>
-            <button
-              type="button"
-              className="note-tree__add-child"
-              title={`在「${node.note.title}」下新建副笔记`}
-              aria-label={`在「${node.note.title}」下新建副笔记`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onCreateChild(node.note);
-              }}
+      {nodes.map((node) => {
+        const expandable = node.children.length > 0 || node.truncated;
+        const isCollapsed = collapsedIds.has(node.note.id);
+        return (
+          <li key={node.note.id}>
+            <div
+              className={`note-tree__row${node.note.id === activeId ? " active" : ""}`}
+              onClick={() => onOpen(node.note.id)}
             >
-              ＋
-            </button>
-          </div>
-          {node.children.length > 0 && (
-            <NoteTreeList
-              nodes={node.children}
-              activeId={activeId}
-              onOpen={onOpen}
-              onCreateChild={onCreateChild}
-              depth={depth + 1}
-            />
-          )}
-        </li>
-      ))}
+              {expandable ? (
+                <button
+                  type="button"
+                  className="note-tree__toggle"
+                  aria-expanded={!isCollapsed}
+                  aria-label={`${isCollapsed ? "展开" : "折叠"}「${node.note.title}」`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle(node.note.id);
+                  }}
+                >
+                  {isCollapsed ? "▸" : "▾"}
+                </button>
+              ) : (
+                <span className="note-tree__leaf" aria-hidden="true" />
+              )}
+              <span className="note-tree__title" title={node.note.title}>
+                {node.note.title}
+              </span>
+              <button
+                type="button"
+                className="note-tree__add-child"
+                title={`在「${node.note.title}」下新建副笔记`}
+                aria-label={`在「${node.note.title}」下新建副笔记`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreateChild(node.note);
+                }}
+              >
+                ＋
+              </button>
+            </div>
+            {node.children.length > 0 && !isCollapsed && (
+              <NoteTreeList
+                nodes={node.children}
+                activeId={activeId}
+                onOpen={onOpen}
+                onCreateChild={onCreateChild}
+                collapsedIds={collapsedIds}
+                onToggle={onToggle}
+                onLoadMore={onLoadMore}
+                loadingMore={loadingMore}
+                depth={depth + 1}
+              />
+            )}
+            {node.truncated && !isCollapsed && (
+              <button
+                type="button"
+                className="note-tree__more"
+                disabled={loadingMore === node.note.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLoadMore(node);
+                }}
+              >
+                {loadingMore === node.note.id ? "载入中…" : "…更多子层级"}
+              </button>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 /** M1 知识库核心：列表 + TipTap 编辑（Markdown 进出）+ 防抖自动保存 + 附件上传。 */
 export function NoteEditorView() {
-  const [notes, setNotes] = useState<NoteSummary[]>([]);
+  // ADR-026 T2：左栏树数据源 = /notes/tree?depth=3（后端剪枝 + 懒加载）。
+  // null = 加载中（骨架占位，CLS 铁律：不定高会顶跳布局）
+  const [tree, setTree] = useState<NoteTreeNode[] | null>(null);
+  // 折叠偏好：存「被用户显式折叠」的 id（默认全展开；新笔记/懒加载节点天然展开）
+  const [collapsedIds, setCollapsedIds] = useState<Set<number>>(() => loadCollapsed());
+  const [loadingMore, setLoadingMore] = useState<number | null>(null);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [detail, setDetail] = useState<NoteDetail | null>(null);
   const [error, setError] = useState<string>("");
@@ -106,15 +154,44 @@ export function NoteEditorView() {
   const setActiveNoteId = useUi((s) => s.setActiveNoteId);
   const toast = useToast();
 
-  const refreshList = useCallback(async () => {
-    const data = await apiGet<NoteListResponse>("/notes");
-    setNotes(data.notes);
-    return data.notes;
+  const refreshTree = useCallback(async () => {
+    const data = await apiGet<NoteTreeResponse>("/notes/tree?depth=3");
+    setTree(data.trees);
   }, []);
 
   useEffect(() => {
-    refreshList().catch((e) => setError((e as ApiError).message));
-  }, [refreshList]);
+    refreshTree().catch((e) => setError((e as ApiError).message));
+  }, [refreshTree]);
+
+  // 折叠/展开（偏好持久化，刷新不丢——ADR-026 §3.3）
+  const toggleCollapse = useCallback((id: number) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      saveCollapsed(next);
+      return next;
+    });
+  }, []);
+
+  // 懒加载：展开被剪枝的子树（ADR-026 §3.1：root_id + depth，无产品硬上限）
+  const loadSubtree = useCallback(
+    async (node: NoteTreeNode) => {
+      if (loadingMore != null) return;
+      setLoadingMore(node.note.id);
+      try {
+        const data = await apiGet<NoteTreeResponse>(
+          `/notes/tree?root_id=${node.note.id}&depth=3`,
+        );
+        setTree((cur) => (cur ? mergeSubtree(cur, node.note.id, data.trees[0]) : cur));
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : String(e));
+      } finally {
+        setLoadingMore(null);
+      }
+    },
+    [loadingMore],
+  );
 
   // 编辑器 chunk 预取（配合 lazy 分包）：视图挂载即后台拉取，
   // 用户点开第一篇笔记前 chunk 基本已就绪——分割收益（首屏不含 800kB 编辑器）
@@ -154,13 +231,13 @@ export function NoteEditorView() {
         // ADR-024：新建副笔记一步写 parent（后端写入 frontmatter 并镜像派生边）
         if (parent) payload.parent = parent.title;
         const data = await apiPost<NoteDetailResponse>("/notes", payload);
-        await refreshList();
+        await refreshTree();
         await openNote(data.note.id);
       } catch (e) {
         setError(e instanceof ApiError ? e.message : String(e));
       }
     },
-    [refreshList, openNote],
+    [refreshTree, openNote],
   );
 
   const deleteActive = useCallback(async () => {
@@ -170,11 +247,11 @@ export function NoteEditorView() {
       setActiveId(null);
       setActiveNoteId(null);
       setDetail(null);
-      void refreshList();
+      void refreshTree();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     }
-  }, [activeId, refreshList]);
+  }, [activeId, refreshTree]);
 
   const scheduleSave = useCallback(
     (markdown: string) => {
@@ -187,7 +264,7 @@ export function NoteEditorView() {
             content_md: markdown,
           });
           setSaveState("saved");
-          void refreshList();
+          void refreshTree();
         } catch (e) {
           const msg = e instanceof ApiError ? e.message : String(e);
           setError(msg);
@@ -198,7 +275,7 @@ export function NoteEditorView() {
         }
       }, 800);
     },
-    [activeId, refreshList, toast],
+    [activeId, refreshTree, toast],
   );
 
   const uploadAttachment = useCallback(    async (file: File) => {
@@ -232,7 +309,6 @@ export function NoteEditorView() {
   }, []);
 
   // 平铺 → 森林（ADR-024 P1-1）。parent_id 由后端 resolver 权威提供，前端不做推断。
-  const noteTree = useMemo(() => buildNoteTree(notes), [notes]);
 
   // 图片按钮 → 触发隐藏 input；setImage 需要 @tiptap/extension-image（待 ECR 批准后启用）
   const imageInput = useRef<HTMLInputElement>(null);
@@ -247,14 +323,28 @@ export function NoteEditorView() {
         {activeId != null && (
           <button className="danger" onClick={deleteActive}>删除</button>
         )}
-        {/* ADR-024 P1-1：层级树（数据来自 /notes 的 parent_id，由后端 resolver 权威提供） */}
+        {/* ADR-026 T2：层级树（数据来自 /notes/tree，经唯一 resolver；默认展开 3 层 +
+            「…」懒加载 + 折叠偏好本地记忆） */}
         <div className="note-tree">
-          <NoteTreeList
-            nodes={noteTree}
-            activeId={activeId}
-            onOpen={(id) => void openNote(id)}
-            onCreateChild={(parent) => void createNote(parent)}
-          />
+          {tree === null ? (
+            <div className="note-tree__loading" role="status">
+              <span className="sr-only">载入笔记树…</span>
+              <Skeleton height={18} width={"82%"} />
+              <Skeleton height={18} width={"70%"} />
+              <Skeleton height={18} width={"76%"} />
+            </div>
+          ) : (
+            <NoteTreeList
+              nodes={tree}
+              activeId={activeId}
+              onOpen={(id) => void openNote(id)}
+              onCreateChild={(parent) => void createNote(parent)}
+              collapsedIds={collapsedIds}
+              onToggle={toggleCollapse}
+              onLoadMore={(node) => void loadSubtree(node)}
+              loadingMore={loadingMore}
+            />
+          )}
         </div>
       </aside>
 
@@ -299,7 +389,7 @@ export function NoteEditorView() {
           </div>
         ) : (
           <div className="editor-empty">
-            {notes.length === 0 ? (
+            {tree !== null && tree.length === 0 ? (
               <>
                 <p className="editor-empty__title">开始你的第一篇笔记</p>
                 <p className="editor-empty__sub">点上方「＋ 新建」开始写。</p>

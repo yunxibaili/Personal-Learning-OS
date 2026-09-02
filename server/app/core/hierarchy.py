@@ -170,6 +170,58 @@ def hierarchy_of(conn, note_id: int) -> dict:
     }
 
 
+def build_note_forest(
+    created_at: dict[int, str],
+    parent_of: dict[int, int],
+    children: dict[int, list[int]],
+    *,
+    depth: int,
+    root_id: int | None = None,
+) -> list[dict]:
+    """树投影的**纯结构**构建（ADR-026 §3.2）。序列化 note 字段由调用方负责。
+
+    输入必须来自 `resolve_hierarchy()`（ADR-024 红线 2：禁止绕过 resolver 拼树）；
+    cycle/orphan 已被 resolver 判 invalid，不在 `children` 里出现——本函数零防御重复。
+
+    规则（ADR-026 v3）：
+      - **后端剪枝**：构建到第 `depth` 层即停，更深层不序列化；
+        剪枝处节点 `truncated=True` 且 `children=[]`（前端据此渲染「…」懒加载入口）；
+      - **同层排序 = created_at 升序**（v3 修订：弃 updated_at 降序——改错别字不应
+        导致同级重排），tiebreak 按 id 升序；
+      - `root_id` 指定时只构建该节点为根的子树（懒加载入口），None = 全森林。
+
+    参数：
+        created_at: {note_id: created_at}（排序键，来自 notes 表既有列，零 migration）
+        parent_of / children: `resolve_hierarchy()` 的输出
+        depth: 构建层数（1 = 只根层；调用方负责 1~10 校验）
+        root_id: 懒加载子树根；不在 notes 里时由调用方先 404
+
+    返回：`[{note_id, children: [同结构], truncated: bool}, ...]`
+    """
+
+    def sort_key(nid: int):
+        return (created_at.get(nid, ""), nid)
+
+    def build(nid: int, level: int) -> dict:
+        # 层数语义：根/当前节点 = 第 1 层；level == depth 时其子层被剪枝
+        kids = sorted(children.get(nid, []), key=sort_key)
+        if level >= depth:
+            return {"note_id": nid, "children": [], "truncated": bool(kids)}
+        return {
+            "note_id": nid,
+            "children": [build(c, level + 1) for c in kids],
+            "truncated": False,
+        }
+
+    if root_id is not None:
+        return [build(root_id, 1)]
+    roots = sorted(
+        (nid for nid in created_at if nid not in parent_of),
+        key=sort_key,
+    )
+    return [build(nid, 1) for nid in roots]
+
+
 PARENT_RELATION = "parent"
 PARENT_ORIGIN = "markdown"          # parent 边派生自 frontmatter（markdown），非 DB-only
 
@@ -249,7 +301,7 @@ def materialize_parent_links(conn) -> dict:
 
 
 __all__ = ["resolve_hierarchy", "hierarchy_of", "resolve_parent_title",
-           "sync_note_parent", "materialize_parent_links",
+           "sync_note_parent", "materialize_parent_links", "build_note_forest",
            "PARENT_RELATION", "PARENT_ORIGIN",
            "EXPLICIT", "INFERRED",
            "REASON_ORPHAN", "REASON_SELF", "REASON_CYCLE"]
