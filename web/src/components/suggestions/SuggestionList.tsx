@@ -76,18 +76,18 @@ export function SuggestionList({ refreshKey = 0 }: Props) {
   return (
     <div className="suggestion-list">
       <div className="suggestion-header">
-        <span className="suggestion-title">AI Suggestions</span>
+        <span className="suggestion-title">AI 建议</span>
         {suggestions.length > 0 && (
           <span className="suggestion-count">{suggestions.length}</span>
         )}
       </div>
-      {loading && <div className="suggestion-loading">Loading...</div>}
+      {loading && <div className="suggestion-loading">加载中…</div>}
       <ul className="suggestion-items">
         {suggestions.map((s) => (
           <li key={s.id} className="suggestion-item">
             <div className="suggestion-item-header">
               <span className="suggestion-item-title">{s.title}</span>
-              <span className="suggestion-item-origin">AI suggested</span>
+              <span className="suggestion-item-origin">来自 AI</span>
             </div>
             {s.summary && (
               <div className="suggestion-item-summary">{s.summary}</div>
@@ -97,13 +97,13 @@ export function SuggestionList({ refreshKey = 0 }: Props) {
                 className="suggestion-accept-btn"
                 onClick={() => void handleAccept(s.id)}
               >
-                Accept
+                采纳
               </button>
               <button
                 className="suggestion-ignore-btn"
                 onClick={() => void handleIgnore(s.id)}
               >
-                Ignore
+                忽略
               </button>
             </div>
           </li>

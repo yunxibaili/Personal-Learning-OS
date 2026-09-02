@@ -74,15 +74,15 @@ interface Props {
 }
 
 const MODE_LABELS: Record<TutorMode, string> = {
-  explain: "Explain",
-  hint: "Hint",
-  review: "Review",
+  explain: "解释",
+  hint: "提示",
+  review: "复习",
 };
 
 const MODE_DESCRIPTIONS: Record<TutorMode, string> = {
-  explain: "Explain this concept clearly",
-  hint: "Give me a hint, don't tell the answer",
-  review: "Add to review queue",
+  explain: "清楚地解释这个概念",
+  hint: "给我提示，不要直接说答案",
+  review: "加入复习队列",
 };
 
 /** 掌握度条形 */
@@ -271,12 +271,12 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
 
   return (
     <div className="tutor-panel">
-      <div className="tutor-header">Tutor</div>
+      <div className="tutor-header">AI 导师</div>
 
       {/* Concept Info */}
       {context?.concept && (
         <div className="tutor-section">
-          <div className="tutor-section-title">Concept</div>
+          <div className="tutor-section-title">概念</div>
           <div className="tutor-concept-name">{context.concept.title}</div>
         </div>
       )}
@@ -284,18 +284,18 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
       {/* Mastery */}
       {context?.mastery && (
         <div className="tutor-section">
-          <div className="tutor-section-title">Mastery</div>
-          <MasteryBar label="Knowledge" value={context.mastery.knowledge} />
-          <MasteryBar label="Practice" value={context.mastery.practice} />
-          <MasteryBar label="Recall" value={context.mastery.recall} />
-          <MasteryBar label="Transfer" value={context.mastery.transfer} />
+          <div className="tutor-section-title">掌握度</div>
+          <MasteryBar label="掌握" value={context.mastery.knowledge} />
+          <MasteryBar label="练习" value={context.mastery.practice} />
+          <MasteryBar label="回忆" value={context.mastery.recall} />
+          <MasteryBar label="迁移" value={context.mastery.transfer} />
         </div>
       )}
 
       {/* Weakness */}
       {context?.mistakes && context.mistakes.length > 0 && (
         <div className="tutor-section">
-          <div className="tutor-section-title">Past Mistakes</div>
+          <div className="tutor-section-title">历史错题</div>
           <ul className="tutor-mistakes">
             {context.mistakes.map((m) => (
               <li key={m.id}>{m.description}</li>
@@ -307,7 +307,7 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
       {/* Related */}
       {context?.related && context.related.length > 0 && (
         <div className="tutor-section">
-          <div className="tutor-section-title">Related</div>
+          <div className="tutor-section-title">关联</div>
           <ul className="tutor-related">
             {context.related.map((r) => (
               <li key={r.id}>
@@ -321,12 +321,12 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
       {/* Referenced Notes（P8-003D：显式选择 ≤2 篇） */}
       <div className="tutor-section">
         <div className="tutor-section-title">
-          Notes
+          引用笔记
           <button
             className="tutor-note-toggle"
             onClick={() => setShowNotePicker((v) => !v)}
           >
-            {showNotePicker ? "Close" : "Reference notes"}
+            {showNotePicker ? "关闭" : "引用笔记"}
           </button>
         </div>
         {selectedNotes.length > 0 && (
@@ -337,7 +337,7 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
                 <button
                   className="tutor-note-remove"
                   onClick={() => toggleNote({ note_id: n.note_id, title: n.title })}
-                  aria-label={`remove ${n.title}`}
+                  aria-label={`移除 ${n.title}`}
                 >
                   ×
                 </button>
@@ -354,7 +354,7 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
                 setNoteSearch(e.target.value);
                 void searchNotes(e.target.value);
               }}
-              placeholder="Search notes to reference"
+              placeholder="搜索要引用的笔记"
             />
             <ul className="tutor-note-results">
               {noteResults.map((n) => {
@@ -377,7 +377,7 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
 
       {/* Mode Selector */}
       <div className="tutor-section">
-        <div className="tutor-section-title">Action</div>
+        <div className="tutor-section-title">操作</div>
         <div className="tutor-modes">
           {(Object.keys(MODE_LABELS) as TutorMode[]).map((m) => (
             <button
@@ -405,7 +405,7 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
           />
           {loading ? (
             <button className="tutor-ask-btn" onClick={handleStop}>
-              Stop
+              停止
             </button>
           ) : (
             <button
@@ -413,7 +413,7 @@ export function TutorPanel({ conceptId: conceptIdProp }: Props) {
               onClick={() => void handleSubmit()}
               disabled={!query.trim()}
             >
-              Ask
+              提问
             </button>
           )}
         </div>

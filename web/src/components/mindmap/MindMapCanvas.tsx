@@ -362,7 +362,7 @@ export function MindMapCanvas() {
       <h1 className="sr-only">思维导图</h1>
       {/* Sidebar: Map List */}
       <div className="mindmap-sidebar">
-        <div className="mindmap-sidebar-title">Maps</div>
+        <div className="mindmap-sidebar-title">导图</div>
         <div className="mindmap-map-list">
           {maps.map((m) => (
             <button
@@ -377,23 +377,23 @@ export function MindMapCanvas() {
         <div className="mindmap-new-map">
           <input
             type="text"
-            placeholder="New map title..."
+            placeholder="新导图标题…"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void handleCreateMap(); }}
             className="mindmap-input"
           />
           <button className="mindmap-btn" onClick={() => void handleCreateMap()}>
-            Create
+            创建
           </button>
         </div>
         <div className="mindmap-import-export">
           <button className="mindmap-btn-sm" onClick={() => void handleImport()}>
-            Import
+            导入
           </button>
           {activeMapId && (
             <button className="mindmap-btn-sm" onClick={() => void handleExport()}>
-              Export
+              导出
             </button>
           )}
         </div>
@@ -407,14 +407,14 @@ export function MindMapCanvas() {
               <span className="mindmap-title">{mapDetail.title}</span>
               <input
                 type="text"
-                placeholder="Add node..."
+                placeholder="添加节点…"
                 value={newNodeLabel}
                 onChange={(e) => setNewNodeLabel(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void handleAddNode(); }}
                 className="mindmap-input"
               />
               <button className="mindmap-btn" onClick={() => void handleAddNode()}>
-                Add
+                添加
               </button>
             </div>
             <div className="mindmap-graph">
@@ -450,14 +450,14 @@ export function MindMapCanvas() {
             {/* Concept Binding Panel (ADR-019: 只读引用，不改 mastery/event） */}
             {selectedNodeId && (
               <div className="mindmap-binding-panel">
-                <div className="binding-panel-title">Concept Binding</div>
+                <div className="binding-panel-title">概念绑定</div>
                 <div className="binding-panel-desc">
-                  Bind this node to an existing Concept (reference only)
+                  将此节点绑定到已有概念（仅引用，不影响掌握度）
                 </div>
                 <div className="binding-search">
                   <input
                     type="text"
-                    placeholder="Search concepts..."
+                    placeholder="搜索概念…"
                     value={conceptQuery}
                     onChange={(e) => void handleSearchConcept(e.target.value)}
                     className="mindmap-input"
@@ -483,7 +483,7 @@ export function MindMapCanvas() {
                     const concept = conceptResults.find((c) => c.id === node.concept_id);
                     return (
                       <div className="binding-current">
-                        <span className="binding-current-label">Bound to:</span>
+                        <span className="binding-current-label">已绑定：</span>
                         <span className="binding-current-name">
                           {concept?.title ?? `Concept #${node.concept_id}`}
                         </span>
@@ -491,7 +491,7 @@ export function MindMapCanvas() {
                           className="mindmap-btn-unbind"
                           onClick={() => void handleUnbindConcept()}
                         >
-                          Unbind
+                          解绑
                         </button>
                       </div>
                     );
@@ -502,7 +502,7 @@ export function MindMapCanvas() {
             )}
           </>
         ) : (
-          <div className="mindmap-empty">Select or create a map</div>
+          <div className="mindmap-empty">选择或新建一个导图</div>
         )}
       </div>
     </div>

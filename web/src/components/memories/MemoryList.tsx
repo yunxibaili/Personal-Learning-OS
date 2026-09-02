@@ -24,10 +24,10 @@ interface Props {
 }
 
 const KIND_LABELS: Record<string, string> = {
-  fact: "Fact",
-  preference: "Preference",
-  goal: "Goal",
-  mistake_pattern: "Mistake pattern",
+  fact: "事实",
+  preference: "偏好",
+  goal: "目标",
+  mistake_pattern: "错误模式",
 };
 
 export function MemoryList({ refreshKey = 0 }: Props) {
@@ -72,7 +72,7 @@ export function MemoryList({ refreshKey = 0 }: Props) {
     async (id: number) => {
       const content = draft.trim();
       if (!content) {
-        setError("Content cannot be empty");
+        setError("内容不能为空");
         return;
       }
       setSaving(true);
@@ -110,13 +110,13 @@ export function MemoryList({ refreshKey = 0 }: Props) {
   return (
     <div className="memory-list">
       <div className="memory-header">
-        <span className="memory-title">Memories</span>
+        <span className="memory-title">记忆</span>
         {memories.length > 0 && (
           <span className="memory-count">{memories.length}</span>
         )}
       </div>
 
-      {loading && <div className="memory-loading">Loading...</div>}
+      {loading && <div className="memory-loading">加载中…</div>}
 
       {/* FadeInUp 包整个列表而非逐条：一次淡入，一个观察器。
           逐条包会产生 N 个 IntersectionObserver，而这里没有滚动长列表,
@@ -146,10 +146,10 @@ export function MemoryList({ refreshKey = 0 }: Props) {
                       onClick={() => void saveEdit(m.id)}
                       disabled={saving}
                     >
-                      {saving ? "Saving..." : "Save"}
+                      {saving ? "保存中…" : "保存"}
                     </button>
                     <button className="memory-cancel-btn" onClick={cancelEdit}>
-                      Cancel
+                      取消
                     </button>
                   </div>
                 </div>
@@ -161,13 +161,13 @@ export function MemoryList({ refreshKey = 0 }: Props) {
                       className="memory-edit-btn"
                       onClick={() => startEdit(m)}
                     >
-                      Edit
+                      编辑
                     </button>
                     <button
                       className="memory-delete-btn"
                       onClick={() => void remove(m.id)}
                     >
-                      Delete
+                      删除
                     </button>
                   </div>
                 </>

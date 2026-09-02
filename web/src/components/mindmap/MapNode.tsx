@@ -48,8 +48,8 @@ export function MapNode({ data, selected }: NodeProps) {
         {hovered && (
           <div className="mindmap-tooltip">
             <div className="tooltip-title">{d.label}</div>
-            {isConcept && <div className="tooltip-domain">Concept Ref</div>}
-            {!isConcept && <div className="tooltip-domain">Temporary</div>}
+            {isConcept && <div className="tooltip-domain">概念引用</div>}
+            {!isConcept && <div className="tooltip-domain">临时节点</div>}
             {d.note && <div className="tooltip-note">{d.note}</div>}
           </div>
         )}
