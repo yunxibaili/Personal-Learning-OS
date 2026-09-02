@@ -2043,6 +2043,10 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 | 退出回收 | ✅ 关壳后 plos/plos-backend 进程零残留、8100 释放 |
 | 回归 | ✅ pytest 50 passed（smoke/notes/cjk_bigram）· vitest 186 passed（tsc 已由 beforeBuildCommand 覆盖） |
 
+### 追加修复（P0-3 实测发现，2026-09-03）
+
+- **孤儿 sidecar**：优雅关闭窗口后 onefile 引导进程被回收，真正的 Python 服务作为孙进程残留数秒——若占住 8100/SQLite，下次启动 sidecar 绑定失败。`lib.rs` 退出改为**进程树终止**（系统 `taskkill /PID /T /F` + CREATE_NO_WINDOW，零新依赖）；复测优雅关闭后进程树零残留、8100 立即释放。
+
 ### 已知边界 / 教训
 
 - 本地命令行环境下 vite 清空 `dist` 会被批量删除守护拦截 → 构建前先手动清 dist

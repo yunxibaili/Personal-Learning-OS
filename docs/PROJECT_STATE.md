@@ -709,7 +709,7 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      解析）+ externalBin + lib.rs spawn/kill + VITE_API_BASE（.env.desktop）+ CORS。
      端到端实测：双击 plos.exe 自动拉 sidecar → 8100 全通（真库 20 篇）→ 退出零残留。
      pytest 50 / vitest 186 / tsc PASS。桌面版自此双击可用（TASKS §T-P0-2b）
-[18] P0-3 真实 Vault CRUD + Search 重启持久化验证（守 vault 安全纪律）
+[18] ✅ P0-3 真实 Vault CRUD + Search 重启持久化验证（2026-09-03，PASS 6/6：创建/编辑/落盘/搜索/重启持久化/真删除，全程针对自建测试笔记、vault 已复原 20 篇）。顺带修复：优雅关闭时 onefile 孙进程孤儿 → lib.rs 进程树终止（taskkill /T /F）复测零残留
 [19] P0-4 核心功能冒烟收口（Notes/Search/Graph/MindMap/Tutor/Review/Memory/Sync）
 ```
 
