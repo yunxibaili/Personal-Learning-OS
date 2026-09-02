@@ -1,117 +1,62 @@
 # Active Task
 
-> AI 工作记忆：当前正在做什么。权威源：`docs/PROJECT_STATE.md`（状态唯一来源）· `docs/TASKS.md`（任务与报告）。
-> 上次更新：2026-09-01 · HEAD `3b49bd8`（193 commits）+ 未提交 P1+审计 · Gate：pytest **865** · vitest **36** · tsc PASS · build PASS · CI 双绿
+> AI 工作记忆：当前正在做什么。
+> **单一真相源原则（2026-09-02 所有者裁定）**：进度真相唯一登记于 `docs/PROJECT_STATE.md` §10.3；
+> 本文件只维护「当前正在进行的任务」，完成后即将本文件交接给下一个任务，历史进 git。
+> 任务定义与完成报告存档：`docs/TASKS.md`。
+
+> 上次更新：2026-09-02 · HEAD `12030ff` · 工作区干净
 
 ---
 
-## Task ID
+## 当前任务
 
-**T-NOTE-HIER 主/副笔记层级（ADR-024）P0+P1 完成 + Vault Rebuild Test + Doc Truth Audit**（2026-09-01 · pytest 865 · vitest 36 · tsc/build PASS）。
-**当前无进行中任务**——项目处于 P8 收尾阶段（政策：`PROJECT_STATE.md` §0.1 + `AGENTS.md` §12 端到端闭环协议）。
+### [0] 项目整理 / 状态收口（2026-09-02 所有者裁定，进行中）
 
-### 核心裁决（ADR-024，不可协商）
+**任务性质**：只做状态对齐，**禁止功能开发**。依据 2026-09-02 交接报告（三路只读调研 +
+实测），把全部文档对齐到 HEAD `12030ff` 的实际状态。
 
-- **存储**：child-side 单父 `parent: "[[父笔记标题]]"`，事实源在 Markdown frontmatter。
-  零新表零 migration；`links(relation='parent')` 仅作派生索引（reindex 全量重算）。
-- **五条铁规则**：① 事实源在 Markdown ② 只写 child 的 `parent`、不持久化 `children`
-  ③ 严格单父（forest，底层允许多级链、UI 先展一层）④ 显式 parent 权威、wikilink
-  推断降为 legacy fallback ⑤ `/graph`、`/universe`、review 统一走 `resolve_hierarchy()`
-- **失败语义**：parent 不存在 → **保留原值 + 标记 invalid，绝不自动删除**；自指/成环
-  → 标记 invalid；删 parent 文件 → child 不静默删，降级 orphan。
+**目标原则**：建立「以后只允许有一个地方定义现在做到哪了」——
+进度真相唯一登记于 `docs/PROJECT_STATE.md`，其他文档只能引用/补充。
 
-### 执行计划（P0 最小闭环）
+**范围**（全部为文档）：
 
-| 阶段 | 内容 | 状态 |
-|---|---|---|
-| P0-1 | frontmatter round-trip（保任意 key · 真删除 · 稳定顺序） | ✅ 完成（`compose_file(meta,body)`） |
-| P0-2 | 显式 `parent` 读写 + 校验（orphan / 自指 / cycle） | ✅ 完成（`parse_parent`/`set_meta_parent` + `NotePatch.parent`；自指走「保存+标 invalid」，红线 4） |
-| P0-3 | 统一 `resolve_hierarchy()`（explicit > inferred） | ✅ 完成（`hierarchy.py`；**修复原 `_detect_cycles` 无限循环**） |
-| P0-4 | `/graph`、`/universe` 统一消费 resolver | ✅ 完成（reindex 物化 `links(relation='parent')` + `/graph` 并入权威父边；web `derivePlanets` 显式优先） |
-| P0-5 | round-trip / rebuild 守护测试 12 项（**P0 验收标准**） | ✅ 完成（`tests/unit/test_hierarchy.py` 12 项 + galaxy 2 项） |
+| 项 | 处置 |
+|---|---|
+| Git / HEAD / tag / branch | 确认：`main` · `12030ff` · tag `v0.1.0-rc.1`→`13fa1bc` · 无未推送提交 · 工作区干净 |
+| `docs/PROJECT_STATE.md` | 唯一进度真相：文首加单一真相源原则；§1/§2.6/§3/§4/§8/§9.1/§10/§12/§13 全面对齐实测；§12 重写为技术债 P1/P2 分级；§10.3 登记路线 |
+| `docs/ai/CURRENT_STATE.md` | 重写为薄快照：删自维护进度表/数字，改为引用 PROJECT_STATE + 速查 + 易误判清单 |
+| `docs/ai/ACTIVE_TASK.md` | 本文件：只维护当前任务；删除过时候选表与 RC Gate 清单（历史在 git） |
+| `docs/TASKS.md` | 执行队列按所有者 09-02 路线重排；修正 P8-001B/C / P8-003 /「未提交」三处与代码矛盾；头部加真相源声明 |
+| `README.md` | 里程碑表对齐；「当前进度」改引用 |
+| `AGENTS.md` | 头部过期「后端优先」横幅清理；§9 冻结表去 marked/d3-force；快速参考 vitest 表述更正 |
+| ADR | 007 标 Superseded（d3-force 已卸载）· 018 标 Superseded（Galaxy 取代）· 016 目录树修正 · ADR_INDEX 同步 |
+| CHANGELOG | [Unreleased] 加 Docs 收口条目 |
 
-**不在 P0**：左侧嵌套树 UI（用户原始诉求，地基后做）· 稳定 note ID（独立 ADR，P1）· 星系视觉改造。
+**明确不做**：任何功能代码 · `web/dist-handoff-check/` 清理（等环境删除守卫恢复后手动删，
+已确认为 untracked 空壳，不影响 Git 状态）· ADR-013 §2.12 裁决（等所有者）· 技术债的实际修复（归 [1]）。
 
-### 已知地基缺陷（P0-1 要修的雷）
+---
 
-`core/knowledge.py::compose_file(tags, body)` **只回写 `tags`**，其余 frontmatter key
-在保存时静默丢弃。不先修这条，加任何字段都会再踩一次。
+## 路线（2026-09-02 所有者裁定，照录）
 
-### 本轮（2026-08-31）已闭环
-
-- **层次/背景** ✅  body 灰底（`--bg-soft`）+ 编辑器白纸面（`--surface`）+ 列表左内边距 12（与 `ui/app-shell.html` / `note-workspace.html` 对齐）
-- **状态色 a11y** ✅  `--ok`/`--warn`/`--err` 作文字全部不达标（最大 3.76:1）；新增 `--ok-text #15803D` (5.02) / `--warn-text #B45309` (5.02) / `--err-text #B91C1C` (6.47)；ui/tokens.css + web/styles/tokens.css + UI_DESIGN.md §2.2 同步更新；20 处 `color: var(--ok|--warn|--err)` 切到 `*-text`
-- **原生控件字体** ✅  button/input/select/textarea `font:inherit`（与设计资产对齐）；三个原生按钮（新建/删除/插图·PDF）从 13.33px → 14px
-- **空态与按钮层级** ✅  「← 选择或新建一篇笔记」单行小灰字 → 居中两行块（0 笔记：「开始你的第一篇笔记」+ CTA；>0 无选：「选一篇笔记开始」+ 提示）；删除按钮无选时隐藏（数据态=UI态），选中时用新 `.danger` 样式（透明边框 / `--text-3`，hover 才显 `--err-text`）
-
-**验证**：tsc · vitest 28 · vite build · 头戴无头 7 视图（empty/selected/rail×5/review）审计全绿；对比度/字号/层次/CLS 全部达标。
-
-- **微交互 150ms** ✅（`3182465`）`.note-list li` / `.note-list button` / `.editor-toolbar button`
-  加 `--dur-fast` + `--ease-out` 过渡；仅 color/背景/边框/transform，禁 box-shadow 动画；
-  全局 `prefers-reduced-motion` 兜底；焦点环已由 `*:focus-visible` 覆盖，未重复加
-
-### P8-FE-001 已裁决/收尾
-
-- **MiSans woff2 → 用户裁定 C（维持现状）**：核授权后确认子集化方案**站不住**——
-  ① 猫啃网核验 MiSans「不允许修改或制作衍生版本」，子集化=衍生=禁止
-  ② woff2 嵌入属灰区，「请自行咨询作者」③ 官方协议是**可撤销**的全球版权许可
-  ④ 本机 `C:\Windows\Fonts\` 0 个 MiSans → 当前静默降级苹方/雅黑。
-  **UI_DESIGN.md §依赖策略已如实改写**：废弃 woff2 离线包、记录三条授权理由、
-  给出 OFL 备选路径（思源黑体 SC）。**FE-001 收尾。**
-- **浮层视图视觉核验**（图谱/星系/导图/Tutor）：基线已采未目视，非缺陷性，按需再做
-
-## 候选方向（待所有者定序，仍照 P8 收尾政策）
-
-| 方向 | 说明 | 前置/风险 |
-|---|---|---|
-| **A. UI 视觉打磨** | 层次 ✅ / 状态色 a11y ✅ / 按钮字体 ✅ / 空态 ✅ / 微交互 ✅；MiSans 已裁定 C 收尾 | **已收尾**（浮层目视按需） |
-| **B. 主/副笔记层级（T-NOTE-HIER）** | ✅ **P0+P1 完成（2026-09-01）**：P0（resolver + reindex + graph）+ P1-1（左侧层级树 + NoteCreate.parent）+ Vault Rebuild Test + Doc Audit；遗留：P1-2 稳定 note ID（独立 ADR） | — |
-| **C. M6 Tauri 桌面打包** | 唯一标「未闭环」正式里程碑 | 重依赖（Rust 工具链） |
-| **D. M9 Visual Engine / M10 AI 生成可视化** | 规格完备未开工 | 体量最大，与「先内容后视觉」铁律冲突 |
-| 挂起 | **P8-Mode-001**（等所有者显式发起）· UpMark 联动 · Radar 编辑器内触发 | — |
-
-## 下一步计划：v0.1.0-rc.1 Release Hardening（GPT 评审建议）
-
-> GPT 评审结论：**🟢 有条件批准 v0.1.0-rc.1**。不要因 M8/M9/M10 未完成而阻塞 RC。
-> 现在应从"继续堆功能"切换到 **release hardening**。
-
-### RC.1 必过 Gate（GPT 列出）
-
-#### P0（必过）
-
-- [x] `resolve_hierarchy()` cycle-safe（已验证：test_hierarchy + vault_rebuild）
-- [x] missing parent 行为固定（orphan 保留原值 + 标 invalid）
-- [x] self-parent 固定（保存原值 + 标 invalid）
-- [x] cycle 检测固定（环上节点全部 invalid）
-- [x] parent 类校验（NoteCreate.parent / NotePatch.parent）
-- [x] hierarchy API contract 固定（4 端点返回 parent_id）
-- [x] SQLite 不是 hierarchy truth（Vault Rebuild Test 验证）
-- [x] 删除 SQLite 后可以 rebuild（Vault Rebuild Test 12 项）
-- [x] `buildNoteTree()` 不重复定义 domain semantics（纯展示投影）
-
-#### P1（RC 前补充）
-
-- [ ] **依赖审计**（AGENTS §11 里程碑收尾四件事之一）
-- [ ] **环境删除测试**（删 .venv/node_modules/dist 后重建）
-- [ ] **CHANGELOG 条目**（v0.1.0-rc.1）
-- [ ] **Git tag**（`v0.1.0-rc.1`）
-- [ ] **_parent_map profiling**（大库场景性能基线）
-- [ ] **frontmatter round-trip 边界测试**（特殊字符 key/value、超长 parent 标题）
-
-### 执行顺序建议
-
-```
-1. v0.1.0-rc.1 Release Hardening（依赖审计 + 环境测试 + CHANGELOG + tag）
-2. M6 Tauri 桌面打包（Rust 工具链，唯一未闭环正式里程碑）
-3. P1-2 稳定 note ID（独立 ADR，解决 rename 断链）
-4. M9 Visual Engine / M10 AI 可视化（规格完备，体量最大）
+```text
+[0] 项目整理 / 状态收口 ← 当前
+[1] 技术债重新分级与处置（清单见 PROJECT_STATE §12）
+[2] M9-007 Visual Engine 接入 web/
+[3] M9-008 真实验收
+[4] M9 正式关闭
+[5] T-NOTE-TREE T1（契约 + GET /notes/tree）
+[6] T-NOTE-TREE T2（前端三级展开 + 懒加载）
+[7] T-NOTE-TREE T3（守护测试 + 真实 vault ≥3 层 E2E）
+[8] P8 正式收尾 / v0.1.x
+[9] 再决定 M8 Mobile / 其他方向
 ```
 
-## 待所有者决策
+裁定理由（所有者原话要点）：M9 基本全部完成只差接入与验收，是最自然的第一个开发任务；
+T-NOTE-TREE 是下一阶段产品能力，不插队打断 M9 收尾；M8 现在开会把项目拉回大功能开发，不碰。
 
-- 首版 git tag：**暂建议 `v0.1.0-rc.1`**，版本号与时机待定。
-- BUG-6（httpx2 迁移）：按定性留依赖审计专项，29 个测试文件、非本轮。
-- BUG-7（React Flow attribution）：@xyflow/react v12 为 **MIT**，「需 Pro 才能隐藏」为过时信息，无合规风险，是否显示属产品选择。
+---
 
 ## 红线（不变）
 

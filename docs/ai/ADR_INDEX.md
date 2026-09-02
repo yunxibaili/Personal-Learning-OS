@@ -12,7 +12,7 @@
 | ADR-004 | 依赖管理制度化 | 所有依赖改动 | Accepted |
 | ADR-005 | 局域网同步模型（文件为真相） | M7 LAN Sync | Accepted |
 | ADR-006 | 移动端技术栈（RN + 混合内核） | M8 Mobile | Accepted |
-| ADR-007 | d3-force 单模块例外 | M3b Universe 布局 | Accepted |
+| ADR-007 | d3-force 单模块例外 | M3b Universe 布局 | **Superseded**（2026-09-02 收口：d3-force 已于 v0.1.0-rc.1 移除，Universe=自研 Canvas Galaxy；D3 禁令恢复无例外） |
 | ADR-008 | 知识图谱模型冻结（Entity + links） | M2+ 图谱相关 | Accepted |
 | ADR-009 | Entity vs Document 边界 | AI Tutor / 检索 | Accepted |
 | ADR-010 | AI Context Architecture（单一管线） | M4+ AI Tutor | Accepted |
@@ -21,9 +21,9 @@
 | ADR-013 | Frontend Design System（设计宪法） | M3b+ 前端 | Accepted |
 | ADR-014 | AI Tutor Architecture（AI Tutor 架构） | M4 AI Tutor | Accepted |
 | ADR-015 | Multilingual Knowledge Support（多语言知识支持） | 全局 | Accepted |
-| ADR-016 | Tutor UI Design（Tutor 界面设计） | M4-D Tutor UI | Accepted |
+| ADR-016 | Tutor UI Design（Tutor 界面设计） | M4-D Tutor UI | Accepted（2026-09-02 注：§3 目录树为历史快照，实际 TutorPanel 在 components/tutor/，Dashboard 已删） |
 | ADR-017 | Architecture Visualization（架构可视化） | M4.5 全局 | Accepted |
-| ADR-018 | Knowledge Universe Design（知识宇宙设计） | M3b 前端 | Accepted |
+| ADR-018 | Knowledge Universe Design（知识宇宙设计） | M3b 前端 | **Superseded**（2026-09-02 收口：d3-force 版已删除，universe 视图=GalaxyView，节点语义改主笔记=星球；边界现以 ADR-023/024 为准） |
 | ADR-019 | MindMap Boundary（思维导图边界冻结） | M2b MindMap | Accepted |
 | ADR-020 | Sync Truth Model（同步冲突事实模型） | M7 LAN Sync | Accepted |
 | ADR-021 | MindMap Exchange Format v1（思维导图交换格式） | M2b-003 Export/Import | Accepted |
@@ -43,13 +43,13 @@
 - 改 Knowledge Radar → 读 ADR-012
 - M7+ 同步 → 读 ADR-005
 - M8+ 移动 → 读 ADR-006
-- M3b 可视化 → 读 ADR-007
+- ~~M3b 可视化 → 读 ADR-007~~（Superseded：可视化边界读 ADR-023；星系实现读 ADR-018 备注 + `GalaxyCanvas.tsx` 文件头）
 - M2b 思维导图 → 读 ADR-002
 - M4 AI Tutor → 读 ADR-003 + ADR-010 + ADR-014
 - 多语言支持 → 读 ADR-015
 - Tutor UI → 读 ADR-016
 - 架构图 → 读 ADR-017
-- M3b Knowledge Universe → 读 ADR-018
+- M3b Knowledge Universe → 读 ADR-018 备注（Superseded）+ ADR-023 + `GalaxyCanvas.tsx` 文件头
 - M2b MindMap → 读 ADR-002 + ADR-019
 - M2b Export/Import → 读 ADR-021
 - M7 同步冲突 → 读 ADR-005 + ADR-020

@@ -1,58 +1,57 @@
 # Current State
 
-> AI 会话增量快照。**唯一权威状态源 = `docs/PROJECT_STATE.md`**；当前任务见 `docs/ai/ACTIVE_TASK.md`；任务与报告见 `docs/TASKS.md`。
-> 上次更新：2026-08-31 · Branch：main · HEAD `b1ce03b` · **184 commits**
-> 工作区：干净（仅 `.workbuddy/` 未跟踪，若未 gitignore 请确认；无未提交代码改动）
+> **AI 会话启动快照。单一真相源原则（2026-09-02 所有者裁定）**：
+> 进度/里程碑/验证数字的唯一权威 = **`docs/PROJECT_STATE.md`**——本文件**不再维护**
+> 自己的进度表或统计数字，只保留会话所需的速查与纪律引用。
+> 当前任务见 `docs/ai/ACTIVE_TASK.md`；任务定义与完成报告存档见 `docs/TASKS.md`。
+>
+> 上次更新：2026-09-02（状态收口）· Branch `main` · HEAD `12030ff` · 工作区干净
 
 ---
 
-## 当前政策
+## 一分钟上手
 
-**P8 收尾阶段**（2026-08-31 裁定，最高优先）：解除前后端修改范围限制，**端到端闭环 + 契约一致性**为最高准则。
-红线不变：Markdown Vault 唯一事实源 · 四层调用链 · UI 不承担核心业务/图计算/SM-2/同步核心 · 无理由不新增依赖/表/Provider · 禁 XP/streak/徽章 · 禁自动发送 Tutor 提问。
+1. **项目现在做到哪了** → `docs/PROJECT_STATE.md`（§10.3 闭环完成度 + 当前路线）
+2. **现在在做什么任务** → `docs/ai/ACTIVE_TASK.md`
+3. **某个功能怎么实现的** → `docs/TECH_DESIGN.md`（应然）+ 实际代码（实然，冲突时以代码为准先核实）
+4. **能改什么不能改什么** → 本文件 Do-Not-Touch 节 + `PROJECT_STATE.md` §11
 
-## 里程碑状态（精简）
+## 当前政策（速记）
 
-| 里程碑 | 状态 |
+**P8 收尾阶段**（2026-08-31 裁定，最高优先，取代一切历史范围限制）：
+**端到端闭环 + 契约一致性**为最高准则；跨层修改须真实原因，禁借任务扩权。
+红线不变：Markdown Vault 唯一事实源 · 四层调用链 · UI 不承担核心业务/图计算/SM-2/同步核心 ·
+无理由不新增依赖/表/Provider · 禁 XP/streak/徽章 · 禁自动发送 Tutor 提问。
+
+**路线（2026-09-02 所有者裁定）**：[0] 状态收口 → [1] 技术债分级处置 →
+[2-4] M9-007/008/关闭 → [5-7] T-NOTE-TREE T1-T3 → [8] P8 收尾 → [9] M8 决策。
+详见 `PROJECT_STATE.md` §10.3。
+
+## 环境与命令速查
+
+| 事项 | 命令 |
 |---|---|
-| M0 脚手架 / M1 知识库 / M2-A~E 双链图谱 / M2b 导图 / M3 Learning Graph / M3b Universe / M3.5-A 雷达 / M3.5-B 全知 / M4 AI Tutor / M5 复习 | ✅ |
-| M7 LAN Sync v1（M7-001~008 全链路） | ✅ |
-| P8-001A~007（含 C 星球 / 002 Graph V2 / 003A-E / 006 三入口 / 007 SSE 流式） | ✅ |
-| 后端 backlog（§9 B1–B29） | ✅ 清零 |
-| Phase 0–4 前端阶段 | ✅ 收口 |
-| **BUG-1（P0 数据不锁死）/ BUG-2 / BUG-3 / BUG-4 / BUG-5** | ✅ |
-| **M6 Tauri 桌面打包** | ✅ 完成（2026-09-01，GNU 工具链，MSI 65MB + NSIS 102MB） |
-| **M8 Mobile / M9 Visual Engine / M10 AI 可视化** | ❌ 未开始 |
-| P8-Mode-001（ADR-022 附录 A） | ⏳ 挂起（等所有者显式发起） |
-
-## 当前验证（2026-08-31 实测）
-
-- 后端全量 pytest：**836 passed**（含 BUG-1 守护 2）
-- 前端：vitest **28 passed**（3 files）· `tsc --noEmit` PASS · `vite build --outDir dist_verify` PASS（**主包 182kB / gzip 59k**）
-- CI：`.github/workflows/ci.yml` 已建（backend pytest / frontend tsc+vitest+build）
-- 闭环：场景 A 11/11 · B 8/8 · B+C 15/15（BUG-1 后概念/掌握度恢复 1→1）
-- 审计：`scripts/contract_audit.py` → OpenAPI **89** 端点（0 路径无测试触及）· shared/types **0 camelCase** 漂移；`export` zip 排除 db/ 与 api_key
-
-## 代码规模（实测）
-
-端点 **89** · Migration 8–9 · ADR **23** · 提交 **184** · 后端 Python ≈ 9.7k 行 · 前端 TS/TSX ≈ 6.4k 行。
-
-## 候选 / 挂起
-
-- 候选：A UI 视觉打磨（FE-001 已解冻，用户反馈「UI 太劣质」）· C M6 Tauri · D M9/M10
-- 挂起：P8-Mode-001 · UpMark 联动（U1-U3）· Radar 编辑器内触发（Ctrl+Shift+K）——三者均「所有者显式发起」
-- 待决：首版 git tag（建议 `v0.1.0-rc.1`）· BUG-6 httpx2 迁移专项 · BUG-7 attribution（已澄清 MIT，勿再变更）
-
-## Known Risks（沿用，依需更新）
-
-- 中文 FTS 分词未解决（unicode61 按字切分，中文走 CJK bigram 回退，ADR-011）
-- 移动端同步未启动（M7/M8，ADR-005/006）· 本地 LLM 实测仅 Ollama qwen3-14b 冒烟（B10）
-- TipTap 数学扩展为社区维护（@aarkue）
-- M6/M8/M9/M10 未开工；AI Tutor 默认 MockProvider，开箱演示需配真实 LLM
+| 后端 | `cd server && uvicorn app.main:app --host 127.0.0.1 --port 8000`（`GET /api/v1/health` 验证） |
+| 前端 | `cd web && npm run dev`（:5173，`/api` 代理到 8000） |
+| 前端测试 | `cd web && npx vitest run` · `npx tsc --noEmit` · `npx vite build --outDir <全新目录>` |
+| 后端测试 | `cd server && pip install -r requirements-dev.txt`（本机 venv 默认未装！）→ `pytest -q` |
+| Windows 删除守卫 | 遇 `[SAFE_DELETE_FAIL_CLOSED]`：构建用全新 outDir；环境守卫故障时无 AI 侧绕法 |
+| 端口 | FastAPI :8000（恒 127.0.0.1）· Vite :5173 · `PORT`/`API_PORT`/`WORKSPACE_DIR` 可覆盖 |
 
 ## Do Not Touch（简要；完整见 PROJECT_STATE §11）
 
 `KnowledgeRadar.tsx` · `GraphView.tsx` · `001_init.sql` · `shared/types/*.ts` · `review_scheduler.py` ·
-`tutor_context.py` · `ai/tutor.py`（只调 constants.py）· `ai/providers/` · **`learning_events` 历史行 `event_id` 保持 NULL**。
+`tutor_context.py` · `ai/tutor.py`（只调 constants.py）· `ai/providers/`（新 Provider 走 providers/ 目录）·
+**`learning_events` 历史行 `event_id` 保持 NULL**（按追加式约束不回填，不要"修复"）。
+
+## 易误判清单（历史资料 vs 现状）
+
+- **Dashboard 不存在**：已删（裁决 A）；7 平级 tab 已删；`universe` 视图渲染 `GalaxyView`（自研 Canvas 星系），非 d3-force 版
+- **d3-force / cobe / marked 依赖不存在**（v0.1.0-rc.1 移除或从未安装）
+- **M9-002~006 已完成**（tracer/API/ui 库组件）；只差 M9-007 接入 web/ 与 M9-008 验收
+- **M6 桌面打包已完成**（MSI/NSIS）
+- **P8-001B/001C（旧 Universe/Planet）已完成后又删除**，勿恢复
+- **AGENTS.md 头部如仍见「后端优先」字样**：该政策已被 §0/§0.1 取代，仅历史留存
+- 进度/数字冲突时：`git log` + 代码核实 → 回改文档 → **以 `PROJECT_STATE.md` 为准**
 
 > 注：历史会话报告不再在本文件堆叠——追溯见 git history 与 `docs/archive/`；本文件保持「当前快照」职责。
