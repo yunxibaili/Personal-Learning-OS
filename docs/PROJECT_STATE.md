@@ -704,7 +704,12 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [16] ✅ P0-1 PC 开发环境完整启动（2026-09-03：uvicorn 重启至当前代码 → 真实 DB 自动应用
      010_fts_bigram + FTS 重建（20 篇笔记保留）；vite 5173 页面 200 + /api 代理通；
      中文短语/单字/rank 搜索真库生效；live-smoke 16/16 · 0 console errors）
-[17] P0-2 Tauri Desktop 启动/sidecar 验证
+[17] ✅ P0-2 Tauri Desktop 启动/sidecar 验证（2026-09-03）：壳可启动 ✅（plos.exe +
+     WebView2 稳定运行）；**两项缺口**——① Python sidecar 从未接线（lib.rs 无 spawn/
+     无 externalBin/无 PyInstaller spec，T-M6 仅打包未测运行）② 生产 API base 相对路径
+     断链（tauri.localhost 下 /api/v1 无代理）。修复方案 i（PyInstaller sidecar + env
+     API base + CORS）**待所有者授权**（涉及修改 src-tauri），记录见 workspace 根
+     P0-2 验证记录
 [18] P0-3 真实 Vault CRUD + Search 重启持久化验证（守 vault 安全纪律）
 [19] P0-4 核心功能冒烟收口（Notes/Search/Graph/MindMap/Tutor/Review/Memory/Sync）
 ```
