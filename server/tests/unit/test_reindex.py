@@ -61,6 +61,17 @@ class TestReindexBasic:
         assert len(rows) == 1
         assert rows[0]["title"] == "Attention"
 
+    def test_fts_cjk_bigram_after_reindex(self, conn, tmp_workspace):
+        """ADR-027：reindex 写入 bigram 检索文本，中文短语经 FTS 可检索。"""
+        vault = tmp_workspace / "vault"
+        vault.mkdir(exist_ok=True)
+        _write_note(vault, "注意力.md", "# 注意力\n\n注意力机制是深度学习的核心")
+        reindex_vault(conn, vault)
+        from app.core.knowledge import search_notes
+
+        res = search_notes(conn, "注意力机制")
+        assert [r["title"] for r in res] == ["注意力"]
+
 
 class TestReindexIdempotent:
     def test_double_reindex_same_result(self, conn, tmp_workspace):

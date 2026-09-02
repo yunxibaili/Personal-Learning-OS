@@ -23,6 +23,18 @@ class TestTokenize:
     def test_empty(self):
         assert tokenize("") == set()
 
+    def test_single_cjk_token_filtered(self):
+        """autolink 历史语义：单字 CJK 词元被过滤（噪声大）。"""
+        assert tokenize("熵 熵是信息论的核心") == tokenize("熵是信息论的核心")
+
+    def test_segmented_text_equivalent_to_raw(self):
+        """ADR-027：对原文与对 segment 后检索文本切分结果一致
+        （suggest_note_links 读 notes_fts.body 即检索文本）。"""
+        from app.core.cjk_bigram import segment
+
+        raw = "注意力机制是深度学习的核心 self-attention"
+        assert tokenize(segment(raw)) == tokenize(raw)
+
 
 class TestOverlap:
     def test_identical_high(self):

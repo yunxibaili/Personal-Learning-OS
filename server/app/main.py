@@ -16,7 +16,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .db import APP_ROOT, init_db
+from .db import APP_ROOT, FTS_REBUILD_VERSIONS, init_db
+from .core.reindex import reindex_vault
 from .routers.attachments import router as attachments_router
 from .routers.conversations import router as conversations_router
 from .routers.export import router as export_router
@@ -45,8 +46,30 @@ WEB_DIST = APP_ROOT / "web" / "dist"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """启动即建目录并跑 migration（幂等）；数据库就绪先于任何请求。"""
-    init_db()
+    """启动即建目录并跑 migration（幂等）；数据库就绪先于任何请求。
+
+    FTS 重建类 migration（ADR-027 的 010_fts_bigram）应用后自动触发一次
+    全量 reindex——notes_fts 是派生索引，DROP+CREATE 后必须从 vault 重建
+    才可检索。重建失败不阻断启动（搜索降级为空结果，后续 sync/reindex 可自愈）。
+    """
+    import logging
+
+    from .db import connect, workspace_root
+
+    logger = logging.getLogger(__name__)
+    newly = init_db()
+    if set(newly) & FTS_REBUILD_VERSIONS:
+        logger.info("FTS rebuild migration applied (%s) → full reindex", newly)
+        conn = connect()
+        try:
+            reindex_vault(conn, workspace_root() / "vault")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            logger.exception("FTS rebuild reindex failed; search degraded "
+                             "until next reindex")
+        finally:
+            conn.close()
     yield
 
 

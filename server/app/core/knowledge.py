@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from ..db import connect, workspace_root
+from . import cjk_bigram
 
 _ILLEGAL = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
 _FRONT_RE = re.compile(r"^---\n(.*?)\n---\n?", re.S)
@@ -235,9 +236,11 @@ def upsert_note_index(
          body_hash(body), mtime),
     )
     conn.execute("DELETE FROM notes_fts WHERE note_id = ?", (note_id,))
+    # notes_fts 列存「检索文本」（cjk_bigram.segment 预分词，ADR-027），
+    # 不是原文快照——原文唯一事实源是 vault/ 的 Markdown 文件。
     conn.execute(
         "INSERT INTO notes_fts (title, body, note_id) VALUES (?, ?, ?)",
-        (title, body, note_id),
+        (cjk_bigram.segment(title), cjk_bigram.segment(body), note_id),
     )
 
 
@@ -255,48 +258,32 @@ def sanitize_fts_query(q: str) -> str:
     return f'"{escaped}"'
 
 
-_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
-
-
-def _has_cjk(q: str) -> bool:
-    return bool(_CJK_RE.search(q or ""))
-
-
-def _cjk_search(conn, q: str, limit: int) -> list[dict]:
-    """B9：CJK 查询 → 基于字符 bigram 重叠的内容匹配（不引 jieba，ADR-011 边界内）。
-
-    unicode61 对中文按单字切分，短语 `"注意力机制"` 检索不到；此处用 bigram
-    词元重叠度对正文排序，弥补 FTS 对中文的薄弱。复用 autolink.tokenize。
-    """
-    from .autolink import content_overlap, tokenize
-
-    q_tokens = tokenize(q)
-    if not q_tokens:
-        return []
-    rows = conn.execute(
-        "SELECT n.id AS note_id, n.title AS title, f.body "
-        "FROM notes n LEFT JOIN notes_fts f ON f.note_id = n.id"
-    ).fetchall()
-    scored: list[tuple[float, dict]] = []
-    for r in rows:
-        score = content_overlap(q_tokens, tokenize(r["body"] or r["title"] or ""))
-        if score > 0:
-            scored.append((score, {
-                "note_id": r["note_id"], "title": r["title"],
-                "score": score, "method": "cjk_bigram",
-            }))
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [item for _, item in scored[:limit]]
-
-
 def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
-    safe_q = sanitize_fts_query(q)
-    if not safe_q:
+    """全文检索（FTS5 + CJK bigram 预分词，ADR-027）。
+
+    写入（upsert_note_index）与查询共用 `cjk_bigram.segment` —— 同一切分
+    保证「短语匹配 ≈ 子串命中」。这是唯一的搜索主路径：
+    B9 的 `_cjk_search` 全表 bigram 重叠扫描已随 ADR-027 删除。
+
+    兜底（仅当 FTS 未命中或不可用时）：
+      - 单字中文查询 → LIKE 扫检索文本（bigram 索引不含 run 内单字词元，
+        而 segment 后文本保留全部汉字字符，LIKE 可精确命中——单字查询
+        不再静默 0 命中）；
+      - 其余 → 标题 LIKE（M1 以来的旧行为）。
+    """
+    text = (q or "").strip()
+    if not text:
         return []
-    # 中文查询：FTS（unicode61 单字切分）命中率低，优先走 bigram 重叠扫描
-    if _has_cjk(q):
-        return _cjk_search(conn, q, limit)
-    # FTS5 default tokenizer 大小写敏感；用 LOWER 做大小写无关匹配
+
+    # 单字中文：bigram 词元不覆盖 run 内单字，直接走 LIKE 兜底
+    if cjk_bigram.is_single_cjk(text):
+        return _like_body_search(conn, text, limit)
+
+    seg = cjk_bigram.segment(text)
+    if not cjk_bigram.has_token(seg):
+        # 纯标点/符号等无词元查询：FTS 无从匹配，退化为标题 LIKE
+        return _title_like_search(conn, text, limit)
+
     rows = conn.execute(
         """
         SELECT n.id AS note_id, n.title AS title
@@ -305,17 +292,38 @@ def search_notes(conn, q: str, limit: int = 50) -> list[dict]:
         ORDER BY rank
         LIMIT ?
         """,
-        (safe_q, limit),
+        (sanitize_fts_query(seg), limit),
     ).fetchall()
     if rows:
         return [{"note_id": r["note_id"], "title": r["title"]} for r in rows]
-    # fallback: LIKE 大小写无关
+    # fallback: 标题 LIKE 大小写无关（旧行为保留）
+    return _title_like_search(conn, text, limit)
+
+
+def _like_body_search(conn, text: str, limit: int) -> list[dict]:
+    """单字中文兜底：LIKE 扫 notes_fts 检索文本（segment 保留全部汉字字符）。"""
+    escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{escaped}%"
+    rows = conn.execute(
+        """
+        SELECT n.id AS note_id, n.title AS title
+        FROM notes_fts f JOIN notes n ON n.id = f.note_id
+        WHERE f.body LIKE ? ESCAPE '\\' OR f.title LIKE ? ESCAPE '\\'
+        ORDER BY n.id
+        LIMIT ?
+        """,
+        (pattern, pattern, limit),
+    ).fetchall()
+    return [{"note_id": r["note_id"], "title": r["title"]} for r in rows]
+
+
+def _title_like_search(conn, text: str, limit: int) -> list[dict]:
+    """标题 LIKE 兜底（大小写无关）。"""
     rows = conn.execute(
         "SELECT id AS note_id, title FROM notes "
-        "WHERE LOWER(title) LIKE LOWER(?) OR id IN "
-        "(SELECT note_id FROM notes_fts WHERE notes_fts MATCH ?) "
+        "WHERE LOWER(title) LIKE LOWER(?) "
         "ORDER BY id LIMIT ?",
-        (f"%{q}%", safe_q, limit),
+        (f"%{text}%", limit),
     ).fetchall()
     return [{"note_id": r["note_id"], "title": r["title"]} for r in rows]
 

@@ -14,6 +14,10 @@ APP_ROOT = Path(__file__).resolve().parents[2]      # .../learning-os
 SERVER_DIR = APP_ROOT / "server"
 MIGRATIONS_DIR = SERVER_DIR / "migrations"
 
+# 应用后需要全量重建 FTS 的 migration 版本（main.lifespan 消费）：
+# notes_fts 是纯派生索引，DROP+CREATE 后必须从 vault reindex 才可检索。
+FTS_REBUILD_VERSIONS = {"010_fts_bigram"}
+
 
 def workspace_root() -> Path:
     """workspace 根目录：环境变量 WORKSPACE_DIR 优先，默认 <repo>/workspace。"""

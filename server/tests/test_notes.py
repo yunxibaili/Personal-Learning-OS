@@ -181,10 +181,10 @@ def test_import_missing_source(client) -> None:
     assert r.status_code == 200
     assert "error" in r.json()
 
-# ── B9 中文检索增强（bigram 回退，不引 jieba）───────────────────────
+# ── ADR-027 中文检索（CJK bigram 预分词 + FTS 统一路径，取代 B9 兜底扫描）──
 
 def test_cjk_search_finds_phrase(client: TestClient) -> None:
-    """中文连词（unicode61 单字切分检索不到）经 bigram 回退仍可命中。"""
+    """中文短语经 bigram 预分词 + FTS MATCH 命中（旧 unicode61 下为 0 命中）。"""
     client.post("/api/v1/notes", json={
         "title": "注意力机制", "content_md": "注意力机制是深度学习的核心"})
     client.post("/api/v1/notes", json={
@@ -192,24 +192,36 @@ def test_cjk_search_finds_phrase(client: TestClient) -> None:
     r = client.get("/api/v1/search", params={"q": "注意力机制"})
     assert r.status_code == 200
     res = r.json()["results"]
-    assert any(x["title"] == "注意力机制" for x in res)
-    # 无关笔记不应作为高分结果出现在前面
-    titles = [x["title"] for x in res]
-    assert "注意力机制" in titles
+    # 短语语义：只有包含连续子串「注意力机制」的笔记命中
+    assert [x["title"] for x in res] == ["注意力机制"]
 
 
 def test_cjk_search_scores_relevant_higher(client: TestClient) -> None:
-    """与查询词重叠度越高的笔记排在越前。"""
+    """短语=连续子串语义（ADR-027）：查询串须为正文连续子串才命中。
+
+    语义边界（有意为之，与 Obsidian 子串搜索一致）：bigram 不跨词边界，
+    「梯度下降 学习率」（词间有空格）不含「梯度下降学习率」的连续子串。
+    """
     client.post("/api/v1/notes", json={
-        "title": "强相关", "content_md": "梯度下降 学习率 优化"})
+        "title": "强相关", "content_md": "梯度下降学习率是优化的关键"})
+    client.post("/api/v1/notes", json={
+        "title": "跨词边界", "content_md": "梯度下降 学习率"})
     client.post("/api/v1/notes", json={
         "title": "弱相关", "content_md": "梯度"})
     r = client.get("/api/v1/search", params={"q": "梯度下降学习率"})
     res = r.json()["results"]
-    titles = [x["title"] for x in res]
-    if "强相关" in titles and "弱相关" in titles:
-        assert titles.index("强相关") < titles.index("弱相关")
-    assert any(x.get("method") == "cjk_bigram" for x in res)
+    assert [x["title"] for x in res] == ["强相关"]
+
+
+def test_cjk_single_char_search_no_silent_miss(client: TestClient) -> None:
+    """单字中文查询经 LIKE 兜底命中 run 内单字（ADR-027，不再静默 0 命中）。"""
+    client.post("/api/v1/notes", json={
+        "title": "信息论", "content_md": "熵是信息论的核心度量"})
+    client.post("/api/v1/notes", json={
+        "title": "无关", "content_md": "梯度下降优化"})
+    r = client.get("/api/v1/search", params={"q": "熵"})
+    assert r.status_code == 200
+    assert [x["title"] for x in r.json()["results"]] == ["信息论"]
 
 
 # ── ADR-024 P1-1：/notes 契约带 parent_id（来自唯一 resolver，红线 2/5）──

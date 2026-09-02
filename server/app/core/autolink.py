@@ -9,27 +9,31 @@
   - 已有链接（source→target，任意 relation）与自链接被排除
 
 分词：
-  - 拉丁/数字按词（[a-z0-9_]+）
-  - CJK 按字符 bigram（无分词器依赖，中文可用；不引 jieba，ADR-011 边界）
+  - 拉丁/数字按词
+  - CJK 按字符 bigram（无分词器依赖，中文可用；不引 jieba）
+  - 2026-09-02（ADR-027）：底层切分规则收敛到 `cjk_bigram.tokens`（FTS 写入/
+    查询共用同一 tokenizer）；autolink 保留自身历史语义——**过滤单字 CJK
+    词元**（孤立单字噪声大，bigram 更有区分度）。因此对原文与对 segment 后
+    的检索文本切分结果一致（`suggest_note_links` 读 notes_fts.body 即检索文本）。
 """
 from __future__ import annotations
 
 import math
-import re
 
-_LATIN_RE = re.compile(r"[a-z0-9_]+")
-_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+from . import cjk_bigram
 
 
 def tokenize(text: str) -> set[str]:
-    """正文 → 词元集合（拉丁词 + CJK 字符 bigram）。"""
-    low = (text or "").lower()
-    tokens: set[str] = set(_LATIN_RE.findall(low))
-    # CJK：连续汉字生成 bigram（单字噪声大，bigram 更有区分度）
-    for run in re.findall(r"[\u4e00-\u9fff]{2,}", low):
-        for i in range(len(run) - 1):
-            tokens.add(run[i:i + 2])
-    return tokens
+    """正文 → 词元集合（拉丁词 + CJK 字符 bigram；单字 CJK 词元过滤）。
+
+    底层规则来自 cjk_bigram.tokens（ADR-027 收敛）；本函数只叠加 autolink
+    自身的集合语义：小写化 + 过滤单字 CJK。
+    """
+    return {
+        t.lower()
+        for t in cjk_bigram.tokens(text)
+        if not (len(t) == 1 and cjk_bigram.is_single_cjk(t))
+    }
 
 
 def content_overlap(tokens_a: set[str], tokens_b: set[str]) -> float:
