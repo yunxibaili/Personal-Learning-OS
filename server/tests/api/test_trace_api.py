@@ -172,8 +172,9 @@ def test_list_examples_returns_manifest_without_source(client):
         "factorial", "fibonacci", "linear-search",
     }
     for e in examples:
-        assert set(e) == {"example_id", "title", "concept_title", "template"}
+        assert set(e) == {"example_id", "title", "concept_title", "template", "file"}
         assert e["template"] in ("FrameStackView", "ArrayView", "GeneralView")
+        assert e["file"].endswith(".py"), "file 仅供 UI 显示，来自清单 filename"
         assert "source" not in e
         # path 属服务端内部结构，不得外泄
         assert "path" not in e
@@ -223,3 +224,39 @@ def test_detail_source_missing_is_500(client, monkeypatch):
     r = client.get("/api/v1/trace/examples/factorial")
     assert r.status_code == 500
     assert r.json()["error"]["code"] == "source_unavailable"
+
+
+# --- M9-007：visualize 事件进入 Learning Memory（ADR-025 §6.3 / §8 守护 15）---
+
+def test_visualize_event_increments_practice(client):
+    """守护 15：TraceRun 成功后前端 POST /events event_type=visualize，
+    practice 增量 = 0.05 × weight（mastery 侧映射在 core/mastery.py 事件表）。"""
+    import pytest
+
+    r = client.post("/api/v1/concepts", json={
+        "title": "TraceVizConcept", "origin": "manual"})
+    assert r.status_code == 201, r.text
+    cid = r.json()["id"]
+
+    # 首次事件：mastery 由 ensure_concept_learning_state 创建，全维 0 起
+    r = client.post("/api/v1/events", json={
+        "concept_id": cid, "event_type": "visualize", "source": "visual_engine"})
+    assert r.status_code == 201, r.text
+    m = r.json()["mastery"]
+    assert m["dimensions"]["practice"] == pytest.approx(0.05)
+    assert m["dimensions"]["knowledge"] == 0.0
+
+    # weight 显式传入：0.05 × weight
+    r = client.post("/api/v1/events", json={
+        "concept_id": cid, "event_type": "visualize",
+        "weight": 2.0, "source": "visual_engine"})
+    assert r.status_code == 201
+    m2 = r.json()["mastery"]
+    assert m2["dimensions"]["practice"] == pytest.approx(0.05 + 0.05 * 2.0)
+
+
+def test_visualize_event_unknown_concept_404(client):
+    """事件的概念存在性校验不变（M9-007 不放宽）"""
+    r = client.post("/api/v1/events", json={
+        "concept_id": 999999, "event_type": "visualize", "source": "visual_engine"})
+    assert r.status_code == 404

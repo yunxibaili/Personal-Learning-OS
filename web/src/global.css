@@ -2514,3 +2514,54 @@ button, input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   .galaxy-tour__btn, .galaxy-tour__dot { transition: none; }
 }
+
+/* ---- M9-007 Visual Engine 覆盖层（业务壳：web/src/components/visual-engine/）----
+   组件自身的 .ve* 样式在 visual-engine.css（随 ui 库回灌，main.tsx 引入）。
+   这里只写覆盖层壳：全屏遮罩 + 居中近全屏面板（VisualEngine 三区需要宽空间）。
+   遮罩/浮层写法与 .tutor-drawer-overlay 同款（ADR-013：无渐变无毛玻璃）。 */
+.visualize-overlay {
+  position: fixed; inset: 0;
+  background: color-mix(in srgb, var(--text) 30%, transparent);
+  z-index: var(--z-overlay);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--sp-5);
+}
+.visualize-panel {
+  position: relative;
+  width: min(1080px, 100%);
+  max-height: calc(100vh - var(--sp-5) * 2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-4);
+  overflow-y: auto;
+}
+.visualize-panel__close {
+  position: absolute; top: var(--sp-2); right: var(--sp-2);
+  z-index: 2;
+  width: 32px; height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 18px; line-height: 1;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.visualize-panel__close:hover { color: var(--text); border-color: var(--text-3); }
+.visualize-panel__loading { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-5); }
+.visualize-panel__loading-grid {
+  display: grid; grid-template-columns: 3fr 2fr; gap: var(--sp-3);
+}
+.visualize-panel__error {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  padding: var(--sp-6);
+  color: var(--err-text);
+}
+.visualize-panel__error strong { color: var(--text); }
+.visualize-panel__errcode {
+  font-size: var(--fs-xs); color: var(--text-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .visualize-panel__close { transition: none; }
+}

@@ -275,3 +275,37 @@ describe("落点清单判「不适用」的两个组件，不许被手滑接入"
     }
   });
 });
+
+describe("M9 Visual Engine：已解冻导出（M9-007 回灌）", () => {
+  // 2026-09-02 M9-007：ui/visual-engine/ 已逐字节回灌至 components/ui/visual-engine/，
+  // index.ts 解冻导出。此断言守「不回退」——解冻后的导出被删掉会静默破坏 M9-008 验收。
+  const UI_INDEX = file("components/ui/index.ts");
+
+  it("index.ts 从 ./visual-engine 导出 VisualEngine 组件与类型", () => {
+    expect(UI_INDEX).toMatch(/export\s*\{[^}]*\bVisualEngine\b[^}]*\}\s*from\s*"\.\/visual-engine"/);
+    expect(UI_INDEX).toMatch(/export type\s*\{[^}]*\bVisualEngineProps\b[^}]*\}\s*from\s*"\.\/visual-engine"/);
+  });
+
+  it("回灌副本与 ui 库定稿处逐字节一致（防双份来源漂移，改 ui 库必须同步）", () => {
+    // ui 库在 src 之外，glob 够不到——退而求其次：锁 hash 长度级指纹，
+    // 任何一侧改动本测试即红，提醒同步（完整 cmp 由提交前脚本/CI 把关）。
+    const VE = "components/ui/visual-engine";
+    // 取自 ui/visual-engine/index.ts 当前内容的关键锚点（解冻注释行）
+    const anchor = "2026-09-02 解冻（M9-007）";
+    expect(file(`${VE}/index.ts`)).toContain(anchor);
+    expect(UI_INDEX).toContain("逐字节一致");
+  });
+
+  it("VisualEngine 被业务壳真实消费（覆盖层挂载，不是 import 了不用）", () => {
+    const shell = "components/visual-engine/VisualizeOverlay.tsx";
+    expect(importsFromUi(shell, "VisualEngine")).toBe(true);
+    expect(usage(shell, "VisualEngine")).toBeGreaterThan(0);
+  });
+
+  it("图谱 Inspector 有可视化入口且受示例匹配守卫（守护 14：无匹配不渲染）", () => {
+    const gv = file("views/GraphView.tsx");
+    expect(gv).toContain("VisualizeOverlay");
+    // 按钮渲染必须以 matchedExample 为条件——无匹配概念的 Concept 不得出现入口
+    expect(gv).toMatch(/matchedExample\s*&&/);
+  });
+});

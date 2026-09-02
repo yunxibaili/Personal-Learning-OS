@@ -26,10 +26,14 @@ export interface TraceDepthLimit {
   class: string;
 }
 
+/**
+ * 类型封闭联合（ADR-025 §4.3 + §8 守护 2）：未知类型在 snapshot 层已归一为
+ * `{"type":"object","class":...}`，不存在裸 dict 形态——
+ * 曾混入 `Record<string, unknown>` 分支破坏封闭性，M9-007 收口移除。
+ */
 export type TraceValue =
   | TracePrimitive
   | TraceValue[]
-  | Record<string, unknown>
   | TraceTruncated
   | TraceObject
   | TraceDepthLimit;
@@ -96,6 +100,8 @@ export interface ExampleEntry {
   title: string;
   concept_title: string;
   template: "FrameStackView" | "ArrayView" | "GeneralView";
+  /** 示例文件名，仅供 UI 显示（CodePane 标题）；绝不参与路径拼接（ADR-025 §3.3 规则 1） */
+  file: string;
 }
 
 /** `GET /api/v1/trace/examples/{example_id}` 的响应：条目 + 源码 */

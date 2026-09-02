@@ -47,6 +47,8 @@ import type { EntityType, GraphNode, GraphResponse } from "@shared/types/graph";
 import { GraphConceptNode, type GraphConceptData } from "../components/graph/GraphConceptNode";
 import { GraphEdgeComponent } from "../components/graph/GraphEdge";
 import { GraphNoteNode, type GraphNoteData } from "../components/graph/GraphNoteNode";
+import { VisualizeOverlay } from "../components/visual-engine/VisualizeOverlay";
+import type { ExampleEntry, ExampleListResponse } from "@shared/types/trace";
 
 /** Layer filter mode */
 type LayerMode = "mixed" | "concept" | "note";
@@ -78,6 +80,11 @@ export function GraphView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  // M9-007：可视化示例清单（静态应用资产，取一次即可缓存，ADR-025 §3.2）。
+  // null = 未取到（含失败）——失败时 Inspector 不渲染 Visualize 按钮（宁可没有）
+  const [traceExamples, setTraceExamples] = useState<ExampleEntry[] | null>(null);
+  const [traceTarget, setTraceTarget] = useState<{ conceptId: number; exampleId: string; openKey: string } | null>(null);
+
   const openNote = useUi((s) => s.openNote);
   const openTutorForConcept = useUi((s) => s.openTutorForConcept);
 
@@ -99,6 +106,29 @@ export function GraphView() {
   useEffect(() => {
     void load(root);
   }, [root, load]);
+
+  // M9-007：示例清单取一次（ADR-025 §3.3：concept_title → example_id 构建期保证唯一）
+  useEffect(() => {
+    let alive = true;
+    apiGet<ExampleListResponse>("/trace/examples")
+      .then((d) => {
+        if (alive) setTraceExamples(d.examples);
+      })
+      .catch(() => {
+        if (alive) setTraceExamples([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // 选中概念与示例清单的匹配（§3.3：0 个 → 无按钮不是灰置；>1 个构建期已拦住）
+  const matchedExample = useMemo(() => {
+    if (!traceExamples || !selectedId) return null;
+    const node = resp?.nodes.find((n) => n.id === selectedId);
+    if (!node || node.type !== "concept") return null;
+    return traceExamples.find((e) => e.concept_title === node.title) ?? null;
+  }, [traceExamples, selectedId, resp]);
 
   const domains = useMemo(
     () =>
@@ -284,11 +314,37 @@ export function GraphView() {
                 问 Tutor
               </button>
             )}
+            {/* M9-007：无匹配示例的 Concept 不渲染按钮（守护 14：不是灰置，是不出现） */}
+            {selectedNode.type === "concept" && matchedExample && (
+              <button
+                onClick={() =>
+                  setTraceTarget({
+                    conceptId: selectedNode.ref_id,
+                    exampleId: matchedExample.example_id,
+                    // 每次点击唯一：visualize「点击即记录」语义按次计数（§6.3），
+                    // Overlay 用它去重 StrictMode 双实例
+                    openKey: `${selectedNode.ref_id}:${matchedExample.example_id}:${Date.now()}`,
+                  })
+                }
+              >
+                可视化 · {matchedExample.title}
+              </button>
+            )}
             <button onClick={() => setRoot({ type: selectedNode.type, id: selectedNode.ref_id })}>
               以此为根展开
             </button>
           </div>
         </div>
+      )}
+      {/* M9-007：Visual Engine 覆盖层——图谱状态保留在挂载树内（React 条件渲染，
+          overlay 不卸载 ReactFlow：它在兄弟节点，selectedId/root 等局部状态不丢） */}
+      {traceTarget && (
+        <VisualizeOverlay
+          conceptId={traceTarget.conceptId}
+          exampleId={traceTarget.exampleId}
+          openKey={traceTarget.openKey}
+          onClose={() => setTraceTarget(null)}
+        />
       )}
     </section>
   );

@@ -20,10 +20,29 @@ export { ToastProvider, useToast } from "./Toast";
 /**
  * Visual Engine 组件集（M9，ADR-025）。
  *
- * **2026-09-01 所有者裁定：M9 组件不直接合入项目。**
- * 样式与交互先在 `ui/visual-engine.html`（ui 库）定稿，再按定稿稿回灌本目录。
- * 先前已合入的实现（35c3ef4）连同 58 项纯逻辑测试一并移出，归档在
- * `ui/archive/visual-engine-tsx-2026-09-01/`，回灌时作为实现参考取回。
- *
- * 本文件**不再导出** M9 组件——避免出现「ui 库一套样式、项目里另一套」的双份来源。
+ * **2026-09-02 M9-007 解冻**：已从 `ui/visual-engine/`（样式定稿处
+ * `ui/visual-engine.html` 的等值转写）回灌至本目录 `./visual-engine/`，
+ * 与 ui 库**逐字节一致**。维护规则：改 ui 库侧文件后必须同步复制过来，
+ * 两边不得漂移（与 tokens.css 镜像同一纪律）。纯逻辑测试（stepping 19 /
+ * derive 37 / highlight 12）随副本进入 web vitest。
  */
+export {
+  VisualEngine,
+  CodePane,
+  DebugToolbar,
+  ArrayView,
+  FrameStackView,
+  GeneralView,
+} from "./visual-engine";
+export type {
+  TraceValue,
+  TraceFrame,
+  TraceEvent,
+  TraceRun,
+  TraceRunStatus,
+  TraceRunError,
+  TraceTemplate,
+  ExampleDefinition,
+  StepAction,
+  VisualEngineProps,
+} from "./visual-engine";

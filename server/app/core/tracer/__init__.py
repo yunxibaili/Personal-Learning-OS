@@ -22,7 +22,11 @@ class UnknownExampleError(LookupError):
 
 
 def describe_example(example_id: str) -> dict[str, Any] | None:
-    """清单条目摘要（不含源码）——供 `GET /trace/examples` 列表用。"""
+    """清单条目摘要（不含源码）——供 `GET /trace/examples` 列表用。
+
+    `file` 仅作 UI 显示（M9-007：CodePane 标题），来自清单 filename，
+    绝不参与服务端路径解析（§3.3 规则 1：路径只经 manifest 映射）。
+    """
     example = get_example(example_id)
     if example is None:
         return None
@@ -31,6 +35,7 @@ def describe_example(example_id: str) -> dict[str, Any] | None:
         "title": example.title,
         "concept_title": example.concept_title,
         "template": example.template,
+        "file": example.filename,
     }
 
 
