@@ -691,7 +691,7 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [10a] ✅ P1-5-A 设置 UI（2026-09-02 完成：LLM Provider 配置页，报告见 TASKS §P1-5-A）
 [10b] P1-5-B 错题本 UI：列表/标记已解决/删除/统计（GET/PATCH/DELETE /mistakes/*）
 [10c] P1-5-C 会话历史最小 UI：Tutor 抽屉内历史列表+删除（GET/DELETE /conversations）
-[11] P1-3 MockProvider 演示路径
+[11] ✅ P1-4 MockProvider 演示路径（2026-09-02，Ollama qwen3 端到端验证：Smoke/非流式/SSE 全通，配置保留 openai_compat）
 [12] P1-4 中文 FTS
 [13] P1-2 国际化（18 处硬编码英文）
 [14] M8 Mobile 可行性 / 架构决策（前置：[9][10] 完成）
@@ -781,7 +781,7 @@ NSIS 102MB，GNU 工具链。
 | P1-1 | ~~MindMap 6 处裸 `fetch` 绕过统一 API 层~~ | ~~`web/src/components/mindmap/MindMapCanvas.tsx:113/132/179/214/273/299`~~ | **✅ 已处置（2026-09-02，P1-1）**：全部走 `lib/api.ts` ApiError 归一化；拖拽改 `PositionSaveQueue`（drag-end flush + 1s trailing debounce）+ 失败显式上报。报告见 TASKS §P1-1 |
 | P1-2 | 活跃 UI **18 处硬编码英文**（中英混排） | `MindMapCanvas.tsx`(Maps/Create/Import/Concept Binding/Select or create a map) · `MapNode.tsx`(Concept Ref/Temporary) · `TutorPanel.tsx`(Tutor/Concept/Mastery/Past Mistakes/Related/Action) · `MemoryList.tsx`(Memories/Loading...) · `SuggestionList.tsx`(AI Suggestions/Loading.../AI suggested) | 5 个组件全部用户可达（App.tsx 懒加载 / Tutor 抽屉内）；同文件 `<h1>` 为中文 → 判翻译遗漏 |
 | P1-3 | 中文 FTS 分词（unicode61 按字切分） | `core/knowledge.py`（B9 仅做 CJK bigram 回退） | ADR-011 边界内；完整分词（jieba 等）需依赖立项 |
-| P1-4 | 默认 MockProvider → Tutor 开箱不可真实演示 | `core/ai/providers/` | 契约与链路已实测（B1b DeepSeek / B10 Ollama qwen3），只差默认配置与引导 |
+| ~~P1-4~~ | ✅ 已闭环（2026-09-02）：P1-5-A 设置 UI + Ollama qwen3 端到端验证（Smoke/非流式/SSE），配置保留 openai_compat | `core/ai/providers/` | 见 TASKS §T-P1-4 |
 | P1-5 | ~~后端已就绪能力的 UI 取舍~~ | 见左 | **✅ 已裁定（2026-09-02 所有者四组弹窗）**：A `/settings` **接 UI**（P1-4 硬前置）· B `/mistakes/*` CRUD **接 UI** · C `/conversations` 历史管理 **接最小 UI** · D `/sync/pair`/`peers`/`plan`/`discover`/`resolve` **延到 M8** · E `/review/history`+`stats`+`/mastery/weak` · F `/study/*` · G `/export` · H 长尾（`/tutor/test`、`/memories` 写操作+maintenance、`/concepts/extract`、`/notes/batch`/`import`/`link-suggestions`）—— **全部 backend-only**。已接线面（notes/concepts/mindmaps/review-today/memories-GET/tutor/chat/trace/sync-status 等）不再列。勘误：`/admin/watcher` 端点不存在（admin_router 仅 `/reindex` 等），本行旧表述过时；`/trace/*` 已由 M9 接入 |
 
 ### P2（低风险，顺手修）

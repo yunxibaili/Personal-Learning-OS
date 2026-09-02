@@ -1915,3 +1915,37 @@ Sync 能发现 sidecar                                ✅ scan_workspace 白名�
 
 - `/tutor/test` 端点按 H 组裁定 backend-only，故设置页**没有「测试连接」按钮**；
   若后续希望「填完立刻验证」，需重新裁定（该端点已实现，接一个按钮成本很低）
+
+## T-P1-4 MockProvider 演示路径验证完成（2026-09-02）
+
+### 做了什么
+
+P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置 → 真实问答」的
+端到端闭环验证（无代码改动，纯验证 + 配置切换）：
+
+1. 探测本机 Ollama 在线，`qwen3-14b-uncensored-16k`（B10 同款）已拉取
+2. `PUT /api/v1/settings`：`llm.provider` mock → `openai_compat`
+   （base_url/model 已预填 `127.0.0.1:11434/v1` + qwen3，Ollama 无需 key）
+3. `POST /tutor/test`（concept_id=7）→ HTTP 200，**provider=OpenAICompatProvider**，
+   真实中文回答（非 Mock 占位）
+4. `POST /chat`（非流式）→ conversation 落库，真实回答，且**回答内容体现
+   memories 注入**（引用 B3 extractor 此前抽取的用户记忆）
+5. `POST /chat stream=true` → **SSE 逐 token 流式**（`data:{"text":...}`）正常
+
+### 配置处置
+
+保留 `openai_compat` + 本地 Ollama qwen3（开箱即真实；设置页可随时切回 Mock）。
+验证产生的 2 轮对话为自然使用痕迹，保留在 workspace（用户数据不删）。
+
+### Gate
+
+| 项 | 结果 |
+|---|---|
+| 全链路 Smoke（/tutor/test） | 200 · 真实回答 · provider 正确 |
+| /chat 非流式 | 200 · conversation 落库 · memories 注入生效 |
+| /chat SSE 流式 | 逐 token 输出正常 |
+| pytest / vitest / tsc / build | 994 / 186·12 / 0 / PASS（本日实测） |
+
+### 遗留
+
+- 无代码改动；P1-4 关闭。
