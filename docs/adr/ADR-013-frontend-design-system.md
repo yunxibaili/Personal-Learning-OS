@@ -264,6 +264,74 @@ Knowledge Universe：允许 Scientific Visualization。
 
 当前为「ADR 与设计资产不一致」，非实现违规。
 
+### 2.13 Spotlight 例外 — 仅限空状态引导（2026-09-02 裁决）
+
+**状态**：所有者裁定「解禁 · 仅空状态引导」。本条是 §2.7 目前**唯一**的例外。
+
+§2.7 禁止 gradient。但「鼠标跟随聚光」（Spotlight）在**空状态引导**场景下是功能而非装饰：
+当界面无内容可读、且用户只有一条路可走时，聚光把注意力指向唯一的 CTA。
+此处不存在「干扰阅读」——因为没有内容要读；橙色仍严格服务于「注意力指针」语义。
+
+**允许**（三条门禁缺一不可）：
+
+1. **空状态**：界面无内容列表、无正文、无数据图表。渲染分支为
+   `empty` / `onboarding` / `error`，而非 `loaded`。
+2. **单一出口**：该界面只有一个主 CTA，无并列动作（卡内 `button` 数为 1，
+   关闭与辅助链接不计）。
+3. **可撤销**：仅 hover 触发；整段实现包在
+   `@media (hover:hover) and (prefers-reduced-motion:no-preference)` 内，
+   触摸设备与 reduced-motion 下完全不启用。
+
+**禁止**（§2.7 / §2.10 在这些场景完整有效）：
+
+- 笔记列表卡、复习卡、检索结果卡等**任何有内容可读的卡**
+- 右栏已有内容的面板（反链 / 掌握度 / 批注）
+- 常亮聚光（非 hover 触发）
+- 渐变描边（conic / radial 描边）、玻璃态、霓虹发光
+- 按钮渐变、渐变背景 —— 本例外**不**豁免这些
+- 对外物料（落地页 / 介绍页）另议，不属本例外范围
+
+**实现约束**：
+
+| 项 | 取值 |
+|---|---|
+| 聚光强度 | `rgba(255,107,53,.13)` 中心，38% 处 .04，62% 全透明 |
+| 半径 | 普通卡 320px / 大号卡 460px |
+| 过渡 | `opacity` ≤ 250ms（§2.6 上限） |
+| 指针跟随 | 事件委托 + 单 rAF + 30fps 节流，只写 `--mx/--my` |
+| CTA 对比度 | `--brand-deep` 底 + 白字 4.13:1（AA）；**不用** `--brand`（配白字仅 2.84:1） |
+
+**落点**（2026-09-02 全量审计结论，完整判定见 `ui/empty-states.html`）：
+
+对 `web/src` 中全部 **12 个空态分支**逐条过三条门禁，结果：
+
+| 结论 | 数量 | 分支 |
+|---|---|---|
+| **允许** | 1 | `views/NoteEditor.tsx:278` 首篇笔记 onboarding（`notes.length === 0`，唯一 CTA「＋ 新建」） |
+| **补一个 CTA 后允许** | 4 | `galaxy/GalaxyCanvas.tsx:741` `!planet` 空态（须补「回工作区写笔记」）<br>`galaxy/GalaxyCanvas.tsx:734` `error`（须补「重试」）<br>`mindmap/MindMapCanvas.tsx:488` 未选中导图（须补「新建导图」）<br>`views/ReviewSessionView.tsx:181` 暂无待复习（临界：CTA「开始复习」在卡外，建议收进卡内） |
+| **禁止** | 7 | `NoteEditor.tsx:284` 有笔记未选中（左栏有内容）<br>`KnowledgeRadar.tsx:66/:78` 无查询/无结果（右栏局部面板）<br>`ContextRail.tsx:100/115/165/171` 大纲/反链/掌握度/薄弱概念 空（右栏有正文）<br>`TopBar.tsx:104` 搜索无匹配（容器面积 < 聚光半径 320px）<br>`NoteEditor.tsx:266` · `ReviewSessionView.tsx:158` · `GalaxyCanvas.tsx:727` —— **这三处是加载态，不是空态，应走 Skeleton 而非聚光** |
+
+**首选落点**：`galaxy/GalaxyCanvas.tsx:741` 的 `!planet` 分支——全屏、无内容可读、
+语义即「还没有笔记」，比 `NoteEditor` 更像空状态；用大号卡（半径 460px）。
+⚠️ 该分支当前**一个按钮都没有**，必须先补唯一 CTA，否则门禁 2 不过。
+
+**规范页**：`ui/spotlight-card.html`（组件规格 + 内容卡反例）、`ui/empty-states.html`（全量落点审计）。
+旧稿（内容卡形态的聚光画廊）保留在 `ui/archive/legacy-gallery-html-2026-09-01/spotlight-card.html`，
+仅作「为何否决内容卡聚光」的可回溯证据，不可再作为实现模板。
+
+**裁决记录**：2026-09-02 所有者审阅 `ui/index.html` 中的归档卡片后表示「我挺喜欢的」，
+选择解禁但限定范围；本条即该裁定的落地。
+
+**接线状态（2026-09-02 所有者二次裁定）**：**只出规范，不写入 `web/` 业务代码。**
+沿用「组件先在 ui 库定稿」的既有节奏，与 M9-007 回灌同一批处理。
+接线开工时以 `ui/empty-states.html` 的落点清单为准，**不要重新盘点**。
+
+> 背景：全量 19 个 `web/src/components/ui/` 导出组件中，仅 5 个进入业务
+> （`Progress` 2 · `Badge` 2 · `Tooltip` 1 · `Select` 1，及 `ToastProvider` 仅挂载而
+> `useToast()` 调用数 0）。**`Button` 的业务引用数为 0** —— 属整层未接线，
+> 需整体排期，不适合零散修补。同理，动效基元落点清单（`ui/empty-states.html` §④）
+> 也只作规范，不接线。
+
 ### 2.11 Dependency Policy
 
 保持：React + 纯 CSS + Zustand

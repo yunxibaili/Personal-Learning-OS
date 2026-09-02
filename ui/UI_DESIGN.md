@@ -279,14 +279,14 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 |---|---|---|---|
 | AppShell | 顶栏 64（半透白 blur）+ 内容区；视图切换为浮层态，**无平级侧边栏** | `note-workspace.html` · `ui-preview.html` | ✅ `components/shell/AppShell.tsx`（Phase 2 已实现）<br>⚠️ 旧示例 `归档·app-shell.html` 的**平级侧栏导航**已否决，仅顶栏尺寸/层次仍沿用 |
 | Hero | 12 列，左文 6 / 右图 6，地球 | `home-hero.html` | `components/planet/`（待建） |
-| ~~BentoGrid~~ | 不等高网格（1+1+2 / 1+3 等） | `归档·bento-dashboard.html` | ⛔ **已否决**：裁决 A 删除独立仪表盘，学习数据分散到该出现处 |
+| ~~BentoGrid~~ | 不等高网格（1+1+2 / 1+3 等） | `归档·bento-dashboard.html` | ⛔ **已否决**：裁决 A 删除独立仪表盘，学习数据分散到该出现处。<br>⚠️ **有限复用（2026-09-02）**：`orbit-tree.html` 的卫星网格**只取**「尺寸 = 重要性」的网格原则与 tile `col/row` span（含 `grid-auto-flow: dense` 补位），**弃用**独立仪表盘定位与 MiMo 风视觉——即复用**网格体系**而非**组件定位**。判定依据见该页 §「为什么能用（与归档理由不冲突）」 |
 | SpotlightCard | 鼠标跟随聚光（开源 Aceternity 风）；**仅限空状态引导** | `spotlight-card.html`<br>旧稿 `归档·spotlight-card.html` | ✅ **2026-09-02 解禁 · 限定范围**：仅用于「无内容可读 + 单一 CTA」的空状态 / 首次引导 / 加载失败兜底，三条门禁见 ADR-013 §2.13。**在内容卡上使用聚光仍 ⛔ 否决**——旧稿正是该形态 |
 | ~~Marquee~~ | 无缝横向滚动（开源 Magic UI 风） | `归档·marquee.html` | ⛔ **已否决**：ADR-013 禁装饰性动效 |
 | CommandPalette | Ctrl+K，浮层居顶 | v1 未建示例 | `stores/ui.ts` |
 | Wikilink | `[[...]]` 黄色高亮 + 墨蓝字 | `归档·app-shell.html`（笔记正文） | `editor/` |
 | TutorPanel | 流式对话 + 抽屉 | v1 未建示例 | `components/tutor/` |
 | KnowledgePlanet | 点阵球 + 轨道卫星（无概念节点） | `home-hero.html` | `components/planet/` |
-| NoteTree | 左栏多层级笔记列表：主/副笔记单父树（层级=缩进唯一通道 · 橙只给选中 · 行/箭头双命中区 · 过滤命中分支自动展开 · orphan 保留+警告不删） | `note-tree.html` | `NoteListView`（回灌替换平铺列表；层级走 `resolve_hierarchy()`，ADR-024） |
+| **OrbitTree**（原 NoteTree） | 左栏主/副笔记单父树，层级 = **轨道**（2026-09-02 重塑）：① 轨道展开 `grid-template-rows 0fr→1fr`，非 `display:none` ② 卫星 `transition-delay: calc(var(--i) * 45ms)` stagger 入轨 ③ 星球点 6px 实心 → 16px 轨道环（`border`+`padding` 过渡，`background-clip: content-box`，无 SVG）④ 空轨道 = 虚线圈 ⑤ orphan 保留不删，warn 虚线环（形状即语义）⑥ 橙只给选中，不用于静态分类 | [`orbit-tree.html`](./orbit-tree.html)（旧名 `note-tree.html`，2026-09-02 更名） | `NoteListView`（回灌替换平铺列表；层级走 `resolve_hierarchy()`，ADR-024）。**注意**：后端契约 `GET /notes/tree` 与 web 组件 `NoteTreeList`/`buildNoteTree` **不随本次更名**——那两者属契约层与 web 实现层，与 ui 规范页同名不同物 |
 | Graph | 力导向/层级，d3-force | v1 未建示例（`归档·bento-dashboard.html` 有缩略） | `components/graph/` |
 | ReviewCard | 复习专注模式 | v1 未建示例 | `ReviewSessionView.tsx` |
 | MasteryRadar | SVG 雷达四维 | `归档·bento-dashboard.html`（雷达块） | M3 |
@@ -305,6 +305,8 @@ num:      Geist / Inter （数字等宽，行内数字更稳）
 ### 7.4 M9 视觉引擎组件（2026-09-01 新增 · 仅 ui 库）
 
 > **位置**：[`visual-engine/`](./visual-engine/)（ui 库）。
+> **样式定稿处**：[`visual-engine.html`](./visual-engine.html)（ui 库根目录）。
+> 任何样式疑问以它为准——6 示例真实 TraceRun 内联于此，组件 CSS 是它的等值转写。
 > **对外演示页**：`visual-engine-demo.html`（ui 库根目录）。样式直引
 > `visual-engine/visual-engine.css` —— 演示的是**组件真实样式**，不是另抄一遍；
 > 数据与脚本由 `visual-engine/sync-demo-html.mjs` 从定稿处幂等注入，改定稿后重跑即同步。
@@ -522,6 +524,7 @@ node ui/empty-states.smoke.js
 | v1.1 | 2026-08-31 | **a11y 与一致性收口**：① §2.2 对比度改为**实测表**（原「品牌橙 3.6:1」为笔误，实测 2.84:1）；② 新增 `--brand-text #C2410C`（5.18:1）供品牌色作文字/白字底；`--brand` 降级为仅图形/填充；`--text-3` 由 `#A3A3A3`(2.52:1) 改为 `#737373`(4.74:1)；③ §11 映射表由「待同步」改为「已落地」真实状态，并补组件落地位置；④ §8 已按裁决 A 改写为笔记优先（原「六页面骨架」）。 |
 | v1.2 | 2026-09-01 | **新增 §7.4 M9 视觉引擎组件**：6 个组件 + 3 个纯逻辑模块落地 `visual-engine/`，**仅入 ui 库不合并 `web/`**（`web/src/components/ui/index.ts` 按裁定不导出）；旧 TSX 归档至 `archive/visual-engine-tsx-2026-09-01/`；登记心智模型（调试器非播放器）、7 条编码通道预算、键位偏离 VS Code 的理由、三条验证命令。**旧画廊 HTML 归档**：`app-shell.html` / `bento-dashboard.html` / `spotlight-card.html` / `marquee.html` 移入 `archive/legacy-gallery-html-2026-09-01/`（四项与设计裁决冲突，§7.1/§7.2 已标 `归档·` 与 ⛔ 已否决）；总览页 `index.html` 对归档项加 `is-archived` 灰显 + 新增 M9 Visual Engine 卡片。 |
 | v1.3 | 2026-09-02 | **Spotlight 解禁（限定范围）**：`spotlight-card.html` 以「空状态聚光引导」新形态回到 `ui/` 根目录——仅限「无内容可读 + 单一 CTA」的空状态 / 首次引导 / 加载失败兜底；内容卡形态仍 ⛔ 否决（旧稿留档作证据）。ADR-013 新增 **§2.13**，为 §2.7「禁 gradient」的**唯一**例外，写明三条门禁（空状态 / 单一出口 / 可撤销）与实现约束（聚光强度 ≤ .13、250ms、单 rAF + 30fps 节流、CTA 用 `--brand-deep` 白字 4.13:1）。§7.1 路径注、§7.2 组件表、§11 作废清单同步。**ui 库启用/归档分层清理**：`index.html` 拆为「组件 / 页面 / 归档」三区——前两区只放现行启用项，归档区集中 3 张 `is-archived` 卡片并指向 `ui/archive/<批次>-<日期>/`；导航加入口。修复归档文件内 8 处返回链接死链（`./index.html` / `./UI_DESIGN.md` → `../../`），全库扫描 14 个 HTML 零死链。 |
+| v1.4 | 2026-09-02 | **左栏规范页重塑为「星系层级」**：`note-tree.html` → **`orbit-tree.html`**（守护脚本同步改名 `orbit-tree.smoke.js`）。§7.2 组件表 NoteTree 行改写为 **OrbitTree**，层级表达由「缩进 + chevron 旋转」改为**轨道**：轨道展开 `grid-template-rows 0fr→1fr`（取代 `display:none`，使高度可过渡）、卫星 `transition-delay: calc(var(--i) * 45ms)` stagger 入轨、星球点 6px 实心经 `border`+`padding` 过渡展开成 16px 轨道环（`background-clip: content-box`，无 SVG 无图片）、空轨道用虚线圈（刻意不复制 spotlight 渐变）、orphan 改 warn 虚线环（形状即语义，ADR-023）。橙仍只给选中，不用于静态分类。**BentoGrid 判定精确化**：§7.2 该行 ⛔ 已否决结论不变，但补记**有限复用**——`orbit-tree.html` 只取「尺寸 = 重要性」的网格原则与 tile span，弃用独立仪表盘定位与 MiMo 风视觉，即复用**网格体系**而非**组件定位**。**M9 定稿处补登记**：§7.4 此前只写 `visual-engine/` 目录与 `visual-engine-demo.html`，从未具名 `visual-engine.html`——而它才是样式定稿处（6 示例真实 TraceRun 内联于此）。已补「样式定稿处」行。**守护脚本两条陈旧断言按事实修正**（非删除）：D10 原找「不取」而新文案作「弃用」；F1 原把 `--i`/`--sat-cols`/`--bento-cols` 判为幽灵 token，但三者是 `style="--x:…"` 就地传参的**页面局部参数**——「幽灵」改为「tokens.css 没有、且页面内也找不到任何赋值点」，并补 F1b 要求局部参数必须被 `var()` 真实消费。实跑 **72/72**。引用同步：`index.html`（含缩略图改画星球环 / 卫星点 / 虚线 orphan 环）、`ui-preview.html`（补 orbit-tree / empty-states / visual-engine-demo 三个 tab）、`README.md`。**未动** `docs/adr/ADR-026-note-tree.md` 与 `web/src/components/notes/buildNoteTree.ts`——二者指后端契约 `GET /notes/tree` 与 web 组件 `NoteTreeList`，与 ui 规范页同名不同物。 |
 
 ---
 
