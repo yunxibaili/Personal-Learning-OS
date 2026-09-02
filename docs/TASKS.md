@@ -1975,3 +1975,33 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 `rebuild_mindmaps` 默认 `prune_missing=True`：未来若出现「rc.2 之前创建且从未再编辑」
 的 map（无 sidecar），Sync Apply 会按 mirror 语义删除它。当前为零；producer 已生效，
 所有新 map 自动带 sidecar，窗口不会重新打开。
+
+## T-P1-2 i18n 用户可见英文中文化完成（2026-09-02）
+
+### 做了什么
+
+5 个组件的用户可见硬编码英文全部中文化，共 **46 处**（收口时估计 18 处为抽查值，
+执行时以「用户可见英文清零」为准逐文件盘点）：
+
+| 组件 | 处数 | 明细 |
+|---|---|---|
+| MindMapCanvas | 13 | 导图 / 新导图标题… / 创建 / 导入 / 导出 / 添加节点… / 添加 / 概念绑定 / 绑定说明 / 搜索概念… / 已绑定： / 解绑 / 选择或新建一个导图 |
+| TutorPanel | 22 | AI 导师 / 概念 / 掌握度（掌握·练习·回忆·迁移四维）/ 历史错题 / 关联 / 引用笔记 / 关闭 / 移除 aria / 搜索要引用的笔记 / 操作 / 停止 / 提问 / MODE_LABELS ×3 / MODE_DESCRIPTIONS ×3 |
+| MemoryList | 11 | 记忆 / 加载中… / 事实·偏好·目标·错误模式 / 内容不能为空 / 保存中… / 保存 / 取消 / 编辑 / 删除 |
+| SuggestionList | 5 | AI 建议 / 加载中… / 来自 AI / 采纳 / 忽略 |
+| MapNode | 2 | 概念引用 / 临时节点（tooltip） |
+
+### 红线遵守
+
+无 i18n 框架 · 零新依赖 · 零 API/数据模型/ADR 变更 · 零组件重构 ·
+技术标识（mode 枚举 key / CSS 类名 / status 值 / 模板名）全部不动。
+
+### 测试了什么
+
+| 项 | 结果 |
+|---|---|
+| 残留英文扫描（五文件 JSX 文本/placeholder/aria 正则） | **零命中** |
+| `tsc --noEmit` | 0 错误 |
+| `npx vitest run` | **186 passed / 12 files**（文案无测试断言依赖，全绿） |
+| `vite build --outDir dist-i18ncheck` | PASS（4.31s） |
+| git staging | exact-path（5 文件逐一列名，未用 -A） |
