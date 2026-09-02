@@ -678,7 +678,17 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [6] ✅ T-NOTE-TREE T2（2026-09-02，默认 3 层展开 + 懒加载 + 折叠偏好）
 [7] ✅ T-NOTE-TREE T3（2026-09-02，Gate 全绿 + 真实 vault 4 层链 E2E 16/16）
 [8] ✅ P8 正式收尾（2026-09-02：删除优先检查 + 依赖审计 + CHANGELOG + tag v0.1.0-rc.2）
-[9] 再决定 M8 Mobile / 其他方向
+
+── 2026-09-02 所有者第二次裁定：先 P1 技术债收敛，M8 不启动（避免把 Web 架构问题复制到 RN）──
+[9]  P1-1 MindMap API 边界治理（6 处裸 fetch → lib/api.ts + 拖拽坐标节流；
+     先架构评审后实现，禁止扩展 MindMap 功能）
+[10] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力；
+     **M8 前必须完成**）
+[11] P1-3 MockProvider 演示路径
+[12] P1-4 中文 FTS
+[13] P1-2 国际化（18 处硬编码英文）
+[14] M8 Mobile 可行性 / 架构决策（前置：[9][10] 完成）
+[15] M8 Android MVP
 ```
 
 ### 已完成的近期里程碑（存档）
