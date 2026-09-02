@@ -419,9 +419,12 @@ node ui/empty-states.smoke.js
 
 ## 8. 页面骨架（2026-08-30 裁决 A 改写：笔记优先）
 
-> 打开应用即笔记工作区，**取消平级 tab，无独立首页/Dashboard**（裁决 A；
-> `bento-dashboard.html` 作废，2026-09-01 归档至 `archive/legacy-gallery-html-2026-09-01/`）。
+> 打开应用即笔记工作区，**取消平级 tab，无独立首页/Dashboard**（裁决 A）。
 > 图谱/星系/导图/Tutor 为顶栏「← 返回笔记」的浮层态。
+>
+> **`bento-dashboard.html` 已于 2026-09-02 解禁回 `ui/` 根目录**（旧稿仍在归档作否决证据）：
+> 只取「尺寸 = 重要性」的网格原则与 tile span，**弃用**「独立仪表盘」定位与 MiMo 风视觉
+> （gradient / backdrop-filter / 多色 palette 全部去掉）。它现在是**网格组件**，不是页面骨架。
 
 | 界面 | 布局 | 核心 | 实现参考 |
 |---|---|---|---|
@@ -430,6 +433,53 @@ node ui/empty-states.smoke.js
 | **复习（浮层）** | 居中专注卡 + 键盘驱动（1/2/3 三档打分 = SM-2 quality 1/3/5 · Esc 退出；2026-08-31 按实现实况校正，原拟 1–4） | ProgressRing | `motion-primitives.html` |
 | **星系（浮层）** | 双形态：全屏单颗 4s 轮换 / 右栏单颗静止 | 地球移植 `home-hero.html`，主笔记=星球 | `home-hero.html` |
 | **Tutor（浮层）** | 右栏抽屉 + 流式对话 | Skeleton + 停止按钮 | — |
+
+### 8.1 页面 × 组件坐标表（2026-09-02 实测）
+
+> 回答四件事：**什么页面 · 什么位置 · 放什么组件 · 多大 · 什么时候触发**。
+> 坐标为 **1264×900 视口**下的文档坐标（`scroll` 归零时 `getBoundingClientRect()` 取整，单位 px）。
+> 布局改动后必须重测，不要照抄：坐标是**实测值**，不是设计意图。
+> 自检口径：`ui-preview.html` 全页 `canvas` 数 = **1**（只有 §hero 那一颗）；
+> `note-workspace.html` 全页 `canvas` 数 = **0**。
+
+#### 笔记工作区 `note-workspace.html`（视口 1264 · 文档高 1754）
+
+| 区域 | 组件 | 选择器 | 实测坐标 / 尺寸 | 触发条件 |
+|---|---|---|---|---|
+| 左栏 · 笔记列表 | `NoteList` + `Filter` | `.rail-left` | (0, 64) 240×505 | 常驻；`.rail-filter` 输入即时过滤，命中项不改布局高度（CLS 0） |
+| 中栏 · 编辑器 | `Editor`（行宽 680） | `.editor` | (240, 64) 689×505 | 常驻；`.editor-inner` (240, 64) 674×835 |
+| 右栏 · 上下文 | 大纲 / 反链 / 掌握度 | `.rail-right` | (929, 64) 320×505 | 常驻；无内容时留空容器不塌陷 |
+| 主笔记标题 | `NoteHead` | `.note-head` · `h1` | (272, 104) 610×57；`h1` 610×36 | 打开笔记即渲染。**右上角曾放 88px Mini Star，2026-09-02 移除** |
+| 统计行 | `StatLine` | `.stat-row` | (272, 193) 610×79 | 常驻；无数据显示 `0`，不隐藏整行 |
+| 关联笔记 chip | `Chip` | `#chipsRow` · `.chip` | (272, 288) 610×27；单 chip 51×27 | 关联 ≥1 条才渲染；点击 = 选中 / 再点取消 |
+| 概览卡片网格 | `Card` + `ProgressRing` | `.cards-grid` · `.card` | (272, 347) 610×279；单卡 297×128 | 常驻（≥1 张）；与 chip **双向锚** |
+| ~~右上角星球~~ | ~~`Mini Star`~~ | — | — | **已取消**（2026-09-02）：卫星不再映射笔记，且笔记区不放任何持续运动的图形（ADR-013 §2.10） |
+
+**视觉层级（自上而下，全部静态）**：标题 → stats → chip → 卡片。**零 canvas、零 rAF。**
+
+#### 整合预览 `ui-preview.html`（视口 1264 · 文档高 8217）
+
+| 区域 | 组件 | 选择器 | 实测坐标 / 尺寸 | 触发条件 |
+|---|---|---|---|---|
+| §hero · 点阵地球 | `DotEarth` | `canvas[data-dot-earth]`（`.de-wrap`） | (672, 515) **460×460** | 页面加载即挂载（`bootAll` 扫选择器）；离屏 / 标签隐藏 → 停 rAF；`reduced-motion` → 只画静态一帧；**≤1080px 整块 `display:none`** |
+| §hero · 文案与 CTA | `HeroCopy` + `Button` | `#heroDemo .copy` | (82, 655) 531×180 | 常驻 |
+| §2 · 主笔记概览 | `NoteOverview` | `.note-overview` | (185, 1924) 880×503 | 常驻 |
+| §2 · 统计行 | `StatLine` | `#overview .stat-line` | (217, 2033) 816×59 | 常驻 |
+| §2 · chip 行 | `Chip` | `#ovChips` | (217, 2108) 816×27 | 点击 = 选中 / 再点取消 |
+| §2 · 卡片网格 | `Card` + `ProgressRing` | `#ovGrid` · `.demo-card` | (217, 2155) 816×240；单卡 402×114 | 与 chip 双向锚；**本节无星球组件** |
+| §4 · Bento 网格 | `BentoGrid` | `#bento .bento-mini` | (50, 3023) 1150×416 | 常驻；`.t.review` 2×2 span：(66, 3039) 553×252 |
+| §5 · 聚光卡 | `Spotlight` | `#spotlight .sl` | (70, 3650) 359×194 | 仅 `(hover: hover)` 且非 `reduced-motion`；**hover 才显形**，不 hover 时 `opacity:0` |
+| §6 · 空态对照 | `Skeleton` / `Spotlight` | `#empty .es-grid` | (50, 4033) 1150×207 | 常驻展示；loading 走 Skeleton，**不走聚光** |
+
+#### 落位裁决（2026-09-02）
+
+1. **点阵地球只进主页 Hero。** 需要 ≥320px 才读得出点阵（Hero 用 460px → 地球直径 230px、点距 3.29px）；
+   笔记区装不下（300px 压标题、150px 点阵糊到 1.07px），两条路都堵死 —— 见 `dot-earth.html` §②。
+2. **笔记区不放任何星球。** 「卫星 = 笔记」映射取消后，88px 的 `Mini Star` 一起撤。
+   实现保留在 `mini-star.html`，**当前无页面消费**；将来列表行 / 卡片角标需要小星，从那里取，不要新写。
+3. **彩色卫星 ≤ 6 颗**，超出回退中性灰 `#525252` + 橙描边，改用位置与轨道区分。
+   颜色**只作身份标识**，不承载掌握度 / 状态 / 时间等第二重语义。
+4. **Hero 的卫星不再代表笔记。** 点选只派发 `dot-earth:pick`，宿主自行决定绑什么；组件不内置笔记语义。
 
 ---
 
@@ -447,7 +497,9 @@ node ui/empty-states.smoke.js
 ## 10. 性能契约（与 P8-001C 一致 · 冻结）
 
 - 单 rAF · 30fps 节流（`--frame-ms = 1000/30`）
-- canvas 卡片版 dpr=1 / Hero dpr≤1.5
+  - **唯一例外：点阵地球 `dot-earth.html` 用 60fps**（自转仅 ~7px/秒，30fps 下每帧走 0.23px，点阵会读成「一格一格」）；代价由预缩放贴图 + 预烘焙叠加层抵消
+  - 节流判断必须留 **6ms 容忍窗口**（`FRAME_TOL`）——60Hz 帧间隔抖动 16.6–16.9ms，硬比 `FRAME_MS` 会整帧跳过，33/50ms 交替，这正是「掉帧、不连贯」的根因
+- canvas 卡片版 dpr=1 / Hero dpr≤1.5 / 点阵地球 dpr≤2（与 `home-hero.html` 一致）
 - 容器 `contain: layout paint size`
 - `IntersectionObserver` + `visibilitychange` 不可见即停
 - `prefers-reduced-motion: reduce` → 静态一帧
@@ -525,6 +577,8 @@ node ui/empty-states.smoke.js
 | v1.2 | 2026-09-01 | **新增 §7.4 M9 视觉引擎组件**：6 个组件 + 3 个纯逻辑模块落地 `visual-engine/`，**仅入 ui 库不合并 `web/`**（`web/src/components/ui/index.ts` 按裁定不导出）；旧 TSX 归档至 `archive/visual-engine-tsx-2026-09-01/`；登记心智模型（调试器非播放器）、7 条编码通道预算、键位偏离 VS Code 的理由、三条验证命令。**旧画廊 HTML 归档**：`app-shell.html` / `bento-dashboard.html` / `spotlight-card.html` / `marquee.html` 移入 `archive/legacy-gallery-html-2026-09-01/`（四项与设计裁决冲突，§7.1/§7.2 已标 `归档·` 与 ⛔ 已否决）；总览页 `index.html` 对归档项加 `is-archived` 灰显 + 新增 M9 Visual Engine 卡片。 |
 | v1.3 | 2026-09-02 | **Spotlight 解禁（限定范围）**：`spotlight-card.html` 以「空状态聚光引导」新形态回到 `ui/` 根目录——仅限「无内容可读 + 单一 CTA」的空状态 / 首次引导 / 加载失败兜底；内容卡形态仍 ⛔ 否决（旧稿留档作证据）。ADR-013 新增 **§2.13**，为 §2.7「禁 gradient」的**唯一**例外，写明三条门禁（空状态 / 单一出口 / 可撤销）与实现约束（聚光强度 ≤ .13、250ms、单 rAF + 30fps 节流、CTA 用 `--brand-deep` 白字 4.13:1）。§7.1 路径注、§7.2 组件表、§11 作废清单同步。**ui 库启用/归档分层清理**：`index.html` 拆为「组件 / 页面 / 归档」三区——前两区只放现行启用项，归档区集中 3 张 `is-archived` 卡片并指向 `ui/archive/<批次>-<日期>/`；导航加入口。修复归档文件内 8 处返回链接死链（`./index.html` / `./UI_DESIGN.md` → `../../`），全库扫描 14 个 HTML 零死链。 |
 | v1.4 | 2026-09-02 | **左栏规范页重塑为「星系层级」**：`note-tree.html` → **`orbit-tree.html`**（守护脚本同步改名 `orbit-tree.smoke.js`）。§7.2 组件表 NoteTree 行改写为 **OrbitTree**，层级表达由「缩进 + chevron 旋转」改为**轨道**：轨道展开 `grid-template-rows 0fr→1fr`（取代 `display:none`，使高度可过渡）、卫星 `transition-delay: calc(var(--i) * 45ms)` stagger 入轨、星球点 6px 实心经 `border`+`padding` 过渡展开成 16px 轨道环（`background-clip: content-box`，无 SVG 无图片）、空轨道用虚线圈（刻意不复制 spotlight 渐变）、orphan 改 warn 虚线环（形状即语义，ADR-023）。橙仍只给选中，不用于静态分类。**BentoGrid 判定精确化**：§7.2 该行 ⛔ 已否决结论不变，但补记**有限复用**——`orbit-tree.html` 只取「尺寸 = 重要性」的网格原则与 tile span，弃用独立仪表盘定位与 MiMo 风视觉，即复用**网格体系**而非**组件定位**。**M9 定稿处补登记**：§7.4 此前只写 `visual-engine/` 目录与 `visual-engine-demo.html`，从未具名 `visual-engine.html`——而它才是样式定稿处（6 示例真实 TraceRun 内联于此）。已补「样式定稿处」行。**守护脚本两条陈旧断言按事实修正**（非删除）：D10 原找「不取」而新文案作「弃用」；F1 原把 `--i`/`--sat-cols`/`--bento-cols` 判为幽灵 token，但三者是 `style="--x:…"` 就地传参的**页面局部参数**——「幽灵」改为「tokens.css 没有、且页面内也找不到任何赋值点」，并补 F1b 要求局部参数必须被 `var()` 真实消费。实跑 **72/72**。引用同步：`index.html`（含缩略图改画星球环 / 卫星点 / 虚线 orphan 环）、`ui-preview.html`（补 orbit-tree / empty-states / visual-engine-demo 三个 tab）、`README.md`。**未动** `docs/adr/ADR-026-note-tree.md` 与 `web/src/components/notes/buildNoteTree.ts`——二者指后端契约 `GET /notes/tree` 与 web 组件 `NoteTreeList`，与 ui 规范页同名不同物。 |
+
+| v1.5 | 2026-09-02 | **点阵地球定稿 + 笔记区去星球化**。新增 **§8.1「页面 × 组件坐标表」**（1264 视口实测：`note-workspace` 7 区 / `ui-preview` 9 区，含选择器、坐标尺寸、触发条件）与 4 条落位裁决。**§10 性能契约补两条**：点阵地球是 30fps 的**唯一登记例外**（用 60fps：自转 ~7px/秒，30fps 下每帧仅 0.23px，点阵读成「一格一格」）；节流判断必须留 **6ms 容忍窗口**——60Hz 帧间隔抖动 16.6–16.9ms，硬比 `FRAME_MS` 会整帧跳过导致 33/50ms 交替，此即「掉帧、不连贯」的根因（纯 JS 模拟：27.6fps / 16% 帧落在 50ms → 59.5fps / 全部 16.6–17ms）。**组件侧**：`dot-earth.html` 为定稿处，`ui-preview.html` §hero 是唯一落位（460px / 4 轨 / 4 星，脚本由 `sync-dot-earth.mjs` 幂等同步，防内联副本漂移）；地球直径 `EARTH_D` 0.60 → **0.50**；卫星半径按绝对观感定档 `地球半径 × 0.085–0.160`（照抄 `home-hero.html` 的比例会缩到 3.4–6.8px）；**卫星不做真遮挡**——一律画在地球之上，用连续 alpha（0.95 / 0.725 / 0.525）+ 半径表达远近，轨道环仍分前后半段。**笔记区按所有者裁定移除整个星球系统**：「优化器就不用显示卫星系统了……这个点阵地球就是主页的固定动画」——`note-workspace.html` 与 `ui-preview.html` §2 的 `.star-card` 退回单列 `.note-head`，「卫星笔记」→「关联笔记」，**零 canvas、零 rAF**，只留 chip ↔ 卡双向锚；`mini-star.html` 退为规范页（当前无页面消费）。**彩色卫星封边**：≤6 颗用域调色板，>6 回退中性灰 `#525252`，颜色只作身份标识不承载第二重语义。守护脚本：dot-earth **137/137** · ui-preview **148/148** · note-workspace **63/63**；`audit-ui-health.mjs` 零死链、13/13 根目录 html 全部登记。 |
 
 ---
 

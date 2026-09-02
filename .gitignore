@@ -43,3 +43,6 @@ web/src-tauri/gen/
 # OS
 .DS_Store
 Thumbs.db
+
+# Agent 工作态（记忆 / 产物）：非项目源码，不入库
+.workbuddy/

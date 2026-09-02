@@ -398,6 +398,68 @@
       </div>
     </a>
 
+    <!-- Mini Star（2026-09-02 新增 · 主页笔记角迷你星系） -->
+    <a class="card" href="./dot-earth.html">
+      <div class="thumb" style="background:#FFFFFF">
+        <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="deDots" width="3.4" height="3.4" patternUnits="userSpaceOnUse">
+              <circle cx="1.7" cy="1.7" r=".95" fill="#8C8C8C"/>
+            </pattern>
+            <clipPath id="deClip"><circle cx="100" cy="55" r="27"/></clipPath>
+          </defs>
+          <!-- 轨道（后/前各两条） -->
+          <ellipse cx="100" cy="55" rx="52" ry="15" fill="none" stroke="#E5E5E5" stroke-width=".8"/>
+          <ellipse cx="100" cy="55" rx="44" ry="12" fill="none" stroke="#E5E5E5" stroke-width=".8" transform="rotate(-11 100 55)"/>
+          <ellipse cx="100" cy="55" rx="60" ry="17" fill="none" stroke="#EDEDED" stroke-width=".8" transform="rotate(9 100 55)"/>
+          <!-- 点阵地球 -->
+          <circle cx="100" cy="55" r="27" fill="#FAFAFA"/>
+          <g clip-path="url(#deClip)"><rect x="73" y="28" width="54" height="54" fill="url(#deDots)"/></g>
+          <circle cx="100" cy="55" r="27" fill="none" stroke="#D4D4D4" stroke-width=".7"/>
+          <!-- 卫星：各一色 + 墨色拖尾 -->
+          <path d="M152 55 A52 15 0 0 0 145 47" fill="none" stroke="#202228" stroke-opacity=".28" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="152" cy="55" r="3.6" fill="#7c93ad"/>
+          <circle cx="56" cy="49" r="2.8" fill="#c9a86a"/>
+          <circle cx="160" cy="66" r="2.6" fill="#8aab8e"/>
+          <circle cx="44" cy="62" r="2.3" fill="#a08cb4"/>
+        </svg>
+      </div>
+      <div class="body">
+        <span class="tag">星球 · 组件 · Hero</span>
+        <h3>Dot Earth · 点阵地球</h3>
+        <p>点阵地球自转 + 多轨彩色卫星（≤6 色，超出的回退中性灰）+ 沿轨道墨色拖尾。贴图 <code>assets/dots-world.png</code> 正像拼镜像成无缝长条。<b>只放主页 Hero</b>（≥320px，Hero 用 460px），不进笔记。</p>
+        <span class="open">打开 →</span>
+      </div>
+    </a>
+
+    <a class="card" href="./mini-star.html">
+      <div class="thumb" style="background:#FFFFFF">
+        <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
+          <!-- 轨道（虚线） -->
+          <ellipse cx="100" cy="55" rx="40" ry="12" fill="none" stroke="#D4D4D4" stroke-width=".8" stroke-dasharray="2 3"/>
+          <ellipse cx="100" cy="55" rx="30" ry="9"  fill="none" stroke="#D4D4D4" stroke-width=".8" stroke-dasharray="2 3" transform="rotate(-12 100 55)"/>
+          <!-- 中央星球 -->
+          <circle cx="100" cy="55" r="9" fill="#FF6B35"/>
+          <!-- 卫星（中性灰 + 橙描边） -->
+          <circle cx="140" cy="55" r="3.4" fill="#525252"/>
+          <circle cx="128" cy="46.5" r="2.6" fill="#525252"/>
+          <circle cx="72" cy="61" r="2.2" fill="#525252"/>
+          <!-- 拖尾 -->
+          <path d="M140 55 A40 12 0 0 0 133 47" fill="none" stroke="#525252" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>
+          <!-- chip 高亮态（与卫星双向锚） -->
+          <rect x="62" y="88" width="24" height="10" rx="5" fill="#FFF1EA" stroke="#F5C7B0"/>
+          <rect x="90" y="88" width="24" height="10" rx="5" fill="#F7F7F7" stroke="#ECECEC"/>
+          <rect x="118" y="88" width="20" height="10" rx="5" fill="#F7F7F7" stroke="#ECECEC"/>
+        </svg>
+      </div>
+      <div class="body">
+        <span class="tag">星球 · 组件</span>
+        <h3>Mini Star</h3>
+        <p>小尺度星球（56/72/88/96 四尺寸 · 0–16 卫星），纯色中央星球无贴图。与 chip / 卡片双向锚，点击派发 <code>mini-star:pick</code>。<b>2026-09-02 起笔记区不再使用</b>（「卫星 = 笔记」映射取消），退为规范页；大尺度见 <a href="./dot-earth.html">Dot Earth</a>。</p>
+        <span class="open">打开 →</span>
+      </div>
+    </a>
+
   </div>
 </section>
 
@@ -438,9 +500,51 @@
         </svg>
       </div>
       <div class="body">
-        <span class="tag">全交互原型</span>
+        <span class="tag">全交互原型 · 单页整合</span>
         <h3>UI Preview</h3>
-        <p>8 章节评审稿：笔记工作区 / 组件库 / 知识图谱 / 复习专注 / 星系 / 导师批注 / 设置 / 知识库。</p>
+        <p>14 段正文 + 归档区，全部组件<b>真实内联</b>同一份 HTML（不走 iframe 切换）：三栏 IA / 主笔记概览 / OrbitTree / Bento / Spotlight / 空态 / 复习 / 批注 / 设置 / 知识库 / M9 / 动效 / 令牌。</p>
+        <span class="open">打开 →</span>
+      </div>
+    </a>
+
+    <!-- Bento Dashboard（2026-09-02 启用归来 · 去掉违规视觉） -->
+    <a class="card" href="./bento-dashboard.html">
+      <div class="thumb" style="background:#FFFFFF">
+        <svg class="mock" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
+          <!-- review 2×2 橙底 -->
+          <rect x="8" y="8" width="90" height="46" rx="6" fill="#D8501F"/>
+          <rect x="16" y="16" width="28" height="4" rx="2" fill="#FFFFFF" fill-opacity=".7"/>
+          <text x="16" y="40" font-size="20" font-weight="700" fill="#FFFFFF">12</text>
+          <text x="36" y="40" font-size="8" fill="#FFFFFF" fill-opacity=".85">张</text>
+          <rect x="16" y="44" width="46" height="5" rx="2.5" fill="#FFFFFF" fill-opacity=".9"/>
+          <!-- concept 墨蓝 -->
+          <rect x="104" y="8" width="42" height="46" rx="6" fill="#35618F"/>
+          <rect x="112" y="16" width="24" height="4" rx="2" fill="#FFFFFF" fill-opacity=".7"/>
+          <text x="112" y="40" font-size="18" font-weight="700" fill="#FFFFFF">38</text>
+          <!-- flow sparkline -->
+          <rect x="152" y="8" width="40" height="46" rx="6" fill="#fff" stroke="#ECECEC"/>
+          <path d="M158 46 L166 42 L174 44 L182 34 L190 28" fill="none" stroke="#FF6B35" stroke-width="1.4" stroke-linecap="round"/>
+          <!-- note tile 4×3（含迷你星球） -->
+          <rect x="8" y="60" width="90" height="42" rx="6" fill="#fff" stroke="#ECECEC"/>
+          <rect x="16" y="68" width="34" height="5" rx="2" fill="#171717"/>
+          <rect x="16" y="78" width="20" height="7" rx="3.5" fill="#FFF1EA"/>
+          <circle cx="84" cy="80" r="10" fill="#FF6B35" fill-opacity=".9"/>
+          <circle cx="95" cy="74" r="2" fill="#525252"/>
+          <!-- mastery 条 -->
+          <rect x="104" y="60" width="42" height="42" rx="6" fill="#fff" stroke="#ECECEC"/>
+          <rect x="112" y="70" width="26" height="4" rx="2" fill="#F0F0F0"/>
+          <rect x="112" y="70" width="22" height="4" rx="2" fill="#FF6B35"/>
+          <rect x="112" y="80" width="26" height="4" rx="2" fill="#F0F0F0"/>
+          <rect x="112" y="80" width="11" height="4" rx="2" fill="#FF6B35"/>
+          <!-- new 虚线 -->
+          <rect x="152" y="60" width="40" height="42" rx="6" fill="#FFF1EA" stroke="#F5C7B0" stroke-dasharray="3 3"/>
+          <text x="172" y="84" font-size="12" fill="#D8501F" text-anchor="middle">＋</text>
+        </svg>
+      </div>
+      <div class="body">
+        <span class="tag">仪表盘 · 启用归来</span>
+        <h3>Bento Dashboard</h3>
+        <p>只留「尺寸 = 重要性」的网格原则；归档版的 gradient / backdrop-filter / 多色 palette 已全部移除。</p>
         <span class="open">打开 →</span>
       </div>
     </a>
@@ -733,9 +837,9 @@
         </svg>
       </div>
       <div class="body">
-        <span class="tag is-archived">Dashboard · 已归档</span>
-        <h3>Bento Dashboard</h3>
-        <p>不等高网格：复习/掌握度/趋势/图谱，单屏一览。</p>
+        <span class="tag is-archived">Dashboard · 旧稿</span>
+        <h3>Bento Dashboard（旧版）</h3>
+        <p>2026-09-02 启用新版（去 gradient / backdrop-filter / 多色 palette）。网格原则保留，视觉全部重做，旧稿留作对比。</p>
         <span class="open">打开 →</span>
       </div>
     </a>
