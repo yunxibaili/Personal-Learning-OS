@@ -15,6 +15,7 @@ const OVERLAY_TITLES: Partial<Record<ViewKey, string>> = {
   mindmap: "思维导图",
   tutor: "AI Tutor",
   review: "复习",
+  settings: "设置",
 };
 
 /**
@@ -113,6 +114,13 @@ export function TopBar() {
           aria-label={reviewDue > 0 ? `今日待复习 ${reviewDue} 个` : "复习"}
         >
           复习{reviewDue > 0 ? ` ${reviewDue}` : ""}
+        </button>
+        <button
+          className={`topbar__settings ${activeView === "settings" ? "topbar__settings--active" : ""}`}
+          onClick={() => setActiveView("settings")}
+          aria-current={activeView === "settings" ? "page" : undefined}
+        >
+          设置
         </button>
         <span
           className={`topbar__sync ${conflictCount ? "topbar__sync--conflict" : ""}`}

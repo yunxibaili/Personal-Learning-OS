@@ -7,7 +7,8 @@ export type ViewKey =
   | "universe"
   | "mindmap"
   | "tutor"
-  | "review";
+  | "review"
+  | "settings";
 
 /**
  * 进入 Tutor 时携带的一次性上下文预填包（P8-006）。

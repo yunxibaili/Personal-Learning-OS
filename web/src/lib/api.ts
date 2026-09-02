@@ -118,6 +118,9 @@ export async function apiPostStream<TFrame extends { event: string }>(
 export const apiPatch = <T,>(path: string, data: unknown) =>
   api<T>(path, { method: "PATCH", body: JSON.stringify(data) });
 
+export const apiPut = <T,>(path: string, data: unknown) =>
+  api<T>(path, { method: "PUT", body: JSON.stringify(data) });
+
 export const apiDelete = <T,>(path: string) => api<T>(path, { method: "DELETE" });
 
 export function apiUpload<T>(path: string, file: File): Promise<T> {
@@ -142,3 +145,13 @@ export const bindConcept = (mapId: number, nodeId: number, conceptId: number) =>
 
 export const unbindConcept = (mapId: number, nodeId: number) =>
   apiDelete(`/mindmaps/${mapId}/nodes/${nodeId}/bind`);
+
+/** settings KV（P1-5-A）：GET 返回脱敏值，敏感键为 "******" */
+export interface SettingsResponse {
+  settings: Record<string, string>;
+}
+
+export const getSettings = () => apiGet<SettingsResponse>("/settings");
+
+export const saveSettings = (settings: Record<string, string>) =>
+  apiPut<{ ok: boolean }>("/settings", { settings });

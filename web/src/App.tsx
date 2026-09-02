@@ -24,6 +24,9 @@ const ReviewSessionView = lazy(() =>
 const TutorDrawer = lazy(() =>
   import("./components/tutor/TutorDrawer").then((m) => ({ default: m.TutorDrawer })),
 );
+const SettingsView = lazy(() =>
+  import("./views/SettingsView").then((m) => ({ default: m.SettingsView })),
+);
 
 function LazyFallback() {
   return <div className="lazy-view-fallback" aria-hidden="true" />;
@@ -81,6 +84,7 @@ function ActiveView() {
       {activeView === "universe" && <GalaxyView />}
       {activeView === "mindmap" && <MindMapCanvas />}
       {activeView === "review" && <ReviewSessionView />}
+      {activeView === "settings" && <SettingsView />}
     </Suspense>
   );
 }
