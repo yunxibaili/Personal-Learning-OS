@@ -30,7 +30,7 @@
 | ADR-022 | Product Mode Boundary（产品模式边界冻结） | 全局 UX 方向 | Accepted |
 | ADR-023 | Visualization Boundary（可视化边界冻结） | P8 前端可视化 | Accepted |
 | ADR-024 | Note Hierarchy（主/副笔记 parent 关系） | 笔记层级 / frontmatter / 图谱消费 | Accepted |
-| ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Proposed |
+| ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Accepted（2026-09-02 M9 验收通过关闭） |
 | ADR-026 | Note Hierarchy Tree（主笔记多级层级树，v3：批准 + 评审三修订） | `GET /notes/tree?depth=&root_id=` 经 resolve_hierarchy（depth 默认 3/安全上限 10，后端剪枝 + 懒加载）/ 默认展开 3 层 + 展开状态本地偏好，无产品硬上限 / 同层 `created_at` 升序 / 零 migration / 星系维持两层 / domain≠parent 语义边界（P1）/ 树·标签·双链正交分工 | Accepted（2026-09-01 批准，Q1–Q3 已裁决） |
 
 ## 快速查阅指南

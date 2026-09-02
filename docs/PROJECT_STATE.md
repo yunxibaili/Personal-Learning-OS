@@ -671,9 +671,9 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
     ├─ ADR 007/013/016/018/022/025/026 状态对齐
     └─ 删除/废弃项统一标记（P8-001B/C、Dashboard、d3-force/cobe/marked）
 [1] 技术债重新分级（按 §12 新分级执行）
-[2] M9-007 Visual Engine 接入 web/
-[3] M9-008 真实验收
-[4] M9 正式关闭
+[2] ✅ M9-007 Visual Engine 接入 web/（2026-09-02 完成）
+[3] ✅ M9-008 真实验收（2026-09-02，11 条全过，见 TASKS T-M9-007/008）
+[4] ✅ M9 正式关闭
 [5] T-NOTE-TREE T1（契约 + GET /notes/tree）
 [6] T-NOTE-TREE T2（前端三级展开 + 懒加载）
 [7] T-NOTE-TREE T3（守护测试 + 真实 vault ≥3 层 E2E）
@@ -690,7 +690,11 @@ P1-1（`buildNoteTree` 纯函数建树 + `NoteTreeList` 递归渲染层级树 + 
 一步创建副笔记）。守护测试 hierarchy 12 + galaxy 2 + buildNoteTree 6 + notes 5 +
 boundary 8 + Vault Rebuild 12 = 45 项。遗留（P1-2）：稳定 note ID（独立 ADR）。
 
-**M9 Visual Engine（ADR-025）——M9-002~006 已完成（2026-09-01），待 007 接入 / 008 验收**：
+**M9 Visual Engine（ADR-025）——✅ 全部完成并关闭（M9-001~008，2026-09-01 ~ 09-02）**：
+M9-007 接入（ui 库逐字节回灌 web/ + 图谱 Inspector 入口 + VisualizeOverlay 业务壳 +
+visualize 事件）与 M9-008 验收（11 条全过）于 2026-09-02 完成，
+完整报告见 `TASKS.md` §T-M9-007/008。Gate：pytest **967** · vitest **155** · tsc PASS · build PASS ·
+无头自检 17/17。原文（M9-002~006 阶段记录）：
 tracer 子进程隔离 PoC（`6636e07`）→ 契约（`shared/types/trace.ts`）→ API 路由
 （`0b6b316`）→ IDE 步进组件（`35c3ef4`，范式裁定：否决播放器）→ 组件入 ui 库
 `ui/visual-engine/`（`3d13b4b`，**刻意不进 web/**，`web/src/components/ui/index.ts`

@@ -764,14 +764,14 @@ Mobile API Preparation 原则（提前冻结，防跑偏）：
 
 | # | 任务 | 产出 | 前置 | 状态 |
 |---|---|---|---|---|
-| **M9-001** | ADR-025 v3 批准 + 文档同步（TECH_DESIGN §8 / AGENTS §10 / ADR_INDEX / 本节） | 4 处文档 | — | `[~]` 文档已落（v3 含二轮终审 5 项修正），**待批准** |
+| **M9-001** | ADR-025 v3 批准 + 文档同步（TECH_DESIGN §8 / AGENTS §10 / ADR_INDEX / 本节） | 4 处文档 | — | `[x]` 已批准（v3 含二轮终审 5 项修正；2026-09-02 收口统一——M9 已实际推进至 006 且所有者裁定继续 007，批准事实成立） |
 | **M9-002** | `shared/types/trace.ts`（`TraceRun` / `TraceEvent` / `TraceValue`）+ 契约测试 | 契约与守护测试 | M9-001 | `[x]` 2026-09-01（含 runner 真实输出往返校验 6 项） |
 | **M9-003** | tracer PoC **四步**（见下） | `runner` / `snapshot` / `limits` | M9-002 | `[x]` 2026-09-01（PoC 四步全绿；独立审核修复：tempfile 对齐 §5.5、per-event stdout 对齐 §4.2、删 `_exec_in_process` 死代码、§5.4 六项 builtins 全移除、序列化集中 snapshot.py） |
 | **M9-004** | `POST /api/v1/trace/run` + API 测试（含 `mode:"vta"` → 400） | 路由 | M9-003 | `[x]` 2026-09-01（15 项测试：400/404/422/429 映射、同步 def 守护、信号量 429/归还、非 completed → 200 桩锁定；`code` 字段 422 需 handler 内手工校验——全局 RequestValidationError handler 会把 422 转 400） |
 | **M9-005** | `CodePane` + `DebugToolbar` + `stepping` 状态模型（**入 ui 组件库**；2026-09-01 裁定否决播放器，改 IDE 步进，见 ADR-025 §3.2） | IDE 步进壳，无 Renderer | M9-002 | `[x]` 2026-09-01（纯逻辑 68 项测试全绿；组件**仅入 ui 库不合并 `web/`**，接入视图归 M9-007） |
 | **M9-006** | `FrameStackView` / `ArrayView` / `GeneralView` | 三 Renderer（`derive.ts` 纯函数驱动） | M9-005 | `[x]` 2026-09-01（真实 trace 夹具测试全绿；样式以 `ui/visual-engine.html` 定稿，组件 CSS 为其等值转写） |
-| **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 **+ 把 `ui/visual-engine/` 回灌到 `web/src/components/ui/` 并在 `index.ts` 解冻导出** | 端到端闭环 | M9-004 + M9-006 | `[ ]`（回灌前 `web/src/components/ui/index.ts` 按裁定**不导出** M9 组件） |
-| **M9-008** | M9 全量验收（11 条） | 验收报告 | M9-007 | `[ ]` |
+| **M9-007** | 示例清单 6 条 + Concept 页入口 + `visualize` 事件 **+ 把 `ui/visual-engine/` 回灌到 `web/src/components/ui/` 并在 `index.ts` 解冻导出** | 端到端闭环 | M9-004 + M9-006 | `[x]` 2026-09-02（见 [T-M9-007/008](#t-m9-007008-visual-engine-接入与验收完成2026-09-02)） |
+| **M9-008** | M9 全量验收（11 条） | 验收报告 | M9-007 | `[x]` 2026-09-02（见 [T-M9-007/008](#t-m9-007008-visual-engine-接入与验收完成2026-09-02)） |
 
 #### M9-003 PoC 四步（不得跳步）
 
@@ -1634,3 +1634,72 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 字段或先备份（禁 PATCH content_md）。domain 实现为 P1 另起 T-NOTE-TREE-P1，
 按 v1 设计（git `7f297f9`）执行，migration 重新编号。
 
+
+## T-M9-007/008 Visual Engine 接入与验收完成（2026-09-02）
+
+### 做了什么
+
+- **回灌**：`ui/visual-engine/` 16 个代码文件（6 组件 + types + stepping/derive/highlight
+  3 纯逻辑 + 3 测试文件 + index + css）**逐字节复制**至 `web/src/components/ui/visual-engine/`
+  （cmp 校验一致）；`ui/visual-engine/index.ts` 注释同步更新为「已解冻」。
+- **解冻导出**：`web/src/components/ui/index.ts` 导出 VisualEngine 组件集与类型。
+- **业务壳**：新增 `web/src/components/visual-engine/VisualizeOverlay.tsx`——
+  取源码（GET /trace/examples/{id}）+ 执行（POST /trace/run）+ 渲染 ui 库 VisualEngine +
+  visualize 事件（POST /events，模块级 openKey 去重 StrictMode 双实例；
+  取数模块级 inflight 去重防撞 §5.7 并发护栏 429）。
+- **入口**：`GraphView` Floating Inspector——按 `concepts.title` 匹配示例清单
+  （GET /trace/examples，挂载取一次），**无匹配概念不渲染按钮**（守护 14），
+  匹配则「可视化 · {title}」；点击打开图谱内全屏覆盖层（图谱状态保留，不新增 ViewKey）。
+- **场景 A 契约补齐**：`describe_example` 补 `file` 字段（UI 显示用，CodePane 标题）+
+  `shared/types/trace.ts` `ExampleEntry.file` + 精确形状断言同步。
+- **契约收紧（场景 C）**：`shared TraceValue` 移除 `Record<string, unknown>` 分支——
+  该分支违反 ADR-025 §4.3 类型封闭与守护 2；对齐 ui 库 types.ts 的封闭联合。
+- **CSS**：覆盖层壳（`.visualize-overlay/.visualize-panel`）入 global.css（令牌驱动）；
+  组件样式 `visual-engine.css` 由 main.tsx 引入。
+- **门禁**：wiring.test.ts +4（导出存在 / 副本一致锚点 / 业务壳真实消费 / 守护 14 条件渲染）。
+
+### 改动文件
+
+server：`core/tracer/__init__.py`（+1 字段）· `tests/api/test_trace_api.py`（形状断言 + 守护 15 两条）
+shared：`types/trace.ts`（file 字段 + TraceValue 收紧）
+web：`components/ui/visual-engine/`（16 文件新增）· `components/ui/index.ts` ·
+`components/visual-engine/VisualizeOverlay.tsx`（新增）· `views/GraphView.tsx` ·
+`main.tsx` · `global.css` · `components/ui/wiring.test.ts`（+4）
+ui 库：`visual-engine/index.ts`（注释同步解冻）
+
+### 测试了什么
+
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `pytest -q`（server） | 全绿 | **967 passed**（2m07s，含新增守护 15 两条） |
+| `npx vitest run`（web） | 全绿 | **155 passed / 9 files**（87 + 回灌 68） |
+| `tsc --noEmit` | 0 错误 | PASS |
+| `vite build --outDir dist-m9check` | PASS | PASS（4.14s） |
+| 无头自检 `web/sandbox/m9-check.cjs`（真后端） | 全绿 | **17/17 · 0 控制台错误** |
+
+### 验收对照（ADR-025 §8 十一条）
+
+| # | 标准 | 证据 |
+|---|---|---|
+| 1 | factorial 递归 frames | test_tracer_poc PoC-1 ✅ |
+| 2 | quicksort 数组状态 | PoC-2 ✅ + 无头自检 rect=7 |
+| 3 | 步进语义（Over/Into/Out/Continue/Restart/Back） | 无头自检：6 按钮 + 步号前进 ✅ |
+| 4 | 当前行高亮 | 无头自检 `.ve-line--active`=1 ✅ |
+| 5 | 无限循环可靠终止 | test_tracer_poc PoC-3 ✅ |
+| 6 | 大量 stdout 不阻塞 | test_tracer_poc PoC-4 + 守护 7 ✅ |
+| 7 | TraceRun 前后端契约 | test_trace_contract 26 项 ✅ |
+| 8 | Concept 页打开动画 | 无头自检：Inspector 按钮 → overlay → VisualEngine ✅ |
+| 9 | Markdown 只存声明 | V1 零声明零改动，vault 无新内容 ✅ |
+| 10 | 删 SQLite 可从 Markdown 重建 | TraceRun 运行时派生不持久化（§6.2），无表；test_vault_rebuild ✅ |
+| 11 | visualize 事件进入 Learning Memory | 无头自检 practice 增量 0.05 + pytest 守护 15 ✅ |
+
+守护测试 18 项：1-13/16-18 此前已锁（test_trace_api + test_tracer_poc）；
+**14**（无匹配不渲染按钮）= 无头自检双向 + wiring 门禁；**15**（visualize → practice +0.05×weight）= 新增 pytest 两条。
+
+### 遗留
+
+- 无。M9 关闭；M9.5（ALGOGEN/VTA）按 ADR-025 §9 Deferred。
+- 入口当前仅图谱 Inspector（Concept 详情的唯一呈现处）；右栏掌握度等其他入口
+  等真实需求，未做（符合 V1 范围锁定）。
+- StrictMode 双挂载的两次坑（取数 429 / 事件双记）已在业务壳以模块级去重解决；
+  线上生产构建无 StrictMode 双跑，但 dev 是日常环境，必须防。

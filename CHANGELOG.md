@@ -5,6 +5,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **M9 Visual Engine 接入（M9-007）+ 验收关闭（M9-008）**（ADR-025 §7 最后一环）：
+  - `ui/visual-engine/` 16 文件逐字节回灌 `web/src/components/ui/visual-engine/`，
+    `components/ui/index.ts` 解冻导出（M9-007 前按 2026-09-01 裁定不导出）
+  - 图谱 Floating Inspector 新增「可视化」入口：按 `concepts.title` 匹配示例清单
+    （GET /trace/examples），无匹配概念不渲染按钮（ADR-025 守护 14）
+  - 业务壳 `VisualizeOverlay`：GET 源码 + POST /trace/run（子进程 settrace）→
+    IDE 步进可视化（CodePane 热力/当前行 + FrameStack/Array/General 三模板路由 +
+    ↓→↑空格←R 键位）；取数模块级 inflight 去重（防撞 §5.7 并发护栏 429）
+  - **visualize 学习事件**（§6.3 点击即记录）：TraceRun 成功 → POST /events →
+    practice +0.05×weight（mastery 侧映射早已就位）；openKey 去重 StrictMode 双实例
+  - 契约：`ExampleEntry.file` 补齐（场景 A）；`TraceValue` 收紧为封闭联合
+    （移除 `Record<string,unknown>`，对齐 §4.3 类型封闭 / 守护 2）
+- 守护测试补齐：test_trace_api +2（visualize → practice 增量 / 未知概念 404）；
+  wiring.test +4（解冻导出 / 副本一致锚点 / 业务壳消费 / 守护 14 条件渲染）
+
 ### Docs
 - **项目状态收口（2026-09-02 所有者裁定「先收口，后开发」）**：确立单一真相源原则——
   进度唯一登记于 `docs/PROJECT_STATE.md`，其他文档只能引用。全面对齐至 HEAD `12030ff`：
