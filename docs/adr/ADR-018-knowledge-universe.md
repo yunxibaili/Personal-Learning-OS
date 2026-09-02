@@ -1,8 +1,17 @@
 # ADR-018: Knowledge Universe Design
 
-**状态**：已批准（2026-08-27）
+**状态**：**Superseded（2026-09-02 状态收口标记）**——原批准 2026-08-27
 **决策者**：项目负责人
-**关联**：ADR-007（d3-force）· ADR-008（Graph Model）· ADR-013（UI Design）· M3b
+**关联**：ADR-007（d3-force，同批失效）· ADR-008（Graph Model）· ADR-013（UI Design）· M3b
+
+> **⚠️ 本 ADR 的设计已随实现演进被取代，仅作历史记录。**
+> ① 原 d3-force React Flow 版 Universe（`lib/universe/layout.ts` + PlanetNode/ConceptNode）
+> 已整包删除（`dd4f40c`，2026-08-31）；② 现 `universe` 视图渲染 **Galaxy 多星球系统**
+> （自研 Canvas 2D，`GalaxyCanvas.tsx`），其节点语义为 **主笔记=星球 / 副笔记=卫星**
+> （Note 而非 Concept，与本 ADR §2.1「Node = Concept」相反——该语义变更由
+> 2026-08-30「笔记优先」裁决与 2026-08-31 星系裁定确立）；③ 可视化边界现以
+> **ADR-023**（Note 方/Concept 圆、橙=注意力指针）与 **ADR-024**（层级权威 parent）
+> 为准。本文的「防止可视化偏离核心价值」精神由 ADR-013/023 继承。
 
 ---
 

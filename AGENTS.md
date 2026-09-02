@@ -16,7 +16,10 @@ Version Control First · Reproducible Development · Small and Maintainable Code
 
 项目目标不是堆叠技术，而是在尽可能少的复杂度下实现完整能力。禁止为了"看起来高级"而增加技术栈。
 
-> **⚠️ 当前开发政策：后端优先（2026-08-28）** —— 前端任务冻结，见 `docs/PROJECT_STATE.md` §0。
+> **⚠️ 当前开发政策：P8 收尾阶段（2026-08-31 裁定，现行有效）** ——
+> 端到端闭环 + 契约一致性为最高准则，前后端范围限制已解除；
+> 跨层修改须真实原因（`AGENTS.md` §12 / `docs/PROJECT_STATE.md` §0.1）。
+> 「后端优先（2026-08-28）」与「前端阶段（2026-08-30）」均为历史政策，见 `PROJECT_STATE.md` §0。
 
 ## 1. 能力复用优先级链（Ponytail 阶梯）
 
@@ -60,7 +63,9 @@ LSP · AST parser · 数学符号引擎 · HTTP client · JSON/YAML parser · Gr
 ### 2.2 禁止清单（永久）
 - ORM / Query Builder（后端直写 SQL）
 - CSS 框架（Tailwind 等）、UI 组件库、图标库
-  - D3 全家桶（渲染/选择集模块）；**唯一例外 `d3-force` 物理计算单模块（ADR-007）**；
+  - D3 全家桶（渲染/选择集模块）；~~唯一例外 `d3-force` 物理计算单模块（ADR-007）~~
+    ——**该例外已失效（2026-09-02 收口标记）**：d3-force 已于 v0.1.0-rc.1 移除，
+    Universe 现为自研 Canvas 2D（`GalaxyCanvas.tsx`）；
     PixiJS / Three.js / Manim / markmap 同禁（可视化走 §8 两套管线：Knowledge Universe 与 Trace）
 - LangChain / LlamaIndex 及一切 AI 编排框架（管线手写）
 - 向量数据库与 embedding 服务（实测性能瓶颈之前）
@@ -207,8 +212,11 @@ AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件
 
 ## 9. 技术栈冻结表
 
-**当前生效**：React · TypeScript · Vite · Zustand · TipTap · React Flow · KaTeX · marked ·
-Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 起)
+**当前生效**：React · TypeScript · Vite · Zustand · TipTap · React Flow · KaTeX ·
+Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 起) ·
+dagre（Graph 布局）· 自研 Canvas 2D（Galaxy/星系）
+（~~marked~~ 从未安装，Markdown 走 tiptap-markdown；~~d3-force / cobe~~ 已于 v0.1.0-rc.1 移除——
+ADR-007 例外随之失效）
 
 **规划中（触发条件达成前禁止安装，清单见 REGISTRY）**：
 - M8 Mobile：React Native · Expo · expo-sqlite 及 RN 系全部包
@@ -222,6 +230,11 @@ Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 
 > **文档结构（2026-08-29 整合后）**：docs/ 根部 9 份主题文档为唯一有效层；
 > 被合并的旧文档全部在 `docs/archive/`（不再更新）；历史目录已移除。
 > 任何新文档先问：能不能并进现有主题文件？禁止再开新散文件。
+>
+> **单一真相源原则（2026-09-02 所有者裁定，强制）**：项目进度/里程碑/验证数字的
+> 唯一权威登记处 = `docs/PROJECT_STATE.md`。其他文档（TASKS / ACTIVE_TASK /
+> CURRENT_STATE / README / CHANGELOG / ADR）**只能引用或补充，不得各自维护进度真相**。
+> 发现他处与 PROJECT_STATE 冲突：先 `git log` + 代码核实，再回改他处。
 
 ### 开发政策（最高优先级）
 
@@ -359,7 +372,7 @@ commit hash 与 working tree 状态。
 | 后端 | Python 3.12 + FastAPI + sqlite3（venv + pip + requirements.txt） |
 | 前端 | React + TypeScript + Vite + Zustand + 单一 global.css |
 | 端口 | FastAPI 默认 :8000（绑 127.0.0.1），环境变量 `PORT` 可覆盖——与 UpMark 共存时用 `PORT=8100`；Vite :5173（proxy `/api/v1` → 后端） |
-| 测试 | pytest（server/tests），vitest（web）——只测 core 逻辑，不为 UI 写测试 |
+| 测试 | pytest（server/tests），vitest（web）——以 core/契约/源码审计为主，UI 层用 renderToStaticMarkup 与源码接线测试（无 jsdom） |
 | 任务跟踪 | docs/TASKS.md（完成必须回填测试报告） |
 | 本地归档 | `_local/` 存旧代码/旧文档/临时脚本，仅本机不入库 |
 | 实验沙盒 | `sandbox/` 一次性实验用完即删；版本基线与环境变量见 AGENTS.md §17 |

@@ -135,10 +135,13 @@ ADR-016 是 ADR-013 在 Tutor 领域的细化：
 ### 代码结构
 
 ```
-web/src/views/
-├── NoteEditor.tsx       ← 已有
-├── TutorPanel.tsx       ← M4-D 新增
-└── DashboardView.tsx    ← 已有
+web/src/views/          （2026-09-02 注：本目录树为 M4-D 当时的规划快照。
+                          实际演进：TutorPanel 现位于 web/src/components/tutor/TutorPanel.tsx，
+                          经 TutorDrawer 懒加载、以抽屉态挂载于 App.tsx；
+                          DashboardView 已随裁决 A 删除。以实际代码为准。）
+├── NoteEditor.tsx       ← 已有（现 views/NoteEditor.tsx）
+├── TutorPanel.tsx       ← M4-D 新增（→ components/tutor/）
+└── DashboardView.tsx    ← 已有（已于 2026-08-30 删除，008ea4e）
 ```
 
 ### 对现有模块的影响

@@ -1,6 +1,14 @@
 # ADR-007: 力导向布局采用 d3-force 单模块（D3 禁令的唯一例外）
 
-日期：2026-08-26 · 状态：Accepted（M3b 实施）
+日期：2026-08-26 · 状态：**Superseded（2026-09-02 状态收口标记）**
+
+> **⚠️ 本 ADR 已失效。** d3-force 已于 v0.1.0-rc.1 随 P8-001B Universe V2 的删除一并移除
+> （代码删除 `dd4f40c`；依赖移除 `13fa1bc`，CHANGELOG §Removed 有记录）。
+> 其唯一消费者——d3-force 版 Knowledge Universe——已被 **Galaxy 多星球系统**
+> （自研 Canvas 2D，`web/src/components/galaxy/GalaxyCanvas.tsx`）取代，
+> 力导向布局不再是任何活跃功能的依赖。
+> D3 全家桶禁令**恢复为无例外状态**（`AGENTS.md` §2.2 已同步）。
+> 本文仅作历史决策记录保留，勿据此重新引入 d3-force（重新引入须开新 ADR）。
 
 ## Context
 
