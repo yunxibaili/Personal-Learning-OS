@@ -4,9 +4,11 @@ import { derivePlanets } from "./GalaxyCanvas";
 import type { GraphEdge, GraphNode, GraphResponse } from "@shared/types/graph";
 
 /**
- * 星球/卫星推断的语义锁（2026-08-31 裁定 = 方案 A：从 wikilink 拓扑推断）。
- * 数据模型无 parent_id、path 扁平、ADR-008 contains 关系零处生产，
- * 因此层级完全由这些用例定义——改动 derivePlanets 必须连带改这里。
+ * 星球/卫星推断的语义锁。
+ * ADR-024 P0 后：显式 parent（relation="parent" 权威边）优先走 explicit 分支；
+ * 本文件的 wikilink 拓扑用例锁的是 **legacy fallback 分支**
+ * （`derivePlanetsHeuristic`，2026-08-31 方案 A）——改动 derivePlanets
+ * 任一分支都必须连带改这里。
  */
 
 function note(id: number, title: string, mastery: number | null = null): GraphNode {

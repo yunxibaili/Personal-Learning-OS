@@ -9,9 +9,10 @@ import type { NoteDetailResponse } from "@shared/types/note";
 /**
  * GalaxyCanvas（Phase 3 ⑤）——「多星球系统」：主笔记=星球，副笔记=卫星。
  *
- * 层级来源（2026-08-31 项目所有者裁定 = 方案 A）：**从 wikilink 拓扑推断**。
- * 数据模型无 parent_id、path 扁平、ADR-008 的 contains 关系零处生产，
- * 因此不引入后端字段，改用 `/graph` 真实边推断：
+ * 层级来源（ADR-024 P0 后）：**显式 parent（frontmatter）优先**——`/graph`
+ * 返回 `relation="parent"` 权威边，见 `derivePlanets` 的 explicit 分支；
+ * wikilink 拓扑推断仅作 legacy fallback（2026-08-31 方案 A，保留于
+ * `derivePlanetsHeuristic`）：
  *   · 星球（hub）= 出度 ≥ HUB_MIN_OUT 的笔记（它链出去多 = 目录/书级）
  *   · 卫星 = 与该 hub **双向互链**的笔记（单向不认，避免把偶然引用当从属）
  *   · 归属排他：一个卫星只归给互链 hub 中出度最大的那个
