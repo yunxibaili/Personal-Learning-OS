@@ -674,9 +674,9 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [2] ✅ M9-007 Visual Engine 接入 web/（2026-09-02 完成）
 [3] ✅ M9-008 真实验收（2026-09-02，11 条全过，见 TASKS T-M9-007/008）
 [4] ✅ M9 正式关闭
-[5] T-NOTE-TREE T1（契约 + GET /notes/tree）
-[6] T-NOTE-TREE T2（前端三级展开 + 懒加载）
-[7] T-NOTE-TREE T3（守护测试 + 真实 vault ≥3 层 E2E）
+[5] ✅ T-NOTE-TREE T1（2026-09-02，GET /notes/tree + 守护测试 10 项）
+[6] ✅ T-NOTE-TREE T2（2026-09-02，默认 3 层展开 + 懒加载 + 折叠偏好）
+[7] ✅ T-NOTE-TREE T3（2026-09-02，Gate 全绿 + 真实 vault 4 层链 E2E 16/16）
 [8] P8 正式收尾 / v0.1.x
 [9] 再决定 M8 Mobile / 其他方向
 ```
