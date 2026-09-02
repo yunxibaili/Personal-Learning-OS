@@ -1,6 +1,11 @@
 # ADR-006: 移动端技术栈——React Native + 混合内核
 
-日期：2026-08-26 · 状态：Accepted（M8 实施）
+日期：2026-08-26 · 状态：**Superseded as primary route; retained as fallback**
+（2026-09-03 所有者裁定：M8 主路线改为 Tauri 2 Mobile——**conditional on M8-000 spike**，
+见 `Open Learning OS — M8 Mobile 可行性决策评审.md` 裁定记录；RN 保留为 fallback，
+仅当 M8-000 证明 Tauri Mobile 的 Core 迁移成本/runtime 限制不可接受时重激活。
+M8 全线暂停，PC Stable Baseline 优先。本 ADR 的引擎策略三选一与编辑分级仍然有效，
+框架无关部分可平移。）
 
 ## Context
 

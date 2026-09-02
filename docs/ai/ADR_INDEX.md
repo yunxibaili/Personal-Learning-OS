@@ -11,7 +11,7 @@
 | ADR-003 | LLM 接入（OpenAI-compatible 裸 HTTP） | M4+ AI Tutor | Accepted |
 | ADR-004 | 依赖管理制度化 | 所有依赖改动 | Accepted |
 | ADR-005 | 局域网同步模型（文件为真相） | M7 LAN Sync | Accepted |
-| ADR-006 | 移动端技术栈（RN + 混合内核） | M8 Mobile | Accepted |
+| ADR-006 | 移动端技术栈（RN + 混合内核） | M8 Mobile | **Superseded as primary route; retained as fallback**（2026-09-03：主路线改 Tauri 2 Mobile conditional on M8-000；M8 暂停，PC Stable 优先；引擎策略/编辑分级仍有效） |
 | ADR-007 | d3-force 单模块例外 | M3b Universe 布局 | **Superseded**（2026-09-02 收口：d3-force 已于 v0.1.0-rc.1 移除，Universe=自研 Canvas Galaxy；D3 禁令恢复无例外） |
 | ADR-008 | 知识图谱模型冻结（Entity + links） | M2+ 图谱相关 | Accepted |
 | ADR-009 | Entity vs Document 边界 | AI Tutor / 检索 | Accepted |

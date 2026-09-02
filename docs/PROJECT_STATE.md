@@ -694,8 +694,11 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [11] ✅ P1-4 MockProvider 演示路径（2026-09-02，Ollama qwen3 端到端验证：Smoke/非流式/SSE 全通，配置保留 openai_compat）
 [12] P1-4 中文 FTS
 [12] ✅ P1-2 i18n（2026-09-02，46 处/5 组件用户可见英文清零，零框架零依赖）
-[14] M8 Mobile 可行性 / 架构决策（前置：[9][10] 完成）
-[15] M8 Android MVP
+[14] ✅ M8 Mobile 可行性 / 架构决策（2026-09-02 评审 + 2026-09-03 最终裁定：
+     主路线 Tauri 2 Mobile **conditional on M8-000**（Python Core 在 Android 的
+     可行性是硬 Go/No-Go）；ADR-006 → Superseded as primary route, retained as
+     fallback；**M8 全线暂停（含 spike），PC Stable Baseline 优先**）
+[15] ⏸ M8 Android MVP（暂停；顺序 = PC Stable → M8-000 → 再启动）
 ```
 
 ### 已完成的近期里程碑（存档）
