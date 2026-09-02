@@ -20,34 +20,30 @@
 > 完整历史见本文档下半部完成报告区与 `git log`。
 
 ```text
-[0] [~] 项目整理 / 状态收口（2026-09-02 裁定，进行中）
-    范围：PROJECT_STATE（唯一真相源对齐）/ CURRENT_STATE / ACTIVE_TASK / TASKS /
-    README / AGENTS / ADR 007·013·016·018·022·025·026 / 删除废弃项统一标记。
-    禁止功能代码。详见 docs/ai/ACTIVE_TASK.md。
+[0]–[8] ✅ 全部完成（收口 / 技术债分级 / M9-007·008 / M9 关闭 /
+        T-NOTE-TREE T1–T3 / P8 收尾 tag v0.1.0-rc.2，详见 PROJECT_STATE §10.3）
 
-[1] [ ] 技术债重新分级与处置
-    清单已登记于 PROJECT_STATE §12（P1：MindMap 裸 fetch / 18 处英文硬编码 /
-    中文 FTS / MockProvider 演示路径 / 后端能力 UI 取舍〔待所有者逐项裁决〕；
-    P2：死代码 / 死 CSS / lazy 分包失效 / 过期注释）。
+── 2026-09-02 所有者第二次裁定：先 P1 技术债收敛，M8 不启动 ──
 
-[2] [ ] M9-007 Visual Engine 接入 web/
-    （ui/visual-engine/ 回灌 web/src/components/ui/ + index.ts 解冻导出 +
-    Concept 页入口 + visualize 事件生产者 + 示例清单 6 条）
+[9]  [x] P1-1 MindMap API 边界治理（2026-09-02 完成，报告见下文）
+     6 处裸 fetch → lib/api.ts（ApiError 归一化）+ 拖拽坐标
+     drag-end flush + 1s trailing debounce 兜底（PositionSaveQueue）。
+     范围裁定：不修 N1 sidecar、不新增 shared/types/mindmap.ts（契约治理候选，
+     现有 lib/api.ts 类型可安全承载）、不动 GET /mindmaps wrapper。
 
-[3] [ ] M9-008 真实验收（11 条）
+[9b] [ ] P1-MINDMAP-TRUTH（P0/P1 架构修复，**M8 前置**，2026-09-02 所有者裁定单独立项）
+     恢复 MindMap sidecar producer：*.mindmap.json（ADR-002/019 声明的事实源）
+     全库零生产者，MindMap 数据只在 SQLite → 不同步、多端必丢。
+     核心验收链：创建/修改/删除 MindMap → *.mindmap.json 正确变化 →
+     SQLite 可从文件重建 → Sync 能发现 sidecar → 另一设备 Apply → 重建 SQLite cache。
+     **本任务完成前不进入 M8。**
 
-[4] [ ] M9 正式关闭（M9-001 状态随收口统一为已完成，见 M9 拆解表）
-
-[5] [ ] T-NOTE-TREE T1 契约 + GET /notes/tree（ADR-026 v3 Accepted：
-    经 resolve_hierarchy，depth 默认 3/上限 10 后端剪枝 + root_id 懒加载）
-
-[6] [ ] T-NOTE-TREE T2 前端默认展开 3 层 + 懒加载展开 + 展开状态本地偏好
-
-[7] [ ] T-NOTE-TREE T3 守护测试 + Gate 全绿 + 真实 vault ≥3 层端到端
-
-[8] [ ] P8 正式收尾 / v0.1.x
-
-[9] [ ] 再决定 M8 Mobile / 其他方向（M8 现在不动：零代码，仅 ADR-006 设计）
+[10] [ ] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力）
+[11] [ ] P1-3 MockProvider 演示路径
+[12] [ ] P1-4 中文 FTS
+[13] [ ] P1-2 国际化（18 处硬编码英文）
+[14] [ ] M8 Mobile 可行性 / 架构决策（前置：[9][9b][10] 完成）
+[15] [ ] M8 Android MVP
 ```
 
 <details>
@@ -1761,3 +1757,53 @@ ADR-026 §3.2「orphan/cycle 不进树」落地为：**不作为任何节点的 
 
 - 手动排序 / 拖拽改父依赖稳定 note ID（ADR-024 P1-2），未做（ADR-026 §3.3 既定）。
 - domain 维度 P1 排期（ADR-026 §5，语义边界 domain≠parent）。
+
+## P1-1 MindMap API 边界治理完成（2026-09-02）
+
+### 做了什么
+
+所有者裁定批准实现（评审结论 Q7/Q9 已纳入范围控制）：
+
+- **6 处裸 `fetch` → `lib/api.ts`**（`MindMapCanvas.tsx` 创建 Map / 添加节点 /
+  连线 / 导出 / 导入 / 拖拽存坐标）：全部获得 `ApiError` 归一化
+  （network_error / http_xxx 统一错误体解析），删除手写
+  `throw new Error("create failed")` 等不一致错误路径。
+- **F3 拖拽坐标保存重做**：原实现每个 `dragging` change 都裸发 PATCH、无防抖、
+  `resp.ok` 不检查、失败静默。新实现 = `PositionSaveQueue`
+  （`drag-end flush + 1s trailing debounce 兜底`，评审裁定原文）：
+  拖动中只入队（同节点去重保留最新值），drop 立即 flush；
+  兜底 debounce 防止 drag-end 信号丢失；组件卸载 `dispose()` 对尾批做最后尝试；
+  flush 失败经 `onError` → `setError` 显式上报（此前完全静默）。
+- **失败处理补齐**（评审 F2/F4）：添加节点 / 连线此前不检查响应成功与否，
+  失败用户不可见；现统一走 `apiPost` 抛 `ApiError` 被 catch 上报。
+- **范围红线（评审裁定，未越界）**：❌ MindMap sidecar producer（→ P1-MINDMAP-TRUTH
+  单独立项）· ❌ Sync 修复 · ❌ 新增 `shared/types/mindmap.ts`
+  （记录为 P1-1 后续契约治理候选，现有 `lib/api.ts` 本地类型可安全承载）·
+  ❌ `GET /mindmaps` response wrapper · ❌ 18 处英文（P1-2）·
+  ❌ `searchingConcept` 清理（P2-6）· MindMap SQLite 行为零改动。
+
+### 改动文件
+
+- `web/src/components/mindmap/MindMapCanvas.tsx`（6 处 fetch 替换 + 队列接线）
+- `web/src/components/mindmap/PositionSaveQueue.ts`（新增，纯逻辑零 React 依赖）
+- `web/src/components/mindmap/PositionSaveQueue.test.ts`（新增，11 项）
+
+### 测试了什么
+
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `vitest run src/components/mindmap/PositionSaveQueue.test.ts` | 全绿 | **11 passed**（trailing debounce / drag-end flush / 同节点去重 / 多节点合并 / 计时重置 / 失败回调 / dispose / 插入序） |
+| `npx vitest run` | 全绿 | **172 passed / 10 files** |
+| `tsc -b --force` | 0 error | PASS |
+| `vite build` | PASS | PASS（3.22s，Tiptap chunk 警告为既有 P2-5） |
+| `pytest -q`（后端零改动回归确认） | 全绿 | **977 passed**（124.6s，与 T-NOTE-TREE 基线一致） |
+
+### 语义说明（供所有者复核）
+
+- `typeof ch.dragging === "boolean"` 门控：仅真实拖拽 change 入队
+  （`dragging===true` 拖动中 / `===false` drag-end），程序化 position change
+  不触发保存——与原实现 `ch.dragging` truthy 判断语义兼容且更严格。
+- 原 `dragging:false`（drop 终帧）坐标在旧实现中**不会保存**（truthy 判断跳过），
+  新实现 drop 帧入队并立即 flush——修复了一个潜在丢点。
+- 队列 flush 闭包经 `activeMapIdRef` 读当前 map：切换 Map 时挂起的尾批
+  仍会存到**正确**的 map（以 flush 时刻的 ref 为准），队列实例不随渲染重建。

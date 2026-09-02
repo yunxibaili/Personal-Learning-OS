@@ -680,8 +680,13 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [8] ✅ P8 正式收尾（2026-09-02：删除优先检查 + 依赖审计 + CHANGELOG + tag v0.1.0-rc.2）
 
 ── 2026-09-02 所有者第二次裁定：先 P1 技术债收敛，M8 不启动（避免把 Web 架构问题复制到 RN）──
-[9]  P1-1 MindMap API 边界治理（6 处裸 fetch → lib/api.ts + 拖拽坐标节流；
-     先架构评审后实现，禁止扩展 MindMap 功能）
+[9]  ✅ P1-1 MindMap API 边界治理（2026-09-02 完成：6 处裸 fetch → lib/api.ts +
+     拖拽 drag-end flush + 1s trailing debounce；报告见 TASKS §P1-1）
+[9b] P1-MINDMAP-TRUTH（2026-09-02 所有者裁定单独立项，**P0/P1 架构修复 · M8 前置**）：
+     `*.mindmap.json` 旁车（ADR-002/019 声明的事实源）全库零生产者，
+     MindMap 数据只在 SQLite → 跨设备无同步闭环。核心验收 = 创建/修改/删除 MindMap →
+     sidecar 正确变化 → SQLite 可从文件重建 → Sync 发现 sidecar → 另一设备 Apply →
+     重建 cache。**本任务完成前不进入 M8。**
 [10] P1-5 Backend/UI 能力裁定（哪些后端能力 backend-only、哪些升级为产品能力；
      **M8 前必须完成**）
 [11] P1-3 MockProvider 演示路径
@@ -771,7 +776,7 @@ NSIS 102MB，GNU 工具链。
 
 | # | 项 | 位置 | 说明 |
 |---|---|---|---|
-| P1-1 | MindMap 6 处裸 `fetch` 绕过统一 API 层 | `web/src/components/mindmap/MindMapCanvas.tsx:113/132/179/214/273/299` | 无 `ApiError` 归一化；`:179` 拖拽存坐标每 change 都发、无防抖 |
+| P1-1 | ~~MindMap 6 处裸 `fetch` 绕过统一 API 层~~ | ~~`web/src/components/mindmap/MindMapCanvas.tsx:113/132/179/214/273/299`~~ | **✅ 已处置（2026-09-02，P1-1）**：全部走 `lib/api.ts` ApiError 归一化；拖拽改 `PositionSaveQueue`（drag-end flush + 1s trailing debounce）+ 失败显式上报。报告见 TASKS §P1-1 |
 | P1-2 | 活跃 UI **18 处硬编码英文**（中英混排） | `MindMapCanvas.tsx`(Maps/Create/Import/Concept Binding/Select or create a map) · `MapNode.tsx`(Concept Ref/Temporary) · `TutorPanel.tsx`(Tutor/Concept/Mastery/Past Mistakes/Related/Action) · `MemoryList.tsx`(Memories/Loading...) · `SuggestionList.tsx`(AI Suggestions/Loading.../AI suggested) | 5 个组件全部用户可达（App.tsx 懒加载 / Tutor 抽屉内）；同文件 `<h1>` 为中文 → 判翻译遗漏 |
 | P1-3 | 中文 FTS 分词（unicode61 按字切分） | `core/knowledge.py`（B9 仅做 CJK bigram 回退） | ADR-011 边界内；完整分词（jieba 等）需依赖立项 |
 | P1-4 | 默认 MockProvider → Tutor 开箱不可真实演示 | `core/ai/providers/` | 契约与链路已实测（B1b DeepSeek / B10 Ollama qwen3），只差默认配置与引导 |

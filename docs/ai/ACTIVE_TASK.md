@@ -33,19 +33,21 @@ ADR-025 状态 → Accepted。M9 正式关闭。
 （零未使用零缺失，REGISTRY 更正 marked/d3-force/cobe 记录）· CHANGELOG v0.1.0-rc.2 ·
 tag `v0.1.0-rc.2`。
 
-### [9] P1-1 MindMap API 边界治理——评审阶段完成（2026-09-02），实现待批准
+### ✅ [9] P1-1 MindMap API 边界治理——完成（2026-09-02，所有者批准后实现）
 
-所有者裁定：先 P1 技术债收敛，M8 不启动（避免把 Web 架构问题复制到 RN）。
-P1-1 第一步为**架构评审**（只回答十问，禁写代码）：评审报告见 2026-09-02 会话
-记录，核心结论——6 处裸 fetch 全部可经现有 `lib/api.ts` 覆盖（零 api.ts 改动、
-零后端改动）；拖拽坐标建议「终止信号 flush + 1s trailing debounce」；
-**重大发现：`*.mindmap.json` 旁车（ADR-002/019 声明的事实源）全库零生产者，
-workspace/mind_maps/ 不存在——MindMap 数据只在 SQLite（不同步），多端必丢**，
-已升级为独立任务候选（M8 前必须解决）。实现待所有者根据评审批准。
+评审（十问）+ 所有者裁定（Q7 升级 / Q9 暂缓）→ 实现完成：
+6 处裸 fetch → `lib/api.ts`（ApiError 归一化）+ 拖拽坐标
+`PositionSaveQueue`（drag-end flush + 1s trailing debounce 兜底）+
+失败处理补齐（原添加节点/连线不查响应、拖拽失败静默 → 全部显式上报）。
+新增纯逻辑测试 11 项。Gate：pytest 977 · vitest 172 · tsc PASS · build PASS。
+范围红线遵守：未动 sidecar/Sync/SQLite 行为、未新增 shared/types/mindmap.ts
+（记为后续契约治理候选）、未动 wrapper/i18n/searchingConcept。
+完整报告见 `TASKS.md` §P1-1。
 
-**当前无进行中任务**——P1-1 实现等所有者批准；路线已重排（见 `PROJECT_STATE.md` §10.3）：
-[9] P1-1 → [10] P1-5 裁定 → [11] MockProvider → [12] FTS → [13] i18n →
-[14] M8 可行性 → [15] M8 MVP。
+**当前无进行中任务**——下一任务 = **[9b] P1-MINDMAP-TRUTH**（P0/P1 架构修复，
+M8 前置：恢复 MindMap sidecar producer 闭环，验收链见 `PROJECT_STATE.md` §10.3；
+完成前不进入 M8）。其后：[10] P1-5 裁定 → [11] MockProvider → [12] FTS →
+[13] i18n → [14] M8 可行性 → [15] M8 MVP。
 
 <details>
 <summary>历史：[0] 收口任务定义（已完成，存档）</summary>
