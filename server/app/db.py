@@ -8,11 +8,20 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import sys
 from pathlib import Path
 
-APP_ROOT = Path(__file__).resolve().parents[2]      # .../learning-os
-SERVER_DIR = APP_ROOT / "server"
-MIGRATIONS_DIR = SERVER_DIR / "migrations"
+if getattr(sys, "frozen", False):
+    # PyInstaller 打包态（P0-2b 桌面 sidecar）：模块在 _MEIPASS/app 下解包，
+    # migrations 作为 datas 打在 _MEIPASS/server/migrations（见 plos_backend.spec）。
+    # 路径真实原因：打包态资源目录，方案 i（所有者已授权）明确包含。
+    APP_ROOT = Path(getattr(sys, "_MEIPASS"))
+    SERVER_DIR = APP_ROOT / "server"
+    MIGRATIONS_DIR = SERVER_DIR / "migrations"
+else:
+    APP_ROOT = Path(__file__).resolve().parents[2]      # .../learning-os
+    SERVER_DIR = APP_ROOT / "server"
+    MIGRATIONS_DIR = SERVER_DIR / "migrations"
 
 # 应用后需要全量重建 FTS 的 migration 版本（main.lifespan 消费）：
 # notes_fts 是纯派生索引，DROP+CREATE 后必须从 vault reindex 才可检索。

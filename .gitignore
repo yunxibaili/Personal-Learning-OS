@@ -53,3 +53,11 @@ Thumbs.db
 web/tsconfig.tsbuildinfo
 web/dist-check-0902/
 web/dist-i18ncheck/
+
+# Tauri sidecar 打包产物（P0-2b）：构建期生成，不入库
+web/src-tauri/binaries/
+server/build/
+
+# Tauri sidecar 打包产物（P0-2b）：构建期生成，不入库
+web/src-tauri/binaries/
+server/build/

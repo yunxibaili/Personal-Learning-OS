@@ -2005,3 +2005,48 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 | `npx vitest run` | **186 passed / 12 files**（文案无测试断言依赖，全绿） |
 | `vite build --outDir dist-i18ncheck` | PASS（4.31s） |
 | git staging | exact-path（5 文件逐一列名，未用 -A） |
+
+## T-P0-2b Tauri sidecar 接线与桌面链路闭环 完成（2026-09-03，P0-2 方案 i）
+
+> 背景见 workspace 根《P0-2 Tauri Desktop 验证记录》：壳可启动但 sidecar 从未接线 +
+> 生产 API base 相对路径断链。所有者授权方案 i 后接线。**桌面版自此双击可用。**
+
+### 做了什么
+
+- `server/backend_main.py`（新增）：打包态后端入口。workspace 解析 = env >
+  自 exe 上溯 4 级找 `workspace/db`（开发树命中 repo/workspace，真数据）>
+  exe 同级 `workspace/` 兜底；端口 env PORT 默认 **8100**（避让 dev 8000）；
+  host 恒 127.0.0.1（红线）。
+- `server/plos_backend.spec`（新增）：PyInstaller onefile；hiddenimports=
+  collect_submodules("uvicorn")+anyio asyncio backend；datas 打
+  `server/migrations → _MEIPASS/server/migrations`。产物 15.5MB。
+- `server/app/db.py`：加 frozen 分支（打包态 `MIGRATIONS_DIR = _MEIPASS/server/migrations`），
+  非 frozen 路径零改动。
+- `server/app/main.py`：CORSMiddleware（allow：`http(s)://tauri.localhost`、
+  `http://localhost:5173`）——桌面 WebView 跨源访问 sidecar 的真实前提。
+- `web/src/lib/api.ts`：`import.meta.env.MODE === "desktop"` 时 BASE 切 `http://127.0.0.1:8100`（`--mode desktop` 即开关；dev/web 相对路径不变）。
+  注：`.env.desktop` 方案已否决——仓库红线 `.env*` 不入库，改用 MODE 判定进代码。
+- `web/src-tauri/tauri.conf.json`：`bundle.externalBin=["binaries/plos-backend"]`；
+  beforeBuildCommand → `npm run build -- --mode desktop`。
+- `web/src-tauri/src/lib.rs`：setup 内 `shell().sidecar("plos-backend").spawn()`，
+  `RunEvent::Exit` 时 kill（防孤儿后端）。Rust 层只做 spawn/kill，端口与 workspace
+  解析全在 Python 侧（薄壳原则）。
+- `.gitignore`：`web/src-tauri/binaries/`、`server/build/`（构建产物不入库）。
+
+### 测试了什么
+
+| 测试 | 结果 |
+|---|---|
+| 冻结态 sidecar 单跑（dist/plos-backend.exe） | ✅ 8100 health `db:true` · notes=20（workspace 上溯命中真库）· CORS 预检 200 + `allow-origin: http://tauri.localhost` |
+| `cargo tauri build --no-bundle` | ✅ desktop 模式 tsc+vite build → Rust release 1m47s |
+| 端到端：双击 plos.exe | ✅ 壳自动拉起 sidecar（onefile 引导+Python 子进程）· 8100 health/notes 全通 · dist 内确认烘焙 `127.0.0.1:8100` |
+| 退出回收 | ✅ 关壳后 plos/plos-backend 进程零残留、8100 释放 |
+| 回归 | ✅ pytest 50 passed（smoke/notes/cjk_bigram）· vitest 186 passed（tsc 已由 beforeBuildCommand 覆盖） |
+
+### 已知边界 / 教训
+
+- 本地命令行环境下 vite 清空 `dist` 会被批量删除守护拦截 → 构建前先手动清 dist
+  （脚本化构建后续可用 `--emptyOutDir false`）。
+- onefile 启动自解压有 ~1-2s 延迟（用户可感知的窗口空白期）；不可接受时改 onedir + resources。
+- 正式安装版（MSI）数据目录仍指向解析出的 workspace；迁移 userData 归 P2 发布基线任务。
+- PyInstaller 为**构建期工具**（server/.venv，6.22.2），不进 requirements.txt（DEPENDENCIES dev 依赖节登记）。

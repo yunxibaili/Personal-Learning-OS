@@ -1,6 +1,9 @@
 /** 唯一的后端访问入口（separation.md）：所有请求走 /api/v1，错误统一 ApiError。 */
 
-const BASE = "/api/v1";
+// 桌面打包（tauri build --mode desktop）：sidecar 固定 127.0.0.1:8100（见
+// server/backend_main.py 与 TASKS §T-P0-2b）；dev（vite proxy）与 web 部署用相对路径。
+const API_BASE = import.meta.env.MODE === "desktop" ? "http://127.0.0.1:8100" : "";
+const BASE = `${API_BASE}/api/v1`;
 
 export class ApiError extends Error {
   readonly code: string;

@@ -134,6 +134,9 @@ Security considerations:
 vite · typescript · vitest · pytest · @vitejs/plugin-react · @types/*
 （仅构建期，不进入运行时 footprint）
 
+构建期工具（不进运行时 footprint，随各自工具环境安装）：
+pyinstaller 6.22.2（server/.venv；P0-2b 桌面 sidecar 打包，2026-09-03）
+
 ### 规划中依赖（触发条件达成前禁止安装）
 
 | 包 | 用途 | 触发条件 |

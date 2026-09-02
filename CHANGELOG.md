@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **P0-2b Tauri sidecar 接线——桌面版双击可用（P0 PC Stable Baseline）**：
+  - `server/backend_main.py` + `plos_backend.spec`（PyInstaller onefile，15.5MB）：
+    workspace 上溯解析（开发树自动命中 repo/workspace 真数据）、端口 8100
+    避让 dev 8000、host 恒 127.0.0.1
+  - `app/db.py` frozen 分支（打包态 migrations 路径）+ `app/main.py` CORS
+    （tauri.localhost / localhost:5173）
+  - `api.ts` 支持 `VITE_API_BASE` 覆盖；`web/.env.desktop`（--mode desktop）；
+    `tauri.conf.json` externalBin + beforeBuildCommand desktop 模式；
+    `lib.rs` sidecar spawn + 退出 kill（薄壳原则，端口/workspace 解析在 Python 侧）
+  - 端到端实测：双击 plos.exe 自动拉起 sidecar → 8100 全通（真库 20 篇）→
+    退出零残留；pytest 50 / vitest 186 / tsc PASS（详见 TASKS §T-P0-2b）
 - **中文 FTS 架构选型 + CJK bigram 实现（ADR-027，取代 ADR-011）**：
   - 选型评审（只读）四案加权：bigram 预分词 70 > trigram+LIKE 67 > jieba 58 >
     ICU 44；证伪 ADR-011 原首选 trigram（<3 字符查询静默 0 命中）；

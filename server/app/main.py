@@ -12,6 +12,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -76,6 +77,18 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     app = FastAPI(title="Personal Learning OS", version=APP_VERSION,
                   lifespan=lifespan)
+    # P0-2b（方案 i）：桌面 WebView origin 为 http://tauri.localhost，
+    # 生产前端以绝对地址 VITE_API_BASE 跨源访问本机 sidecar——需放行 CORS。
+    # dev 5173 一并放行（vite proxy 同源转发不受影响，显式列出便于直连调试）。
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://tauri.localhost", "https://tauri.localhost",
+            "http://localhost:5173",
+        ],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.include_router(settings_router)
     app.include_router(notes_router)
     app.include_router(links_router)
