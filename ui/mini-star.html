@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini Star · 单笔记视角迷你星系</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  /* ===== 页面骨架（与 ui 库其他规范页一致） ===== */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg-soft);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  .topbar{height:var(--nav-h);display:flex;align-items:center;gap:var(--sp-4);padding:0 var(--sp-6);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
+  .brand{font-size:var(--fs-md);font-weight:600;letter-spacing:-.01em}.brand i{color:var(--brand);font-style:normal}
+  .topbar .home{margin-left:auto;font-size:var(--fs-sm);color:var(--text-2);text-decoration:none}.topbar .home:hover{color:var(--brand-deep)}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:var(--sp-10) var(--sp-6) var(--sp-24)}
+  .bread{font-size:var(--fs-xs);color:var(--text-3);margin-bottom:var(--sp-3);letter-spacing:.04em;text-transform:uppercase}
+  .bread code{font-family:var(--mono);background:var(--surface-2);padding:2px 6px;border-radius:var(--r-xs);font-size:11px;color:var(--text-2)}
+  h1{font-size:var(--fs-4xl);font-weight:600;letter-spacing:-.02em;margin:0 0 var(--sp-3)}
+  h1 em{font-style:normal;color:var(--brand-deep)}
+  .lede{font-size:var(--fs-lg);color:var(--text-2);max-width:720px;line-height:1.65;margin:0 0 var(--sp-8)}
+
+  section{margin-top:var(--sp-12)}
+  h2{font-size:var(--fs-xl);font-weight:600;margin:0 0 var(--sp-2);letter-spacing:-.01em}
+  h2 .step{display:inline-block;font-family:var(--mono);font-size:var(--fs-xs);background:var(--brand-soft);color:var(--brand-deep);padding:2px 8px;border-radius:var(--r-sm);margin-right:var(--sp-2);vertical-align:middle}
+  .sec-sub{color:var(--text-2);margin:0 0 var(--sp-5);font-size:var(--fs-sm)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:var(--sp-5)}
+  .note{font-size:var(--fs-sm);color:var(--text-2);background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);margin-top:var(--sp-4);line-height:1.65}
+
+  /* ===== 演示容器 ===== */
+  .demo-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4);margin-top:var(--sp-2)}
+  .demo-cell{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:var(--sp-4);display:flex;flex-direction:column;align-items:center;gap:var(--sp-3)}
+  .demo-cell .lbl{font-size:var(--fs-xs);color:var(--text-3)}
+  .demo-cell .desc{font-size:var(--fs-xs);color:var(--text-3);text-align:center;line-height:1.5}
+
+  /* ===== 真实使用场景（与 Home 页截图 1 配套） ===== */
+  .star-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);
+    padding:var(--sp-5) var(--sp-6);
+    display:grid;grid-template-columns:1fr auto;gap:var(--sp-4) var(--sp-6);align-items:start;
+  }
+  .star-card h3{margin:0;font-size:var(--fs-2xl);font-weight:600;letter-spacing:-.01em}
+  .star-card .by{font-size:var(--fs-sm);color:var(--text-3);margin-top:var(--sp-1)}
+  .star-card .stats{display:flex;gap:var(--sp-6);margin-top:var(--sp-4)}
+  .star-card .stat{display:flex;flex-direction:column;gap:2px}
+  .star-card .stat b{font-size:var(--fs-3xl);font-weight:600;font-family:var(--font);letter-spacing:-.02em;color:var(--text)}
+  .star-card .stat b.brand{color:var(--brand)}
+  .star-card .stat span{font-size:var(--fs-xs);color:var(--text-3)}
+  .star-card .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--sp-4)}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--r-pill);background:var(--surface-2);font-size:var(--fs-xs);color:var(--text-2);border:1px solid transparent}
+  .chip.active{background:var(--brand-soft);color:var(--brand-deep);border-color:var(--brand-line)}
+  .chip:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+  /* ===== mini-star 组件自身 ===== */
+  .mini-star-wrap{position:relative;width:88px;height:88px}
+  .mini-star-wrap canvas{display:block;width:88px;height:88px}
+  .mini-star-wrap[data-active="true"]{cursor:pointer}
+  .mini-star-wrap[data-active="true"]:hover .mini-star-ring{opacity:.6}
+  .mini-star-ring{position:absolute;inset:-6px;border-radius:50%;border:1px dashed var(--brand-line);opacity:0;transition:opacity var(--dur-fast) var(--ease-out);pointer-events:none}
+
+  /* ===== 规范表 ===== */
+  table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);margin-top:var(--sp-3)}
+  th,td{text-align:left;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-weight:600;color:var(--text-2);background:var(--bg-elev);font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.04em}
+  td:first-child{font-weight:600;color:var(--text);width:120px}
+  td code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:2px 6px;border-radius:var(--r-xs);color:var(--text-2)}
+  .ok{color:var(--ok)}.no{color:var(--err)}
+
+  /* ===== 三档可调（控制台） ===== */
+  .ctrl{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;margin:var(--sp-3) 0 0}
+  .ctrl label{font-size:var(--fs-sm);color:var(--text-2);display:flex;align-items:center;gap:var(--sp-2)}
+  .ctrl input[type="range"]{accent-color:var(--brand);width:140px}
+  .ctrl select{font-family:inherit;font-size:var(--fs-sm);padding:4px 8px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Open Learning <i>OS</i>.</div>
+  <a class="home" href="./index.html">← gallery</a>
+</header>
+
+<div class="wrap">
+
+  <div class="bread">UI 库 · <code>mini-star.html</code> · v1 · 2026-09-02</div>
+  <h1>Mini Star · 主笔记视角的<em>迷你星系</em></h1>
+  <p class="lede">
+    笔记工作区右上角内嵌的小型可视化——一颗主笔记星球 + 它的卫星在轨道上转。
+    来自 <a href="./home-hero.html" style="color:var(--brand-deep)">home-hero</a> 的 <code>drawSatellite</code> 算法缩到 88px，
+    不带点阵贴图、不带光晕、不带 hover 被动响应——<strong>它不抢戏</strong>，
+    只在用户主动点击时把当前笔记的卫星清单列在下方（写回 chip 由宿主页面更新）。
+  </p>
+
+  <!-- ==================================================== ① 演示矩阵 -->
+  <section>
+    <h2><span class="step">①</span>四档规模</h2>
+    <p class="sec-sub">默认 88px。宿主按容器宽度可调到 56 / 72 / 96；性能契约 ≤ 16 颗卫星、≤ 3 圈轨道。</p>
+
+    <div class="demo-row">
+      <div class="demo-cell">
+        <div class="mini-star-wrap"><canvas data-mini-star="2" data-labels='["反链 1","反链 2"]' width="88" height="88" aria-label="迷你星系·2 卫星"></canvas><div class="mini-star-ring"></div></div>
+        <div class="lbl">56px · 2 卫星</div>
+        <div class="desc">笔记只有 1 篇被引时</div>
+      </div>
+      <div class="demo-cell">
+        <div class="mini-star-wrap" style="width:72px;height:72px"><canvas data-mini-star="3" data-labels='["SGD","Adam","Nesterov"]' width="72" height="72" aria-label="迷你星系·3 卫星"></canvas><div class="mini-star-ring"></div></div>
+        <div class="lbl">72px · 3 卫星</div>
+        <div class="desc">默认档·3 颗子笔记</div>
+      </div>
+      <div class="demo-cell">
+        <div class="mini-star-wrap"><canvas data-mini-star="5" data-labels='["SGD","Adam","Nesterov","RMSprop","Adagrad"]' width="88" height="88" aria-label="迷你星系·5 卫星"></canvas><div class="mini-star-ring"></div></div>
+        <div class="lbl">88px · 5 卫星</div>
+        <div class="desc">优化器多分支</div>
+      </div>
+      <div class="demo-cell">
+        <div class="mini-star-wrap" style="width:96px;height:96px"><canvas data-mini-star="8" data-labels='["SGD","Adam","Nesterov","RMSprop","Adagrad","Momentum","AdaDelta","AdamW"]' width="96" height="96" aria-label="迷你星系·8 卫星"></canvas><div class="mini-star-ring"></div></div>
+        <div class="lbl">96px · 8 卫星</div>
+        <div class="desc">上限·8 颗</div>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>卫星数 <input id="ctlSats" type="range" min="0" max="16" value="3"></label>
+      <label>轨道数 <select id="ctlOrb"><option>1</option><option selected>2</option><option>3</option></select></label>
+      <label>自转 <select id="ctlSpin"><option value="on" selected>on</option><option value="off">off (reduced-motion)</option></select></label>
+      <span id="ctlEcho" style="font-family:var(--mono);font-size:12px;color:var(--text-3)">3 卫星 · 2 轨道</span>
+    </div>
+
+    <div class="note">
+      点任意 canvas → 上方 <code>[Host]</code> chip 高亮对应标签；再次点击同一颗 → 取消高亮。
+      demo 用 <code>data-active="true"</code> 标记可点态——<strong>点出的不是弹窗，是写在 chip 的高亮</strong>，
+      呼应「聚光是引导，状态是文字」（ADR-013 §2.13）。
+    </div>
+  </section>
+
+  <!-- ==================================================== ② 真实落点：笔记工作区右上角 -->
+  <section>
+    <h2><span class="step">②</span>真实落点 · 笔记工作区右上角</h2>
+    <p class="sec-sub">与 <a href="./note-workspace.html" style="color:var(--brand-deep)">note-workspace.html</a> 顶部主笔记卡配套，Mini Star 与下方卡片网格形成「视觉索引 ⇄ 列表切换」的双向锚。</p>
+
+    <div class="star-card" id="hostCard">
+      <div>
+        <h3>优化器</h3>
+        <div class="by">深度学习 · 上次更新 14:32 · 1,284 字</div>
+        <div class="stats">
+          <div class="stat"><b class="brand" id="statSats">3</b><span>卫星笔记</span></div>
+          <div class="stat"><b id="statLinks">5</b><span>总链接</span></div>
+          <div class="stat"><b id="statMastery">67</b><span>平均掌握度</span></div>
+        </div>
+        <div class="chips" id="hostChips">
+          <button class="chip" data-name="SGD">SGD</button>
+          <button class="chip" data-name="Adam">Adam</button>
+          <button class="chip" data-name="学习率调度">学习率调度</button>
+        </div>
+      </div>
+      <div>
+        <div class="mini-star-wrap" data-active="true" id="hostStar">
+          <canvas id="hostCanvas" data-mini-star="3" data-labels='["SGD","Adam","学习率调度"]' width="88" height="88" aria-label="当前笔记的迷你星系，点击展开下方 chip"></canvas>
+          <div class="mini-star-ring"></div>
+        </div>
+        <div style="text-align:right;margin-top:6px;font-size:11px;color:var(--text-3)">卫星系统·点任意星球</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== ③ 规范 -->
+  <section>
+    <h2><span class="step">③</span>规范</h2>
+    <p class="sec-sub">性能契约与 ADR-013 §2.10 装饰动效约束的最小交集。</p>
+
+    <table>
+      <thead><tr><th>项</th><th>取值</th><th>依据</th></tr></thead>
+      <tbody>
+        <tr><td>尺寸</td><td>56 / 72 / 88（默认）/ 96 px；尺寸靠 CSS 控制</td><td>右上角不抢眼，4 档覆盖主流场景</td></tr>
+        <tr><td>卫星数</td><td>0–16（默认 3）· ≤ 16</td><td>性能契约冻结</td></tr>
+        <tr><td>轨道数</td><td>1–3（默认 2）</td><td>3 圈已能容纳 ≤ 16 颗且视觉不挤</td></tr>
+        <tr><td>中央</td><td>半径 = 容器尺寸 × 22%，<code>--brand</code> 实心</td><td>主笔记即星球</td></tr>
+        <tr><td>卫星</td><td>域色硬编码为 <code>--text-2</code>（中性）；与中央同形状</td><td>形状即语义（ADR-023）—— 主/副都用圆点，区分靠相对位置而非颜色</td></tr>
+        <tr><td>轨道线</td><td>1px 虚线 <code>--border-strong</code></td><td>轨道存在但克制</td></tr>
+        <tr><td>拖尾</td><td>弧度 1.1rad·9 段·墨色 <code>rgba(32,34,40,.38)</code></td><td>与 home-hero 一致</td></tr>
+        <tr><td>FPS</td><td>30，单 rAF 节流</td><td>性能契约</td></tr>
+        <tr><td>dpr</td><td>固定 1（不放大）</td><td>88px 已小，再 dpr>1 浪费像素</td></tr>
+        <tr><td>reduced-motion</td><td>不绘制卫星拖尾 · 停止相位推进 · 中央与轨道保留</td><td>可访问</td></tr>
+        <tr><td>hover / focus</td><td>无被动响应（不算交互组件）；可点态用 <code>data-active="true"</code> 显式开启</td><td>右上角的可视化不抢戏</td></tr>
+        <tr><td>触发回调</td><td>点 canvas → <code>new CustomEvent('mini-star:pick', { detail:{ index,name } })</code></td><td>宿主用 <code>addEventListener</code> 处理</td></tr>
+        <tr><td>禁止</td><td>点阵贴图·多色 palette·光晕·常亮发光·装饰 box-shadow·emoji</td><td>ADR-013 §2.6/§2.7/§2.10</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>与 home-hero 的关系：</strong>共享同一套 <code>ringPoint/satPhase</code> 算法，
+      但刻意简化——不放点阵贴图（mini 不显细节）、去掉 mouse reactive（不与下方卡片抢 hover）、
+      颜色策略改为「主/副形状同形」而非 6 域 palette（mini 不承担域分类）。
+      真实视觉跑起来是 <code>home-hero</code> ← <code>mini-star</code> 的「严肃微缩版」。
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================================
+   Mini Star 引导器（可被任何页面引用）
+   ----------------------------------------------------------------------------
+   用法：宿主页面 <canvas class="mini-star" data-mini-star="N"
+                       data-labels='["a","b",...]'
+                       data-orbits="2"
+                       data-spin="on|off">
+        </canvas>
+   触发：点 canvas → 在该 canvas 上派发 CustomEvent('mini-star:pick')
+         detail = { index, name }
+   ============================================================================ */
+(function () {
+  'use strict';
+  if (window.__miniStarBooted) return;  // 防止重复挂载
+  window.__miniStarBooted = true;
+
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const FRAME_MS = 1000 / 30;
+
+  /* 圆锥椭圆点（含倾斜角）—— 与 home-hero 共用此公式 */
+  function ringPoint(c, orb, t) {
+    const lx = orb.rx * Math.cos(t);
+    const ly = orb.ry * Math.sin(t);
+    return {
+      x: c.x + lx * Math.cos(orb.tilt) - ly * Math.sin(orb.tilt),
+      y: c.y + lx * Math.sin(orb.tilt) + ly * Math.cos(orb.tilt),
+    };
+  }
+  const safe = (s, fb) => { try { return JSON.parse(s); } catch { return fb; } };
+
+  function boot(canvas) {
+    if (canvas.__miniStarMounted) return;
+    canvas.__miniStarMounted = true;
+
+    const ctx = canvas.getContext('2d');
+    const total = Math.min(16, Math.max(0, parseInt(canvas.dataset.miniStar || '3', 10)));
+    const labels = safe(canvas.dataset.labels || '[]', []);
+    const orbitsN = Math.min(3, Math.max(1, parseInt(canvas.dataset.orbits || '2', 10)));
+    const wantSpin = (canvas.dataset.spin || 'on') === 'on';
+    const spinOn = wantSpin && !REDUCED;
+
+    const w = canvas.width;     // CSS 控制的实际尺寸
+    const cR = w * 0.22;        // 中央半径
+    const OX = [
+      { rx: 0.42, ry: 0.15, tilt: -0.18 },
+      { rx: 0.50, ry: 0.18, tilt:  0.42 },
+      { rx: 0.58, ry: 0.22, tilt: -0.62 },
+    ];
+    const ORBITS = OX.slice(0, orbitsN);
+    const PERIOD = 18;
+    const TRAIL_RAD = 1.1;
+    const TRAIL_SEGS = 9;
+    const SAT_MIN = w * 0.034;
+    const SAT_MAX = w * 0.078;
+
+    /* 域名颜色（仅中央用 brand；卫星用 text-2，避免 palette 回归） */
+    const SAT_RGB = getComputedStyle(canvas).getPropertyValue('--text-2').trim() || '#525252';
+    const SAT_TRIPLE = (() => {
+      const m = SAT_RGB.match(/^#([0-9a-f]{6})$/i);
+      if (m) {
+        const n = parseInt(m[1], 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      }
+      return [82, 82, 82];
+    })();
+    const BRAND_RGB = [255, 107, 53];
+
+    let raf = 0, last = 0, acc = 0;
+    const sats = Array.from({ length: total }, (_, i) => ({
+      size: SAT_MIN + ((i * 7) % 100) / 100 * (SAT_MAX - SAT_MIN),
+      orbit: ORBITS[i % ORBITS.length],
+      phase: (i * 137.5) % (Math.PI * 2),
+      speed: (Math.PI * 2) / (PERIOD * (1 + ORBITS[i % ORBITS.length].rx - ORBITS[0].rx)),
+    }));
+
+    function frame(now) {
+      raf = 0;
+      const dt = (now - last) / 1000;
+      last = now;
+      if (spinOn) acc += dt;
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const c = { x: cx, y: cy };
+
+      /* 1 轨道线（虚线 1px） */
+      ctx.save();
+      ctx.setLineDash([2, 3]);
+      ctx.strokeStyle = 'rgba(212,212,212,1)';
+      ctx.lineWidth = 1;
+      ORBITS.forEach((o) => {
+        ctx.beginPath();
+        for (let t = 0; t <= Math.PI * 2 + 0.05; t += 0.2) {
+          const p = ringPoint(c, { rx: o.rx * w, ry: o.ry * w, tilt: o.tilt }, t);
+          if (t === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      /* 2 卫星（域色硬编码为 text-2 / brand 描边） */
+      const cnv = canvas;
+      sats.forEach((s) => {
+        if (spinOn) s.phase += s.speed * dt;
+        const depth = Math.sin(s.phase);
+        const head = ringPoint(c, { rx: s.orbit.rx * w, ry: s.orbit.ry * w, tilt: s.orbit.tilt }, s.phase);
+        const baseAlpha = 0.725 + 0.225 * depth;
+        const r = s.size;
+
+        /* 拖尾（reduced-motion 不画） */
+        if (!REDUCED) {
+          ctx.save();
+          ctx.lineCap = 'round';
+          for (let k = 0; k < TRAIL_SEGS; k++) {
+            const t0 = s.phase - ((k + 1) / TRAIL_SEGS) * TRAIL_RAD;
+            const t1 = s.phase - (k / TRAIL_SEGS) * TRAIL_RAD;
+            const p0 = ringPoint(c, { rx: s.orbit.rx * w, ry: s.orbit.ry * w, tilt: s.orbit.tilt }, t0);
+            const p1 = ringPoint(c, { rx: s.orbit.rx * w, ry: s.orbit.ry * w, tilt: s.orbit.tilt }, t1);
+            const fade = 1 - k / TRAIL_SEGS;
+            ctx.strokeStyle = `rgba(${SAT_TRIPLE[0]},${SAT_TRIPLE[1]},${SAT_TRIPLE[2]},${(0.38 * fade * baseAlpha).toFixed(3)})`;
+            ctx.lineWidth = Math.max(0.4, r * 0.6 * fade) * (0.775 + 0.225 * depth);
+            ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        /* 本体 */
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${SAT_TRIPLE[0]},${SAT_TRIPLE[1]},${SAT_TRIPLE[2]},${baseAlpha})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(${BRAND_RGB[0]},${BRAND_RGB[1]},${BRAND_RGB[2]},${0.45 * baseAlpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      /* 3 中央（brand 实心 + 描边） */
+      ctx.beginPath();
+      ctx.arc(cx, cy, cR, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${BRAND_RGB[0]},${BRAND_RGB[1]},${BRAND_RGB[2]},1)`;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    function tick(now) {
+      if (now - last >= FRAME_MS) {
+        frame(now);
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+
+    /* 点击：派发 mini-star:pick */
+    canvas.addEventListener('click', (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      /* 计算命中卫星：用最近投影 */
+      let bestIdx = -1, bestD = 1e9;
+      const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
+      const c = { x: canvas.width / 2, y: canvas.height / 2 };
+      sats.forEach((s, i) => {
+        const p = ringPoint(c, { rx: s.orbit.rx * w, ry: s.orbit.ry * w, tilt: s.orbit.tilt }, s.phase);
+        const d = (p.x - px) ** 2 + (p.y - py) ** 2;
+        if (d < bestD) { bestD = d; bestIdx = i; }
+      });
+      /* 距离阈值：≤ 自身半径 × 5 视为命中 */
+      const satSize = (bestIdx >= 0 && sats[bestIdx]) ? Math.max(sats[bestIdx].size, 4) : 4;
+      const hit = (bestIdx >= 0 && bestD <= (satSize * 5) ** 2);
+      window.__lastClick = (window.__miniStarDebug)
+        ? { px, py, bestIdx, bestD: Math.round(bestD), satSize, satsLen: sats.length }
+        : null;
+      canvas.dispatchEvent(new CustomEvent('mini-star:pick', {
+        bubbles: true, detail: {
+          hit, index: hit ? bestIdx : -1,
+          name: hit && labels[bestIdx] !== undefined ? labels[bestIdx] : null,
+          clientX: ev.clientX, clientY: ev.clientY,
+        }
+      }));
+    });
+  }
+
+  function bootAll(root) {
+    (root || document).querySelectorAll('canvas[data-mini-star]').forEach(boot);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => bootAll(document));
+  } else {
+    bootAll(document);
+  }
+  window.__miniStarBootAll = bootAll;       // 让 dynamic-rendered canvas 也能被初始化
+})();
+
+/* ===== 演示矩阵控制：卫星数/轨道数/自转档 ===== */
+(function () {
+  const r = document.getElementById('ctlSats');
+  const o = document.getElementById('ctlOrb');
+  const s = document.getElementById('ctlSpin');
+  const echo = document.getElementById('ctlEcho');
+  if (!r) return;
+  function update() {
+    echo.textContent = `${r.value} 卫星 · ${o.value} 轨道 · ${s.value === 'on' ? '旋转' : '停止'}`;
+    document.querySelectorAll('.demo-row .mini-star-wrap canvas').forEach((c) => {
+      c.dataset.miniStar = r.value;
+      c.dataset.orbits = o.value;
+      c.dataset.spin = s.value;
+      c.__miniStarMounted = false;
+      c.getContext('2d').clearRect(0, 0, c.width, c.height);
+      window.__miniStarBootAll(c.parentElement);
+      c.__miniStarMounted = true;
+    });
+    document.querySelectorAll('.demo-row .mini-star-wrap canvas').forEach((c) => {
+      c.__miniStarMounted = false;
+    });
+    document.querySelectorAll('.demo-row .mini-star-wrap').forEach((wrap) => {
+      wrap.querySelectorAll('canvas').forEach((c) => {
+        c.__miniStarMounted = false;
+        window.__miniStarBootAll(wrap);
+      });
+    });
+  }
+  r.addEventListener('input', update);
+  o.addEventListener('change', update);
+  s.addEventListener('change', update);
+  update();
+})();
+
+/* ===== 真实落点：点 Mini Star → chip 高亮 ===== */
+(function () {
+  const star = document.getElementById('hostCanvas');
+  const chips = document.querySelectorAll('#hostChips .chip');
+  if (!star || !chips.length) return;
+  let active = -1;
+  star.addEventListener('mini-star:pick', (ev) => {
+    const d = ev.detail;
+    chips.forEach((c) => c.classList.remove('active'));
+    const next = d.index;
+    if (next < 0 || next >= chips.length) { active = -1; return; }
+    if (next === active) { active = -1; return; }
+    active = next;
+    chips[next].classList.add('active');
+    chips[next].focus({ preventScroll: true });
+  });
+  chips.forEach((c, i) => {
+    c.addEventListener('click', () => {
+      chips.forEach((x) => x.classList.remove('active'));
+      if (active === i) { active = -1; } else { active = i; c.classList.add('active'); }
+    });
+    c.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        chips[(i + 1) % chips.length].focus();
+        chips.forEach((x) => x.classList.remove('active'));
+        chips[(i + 1) % chips.length].classList.add('active');
+        active = (i + 1) % chips.length;
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        chips[(i - 1 + chips.length) % chips.length].focus();
+        chips.forEach((x) => x.classList.remove('active'));
+        chips[(i - 1 + chips.length) % chips.length].classList.add('active');
+        active = (i - 1 + chips.length) % chips.length;
+      } else if (e.key === 'Escape') {
+        chips.forEach((x) => x.classList.remove('active'));
+        active = -1;
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dot Earth · 点阵地球 + 多轨卫星（主页 Hero 主视觉）</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  /* ===== 页面骨架（与 ui 库其他规范页一致） ===== */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg-soft);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased}
+  .topbar{height:var(--nav-h);display:flex;align-items:center;gap:var(--sp-4);padding:0 var(--sp-6);background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
+  .brand{font-size:var(--fs-md);font-weight:600;letter-spacing:-.01em}.brand i{color:var(--brand);font-style:normal}
+  .topbar .home{margin-left:auto;font-size:var(--fs-sm);color:var(--text-2);text-decoration:none}.topbar .home:hover{color:var(--brand-deep)}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:var(--sp-10) var(--sp-6) var(--sp-24)}
+  .bread{font-size:var(--fs-xs);color:var(--text-3);margin-bottom:var(--sp-3);letter-spacing:.04em;text-transform:uppercase}
+  .bread code{font-family:var(--mono);background:var(--surface-2);padding:2px 6px;border-radius:var(--r-xs);font-size:11px;color:var(--text-2)}
+  h1{font-size:var(--fs-4xl);font-weight:600;letter-spacing:-.02em;margin:0 0 var(--sp-3)}
+  h1 em{font-style:normal;color:var(--brand-deep)}
+  .lede{font-size:var(--fs-lg);color:var(--text-2);max-width:720px;line-height:1.65;margin:0 0 var(--sp-8)}
+
+  section{margin-top:var(--sp-12)}
+  h2{font-size:var(--fs-xl);font-weight:600;margin:0 0 var(--sp-2);letter-spacing:-.01em}
+  h2 .step{display:inline-block;font-family:var(--mono);font-size:var(--fs-xs);background:var(--brand-soft);color:var(--brand-deep);padding:2px 8px;border-radius:var(--r-sm);margin-right:var(--sp-2);vertical-align:middle}
+  .sec-sub{color:var(--text-2);margin:0 0 var(--sp-5);font-size:var(--fs-sm)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:var(--sp-5)}
+  .note{font-size:var(--fs-sm);color:var(--text-2);background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);margin-top:var(--sp-4);line-height:1.65}
+  .note b{color:var(--text)}
+
+  /* ===== §① 组件本体演示 ===== */
+  .demo-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);margin-top:var(--sp-2)}
+  .demo-cell{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:var(--sp-4);display:flex;flex-direction:column;align-items:center;gap:var(--sp-3)}
+  .demo-cell .lbl{font-size:var(--fs-xs);font-weight:600;color:var(--text)}
+  .demo-cell .desc{font-size:var(--fs-xs);color:var(--text-3);text-align:center;line-height:1.5}
+  .de-wrap{position:relative;flex-shrink:0}
+  .de-wrap canvas{display:block}
+
+  /* ===== §② 落位三选一 ===== */
+  .place-grid{display:grid;gap:var(--sp-5);margin-top:var(--sp-2)}
+  .place{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
+  .place.recommend{border-color:var(--brand-line);box-shadow:inset 3px 0 0 var(--brand)}
+  .place.reject{border-style:dashed}
+  .place.reject .place__head h3{color:var(--text-2)}
+  .place__head{display:flex;align-items:baseline;gap:var(--sp-3);padding:var(--sp-4) var(--sp-5) var(--sp-2)}
+  .place__head .k{font-family:var(--mono);font-size:var(--fs-xs);background:var(--surface-2);color:var(--text-2);padding:2px 8px;border-radius:var(--r-sm)}
+  .place.recommend .place__head .k{background:var(--brand-soft);color:var(--brand-deep)}
+  .place.reject .place__head .k{background:var(--err-soft);color:var(--err)}
+  .place__head h3{margin:0;font-size:var(--fs-md);font-weight:600}
+  .place__head .verdict{margin-left:auto;font-size:var(--fs-xs);color:var(--text-3)}
+  .place.recommend .place__head .verdict{color:var(--brand-deep);font-weight:500}
+  .place.reject .place__head .verdict{color:var(--err);font-weight:500}
+
+  /* Hero 落位容器（模拟主页 Hero 的 1fr / 1fr 双栏） */
+  .hero-mock{display:grid;grid-template-columns:1fr 460px;gap:var(--sp-8);align-items:center;background:var(--bg-elev);padding:var(--sp-8);border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)}
+  .hero-mock .copy h3{margin:0 0 var(--sp-3);font-size:var(--fs-3xl);font-weight:600;letter-spacing:-.02em;line-height:1.2}
+  .hero-mock .copy p{margin:0 0 var(--sp-5);color:var(--text-2);font-size:var(--fs-md);line-height:1.65;max-width:420px}
+  .cta-row{display:flex;gap:var(--sp-2)}
+  .btn-p{display:inline-flex;align-items:center;height:36px;padding:0 var(--sp-4);border-radius:var(--r-md);background:var(--brand);color:var(--text-inv);font-size:var(--fs-sm);font-weight:500}
+  .btn-g{display:inline-flex;align-items:center;height:36px;padding:0 var(--sp-4);border-radius:var(--r-md);color:var(--text-2);font-size:var(--fs-sm);font-weight:500}
+
+  /* 落位容器：模拟真实三栏工作区（240 / 1fr / 320） */
+  .mock-ws{display:grid;grid-template-columns:200px 1fr 260px;min-height:340px;background:var(--bg-elev);border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)}
+  .mock-ws .col-l{background:var(--surface);border-right:1px solid var(--border);padding:var(--sp-4)}
+  .mock-ws .col-c{padding:var(--sp-5)}
+  .mock-ws .col-r{background:var(--surface);border-left:1px solid var(--border);padding:var(--sp-4)}
+  .mock-h{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp-3)}
+  .mock-line{height:6px;border-radius:99px;background:var(--surface-3);margin-bottom:8px}
+  .mock-line.on{background:var(--brand-soft)}
+  .mock-line.w30{width:30%}.mock-line.w50{width:50%}.mock-line.w70{width:70%}.mock-line.w90{width:90%}
+
+  /* 「优化器」主笔记卡（三种落位共用） */
+  .note-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-4)}
+  .note-card h4{margin:0;font-size:var(--fs-2xl);font-weight:600;letter-spacing:-.01em}
+  .note-card .by{font-size:var(--fs-xs);color:var(--text-3);margin-top:2px}
+  .note-card .stats{display:flex;gap:var(--sp-5);margin-top:var(--sp-3)}
+  .note-card .stat b{display:block;font-size:var(--fs-xl);font-weight:600;letter-spacing:-.02em;line-height:1.15}
+  .note-card .stat b.brand{color:var(--brand)}
+  .note-card .stat span{font-size:11px;color:var(--text-3)}
+  .note-card .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:var(--sp-3)}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:var(--r-pill);background:var(--surface-2);font-size:11px;color:var(--text-2);border:1px solid transparent}
+  .chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .chip.active{background:var(--brand-soft);color:var(--brand-deep);border-color:var(--brand-line)}
+
+  /* A：主卡右上 */
+  .place-a .note-card{display:grid;grid-template-columns:1fr 300px;gap:var(--sp-4);align-items:start}
+  .place-a .de-wrap{margin-left:auto}
+  /* B：主页 Hero 双栏（地球在右） */
+  .place-b .de-wrap{margin:0 auto}
+  /* C：笔记主卡 · 硬塞小尺寸 */
+  .place-c .note-card{display:grid;grid-template-columns:1fr 150px;gap:var(--sp-4);align-items:start}
+  .place-c .de-wrap{margin-left:auto}
+
+  .place__foot{padding:var(--sp-3) var(--sp-5) var(--sp-4);display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+  .place__foot .pro,.place__foot .con{font-size:var(--fs-xs);color:var(--text-2);line-height:1.6}
+  .place__foot .pro b{color:var(--ok)}
+  .place__foot .con b{color:var(--err)}
+  .place__foot ul{margin:4px 0 0;padding-left:16px}
+
+  /* ===== §③ 规格表 ===== */
+  table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+  th,td{text-align:left;padding:10px var(--sp-4);border-bottom:1px solid var(--border-soft);vertical-align:top}
+  th{background:var(--surface-2);font-size:var(--fs-xs);color:var(--text-2);font-weight:600;letter-spacing:.02em}
+  tr:last-child td{border-bottom:0}
+  td code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:var(--r-xs);color:var(--text-2)}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.06)}
+
+  /* ===== §④ 取舍 ===== */
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);margin-top:var(--sp-2)}
+  .vs .col{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:var(--sp-5)}
+  .vs .col h4{margin:0 0 var(--sp-3);font-size:var(--fs-md);font-weight:600}
+  .vs .col ul{margin:0;padding-left:18px;font-size:var(--fs-sm);color:var(--text-2);line-height:1.75}
+  .vs .col.dim{border-style:dashed}
+  .vs .col.dim h4{color:var(--text-3)}
+
+  /* ===== §⑤ 结论 ===== */
+  .verdict-box{background:var(--brand-soft);border:1px solid var(--brand-line);border-radius:var(--r-xl);padding:var(--sp-5);margin-top:var(--sp-2)}
+  .verdict-box h3{margin:0 0 var(--sp-2);font-size:var(--fs-md);font-weight:600;color:var(--brand-deep)}
+  .verdict-box p{margin:0;font-size:var(--fs-sm);color:var(--text);line-height:1.7}
+  .verdict-box p + p{margin-top:var(--sp-2)}
+
+  footer{margin-top:var(--sp-16);padding-top:var(--sp-6);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--text-3);display:flex;gap:var(--sp-4);flex-wrap:wrap}
+  footer a{color:var(--brand-deep);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Open Learning <i>OS</i>.</div>
+  <a class="home" href="./index.html">← ui 库总览</a>
+</div>
+
+<div class="wrap">
+
+  <div class="bread">ui 库 · 组件 · <code>dot-earth.html</code></div>
+  <h1>Dot Earth · 点阵地球 + <em>多轨卫星</em></h1>
+  <p class="lede">
+    <strong>主页 Hero 的主视觉</strong>：一颗<strong>点阵地球</strong>自转，多条近地轨道环绕，
+    每颗卫星是<strong>一个颜色的球体</strong>，沿轨道拖出<strong>墨色渐隐尾迹</strong>。
+    地球本体只有点阵大陆轮廓，<strong>没有中间那些彩色节点连线</strong> —— 概念网络归 GraphView，这里只保留「星球 + 轨道卫星」两层。
+  </p>
+  <p class="lede" style="font-size:var(--fs-md);margin-top:calc(-1 * var(--sp-4))">
+    <b>落位：主页 Hero 与全屏「星系」浮层 —— 只在这里，不进笔记。</b>
+    它照 mimo.mi.com 的地球来，尺寸天然大（<b>建议 ≥ 320px</b>，Hero 用 460px）。
+    <b>笔记区一颗星球都不放</b>：2026-09-02 取消「卫星 = 笔记」映射后，
+    88px 的 <a href="./mini-star.html" style="color:var(--brand-deep)">Mini Star</a>
+    也从笔记卡右上角撤掉，退为纯规范页。理由见 §②、§⑤。
+  </p>
+
+  <!-- ══════════════════ ① 组件本体 ══════════════════ -->
+  <section id="demo">
+    <h2><span class="step">①</span>组件本体</h2>
+    <p class="sec-sub">
+      三个尺寸，同一份实现。点阵大陆来自 <code>assets/dots-world.png</code>（正像 + 水平镜像预拼成无缝长条，横向滚动 = 自转）。
+      卫星颜色取自项目既有的<strong>域调色板</strong>（与 <code>home-hero.html</code> / <code>KnowledgePlanet.tsx</code> 同源，未新造颜色）。
+    </p>
+    <div class="demo-row">
+      <div class="demo-cell">
+        <div class="de-wrap" style="width:200px;height:200px">
+          <canvas data-dot-earth data-orbits="2" width="200" height="200"
+            data-sats='[{"name":"SGD","w":0.9},{"name":"Adam","w":0.7},{"name":"学习率调度","w":0.4}]'
+            aria-label="卫星系统：点阵地球与 3 颗卫星"></canvas>
+        </div>
+        <div class="lbl">200 × 200</div>
+        <div class="desc">3 卫星 / 2 轨。地球直径 100px，点距 1.43px —— <b>点阵糊成一片</b>，只适合极窄场景。</div>
+      </div>
+      <div class="demo-cell">
+        <div class="de-wrap" style="width:260px;height:260px">
+          <canvas data-dot-earth data-orbits="3" width="260" height="260"
+            data-sats='[{"name":"SGD","w":0.9},{"name":"Adam","w":0.7},{"name":"学习率调度","w":0.4},{"name":"RAdam","w":0.55}]'
+            aria-label="卫星系统：点阵地球与 4 颗卫星"></canvas>
+        </div>
+        <div class="lbl">260 × 260</div>
+        <div class="desc">4 卫星 / 3 轨。地球直径 130px，点距 1.86px —— 点阵勉强可辨，<b>下限</b>。</div>
+      </div>
+      <div class="demo-cell">
+        <div class="de-wrap" style="width:320px;height:320px">
+          <canvas data-dot-earth data-orbits="3" width="320" height="320"
+            data-sats='[{"name":"SGD","w":0.9},{"name":"Adam","w":0.7},{"name":"学习率调度","w":0.4},{"name":"RAdam","w":0.55}]'
+            aria-label="卫星系统：点阵地球与 4 颗卫星"></canvas>
+        </div>
+        <div class="lbl">320 × 320</div>
+        <div class="desc">4 卫星 / 3 轨。地球直径 160px，点距 2.29px —— 点阵清晰，<b>组件内推荐尺寸</b>；Hero 用 460px。</div>
+      </div>
+    </div>
+    <div class="note">
+      <b>为什么地球不能再小。</b>贴图实测 2000×1049，原始点距 15px、点宽 6–7px；球面可见宽度约等于地球直径，
+      映射后点距 = <b>直径 ÷ 1049 × 15</b>（直径 = 容器 × <code>EARTH_D</code>，现行 0.50）。
+      实测四档：200px 容器 → 直径 100 → <b>1.43px（糊）</b>；260 → 130 → <b>1.86px（勉强，下限）</b>；
+      320 → 160 → <b>2.29px（清晰）</b>；Hero 的 460 → 230 → <b>3.29px（清晰）</b>。
+      这也是为什么「右上角星球」不能继续用 88px 的小星：<b>88px 装不下点阵</b>（直径仅 44px → 点距 0.63px），
+      只能是无贴图的纯色星球（即 <code>mini-star.html</code>）。
+    </div>
+  </section>
+
+  <!-- ══════════════════ ② 落位 ══════════════════ -->
+  <section id="placement">
+    <h2><span class="step">②</span>落位：进 Hero，不进笔记</h2>
+    <p class="sec-sub">
+      2026-09-02 所有者裁定：<b>「点阵地球不要放在笔记里，太大了。」</b>「优化器就不用显示卫星系统了。
+      也不用搞笔记增加卫星增加了，这个点阵地球就是主页的固定动画。」
+      <br>它的位置照 mimo.mi.com 来 —— <b>主页 Hero 的主视觉</b>，且<b>只在这里</b>。
+      同一轮裁定同时取消了「卫星 = 笔记」的映射：笔记区现在<b>一颗星球都没有</b>，标题旁不再放 88px 的小星，
+      <a href="./mini-star.html">mini-star.html</a> 因此退为纯规范页（<b>当前无页面消费</b>）。
+      <br>于是只剩两档，各自只做自己装得下的事：<b>Hero ≥ 320px → 点阵地球</b>；<b>笔记区 → 全静态，无星球</b>。
+      中间那档（100–280px）两边都不占：点阵糊、纯色星球又失去语义 —— <b>不做</b>。
+    </p>
+
+    <div class="place-grid">
+
+      <!-- ✗ 笔记主卡 · 大尺寸 -->
+      <div class="place place-a reject">
+        <div class="place__head">
+          <span class="k">✗</span>
+          <h3>笔记主卡 · 300px</h3>
+          <span class="verdict">太大</span>
+        </div>
+        <div class="mock-ws">
+          <div class="col-l">
+            <div class="mock-h">笔记</div>
+            <div class="mock-line on w70"></div>
+            <div class="mock-line w50"></div>
+            <div class="mock-line w90"></div>
+            <div class="mock-line w70"></div>
+            <div class="mock-line w50"></div>
+          </div>
+          <div class="col-c">
+            <div class="note-card">
+              <div>
+                <h4>优化器</h4>
+                <div class="by">深度学习 · 上次更新 14:32 · 1,284 字</div>
+                <div class="stats">
+                  <div class="stat"><b>3</b><span>关联笔记</span></div>
+                  <div class="stat"><b>5</b><span>总链接</span></div>
+                  <div class="stat"><b>67</b><span>平均掌握度</span></div>
+                </div>
+                <div class="chips" data-bind="a">
+                  <span class="chip active"><i class="dot" style="background:#7c93ad"></i>SGD</span>
+                  <span class="chip"><i class="dot" style="background:#c9a86a"></i>Adam</span>
+                  <span class="chip"><i class="dot" style="background:#8aab8e"></i>学习率调度</span>
+                  <span class="chip"><i class="dot" style="background:#a08cb4"></i>RAdam</span>
+                </div>
+              </div>
+              <div class="de-wrap" style="width:300px;height:300px">
+                <canvas data-dot-earth data-orbits="3" width="300" height="300"
+                  data-sats='[{"name":"SGD","w":0.9},{"name":"Adam","w":0.7},{"name":"学习率调度","w":0.4},{"name":"RAdam","w":0.55}]'
+                  aria-label="优化器的卫星系统"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-r">
+            <div class="mock-h">大纲 / 反链 / 掌握度</div>
+            <div class="mock-line w90"></div>
+            <div class="mock-line w70"></div>
+            <div class="mock-line w50"></div>
+          </div>
+        </div>
+        <div class="place__foot">
+          <div class="con"><b>为什么不进笔记</b>
+            <ul>
+              <li><b>尺寸账</b>：中栏内容宽 610px，300px 的地球把标题列压到约 290px，元信息行被迫换行</li>
+              <li><b>动线账</b>：星球在正文正上方且持续自转 —— 写着字旁边有东西在转，与「工具栏只放格式控件」是同一类问题</li>
+              <li><b>注意力账</b>：点阵 + 4 颗彩球 + 墨色拖尾是全页对比最强的一块，笔记正文反而成配角 —— 本末倒置</li>
+            </ul>
+          </div>
+          <div class="pro"><b>它唯一的优点</b>
+            <ul>
+              <li>星球与标题同处一个视觉单元，语义连接最直接 —— 但 2026-09-02 起<b>这条语义本身被取消了</b>：卫星不再映射笔记，笔记区不需要任何星球。优点归零</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✗ 笔记主卡 · 硬塞小尺寸 -->
+      <div class="place place-c reject">
+        <div class="place__head">
+          <span class="k">✗</span>
+          <h3>笔记主卡 · 硬塞 150px</h3>
+          <span class="verdict">点阵糊了</span>
+        </div>
+        <div class="mock-ws">
+          <div class="col-l">
+            <div class="mock-h">笔记</div>
+            <div class="mock-line on w70"></div>
+            <div class="mock-line w50"></div>
+            <div class="mock-line w90"></div>
+            <div class="mock-line w70"></div>
+            <div class="mock-line w50"></div>
+          </div>
+          <div class="col-c">
+            <div class="note-card">
+              <div>
+                <h4>优化器</h4>
+                <div class="by">深度学习 · 上次更新 14:32 · 1,284 字</div>
+                <div class="stats">
+                  <div class="stat"><b>3</b><span>关联笔记</span></div>
+                  <div class="stat"><b>5</b><span>总链接</span></div>
+                  <div class="stat"><b>67</b><span>平均掌握度</span></div>
+                </div>
+                <div class="chips" data-bind="c">
+                  <span class="chip active"><i class="dot" style="background:#7c93ad"></i>SGD</span>
+                  <span class="chip"><i class="dot" style="background:#c9a86a"></i>Adam</span>
+                  <span class="chip"><i class="dot" style="background:#8aab8e"></i>学习率调度</span>
+                </div>
+              </div>
+              <div class="de-wrap" style="width:150px;height:150px">
+                <canvas data-dot-earth data-orbits="3" width="150" height="150"
+                  data-sats='[{"name":"SGD","w":0.9},{"name":"Adam","w":0.7},{"name":"学习率调度","w":0.4},{"name":"RAdam","w":0.55}]'
+                  aria-label="优化器的卫星系统"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-r">
+            <div class="mock-h">大纲 / 反链 / 掌握度</div>
+            <div class="mock-line w90"></div>
+            <div class="mock-line w70"></div>
+            <div class="mock-line w50"></div>
+          </div>
+        </div>
+        <div class="place__foot">
+          <div class="con"><b>为什么缩小也不行</b>
+            <ul>
+              <li>地球直径只剩 <b>75px</b>（150 × 0.50），点距 ≈ <b>1.07px</b>，不到可辨下限 2.2px 的一半 —— 大陆轮廓糊成一团灰</li>
+              <li>那还不如<b>干脆不放图形</b>：2026-09-02 后笔记区全静态（标题 → stats → chip → 卡片），既不必假装有点阵，也不必在小尺寸里塞一颗纯色球</li>
+            </ul>
+          </div>
+          <div class="pro"><b>并排看</b>
+            <ul>
+              <li>这一格 150px 与上一格 300px 是同一份代码真实渲染 —— 小尺寸的点是糊的，大尺寸才读得出大陆</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✓ 主页 Hero -->
+      <div class="place place-b recommend">
+        <div class="place__head">
+          <span class="k">✓</span>
+          <h3>主页 Hero · 主视觉（460px）</h3>
+          <span class="verdict">采用</span>
+        </div>
+        <div class="hero-mock">
+          <div class="copy">
+            <h3>笔记第一。<br>其余第二。</h3>
+            <p>打开应用就是笔记工作区。主页只留一个入口、一句主张，和一颗还在长的星球 —— 看完这一眼就进去写字。</p>
+            <div class="cta-row"><span class="btn-p">立即开始 →</span><span class="btn-g">看主笔记视图</span></div>
+          </div>
+          <div class="de-wrap" style="width:460px;height:460px">
+            <canvas data-dot-earth data-orbits="4" width="460" height="460"
+              data-sats='[{"name":"梯度下降与优化器","w":0.56},{"name":"Attention 机制笔记","w":0.28},{"name":"SM-2 复习算法","w":1},{"name":"卷积网络读书笔记","w":0.16}]'
+              aria-label="知识星球：点阵地球与 4 颗不同颜色的卫星"></canvas>
+          </div>
+        </div>
+        <div class="place__foot">
+          <div class="pro"><b>为什么是这里</b>
+            <ul>
+              <li><b>mimo.mi.com 的地球就在这个位置</b> —— 主页主视觉，白空间足够；460px 容器 → 地球直径 230px、点距 3.29px，点阵清晰</li>
+              <li>Hero 是<b>「看」的地方，不是「读」的地方</b>：会自转的星球不跟阅读抢注意力</li>
+              <li>它不在笔记工作区里，因此不违反「打开应用即笔记工作区」的 IA 裁决（2026-08-30 裁决 A）</li>
+              <li>4 条轨道 + 4 颗卫星（home-hero 的真实笔记，按字数归一化权重），多轨围绕的形态只有在这个尺寸下才成立</li>
+            </ul>
+          </div>
+          <div class="con"><b>约束</b>
+            <ul>
+              <li>只在 <b>主页 Hero</b> 与全屏「星系」浮层出现；其余界面一律不复用</li>
+              <li>306KB 贴图只随 Hero 加载；笔记工作区不加载它 —— 那里连星球都没有，<b>零 canvas、零 rAF</b></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <b>一句话分工（2026-09-02 现行）。</b>不再是「同一隐喻两个尺度」，而是<b>只有一个尺度在用</b>：
+      <b>≥ 320px（Hero 460px）→ Dot Earth</b>：有点阵、会自转、卫星多色，<b>只放主页 Hero</b>；
+      <b>笔记区 → 不放任何星球</b>：卫星与笔记解绑后它没有语义，标题旁也不该有持续运动的图形
+      （ADR-013 §2.10）；
+      <b>56–96px 的 Mini Star</b>：实现保留为规范页，<b>当前无页面消费</b> —— 若将来列表行/卡片角标
+      需要小星，从这里取，不要新写。
+      中间那档（100–280px）两边都不占：点阵糊、纯色球又失去语义 —— <b>不要做</b>。
+    </div>
+  </section>
+
+  <!-- ══════════════════ ③ 规格表 ══════════════════ -->
+  <section id="spec">
+    <h2><span class="step">③</span>规格表</h2>
+    <p class="sec-sub">挂载方式：<code>&lt;canvas data-dot-earth&gt;</code>，脚本自动扫 <code>canvas[data-dot-earth]</code> 并逐个挂载，逐 canvas 幂等。</p>
+    <table>
+      <thead>
+        <tr><th style="width:15%">项</th><th style="width:30%">取值</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>挂载选择器</td><td><code>canvas[data-dot-earth]</code></td><td>同页多实例互不干扰；<code>window.__dotEarthBootAll(root)</code> 供动态渲染复用</td></tr>
+        <tr><td>尺寸</td><td>由 CSS 容器决定</td><td><code>ResizeObserver</code> 跟随容器；<b>建议 ≥ 320px</b>（点距 ≥ 2.2px 的可辨下限）；260–300px 为「勉强」，&lt; 200px 点阵糊成一团</td></tr>
+        <tr><td>地球直径</td><td>容器 × 0.50</td><td>半径 = 容器 × 0.25（常量 <code>EARTH_D</code>）。与 <code>home-hero.html</code> 的 0.733 不同——本组件要给轨道留边；早期按 0.60 做过，实测球把轨道压住了，收到「球体有点大」后下调</td></tr>
+        <tr><td>点阵贴图</td><td><code>assets/dots-world.png</code></td><td>2000×1049；正像 + 水平镜像预拼成 4000px 无缝长条，横向滚动 = 自转，接缝天然对齐</td></tr>
+        <tr><td>自转速度</td><td>0.030 × 地球直径 / 秒</td><td><code>data-spin</code> 可选 <code>slow</code> 0.012 / <code>normal</code> 0.030 / <code>fast</code> 0.055；与页面尺寸无关，缩小不减速</td></tr>
+        <tr><td>轨道数</td><td>1–4（默认 3）</td><td><code>data-orbits</code>；rx/ry 为地球半径倍数，tilt 错开：<code>1.24/-0.20</code> · <code>1.40/0.44</code> · <code>1.56/-0.64</code> · <code>1.70/0.86</code></td></tr>
+        <tr><td>轨道不裁切</td><td>自动 <code>fit</code> 缩放</td><td>最外轨半径 + 卫星半径 &gt; 画布半宽时整体等比收缩，轨道永不出血</td></tr>
+        <tr><td>卫星数</td><td>0–16（默认 4）</td><td>上限同性能契约；超过 6 颗时颜色回退中性灰（见 §④）</td></tr>
+        <tr><td>卫星颜色</td><td>域调色板 6 色</td><td><span class="swatch" style="background:#7c93ad"></span>#7c93ad · <span class="swatch" style="background:#c9a86a"></span>#c9a86a · <span class="swatch" style="background:#8aab8e"></span>#8aab8e · <span class="swatch" style="background:#a08cb4"></span>#a08cb4 · <span class="swatch" style="background:#b48a8a"></span>#b48a8a · <span class="swatch" style="background:#6fa3b8"></span>#6fa3b8 —— 与 <code>home-hero.html</code> 同源，未新造</td></tr>
+        <tr><td>卫星大小</td><td>地球半径 × 0.085 – 0.160</td><td>由 <code>w</code>（0–1，可映射字数或链数）插值，不传取 0.5。460px 容器 → 9.8 – 18.4px 半径。<br><b>两轮实测定档，别再改</b>：曾照抄 home-hero 比例（0.024–0.059）→ 只剩 3.4–6.8px，被指「太小」；上限再往上，拖尾线宽（<code>headR × 0.8</code>）会先糊成一片</td></tr>
+        <tr><td>球后卫星</td><td><b>可见</b>，不遮挡</td><td>depth = <code>sin(phase)</code> ∈ [-1,1]；不透明度 <code>0.725 + depth×(depth≥0 ? 0.225 : 0.20)</code> → 0.95（球前最近）/ 0.725（侧边）/ 0.525（球后最远），两侧在 depth=0 收敛、连续无跳变；半径另乘 <code>0.8 + 0.2×depth</code>。<br><b>不要改回「球后先画、被地球盖住」的真遮挡</b>：卫星只有几 px，地球边缘扫过它只要 0.04s，真遮挡就是每圈约 3 成时间整个消失，进出像卡了一下</td></tr>
+        <tr><td>墨色拖尾</td><td>弧长 1.1 rad / 9 段</td><td><code>INK = [32,34,40]</code>，逐段 alpha <code>0.38 × fade × baseAlpha</code>，线宽 <code>headR × 0.8 × fade</code>，<code>lineCap: round</code></td></tr>
+        <tr><td>深度表达</td><td><code>sin(phase)</code> 判前后</td><td>见上「球后卫星」一行：<b>不做遮挡</b>，用不透明度 + 半径表达远近。轨道环仍按前后半段分开画（后半段被地球盖住 —— 环绕到球后是对的）</td></tr>
+        <tr><td>帧率</td><td>上限 60fps · 单 rAF</td><td><b>不沿用性能契约的 30fps</b>：地球自转只有 ~7px/秒，30fps 下每帧走 0.23px，点阵会读成「一格一格」。代价由预缩放/预渲染抵消。<br>节流判断留 6ms 容忍窗口（<code>FRAME_TOL</code>）——60Hz 帧间隔在 16.6–16.9ms 抖动，硬比 <code>FRAME_MS</code> 会让「两次 vsync」偶尔差一点不到阈值而整帧跳过，于是 33ms/50ms 交替，这正是「掉帧、不连贯」的根因</td></tr>
+        <tr><td>贴图</td><td>预缩放 + 预烘焙</td><td>4000px 无缝长条按渲染尺寸预缩一次（<code>strip</code>），周期取整 → 接缝落整像素；暗角 + 顶部柔光烘成一张叠加图（<code>overlay</code>）。每帧只剩 1:1 位块传输，<b>不要改回每帧 <code>drawImage(seamless,…)</code> 带缩放</b></td></tr>
+        <tr><td>dpr</td><td><code>min(devicePixelRatio, 2)</code></td><td>与 <code>home-hero.html</code> 一致</td></tr>
+        <tr><td>离屏暂停</td><td><code>IntersectionObserver</code> + <code>visibilitychange</code></td><td>不可见即停 rAF，回来再起</td></tr>
+        <tr><td>reduced-motion</td><td>静态一帧</td><td>不自转、不公转；拖尾保留（它是静态几何，不是装饰动效）</td></tr>
+        <tr><td>点击</td><td>派发 <code>dot-earth:pick</code></td><td><code>detail: { hit, index, name, clientX, clientY }</code>；命中半径 = <code>max(卫星半径, 8) × 2.2</code></td></tr>
+        <tr><td>指针跟随</td><td><b>无</b></td><td>刻意不监听 <code>pointermove</code>——不与页面的聚光/悬浮抢指针</td></tr>
+        <tr><td>禁止</td><td>彩色节点连线 / gradient / backdrop-filter</td><td>球面概念节点 + 连线已于 2026-08-29 从 <code>home-hero.html</code> 移除，本组件同样不引入；概念网络归 GraphView</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════ ④ 取舍 ══════════════════ -->
+  <section id="vs">
+    <h2><span class="step">④</span>与 Mini Star 的关系 · 以及「彩色卫星」的边界</h2>
+    <p class="sec-sub">
+      两个组件曾是同一隐喻的两个尺度。2026-09-02 取消「卫星 = 笔记」映射后，<b>只有大尺度还在用</b>：Dot Earth 是主页 Hero 的固定动画，Mini Star 退为无页面消费的规范页。下面的对照保留，是为了说明<b>小尺度为什么在笔记区也停了</b> —— 不是尺寸问题，是语义问题。
+    </p>
+    <div class="vs">
+      <div class="col">
+        <h4>Dot Earth（本页）· 主页 Hero 主视觉</h4>
+        <ul>
+          <li>尺寸 ≥ 320px（Hero 用 460px），<b>有点阵贴图</b>，地球自转</li>
+          <li>用在<b>主页 Hero</b> —— <b>唯一落位</b>；笔记区、列表、角标一律不复用</li>
+          <li>卫星可多色（≤6，>6 回退中性灰）</li>
+          <li>成本：一张 306KB 贴图 + 每帧若干次 1:1 位块传输（贴图长条 + 叠加层 + 每星一次光晕）</li>
+          <li>卫星<b>不再代表笔记</b>：它现在是 Hero 的装饰层，点选派发 <code>dot-earth:pick</code> 但不绑定笔记</li>
+        </ul>
+      </div>
+      <div class="col dim">
+        <h4>Mini Star · 小尺度版（<b>当前无页面消费</b>）</h4>
+        <ul>
+          <li>尺寸 56–96px，<b>纯色中央星球，无贴图</b></li>
+          <li>曾用在<b>笔记卡右上角</b>；2026-09-02 移除 —— 卫星不再映射笔记后它失去语义</li>
+          <li>卫星中性灰 + 橙描边（装不下色相）</li>
+          <li>成本：纯几何绘制，零资源</li>
+          <li><b>留着不删</b>：将来列表行 / 侧栏 / 卡片角标若需要小星，从这里取，不要新写</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:var(--sp-5)">
+      <b>「每颗卫星一个颜色」的适用边界（2026-09-02 所有者裁定，据此放宽既有约束）。</b>
+      既有约束是「形状即语义、橙只作注意力指针、不用于静态分类」（ADR-013 §2.x / ADR-023）。
+      彩色卫星等于<b>新增一个色相编码通道</b>，因此必须封边，否则会被稀释成又一套彩虹分类：
+      <ul style="margin:var(--sp-2) 0 0;padding-left:18px">
+        <li><b>≤ 6 颗</b>：可用域调色板区分（Hero 情形：梯度下降与优化器 / Attention 机制笔记 / SM-2 复习算法 / 卷积网络读书笔记 = 4 颗）</li>
+        <li><b>&gt; 6 颗</b>：色相开始难辨，<b>回退中性灰 + 橙描边</b>，改用位置与轨道区分——同 Mini Star</li>
+        <li>颜色<b>只作身份标识</b>，不承载掌握度 / 状态 / 时间等第二重语义；那些仍走 ProgressRing 与文字</li>
+        <li>选中态仍<b>只用橙</b>（<code>brand-soft</code> 底 + 左缘橙条），不改为「把卫星变橙」</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════ ⑤ 结论 ══════════════════ -->
+  <section id="verdict">
+    <h2><span class="step">⑤</span>结论</h2>
+    <div class="verdict-box">
+      <h3>点阵地球不进笔记；它属于主页 Hero</h3>
+      <p>
+        三个落位都真实渲染过：塞进笔记主卡的 300px 太大（压标题、抢注意力、挡动线），
+        硬缩到 150px 又点阵糊了（地球直径只剩 75px、点距 1.07px，不到可辨下限 2.2px 的一半）。
+        <b>两条路都堵死 —— 说明它压根不该在笔记里</b>，而不是尺寸没调好。
+      </p>
+      <p>
+        <b>主页 Hero 是它唯一站得住的位置</b>：mimo.mi.com 的地球就在这里；
+        Hero 是「看」的地方不是「读」的地方，自转不抢注意力；
+        460px 的画布给到地球直径 230px、点距 3.29px，点阵清晰，4 轨 4 星的多轨形态才成立。
+      </p>
+      <p>
+        <b>笔记区一颗星球都不放。</b>2026-09-02 所有者裁定「优化器就不用显示卫星系统了」，
+        「卫星 = 笔记」这套映射取消 —— 小尺度的 <b>88px Mini Star 也一起撤掉</b>，不再只是换小一号，
+        因为失去语义的图形换成任何尺寸都还是装饰。
+      </p>
+      <p>
+        已落地的三处：
+        <a href="./ui-preview.html#hero" style="color:var(--brand-deep)">ui-preview.html §hero</a>
+        把手画的 CSS 圆占位换成真实组件（460px / 4 轨 / 4 星，脚本由 <code>sync-dot-earth.mjs</code> 从本页同步）；
+        <a href="./note-workspace.html" style="color:var(--brand-deep)">note-workspace.html</a>
+        与 ui-preview §2 的「优化器」<b>移除整个星球系统</b>，标题回到单列
+        （<code>.star-card</code> → <code>.note-head</code>），现在是<b>零 canvas、零 rAF</b>，
+        只保留 chip ↔ 卡的双向锚；<code>mini-star.html</code> 留作规范页，当前无页面消费。
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Dot Earth · 2026-09-02</span>
+    <span>贴图来源 <code>assets/dots-world.png</code></span>
+    <a href="./home-hero.html">home-hero.html（起源）</a>
+    <a href="./mini-star.html">mini-star.html（小尺度版）</a>
+    <a href="./note-workspace.html">note-workspace.html（落位）</a>
+    <a href="./index.html">ui 库总览</a>
+  </footer>
+
+</div>
+
+<script>
+/* =====================================================================
+ * Dot Earth —— 点阵地球 + 多轨卫星
+ *
+ * 来源：home-hero.html 的地球实现（AGENTS 复用阶梯：移植既有实现，不重写）。
+ * 与其差异：
+ *   1. 地球占比 0.50（home-hero 为 0.733）—— 本组件要给轨道留边，球再大就压过轨道了
+ *   2. 轨道自动 fit 缩放，最外轨永不出血（home-hero 的第 4 轨 rx 1.55 会出画布）
+ *   3. 去掉鼠标/滚动视差 —— 笔记页不需要，且避免与页面聚光抢指针
+ *   4. 自转速度按地球直径归一，缩小不减速
+ *   5. 卫星颜色 = 域调色板，超过 6 颗回退中性灰
+ *
+ * 性能契约：单 rAF · 帧率上限 60（非 30：慢速平移的点阵在 30fps 下会读成「一格一格」）·
+ *   贴图按渲染尺寸预缩放 + 明暗叠加层预渲染，每帧只剩 1:1 位块传输 ·
+ *   dpr≤2 · 离屏/隐藏暂停 · reduced-motion 静态帧
+ * ===================================================================== */
+(function () {
+  'use strict';
+
+  // 帧率上限 60：30fps 在慢速平移的点阵上会读成「一格一格」，故不沿用 30。
+  // 代价由下面的预缩放/预渲染抵消（每帧只剩 1:1 贴图 + 一次叠加层）。
+  var FPS = 60;
+  var FRAME_MS = 1000 / FPS;
+  // 节流容忍窗口：60Hz 的帧间隔在 16.6–16.9ms 抖动，硬比 FRAME_MS 会让
+  // 「两次 vsync」偶尔差一点点不到阈值 → 整帧跳过 → 33ms/50ms 交替，肉眼一顿一顿。
+  var FRAME_TOL = 6;
+
+  var EARTH_D = 0.50;                      // 地球直径 = 容器 × 0.50（球再大就压过轨道了）
+
+  var ORBITS = [
+    { rx: 1.24, ry: 0.36, tilt: -0.20 },
+    { rx: 1.40, ry: 0.42, tilt:  0.44 },
+    { rx: 1.56, ry: 0.48, tilt: -0.64 },
+    { rx: 1.70, ry: 0.34, tilt:  0.86 }
+  ];
+
+  var PALETTE = ['#7c93ad', '#c9a86a', '#8aab8e', '#a08cb4', '#b48a8a', '#6fa3b8'];
+  var NEUTRAL = '#525252';                 // 卫星数 > 6 时的回退色（--text-2）
+  var COLOR_LIMIT = 6;                     // 彩色编码上限（见 §④）
+  var INK = [32, 34, 40];                  // 墨色拖尾
+  var TRAIL_RAD = 1.1;                     // 拖尾弧长（弧度）
+  var TRAIL_SEGS = 9;                      // 拖尾分段
+  var SAT_PERIOD = 18;                     // 公转基准秒数（内环更快）
+  var SPIN = { slow: 0.012, normal: 0.030, fast: 0.055 };   // × 地球直径 / 秒
+  var TEX_SRC = 'assets/dots-world.png';
+
+  // ---- 贴图：正像 + 镜像 → 无缝长条（全页共用一份） ----
+  var seamless = null;
+  var textureReady = false;
+  var textureFailed = false;
+  var waiters = [];
+  function loadTexture() {
+    if (seamless !== null || textureFailed) return;
+    var img = new Image();
+    img.onload = function () {
+      var w = img.width, h = img.height;
+      seamless = document.createElement('canvas');
+      seamless.width = w * 2;
+      seamless.height = h;
+      var s = seamless.getContext('2d');
+      s.drawImage(img, 0, 0);
+      s.save();
+      s.translate(w * 2, 0);
+      s.scale(-1, 1);
+      s.drawImage(img, 0, 0);
+      s.restore();
+      textureReady = true;
+      waiters.splice(0).forEach(function (fn) { fn(); });
+    };
+    img.onerror = function () {
+      textureFailed = true;
+      console.error('[dot-earth] 贴图加载失败:', TEX_SRC);
+    };
+    img.src = TEX_SRC;
+  }
+
+  // 卫星光晕：按颜色预渲染一次，避免每帧 createRadialGradient
+  var GLOW_PX = 64;
+  var glowCache = {};
+  function glowSprite(color) {
+    if (glowCache[color]) return glowCache[color];
+    var g = document.createElement('canvas');
+    g.width = g.height = GLOW_PX;
+    var gc = g.getContext('2d');
+    var half = GLOW_PX / 2;
+    var grad = gc.createRadialGradient(half, half, 0, half, half, half);
+    grad.addColorStop(0, hexToRgba(color, 1));
+    grad.addColorStop(1, hexToRgba(color, 0));
+    gc.fillStyle = grad;
+    gc.fillRect(0, 0, GLOW_PX, GLOW_PX);
+    glowCache[color] = g;
+    return g;
+  }
+
+  function hexToRgba(hex, a) {
+    var m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return 'rgba(0,0,0,' + a + ')';
+    var v = parseInt(m[1], 16);
+    return 'rgba(' + ((v >> 16) & 255) + ',' + ((v >> 8) & 255) + ',' + (v & 255) + ',' + a + ')';
+  }
+
+  function boot(canvas) {
+    if (canvas.__dotEarthMounted) return;
+    canvas.__dotEarthMounted = true;
+
+    var ctx = canvas.getContext('2d');
+    var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    var sats = (function () {
+      try { return JSON.parse(canvas.dataset.sats || '[]'); } catch (e) { return []; }
+    })();
+    if (!sats.length) {
+      var n = Math.min(16, Math.max(0, parseInt(canvas.dataset.satellites || '4', 10)));
+      sats = Array.from({ length: n }, function (_, i) { return { name: '卫星 ' + (i + 1) }; });
+    }
+    sats = sats.slice(0, 16);
+
+    var orbitsN = Math.min(4, Math.max(1, parseInt(canvas.dataset.orbits || '3', 10)));
+    var ORB = ORBITS.slice(0, orbitsN);
+    var spinRate = SPIN[canvas.dataset.spin] || SPIN.normal;
+    var colored = sats.length <= COLOR_LIMIT;
+
+    // ---- 尺寸 ----
+    var size = 0, earthR = 0, fit = 1;
+    function resize() {
+      var rect = canvas.getBoundingClientRect();
+      var css = Math.min(rect.width || canvas.width, rect.height || canvas.height);
+      if (!css) return;
+      size = css;
+      canvas.width = Math.round(css * dpr);
+      canvas.height = Math.round(css * dpr);
+      earthR = css * EARTH_D / 2;                           // 地球直径 = 容器 × EARTH_D
+      var satMax = earthR * 0.160;                          // 见 satR()：卫星半径上限
+      var maxRx = Math.max.apply(null, ORB.map(function (o) { return o.rx; }));
+      var half = css / 2;
+      fit = Math.min(1, (half - satMax - 2) / (maxRx * earthR));   // 轨道永不出血
+    }
+
+    // ---- 预烘焙 ----
+    // 每帧直接 drawImage 4000px 原图（还带缩放）是这套动画最贵的一笔；
+    // 按渲染尺寸预缩放后，每帧只剩 1:1 位块传输，且周期取整 → 接缝落在整像素上。
+    var strip = null, stripW = 0, stripH = -1;
+    var overlay = null, overlayR = -1;
+
+    function buildStrip() {
+      if (!textureReady) { strip = null; return; }
+      var h = Math.max(1, Math.ceil(earthR * 2 * dpr));     // 宁高勿低：低了底缘会漏白边
+      if (strip && stripH === h) return;
+      stripH = h;
+      stripW = Math.max(1, Math.round(seamless.width * (h / seamless.height)));
+      strip = document.createElement('canvas');
+      strip.width = stripW;
+      strip.height = h;
+      strip.getContext('2d').drawImage(seamless, 0, 0, stripW, h);
+    }
+
+    // 暗角 + 顶部柔光都是静态的，烘成一张叠加图，每帧一次 drawImage 了事
+    function buildOverlay() {
+      var r = Math.max(1, Math.round(earthR * dpr));
+      if (overlay && overlayR === r) return;
+      overlayR = r;
+      overlay = document.createElement('canvas');
+      overlay.width = r * 2;
+      overlay.height = r * 2;
+      var o = overlay.getContext('2d');
+      var vig = o.createRadialGradient(r, r - r * 0.15, r * 0.25, r, r, r);
+      vig.addColorStop(0, 'rgba(255,255,255,0)');
+      vig.addColorStop(0.55, 'rgba(255,255,255,0)');
+      vig.addColorStop(0.85, 'rgba(150,150,150,0.18)');
+      vig.addColorStop(1, 'rgba(120,120,120,0.32)');
+      o.fillStyle = vig;
+      o.fillRect(0, 0, r * 2, r * 2);
+      var top = o.createRadialGradient(r - r * 0.4, r - r * 0.5, r * 0.1,
+        r - r * 0.4, r - r * 0.5, r * 0.9);
+      top.addColorStop(0, 'rgba(255,255,255,0.18)');
+      top.addColorStop(1, 'rgba(255,255,255,0)');
+      o.fillStyle = top;
+      o.fillRect(0, 0, r * 2, r * 2);
+    }
+
+    var items = sats.map(function (s, i) {
+      var w = (typeof s.w === 'number') ? Math.min(1, Math.max(0, s.w)) : 0.5;
+      var orb = ORB[i % ORB.length];
+      return {
+        name: s.name,
+        weight: w,
+        color: colored ? (s.color || PALETTE[i % PALETTE.length]) : NEUTRAL,
+        orbit: orb,
+        phase: (i * 137.5) % (Math.PI * 2),                 // 黄金角错相
+        speed: (Math.PI * 2) / (SAT_PERIOD * (1 + orb.rx - ORB[0].rx))
+      };
+    });
+
+    var rotation = 0;
+    var last = 0;
+    var rafId = 0;
+    var visible = true;
+
+    // 卫星半径 = 地球半径 × 0.085 – 0.160（460px 容器 → 9.8 – 18.4px）
+    // 调参经过两轮实测：先是按 home-hero 比例取 0.024–0.059（5.3–13px ÷ earthR 220），
+    // 但 home-hero 的地球占画布 0.733、本组件只有 0.50 —— 照搬比例会让卫星只剩 3.4–6.8px，
+    // 实测「卫星又太小了」。故按**绝对观感**定档，不再照抄参考实现的比例。
+    // 上限别再往上加：拖尾线宽 = headR × 0.8，卫星一大墨带先糊。
+    function satR(it) { return earthR * (0.085 + 0.075 * it.weight) * dpr; }
+
+    function ringPoint(c, orb, t) {
+      var rx = orb.rx * c.r * fit, ry = orb.ry * c.r * fit;
+      var lx = rx * Math.cos(t), ly = ry * Math.sin(t);
+      return {
+        x: c.x + lx * Math.cos(orb.tilt) - ly * Math.sin(orb.tilt),
+        y: c.y + lx * Math.sin(orb.tilt) + ly * Math.cos(orb.tilt),
+        depth: Math.sin(t)
+      };
+    }
+
+    function drawRing(c, orb, front) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(orb.tilt);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, orb.rx * c.r * fit, orb.ry * c.r * fit, 0,
+        front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+      ctx.strokeStyle = front ? 'rgba(160,160,160,0.5)' : 'rgba(180,180,180,0.3)';
+      ctx.lineWidth = 0.6 * dpr;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 深度 → 不透明度：depth=+1（球前最近）0.95 → depth=0（侧边）0.725 → depth=-1（球后最远）0.525
+    // 两侧在 depth=0 处都收敛到 0.725，连续无跳变。
+    // 关键：球后卫星**不再被地球盖掉**。卫星只有几 px，地球边缘扫过它只要 0.04s，
+    // 真做遮挡就是「啪」地消失、藏掉约 3 成时间再「啪」地出现 —— 实测这是最刺眼的一处。
+    // 现在一律画在球上，靠透明度 + 尺寸表达远近，全程可见。
+    function baseAlphaOf(depth) {
+      return 0.725 + depth * (depth >= 0 ? 0.225 : 0.20);
+    }
+
+    function drawTrail(c, it) {
+      var depth = Math.sin(it.phase);
+      var baseAlpha = baseAlphaOf(depth);
+      var headR = satR(it);
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (var s = 0; s < TRAIL_SEGS; s++) {
+        var t0 = it.phase - ((s + 1) / TRAIL_SEGS) * TRAIL_RAD;
+        var t1 = it.phase - (s / TRAIL_SEGS) * TRAIL_RAD;
+        var p0 = ringPoint(c, it.orbit, t0);
+        var p1 = ringPoint(c, it.orbit, t1);
+        var fade = 1 - s / TRAIL_SEGS;
+        // 球后拖尾再压一道：墨迹横穿点阵会显脏，且它本来就该更"远"
+        ctx.strokeStyle = 'rgba(' + INK[0] + ',' + INK[1] + ',' + INK[2] + ',' +
+          (0.38 * fade * baseAlpha * (depth < 0 ? 0.55 : 1)).toFixed(3) + ')';
+        ctx.lineWidth = Math.max(0.4, headR * 0.8 * fade) * (0.775 + 0.225 * depth);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawSatellite(c, it) {
+      var depth = Math.sin(it.phase);
+      var head = ringPoint(c, it.orbit, it.phase);
+      var baseAlpha = baseAlphaOf(depth);
+      var r = satR(it) * (0.8 + 0.2 * depth);
+
+      drawTrail(c, it);
+
+      // 极淡的同色光晕，仅作球面前后景分离，不构成装饰
+      var gr = r * 2.2;
+      ctx.globalAlpha = 0.30 * baseAlpha;
+      ctx.drawImage(glowSprite(it.color), head.x - gr, head.y - gr, gr * 2, gr * 2);
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.arc(head.x, head.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = hexToRgba(it.color, baseAlpha);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * baseAlpha) + ')';
+      ctx.lineWidth = 1 * dpr;
+      ctx.stroke();
+    }
+
+    function drawEarth(c) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(c.x - c.r, c.y - c.r, c.r * 2, c.r * 2);
+
+      if (strip) {
+        var period = stripW;                                // 已预缩放 → 周期即贴图宽
+        var offset = ((rotation % period) + period) % period;
+        var startX = c.x - c.r - offset;
+        // 周期恒为地球直径的 4000/1049 ≈ 3.8 倍 → 铺满一个直径最多 2 张
+        var n = Math.ceil((c.r * 2) / period) + 1;
+        for (var i = 0; i < n; i++) {
+          ctx.drawImage(strip, startX + i * period, c.y - c.r);
+        }
+      }
+
+      if (overlay) ctx.drawImage(overlay, c.x - c.r, c.y - c.r);
+
+      ctx.restore();
+
+      // 外圆描边
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(150,150,150,0.55)';
+      ctx.lineWidth = 1 * dpr;
+      ctx.stroke();
+    }
+
+    function frame(dtMs) {
+      if (!size) resize();
+      if (!size) return;
+      buildStrip();
+      buildOverlay();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!REDUCED) {
+        rotation += spinRate * (size * EARTH_D) * (dtMs / 1000) * dpr;
+        items.forEach(function (it) { it.phase += it.speed * (dtMs / 1000); });
+      }
+
+      var c = { x: canvas.width / 2, y: canvas.height / 2, r: earthR * dpr };
+
+      // 1) 轨道后半段（环本来就该绕到球后，被地球盖住是对的）
+      ORB.forEach(function (o) { drawRing(c, o, false); });
+
+      // 2) 地球本体
+      drawEarth(c);
+
+      // 3) 轨道前半段
+      ORB.forEach(function (o) { drawRing(c, o, true); });
+
+      // 4) 卫星：不分前后批，**一律画在球上**。
+      //    曾按「球后先画、被地球盖住」做真遮挡，结果卫星每圈有约 3 成时间整个消失，
+      //    进出那一瞬（0.04s）像卡了一下 —— 这是实测最刺眼的一处，故改为全可见。
+      items.forEach(function (it) { drawSatellite(c, it); });
+    }
+
+    function tick(now) {
+      rafId = requestAnimationFrame(tick);
+      var dt = last ? (now - last) : FRAME_MS;
+      if (dt < FRAME_MS - FRAME_TOL) return;   // 帧率上限（容忍 vsync 抖动，见 FRAME_TOL）
+      last = now;
+      if (!visible) return;
+      frame(Math.min(dt, 100));           // 掉帧不加速
+    }
+
+    function start() {
+      if (rafId || REDUCED) { if (REDUCED) frame(0); return; }
+      last = 0;
+      rafId = requestAnimationFrame(tick);
+    }
+    function stop() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    }
+
+    // 离屏 / 切后台即停
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver(function (entries) {
+        visible = entries[0].isIntersecting;
+        if (visible) start(); else stop();
+      }, { threshold: 0 }).observe(canvas);
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stop(); else if (visible) start();
+    });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(function () { resize(); if (REDUCED || !visible) frame(0); }).observe(canvas);
+    } else {
+      window.addEventListener('resize', function () { resize(); if (REDUCED) frame(0); });
+    }
+
+    resize();
+    if (textureReady) { start(); }
+    else { waiters.push(function () { frame(0); start(); }); loadTexture(); frame(0); }
+
+    // ---- 点击拾取：派发 dot-earth:pick，状态交给宿主 ----
+    canvas.addEventListener('click', function (ev) {
+      var rect = canvas.getBoundingClientRect();
+      var scale = canvas.width / (rect.width || 1);
+      var px = (ev.clientX - rect.left) * scale;
+      var py = (ev.clientY - rect.top) * scale;
+      var c = { x: canvas.width / 2, y: canvas.height / 2, r: earthR * dpr };
+      var bestIdx = -1, bestD = Infinity;
+      items.forEach(function (it, i) {
+        var p = ringPoint(c, it.orbit, it.phase);
+        var d = (p.x - px) * (p.x - px) + (p.y - py) * (p.y - py);
+        if (d < bestD) { bestD = d; bestIdx = i; }
+      });
+      var rad = bestIdx >= 0 ? Math.max(satR(items[bestIdx]), 8 * dpr) : 8 * dpr;
+      var hit = bestIdx >= 0 && bestD <= (rad * 2.2) * (rad * 2.2);
+      canvas.dispatchEvent(new CustomEvent('dot-earth:pick', {
+        bubbles: true,
+        detail: {
+          hit: hit,
+          index: hit ? bestIdx : -1,
+          name: hit ? items[bestIdx].name : null,
+          clientX: ev.clientX,
+          clientY: ev.clientY
+        }
+      }));
+    });
+
+    // 调试钩子（默认不落地任何日志，供守护脚本/无头检查读取）
+    canvas.__dotEarth = function () {
+      return {
+        size: size, earthR: earthR, earthD: EARTH_D, fit: fit, dpr: dpr,
+        fps: FPS, stripW: stripW, stripH: stripH, hasStrip: !!strip, hasOverlay: !!overlay,
+        sats: items.length, orbits: ORB.length,
+        colored: colored, textureReady: textureReady, reduced: REDUCED,
+        colors: items.map(function (it) { return it.color; }),
+        names: items.map(function (it) { return it.name; }),
+        satRadii: items.map(function (it) { return satR(it); }),
+        // 供轨迹平滑度自检（接缝/节流问题只能靠逐帧坐标发现）
+        phases: items.map(function (it) { return it.phase; }),
+        points: items.map(function (it) {
+          var p = ringPoint({ x: canvas.width / 2, y: canvas.height / 2, r: earthR * dpr }, it.orbit, it.phase);
+          return { x: +p.x.toFixed(3), y: +p.y.toFixed(3), depth: +p.depth.toFixed(3) };
+        }),
+        rotation: +rotation.toFixed(3)
+      };
+    };
+  }
+
+  function bootAll(root) {
+    (root || document).querySelectorAll('canvas[data-dot-earth]').forEach(boot);
+  }
+
+  loadTexture();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { bootAll(document); });
+  } else {
+    bootAll(document);
+  }
+  window.__dotEarthBootAll = bootAll;
+  window.__dotEarthTexture = function () { return { ready: textureReady, failed: textureFailed }; };
+})();
+</script>
+
+</body>
+</html>
