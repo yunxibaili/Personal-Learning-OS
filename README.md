@@ -40,8 +40,11 @@ npm run dev
 
 ## 当前进度
 
-📋 任务看板与完成报告：[docs/TASKS.md](docs/TASKS.md) —— 当前焦点：**RC 收尾**（端到端闭环已通 · UI 视觉打磨 · 开源准备）· M7 同步系统完整
-每个里程碑的验收标准见 [docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10。
+> **单一真相源原则（2026-09-02）**：项目进度的唯一权威登记处是
+> [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)（§10 闭环完成度 / §10.3 路线 / §12 技术债）；
+> 本表与任务看板只做引用与摘要，进度以 PROJECT_STATE 为准。
+
+📋 任务定义与完成报告存档：[docs/TASKS.md](docs/TASKS.md) · 里程碑验收标准：[docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10
 
 | 里程碑 | 状态 | 内容 |
 |---|---|---|
@@ -49,14 +52,17 @@ npm run dev
 | M1 知识库核心 | ✅ | notes CRUD + TipTap + KaTeX + 附件 + FTS5 |
 | M2 双链·图谱 | ✅ | [[wikilink]] 解析 + 反链 API + 图谱读模型 + React Flow |
 | M2b 思维导图 | ✅ | React Flow 导图 · 节点 CRUD · 概念绑定 · 导入导出 roundtrip |
-| M3 Learning Graph | ✅ | 四维掌握度 + SM-2 复习 + 复习浮层（键盘驱动） |
+| M3 Learning Graph | ✅ | 四维掌握度 + SM-2 复习 + 复习会话（键盘驱动） |
 | M3.5-A 知识雷达 | ✅ | 全知领域 Phase A：上下文匹配 + 图谱邻居 + Radar 面板 |
 | M3.5-B 全知领域 | ✅ | 掌握度联动 + 复习建议 + 错误历史 |
 | M4 AI Tutor | ✅ | 上下文感知 Tutor（三入口）· SSE 流式 + 停止 · 对话持久化 |
-| M5 同步基础（M7） | ✅ | Discover→Pair→Manifest→Diff→Transport→Apply→Reindex · E2E 双进程一致 |
-| 一键导出 | ✅ | 全量 zip（vault + 附件 + 导图 + 事件日志 + 概念/掌握度快照 · 脱敏 settings）；导出→重建概念/掌握度一致有守护测试 |
-| UI 视觉打磨 | 🔜 | 视觉语言打磨与空态设计（架构与性能契约已落地） |
-| 桌面/移动分发 | 🔜 | M6/M8 打包分发 |
+| M6 桌面分发 | ✅ | Tauri 打包（2026-09-01，Windows MSI / NSIS 安装包） |
+| M7 LAN Sync | ✅ | Discover→Pair→Manifest→Diff→Transport→Apply→Reindex · E2E 双进程一致 |
+| M9 Visual Engine | 🟡 | tracer/API/IDE 步进组件已完成（M9-002~006）；待 M9-007 接入 web/ · M9-008 验收 |
+| M8 移动分发 | 🔜 | 未开始（ADR-006 设计就绪，等 P8 收尾后决策） |
+
+其他已完成：一键全量导出（B11，vault + 附件 + 导图 + 事件日志 + 概念/掌握度快照 · 脱敏）·
+主/副笔记层级树（ADR-024/026 地基）· AI 记忆管理与导入导出（B15/B19/B28）。
 
 > **AI Tutor 说明**：Tutor 的接口契约与流式链路已就绪并有守护测试；默认
 > `MockProvider` 返回占位文本，**真实问答需配置 LLM**——支持任意

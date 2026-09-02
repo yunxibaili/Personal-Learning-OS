@@ -7,16 +7,53 @@
 > 3. 里程碑收尾**四件事**：依赖审计（REGISTRY 审计表）· 环境删除测试 + 删除优先检查
 >    （AGENTS.md §17 §五）· CHANGELOG 条目 · Git tag。
 >
+> **单一真相源原则（2026-09-02 所有者裁定）**：项目进度的唯一权威 = `docs/PROJECT_STATE.md`
+> （§10 闭环完成度 / §10.3 当前任务与路线 / §12 技术债）。本文件职责 = **任务定义 + 执行队列 +
+> 完成报告存档**；本文件的状态列若与 PROJECT_STATE 或实际代码冲突，以二者为准并回改本文件。
+> 本文件已完成部分的过时表述（如已被取代的架构）在 2026-09-02 收口中标注，历史原文进 git。
+>
 > 状态：`[ ]` 待办 · `[~]` 进行中 · `[x]` 完成（附报告锚点）
 
-## 执行队列（后端优先 · 2026-08-29 · 执行序 ≠ 标注优先序）
+## 执行队列（2026-09-02 所有者裁定「先收口，后开发」重排）
 
-> **显式声明**：本队列是**执行顺序**，不改变 §9/里程碑的标注优先级。
-> 理由：T-EXPORT（B11）体量小且是 README「首次公开发布前必须」红线项，先行清掉；
-> 9.1 AI 闭环（B1-B10，自标最高优先）卡在 B1 真实 LLM Provider 需外部凭据，
-> 其前置就绪工作不与 T-EXPORT/M7-007 冲突。此声明消解"执行序与优先序"的表面矛盾。
+> 历史队列（1–8 项，后端 backlog 清零 → 前端阶段 → T-NOTE-HIER）全部完成，
+> 完整历史见本文档下半部完成报告区与 `git log`。
 
+```text
+[0] [~] 项目整理 / 状态收口（2026-09-02 裁定，进行中）
+    范围：PROJECT_STATE（唯一真相源对齐）/ CURRENT_STATE / ACTIVE_TASK / TASKS /
+    README / AGENTS / ADR 007·013·016·018·022·025·026 / 删除废弃项统一标记。
+    禁止功能代码。详见 docs/ai/ACTIVE_TASK.md。
+
+[1] [ ] 技术债重新分级与处置
+    清单已登记于 PROJECT_STATE §12（P1：MindMap 裸 fetch / 18 处英文硬编码 /
+    中文 FTS / MockProvider 演示路径 / 后端能力 UI 取舍〔待所有者逐项裁决〕；
+    P2：死代码 / 死 CSS / lazy 分包失效 / 过期注释）。
+
+[2] [ ] M9-007 Visual Engine 接入 web/
+    （ui/visual-engine/ 回灌 web/src/components/ui/ + index.ts 解冻导出 +
+    Concept 页入口 + visualize 事件生产者 + 示例清单 6 条）
+
+[3] [ ] M9-008 真实验收（11 条）
+
+[4] [ ] M9 正式关闭（M9-001 状态随收口统一为已完成，见 M9 拆解表）
+
+[5] [ ] T-NOTE-TREE T1 契约 + GET /notes/tree（ADR-026 v3 Accepted：
+    经 resolve_hierarchy，depth 默认 3/上限 10 后端剪枝 + root_id 懒加载）
+
+[6] [ ] T-NOTE-TREE T2 前端默认展开 3 层 + 懒加载展开 + 展开状态本地偏好
+
+[7] [ ] T-NOTE-TREE T3 守护测试 + Gate 全绿 + 真实 vault ≥3 层端到端
+
+[8] [ ] P8 正式收尾 / v0.1.x
+
+[9] [ ] 再决定 M8 Mobile / 其他方向（M8 现在不动：零代码，仅 ADR-006 设计）
 ```
+
+<details>
+<summary>历史执行队列（2026-08-29 → 2026-09-01，全部完成，存档）</summary>
+
+```text
 1. ✅ 审核收口四项（SYNC 矛盾统一 · ADR-020 附录化 · 残留清零 · 基线）
 2. ✅ T-EXPORT 导出脚本（B11 完成：GET /api/v1/export · 493 passed）
 3. ✅ M7-007 Vault Conflict Preservation（代码+文档均已闭环）
@@ -25,23 +62,16 @@
 6. ✅ event_id/event_uuid 术语统一（migration 009 + 代码+文档同步）
 ── §9 后端 backlog 已全部清零 ──
 ── 前端阶段（2026-08-30 项目所有者宣布进入）──
-7. ✅ /home 聚合端点（D1）+ P8-003 Home 最小接线 · pytest 826 · vitest 23 · tsc/build PASS
-· FE-001（UI 视觉打磨，2026-08-31 解冻：Round1-3 已推 907ff74/888ecd2/3182465）
-8. [x] T-NOTE-HIER 主/副笔记层级（ADR-024）——P0+P1 完成（2026-09-01 · pytest 853 · vitest 36）
-   P0-1 frontmatter round-trip → P0-2 显式 parent + 校验 → P0-3 resolve_hierarchy
-   → P0-4 graph/universe 统一消费 → P0-5 round-trip/rebuild 守护测试（P0 验收标准）
-   P1（独立 ADR，不在本任务）：稳定 note ID · 左侧嵌套树 UI
+7. ✅ /home 聚合端点（D1）+ P8-003 Home 最小接线
+   （后注：HomeView 已按「方案 B」删除，GET /home 端点保留，见 §Home 处置）
+· FE-001（UI 视觉打磨，2026-08-31 解冻：Round1-3 已推 907ff74/888ecd2/3182465，已收尾）
+8. [x] T-NOTE-HIER 主/副笔记层级（ADR-024）——P0+P1 完成（2026-09-01）
 ── 项目所有者 2026-09-01 裁定：M9 优先于 T-NOTE-HIER P1 ──
-9. [~] M9 Visual Engine V1（ADR-025 v2 已批准）
-   M9-001 ✅ ADR 批准 + 文档同步 → M9-002 ✅ 契约 + 往返校验 → M9-003 ✅ PoC 四步全绿（2026-09-01，含独立审核修复）
-   → M9-004 ✅ API 路由（2026-09-01）→ M9-005 IDE 步进壳（2026-09-01 裁定否决播放器，组件入 ui 库）
-   → M9-006 三 Renderer → M9-007 接入 → M9-008 验收
-10. [ ] T-NOTE-TREE 主笔记多级层级树（ADR-026 v3 **Accepted**，2026-09-01 批准 + 三处修订）
-   核心 = 主笔记下 ≥3 层文件夹式子层级；domain 保留设计 P1 排期（语义边界 domain≠parent）
-   → T1 契约 + `GET /notes/tree?depth=&root_id=`（经 resolve_hierarchy，depth 默认 3/上限 10 后端剪枝）
-   → T2 前端默认展开 3 层 + 懒加载展开 + 展开状态本地偏好（无产品硬上限）
-   → T3 守护测试 + Gate 全绿 + 真实 vault ≥3 层端到端
+9. [~] M9 Visual Engine V1 → M9-002~006 已完成，余 007/008（见新队列 [2]-[4]）
+10. [ ] T-NOTE-TREE T1-T3（ADR-026 v3 Accepted）→ 移入新队列 [5]-[7]
 ```
+
+</details>
 
 ## 里程碑总览（映射 TECH_DESIGN §10）
 
@@ -64,7 +94,7 @@
 | M6 | Tauri 桌面打包 | `[x]` 完成（2026-09-01，GNU 工具链，MSI 65MB + NSIS 102MB） | [T-M6](#t-m6-m6-tauri-桌面打包完成2026-09-01) |
 | M7 | LAN Sync v1（配对/manifest 对比/冲突双份，ADR-005） | `[x]` 完成（M7-001~008 全链路闭环，2026-08-31 核实回填） | 见下方 M7 拆解 |
 | M8 | Mobile MVP Android（RN+混合内核，ADR-006） | `[ ]` | — |
-| M9 | Visual Engine V1（预置示例 trace/VisualEngine/三 Renderer） | `[~]` 进行中（ADR-025 v3 · 2026-09-01 裁定 IDE 步进范式） | [M9 拆解](#m9-visual-engine-任务拆解) |
+| M9 | Visual Engine V1（预置示例 trace/VisualEngine/三 Renderer） | `[~]` 进行中（ADR-025 IDE 步进范式；**M9-002~006 已完成 2026-09-01**，余 M9-007 接入 / M9-008 验收） | [M9 拆解](#m9-visual-engine-任务拆解) |
 | M10 | AI 生成可视化 | `[ ]` | — |
 
 ## M7 LAN Sync 任务拆解（当前）
@@ -160,8 +190,14 @@
 P8-001A Concept Foundation      ✅ 已完成（origin 唯一来源 + /concepts CRUD，2026-08-27）
         ↓
 P8-001B Universe V2 Layout      ✅ 已完成（d3-force + Planet + Inspector，2026-08-27）
+                                ⚠️ 【2026-09-02 收口标注】后于 2026-08-31 随架构演进
+                                整包删除（dd4f40c，11 文件 2283 行）；d3-force 依赖已移除；
+                                替代物 = Galaxy 多星球系统（自研 Canvas）。勿据本行恢复代码。
         ↓
 P8-001C Knowledge Planet        ✅ 已完成（Cobe 地球 + 轨道卫星 + 性能契约，2026-08-28）
+                                ⚠️ 【2026-09-02 收口标注】同上已删除（dd4f40c + 依赖移除
+                                13fa1bc）；点阵地球视觉定稿改入 ui 库（ui/dot-earth.html）。
+                                勿据本行恢复代码。
         ↓
 P8-004 Demo Cleanup             ✅ 已完成（清除 TestConcept/MasteryTest 探针残留，2026-08-28）
         ↓
@@ -182,7 +218,11 @@ P8-003E Tutor Review Bridge     ✅（context 注入 mastery/mistakes/review/mem
 Home / UI Polish
 ```
 
-### P8-003 Home + /home 聚合端点（D1）（2026-08-30 ✅）
+### P8-003 Home + /home 聚合端点（D1）（2026-08-30 ✅ 端点；视图已按方案 B 删除）
+
+> 【2026-09-02 收口标注】本任务标题的 ✅ 指 **`GET /home` 聚合端点**（保留至今，
+> TopBar 复习徽章 + 右栏掌握度消费）；而 `HomeView.tsx` 视图已于裁决 A 删除
+> （见本文「Home 处置」节：方案 B）。两处 ✅ 语义不同，非矛盾。
 
 前端阶段首个任务（项目所有者 2026-08-30 宣布进入前端阶段）。§0 边界遵守：
 最小接线（调用得通、结果可见），零视觉打磨（FE-001 仍冻结）。
@@ -560,6 +600,10 @@ canvas → 把右栏下推 317px（CLS 0.0454）。改为始终渲染 + `.ctx-ga
 ---
 
 ### ⚠️ 待决冲突：P8-003 Home vs 裁决 A（需项目所有者裁定）
+
+> 【2026-09-02 收口标注】**本冲突已裁决**：所有者裁定 = 方案 B（见上方「当前处置」）——
+> `HomeView.tsx` 及 home 视图接线已删除，默认视图回归 `notes`，`GET /home` 端点保留。
+> 以下为裁定前快照，仅作决策依据存档。
 
 **现状**（2026-08-30 已实现，未提交）：
 
@@ -1420,7 +1464,7 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 `now_iso()[:7]`（复用 B21 单一时间源）。经 `git stash` 回干净 HEAD 复跑确认
 为**测试过时**，非本次回归。
 
-#### P1-1 完成报告（2026-09-01 · 未提交）
+#### P1-1 完成报告（2026-09-01 · 已提交：`469d667` web P1 / `eb049ee` server P1 / `6da2b3f` 报告）
 
 落地要点：
 
@@ -1437,7 +1481,7 @@ Knowledge Layer → Learning Layer → Thinking Layer → AI Assistance
 **验证**：pytest **853 passed**（+5 notes 测试）· vitest **36 passed**（+6 buildNoteTree）
 · tsc PASS · vite build PASS。
 
-#### Vault Rebuild Test（2026-09-01 · GPT 评审建议 · 未提交）
+#### Vault Rebuild Test（2026-09-01 · GPT 评审建议 · 已提交 `611852b`）
 
 新增 `tests/unit/test_vault_rebuild.py`（12 项）：
 

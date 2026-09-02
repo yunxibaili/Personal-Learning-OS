@@ -5,6 +5,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Docs
+- **项目状态收口（2026-09-02 所有者裁定「先收口，后开发」）**：确立单一真相源原则——
+  进度唯一登记于 `docs/PROJECT_STATE.md`，其他文档只能引用。全面对齐至 HEAD `12030ff`：
+  - `PROJECT_STATE.md`：§2.6/§3 技术栈清除 d3-force/cobe/marked 残留、§4 各「未实现」
+    小节对齐 B 系列后实况、§8 修正 #gallery/MiniMap 表述、§9.1 B9 闭环口径、
+    §10 数字更新（230 commits / 405 files / 9 migrations / 26 ADR / vitest 87）、
+    §10.3 登记路线（收口→技术债→M9-007/008→T-NOTE-TREE→P8 收尾→M8 决策）、
+    §12 重写为技术债 P1/P2 分级、§13 开源 P0 清零更新
+  - `docs/ai/CURRENT_STATE.md`：重写为薄快照（不再自维护进度表）
+  - `docs/ai/ACTIVE_TASK.md`：改为仅维护当前任务（= 本收口）+ 路线照录
+  - `docs/TASKS.md`：执行队列重排；P8-001B/C 标注「已完成后删除」、
+    P8-003 Home 冲突标注已裁决（方案 B）、两处「未提交」更正为实际 commit
+  - `README.md`：里程碑表对齐（M6 ✅ / M9 🟡 / M8 🔜）、进度改引用
+  - `AGENTS.md`：头部过期「后端优先」横幅替换、§2.2 d3-force 例外标记失效、
+    §9 冻结表更正、§10 加单一真相源原则
+  - ADR：007/018 标 Superseded（含取代说明）、016 目录树标注历史快照、ADR_INDEX 同步
+
 ## [v0.1.0-rc.1] — 2026-09-01
 
 ### Added
