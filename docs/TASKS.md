@@ -39,7 +39,7 @@
      **M8 前置条件已满足。**
 
 [10] [x] P1-5 Backend/UI 能力裁定（2026-09-02 四组弹窗完成，裁定结果见 PROJECT_STATE §12）
-[10a] [ ] P1-5-A 设置 UI：LLM Provider 配置页（GET/PUT /settings；P1-4 硬前置）
+[10a] [x] P1-5-A 设置 UI：LLM Provider 配置页（GET/PUT /settings；2026-09-02 完成）
 [10b] [ ] P1-5-B 错题本 UI：列表/标记已解决/删除/统计（/mistakes/*）
 [10c] [ ] P1-5-C 会话历史最小 UI：Tutor 抽屉内列表+删除（/conversations）
 [11] [ ] P1-3 MockProvider 演示路径
@@ -1870,3 +1870,48 @@ Sync 能发现 sidecar                                ✅ scan_workspace 白名�
 - 跨设备 concept_id 对齐：rebuild 时本地不存在 → NULL，稳定 note/concept ID
   属 ADR-024 P1-2 既定债务，本任务不解决
 - M8 前置条件（[9b]）已满足；下一步 = [10] P1-5 Backend/UI 能力裁定（待所有者逐项裁决）
+
+## P1-5-A 设置 UI 完成（2026-09-02）
+
+### 做了什么（P1-5 裁定 A 组：/settings 接 UI；P1-4 MockProvider 演示的硬前置）
+
+新增浮层视图「设置」——LLM Provider 配置页。没有它，用户无法把默认 MockProvider
+切成真实 LLM，Tutor 只能永远演示。
+
+- `views/SettingsView.tsx`（新增）：Provider 下拉（mock / openai_compat）·
+  Base URL · API Key（password，已保存时占位「不修改请留空」）· 模型名 ·
+  辅助模型 · token 预算；保存走 `PUT /settings`，成功/失败经 Toast 反馈
+- `views/settingsPatch.ts`（新增，纯逻辑零 React 依赖）+ 12 项单测：
+  **脱敏值 `******` 绝不回写**（否则真密钥被六个星号覆盖，不可逆）·
+  未变化的键不下发 · 空串 = 显式清除 · 「服务端无该键 + 表单留空」不生成空条目
+- 接线：`ViewKey += "settings"` · App lazy 路由 · TopBar「设置」入口 ·
+  `lib/api.ts` 新增 `getSettings`/`saveSettings`/`apiPut` · global.css 纯色样式
+  （无 gradient / 无 backdrop-filter，`contain: layout paint`）
+- 组件层接线副产品：`Select` / `Input` / `Badge` / `Button` / `Skeleton` /
+  `useToast` 首次进入业务（此前整层 0 接线，见 empty-states.html 审计结论）
+
+### 改动文件
+
+`web/src/views/SettingsView.tsx`（新）· `web/src/views/settingsPatch.ts`（新）+`.test.ts`（新）·
+`web/src/lib/api.ts` · `web/src/stores/ui.ts` · `web/src/App.tsx` ·
+`web/src/components/shell/TopBar.tsx` · `web/src/global.css`
+
+### 测试了什么
+
+| 命令 | 预期 | 实际 |
+|---|---|---|
+| `vitest run`（新增 settingsPatch 12 项） | 全绿 | **184 passed / 11 files**（172 基线 + 12） |
+| `tsc -b --force` | 0 error | PASS |
+| `vite build` | PASS | PASS（3.15s，Tiptap chunk 警告既有） |
+| 真实后端契约验证（临时 workspace 跑 app） | 四项假设成立 | **脱敏** `api_key→******` · **增量 PUT 不覆盖真密钥** · **空串清除** · **provider 切换工厂生效**（mock → MockProvider） |
+| `pytest server/tests`（后端零改动回归） | 全绿 | **994 passed**（124.5s，与 P1-MINDMAP-TRUTH 后基线一致） |
+
+### 边界（P1-5 裁定执行）
+
+只做 LLM Provider 配置。**未做**：同步管理（D 组，延 M8）· 全量导出/导入
+（G 组，backend-only）· 学习数据回看与 study 会话（E/F 组，backend-only）。
+
+### 遗留
+
+- `/tutor/test` 端点按 H 组裁定 backend-only，故设置页**没有「测试连接」按钮**；
+  若后续希望「填完立刻验证」，需重新裁定（该端点已实现，接一个按钮成本很低）

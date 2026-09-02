@@ -46,8 +46,8 @@ tag `v0.1.0-rc.2`。
 
 **当前无进行中任务**——[10] P1-5 已裁定（2026-09-02 所有者四组弹窗：A settings 接 UI /
 B mistakes 接 UI / C conversations 最小 UI / D sync 延 M8 / E-H backend-only；
-详见 PROJECT_STATE §12）。待执行 = **[10a] 设置 UI → [10b] 错题本 UI → [10c] 会话历史 UI**
-（A 是 P1-4 MockProvider 演示的硬前置，先做）。其后：[11] MockProvider → [12] FTS →
+详见 PROJECT_STATE §12）。[10a] 设置 UI 已完成（2026-09-02）。待执行 = **[10b] 错题本 UI → [10c] 会话历史 UI**。
+其后：[11] MockProvider → [12] FTS →
 [13] i18n → [14] M8 可行性（含 D 组 sync 管理 UI 形态裁定）→ [15] M8 MVP。
 
 <details>

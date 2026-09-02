@@ -688,7 +688,7 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [10] ✅ P1-5 Backend/UI 能力裁定（2026-09-02 四组弹窗完成：A settings 接 UI /
      B mistakes 接 UI / C conversations 最小 UI / D sync 延 M8 / E-H backend-only；
      执行任务 = [10a][10b][10c]，M8 前置满足）
-[10a] P1-5-A 设置 UI：LLM Provider 配置页（GET/PUT /settings；P1-4 MockProvider 演示硬前置）
+[10a] ✅ P1-5-A 设置 UI（2026-09-02 完成：LLM Provider 配置页，报告见 TASKS §P1-5-A）
 [10b] P1-5-B 错题本 UI：列表/标记已解决/删除/统计（GET/PATCH/DELETE /mistakes/*）
 [10c] P1-5-C 会话历史最小 UI：Tutor 抽屉内历史列表+删除（GET/DELETE /conversations）
 [11] P1-3 MockProvider 演示路径
