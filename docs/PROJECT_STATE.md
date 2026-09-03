@@ -751,7 +751,13 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      Graph 53/15 · MindMap 写路径闭环（500 系沙箱删除守护伪影，shim-free 复测 200）·
      Tutor 真实 qwen3 全链（Ollama 在线）· Memory 8 · Mistakes 3 · Sync status/manifest ·
      Settings。**P0 全部完成 → 进入 P1 UI/UX 打磨**
-[19l] ✅ P1-11 文案语调（2026-09-03，commit 291bb4d）：取证先于裁决——「语调不统一」这一审计
+[19l] ✅ P1-11 文案语调[19m] ✅ P1-12 Bright UI Assembly（2026-09-03，commits a890e1a/b5093e9/bf904eb/3657176/50611bb）：
+     B1 HomeHero 产品入口页（activeView 默认 home，点阵地球 480 planet=null animate）；
+     D1 680px 锁宽 zero-code；D2 标题 30px/600 独立层级；D6 wikilink 零代码（需 TipTap 扩展）；
+     minimap animate 启用 + supersample 2× 防摩尔纹；B2-A 概览模式（统计+标签+概览/编辑切换，
+     纯前端 computeNoteStats 零 fetch）。Gate: tsc 0 / vitest 213 / build / pytest 1020。
+     D3 时间分组 ⏳（IA 冲突需产品裁决）/ D4 统计行 ⏳（需跨组件数据）。
+（2026-09-03，commit 291bb4d）：取证先于裁决——「语调不统一」这一审计
      假设**不成立**（全角/半角感叹号 0·0、敬语混用 0、emoji 0、术语中文化稳定）。真实不一致仅
      3 项机械问题，全部清零：① `GraphView.tsx:239` 图层切换 `Concept`/`Note` → **概念/笔记**
      （同控件内「全部」为中文，另两项为英文）；② 统一为 **AI 导师**（所有者裁定方向）——
