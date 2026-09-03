@@ -424,8 +424,10 @@ export function GalaxyCanvas({
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    // 契约：全屏 dpr≤1.5；右栏卡片（≤320）dpr=1
-    const dpr = size <= 320 ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
+    // 契约：全屏 dpr≤1.5；小尺寸（≤320）supersample 2× 防摩尔纹——
+    // dot-earth 点阵纹理在小尺寸 dpr=1 时点距低于像素级产生混叠（所有者反馈）。
+    // 渲染 2× 后由浏览器下采样到 CSS 尺寸 → 反走样消除摩尔纹。
+    const dpr = size <= 320 ? 2 : Math.min(window.devicePixelRatio || 1, 1.5);
     const planetR = (REF_PLANET_R / REF_CANVAS) * size;
     canvas.width = Math.round(size * dpr);
     canvas.height = Math.round(size * dpr);
