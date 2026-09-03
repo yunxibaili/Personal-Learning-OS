@@ -420,7 +420,7 @@ button, input, select, textarea {
 .gnode.unconf { border-style: dashed; opacity: 0.65; }
 /* hover 由蓝色环改为中性投影（React Flow 官方 --xy-node-boxshadow-hover-default） */
 .gnode:hover { box-shadow: 0 1px 4px 1px rgba(0, 0, 0, 0.08); }
-.gnode-icon { font-size:font-size: var(--fs-xs); opacity: 0.5; flex-shrink: 0; }
+.gnode-icon { font-size: var(--fs-xs); opacity: 0.5; flex-shrink: 0; }
 .gnode-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Concept mastery 环（ADR-023 视觉编码：Concept = 圆形 + mastery 环） */
@@ -448,7 +448,7 @@ button, input, select, textarea {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .gnode-tooltip-mastery { font-weight: 600; color: var(--text-primary, var(--text)); }
-.gnode-tooltip-domain { color: var(--text-secondary, var(--text-2)); font-size:font-size: var(--fs-xs); }
+.gnode-tooltip-domain { color: var(--text-secondary, var(--text-2)); font-size: var(--fs-xs); }
 
 /* 边样式已收敛为两级中性灰 + hover 品牌橙，见 GraphEdge.tsx。
    旧的 9 种按 relation 分色规则未被任何组件引用，属死代码，已移除。 */
@@ -472,7 +472,7 @@ button, input, select, textarea {
 .graph-layer-toggle button {
   border: none; background: var(--bg-secondary, var(--surface-2));
   color: var(--text-secondary, var(--text-2));
-  padding: 3px 10px; font-size:font-size: var(--fs-xs); cursor: pointer;
+  padding: 3px 10px; font-size: var(--fs-xs); cursor: pointer;
   border-right: 1px solid var(--border, #ddd);
 }
 .graph-layer-toggle button:last-child { border-right: none; }
@@ -505,14 +505,14 @@ button, input, select, textarea {
 .graph-inspector-type { font-size: 14px; }
 .graph-inspector-type.concept { color: var(--ok, #4a9); }
 .graph-inspector-type.note { color: var(--text-secondary, var(--text-2)); }
-.graph-inspector-domain { color: var(--text-secondary, var(--text-2)); font-size:font-size: var(--fs-xs); margin-bottom: 4px; }
-.graph-inspector-mastery { font-size:font-size: var(--fs-xs); margin-bottom: 4px; }
+.graph-inspector-domain { color: var(--text-secondary, var(--text-2)); font-size: var(--fs-xs); margin-bottom: 4px; }
+.graph-inspector-mastery { font-size: var(--fs-xs); margin-bottom: 4px; }
 .graph-inspector-actions { display: flex; gap: 6px; margin-top: 8px; }
 .graph-inspector-actions button {
   border: 1px solid var(--border, #ddd);
   background: var(--bg-secondary, var(--surface-2));
   color: var(--text-primary);
-  padding: 3px 8px; border-radius: 4px; font-size:font-size: var(--fs-xs); cursor: pointer;
+  padding: 3px 8px; border-radius: 4px; font-size: var(--fs-xs); cursor: pointer;
 }
 .graph-inspector-actions button:hover { background: var(--brand-text); color: var(--text-inv); }
 
@@ -826,7 +826,7 @@ button, input, select, textarea {
 }
 .review-quality-icon { font-size: 24px; }
 .review-quality-label { font-size: 13px; font-weight: 500; }
-.review-quality-desc { font-size:font-size: var(--fs-xs); color: var(--text-secondary, var(--text-2)); }
+.review-quality-desc { font-size: var(--fs-xs); color: var(--text-secondary, var(--text-2)); }
 
 /* Feedback */
 .review-feedback {
@@ -1791,7 +1791,7 @@ button, input, select, textarea {
 .sync-compare { display: flex; gap: 12px; margin: 8px 0; }
 .sync-side { flex: 1; min-width: 0; }
 .sync-side pre {
-  font-size:font-size: var(--fs-xs); background: var(--bg-alt, var(--surface-2)); border: 1px solid var(--border);
+  font-size: var(--fs-xs); background: var(--bg-alt, var(--surface-2)); border: 1px solid var(--border);
   border-radius: 4px; padding: 6px 8px; max-height: 180px; overflow: auto;
   white-space: pre-wrap; word-break: break-all; margin: 4px 0 0;
 }
@@ -1841,7 +1841,7 @@ button, input, select, textarea {
   border: none; background: transparent; color: var(--text-tertiary);
   font-size: 16px; cursor: pointer; line-height: 1;
 }
-.inspector-domain { font-size:font-size: var(--fs-xs); color: var(--text-tertiary); }
+.inspector-domain { font-size: var(--fs-xs); color: var(--text-tertiary); }
 .inspector-status { font-size: 12px; font-weight: 600; }
 .inspector-row {
   display: flex; justify-content: space-between; font-size: 12px;
@@ -1849,11 +1849,11 @@ button, input, select, textarea {
 }
 .inspector-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
 .inspector-dim {
-  display: flex; justify-content: space-between; font-size:font-size: var(--fs-xs);
+  display: flex; justify-content: space-between; font-size: var(--fs-xs);
   color: var(--text-secondary);
 }
 .inspector-section { border-top: 1px solid var(--border); padding-top: 8px; }
-.inspector-label { font-size:font-size: var(--fs-xs); color: var(--text-tertiary); margin-bottom: 6px; }
+.inspector-label { font-size: var(--fs-xs); color: var(--text-tertiary); margin-bottom: 6px; }
 .inspector-neighbors { display: flex; flex-direction: column; gap: 4px; }
 .inspector-neighbor {
   display: flex; align-items: center; gap: 6px; font-size: 12px;
@@ -2588,7 +2588,7 @@ button, input, select, textarea {
   border: none;
   background: none;
   color: var(--text-3);
-  font-size:font-size: var(--fs-xs); line-height: 1;
+  font-size: var(--fs-xs); line-height: 1;
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out);
 }
