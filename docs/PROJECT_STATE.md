@@ -710,6 +710,18 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      端到端实测：双击 plos.exe 自动拉 sidecar → 8100 全通（真库 20 篇）→ 退出零残留。
      pytest 50 / vitest 186 / tsc PASS。桌面版自此双击可用（TASKS §T-P0-2b）
 [18] ✅ P0-3 真实 Vault CRUD + Search 重启持久化验证（2026-09-03，PASS 6/6：创建/编辑/落盘/搜索/重启持久化/真删除，全程针对自建测试笔记、vault 已复原 20 篇）。顺带修复：优雅关闭时 onefile 孙进程孤儿 → lib.rs 进程树终止（taskkill /T /F）复测零残留
+[19b] ✅ P1-1 知识图谱布局坍塌修复（2026-09-03，commit eb169ea）：两阶段布局
+     （连通 dagre TB + 孤立节点 grid 散开封顶 6 列）；`<FitOnLayoutChange>` 修 fitView
+     异步时序（mount 时 layoutResult 为空 → camera 卡空）。53 节点可见，graph 恢复。
+[19c] ✅ P1-2 stub 标题降级显示（2026-09-03，commit 645a935）：`displayNoteTitle()`
+     覆盖空/纯空白/null/纯数字/占位 pattern「未命名笔记 <数字>」→「未命名笔记 · #<id>」。
+     注：审计原描述「裸数字 ID」不准确，实测 title = `未命名笔记 193159`。
+[19d] ✅ P1-3 settings.theme 死配置处置（2026-09-03，决策 **b**）：**取证后为零改动**——
+     全库（web/src · server/app · migrations · shared · docs）**零 theme 引用**，前端
+     SettingsView 仅 LLM Provider 六显式字段（无泛型遍历）、无 theme 控件/state/CSS
+     consumer；后端 settings 为通用 KV（`dict[str,str]`）无 schema 字段无 seed。
+     `theme=dark` 仅为 KV 表一行孤儿数据（零消费），按 (b) 保留后端兼容数据不动。
+     **更正 P1-0 审计**：原「设置页存在无效 Theme 选项」为推断错误（当时未读源码）。
 [19] ✅ P0-4 核心功能冒烟收口（2026-09-03，PASS 八面全绿）：live-smoke 16/16 ×2 轮 ·
      Graph 53/15 · MindMap 写路径闭环（500 系沙箱删除守护伪影，shim-free 复测 200）·
      Tutor 真实 qwen3 全链（Ollama 在线）· Memory 8 · Mistakes 3 · Sync status/manifest ·
