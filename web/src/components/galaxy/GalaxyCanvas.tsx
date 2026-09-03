@@ -879,7 +879,7 @@ export function GalaxyMini({ activeNoteId }: { activeNoteId: number | null }) {
       <GalaxyCanvas
         size={GALAXY_MINI_SIZE}
         planet={planet}
-        animate={false}
+        animate
         activeNoteId={activeNoteId}
         onSatelliteClick={onSatelliteClick}
       />
