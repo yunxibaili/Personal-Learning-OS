@@ -716,7 +716,10 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [19c] ✅ P1-2 stub 标题降级显示（2026-09-03，commit 645a935）：`displayNoteTitle()`
      覆盖空/纯空白/null/纯数字/占位 pattern「未命名笔记 <数字>」→「未命名笔记 · #<id>」。
      注：审计原描述「裸数字 ID」不准确，实测 title = `未命名笔记 193159`。
-[19d] ✅ P1-3 settings.theme[19e] ✅ P1-4 思维母图空态结构化（2026-09-03，commit 0b4aeaf）：标题+描述+唯一主 CTA+ghost 次 CTA，
+[19d] ✅ P1-3 settings.theme[19e] ✅ P1-4 思维母图空态[19f] ✅ P1-5 编辑器未选中笔记共享空态补 CTA（2026-09-03，commit d9283f1，更名自「Tutor 主区空态」）：
+     NoteEditor.tsx 第二分支补唯一主 CTA「＋ 新建」——与第一分支同构，零新 CSS。2 项结构测试。
+     Backlog #5 ✅。**P0 backlog 全部清零**。
+结构化（2026-09-03，commit 0b4aeaf）：标题+描述+唯一主 CTA+ghost 次 CTA，
      沿用 web 既有 .editor-empty 命名体系（避免引入未镜像的 .sl* 新体系）；主 CTA 聚焦
      标题输入框（handleCreateMap 要求非空）。3 项结构断言测试。Backlog #4 ✅。
  死配置处置（2026-09-03，决策 **b**）：**取证后为零改动**——
