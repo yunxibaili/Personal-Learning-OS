@@ -122,6 +122,12 @@
   --r-4xl:  24px;
   --r-pill: 999px;
 
+  /* ---------- 固定尺寸（P1-7：右栏 Knowledge Radar minimap） ---------- */
+  /* 224 ≤ 320 → GalaxyCanvas dpr 恒为 1（性能契约：size<=320 才不上采样）。
+     改这一处即联动 global.css(.ctx-galaxy 高度 / canvas flex-basis) 与
+     GalaxyCanvas.tsx 的 GALAXY_MINI_SIZE 常量——三处数值必须一致。 */
+  --galaxy-mini-size: 224px;
+
   /* ---------- 阴影（克制，呼吸感优先） ---------- */
   --shadow-1: 0 1px 2px rgba(0,0,0,.04);                                /* 浮起一档 */
   --shadow-2: 0 2px 8px rgba(0,0,0,.06);                                /* 卡片 */

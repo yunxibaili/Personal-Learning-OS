@@ -2484,13 +2484,15 @@ button, input, select, textarea {
   padding: var(--sp-3) var(--sp-3) 0;
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
-  /* CLS：固定高度，数据到达前后不回流（GalaxyMini 始终渲染） */
-  height: calc(272px + 44px);
+  /* CLS：固定高度，数据到达前后不回流（GalaxyMini 始终渲染）。
+     P1-7：尺寸统一由 --galaxy-mini-size 驱动（原硬编码 272 → 224，宽度占比 85%→70%）；
+     +44px 是 caption 固定开销（hint 28px + padding 14px + border-bottom 1px） */
+  height: calc(var(--galaxy-mini-size) + 44px);
 }
 .ctx-galaxy canvas {
   border-radius: var(--r-lg);
-  /* 数据未到时也是 272×272 的空白 canvas，不塌缩 */
-  flex: 0 0 272px;
+  /* 数据未到时也是同尺寸空白 canvas，不塌缩（P1-7：跟随 --galaxy-mini-size） */
+  flex: 0 0 var(--galaxy-mini-size);
 }
 .ctx-galaxy__hint {
   font-size: var(--fs-xs); color: var(--text-3); padding: 4px 0 10px;

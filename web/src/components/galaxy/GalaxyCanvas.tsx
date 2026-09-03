@@ -55,6 +55,13 @@ const MIN_SAT_PX = 3.2;
 const MAX_SAT_PX = 13;
 const SAT_WORDS_DIV = 260;
 
+/**
+ * 右栏 minimap 画布尺寸（P1-7）：与 styles/tokens.css 的 `--galaxy-mini-size` 对应，
+ * 两处必须一致（CSS 驱动容器高度与 canvas flex-basis，这里驱动绘制尺寸）。
+ * 保持 ≤320 → GalaxyCanvas 内部 dpr 恒为 1（`size <= 320 ? 1 : ...`），不上采样。
+ */
+const GALAXY_MINI_SIZE = 224;
+
 const INK = [32, 34, 40]; // #202228 墨色
 const BRAND = "#FF6B35"; // --brand：仅 mastery 弧与选中态
 const RING = "rgba(150,150,150,0.32)";
@@ -844,7 +851,7 @@ export function GalaxyMini({ activeNoteId }: { activeNoteId: number | null }) {
   return (
     <div className="ctx-galaxy">
       <GalaxyCanvas
-        size={272}
+        size={GALAXY_MINI_SIZE}
         planet={planet}
         animate={false}
         activeNoteId={activeNoteId}
