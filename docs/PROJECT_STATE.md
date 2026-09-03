@@ -716,7 +716,10 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [19c] ✅ P1-2 stub 标题降级显示（2026-09-03，commit 645a935）：`displayNoteTitle()`
      覆盖空/纯空白/null/纯数字/占位 pattern「未命名笔记 <数字>」→「未命名笔记 · #<id>」。
      注：审计原描述「裸数字 ID」不准确，实测 title = `未命名笔记 193159`。
-[19d] ✅ P1-3 settings.theme[19e] ✅ P1-4 思维母图空态[19f] ✅ P1-5 编辑器未选中笔记共享空态[19g] ✅ P1-6 业务组件字体层级[19h] ✅ P1-7-P1 minimap 尺寸[19i] ✅ P1-8 顶栏/右栏 header 对齐[19j] ✅ P1-9-P1 知识星系全屏空轨道收敛（2026-09-03，commit cc2ca49，决策 A 渲染层）：
+[19d] ✅ P1-3 settings.theme[19e] ✅ P1-4 思维母图空态[19f] ✅ P1-5 编辑器未选中笔记共享空态[19g] ✅ P1-6 业务组件字体层级[19h] ✅ P1-7-P1 minimap 尺寸[19i] ✅ P1-8 顶栏/右栏 header 对齐[19j] ✅ P1-9-P1 知识星系全屏空轨道收敛[19k] ✅ P1-10 圆角/阴影 token 一致性：**零代码关闭**（2026-09-03，取证后无实际缺陷）——radius 147 条：51 token +
+     67 等价硬编码 + 13 条 50% + 8 条 2-3px（微型 bar 自成语义）；shadow 21 条：8 token + 8 浮层阶梯 +
+     4 条同值 focus ring（冗余但不新增 --shadow-focus）。visual-engine 镜像不动。Backlog #10 ✅。
+（2026-09-03，commit cc2ca49，决策 A 渲染层）：
      orbitCountFor(0/1/≥2)=0/1/2；drawFrame 仅画 drawn 轨道；卫星索引 drawn[sat.orbit%drawn.length] 仍落已绘环。
      像素取证 0-卫星环带=0、1-卫星≈445。18 星球 / 2 卫星 / 巡览 / minimap 224×224 + 容器 268 +
      flexShrink:0 全部不变。Gate: tsc 0 / vitest 207 / build / console 0。Backlog #9 ✅。
