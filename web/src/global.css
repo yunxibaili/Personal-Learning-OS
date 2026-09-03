@@ -1550,14 +1550,66 @@ button, input, select, textarea {
   min-height: 0;
 }
 
+/* P1-4：思维导图空态——沿用 web 既有空态体系（.editor-empty）的命名与量级，
+   不引入 ui/empty-states.html 的 .sl* 体系（web 侧无镜像，引入即漂移风险）。
+   结构：标题 + 描述 + 唯一填充主 CTA + ghost 次 CTA（ADR-013 §2.13 硬门禁 #2）。 */
 .mindmap-empty {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
-  font-size: 13px;
+  gap: var(--sp-2);
+  padding: var(--sp-12) var(--sp-6);
+  text-align: center;
 }
+
+.mindmap-empty__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.mindmap-empty__desc {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-3);
+}
+
+.mindmap-empty__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+/* 唯一填充主 CTA：brand-deep 底 + 白字（4.13:1，AA） */
+.mindmap-empty__cta {
+  padding: 8px 18px;
+  border: 1px solid var(--brand-deep);
+  border-radius: var(--r-lg);
+  background: var(--brand-deep);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.mindmap-empty__cta:hover { background: var(--brand-text); border-color: var(--brand-text); }
+.mindmap-empty__cta:focus-visible { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+
+/* 次 CTA：ghost 文字形态，视觉从属，不与主 CTA 争注意力 */
+.mindmap-empty__cta-secondary {
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.mindmap-empty__cta-secondary:hover { color: var(--brand-text); }
+.mindmap-empty__cta-secondary:focus-visible { outline: 2px solid var(--brand-text); outline-offset: 2px; }
 
 /* ---- Map Node ---- */
 .mindmap-node {

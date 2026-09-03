@@ -42,6 +42,7 @@ import {
 } from "../../lib/api";
 import { PositionSaveQueue } from "./PositionSaveQueue";
 import { MapNode, type MapNodeData } from "./MapNode";
+import { MindMapEmptyState } from "./MindMapEmptyState";
 
 /** API 响应 */
 interface MapSummary {
@@ -83,6 +84,8 @@ export function MindMapCanvas() {
   const [mapDetail, setMapDetail] = useState<MapDetail | null>(null);
   const [error, setError] = useState("");
   const [newTitle, setNewTitle] = useState("");
+  // P1-4：空态主 CTA 用它聚焦标题输入框（handleCreateMap 要求标题非空）
+  const newTitleRef = useRef<HTMLInputElement | null>(null);
   const [newNodeLabel, setNewNodeLabel] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [conceptQuery, setConceptQuery] = useState("");
@@ -376,6 +379,7 @@ export function MindMapCanvas() {
         </div>
         <div className="mindmap-new-map">
           <input
+            ref={newTitleRef}
             type="text"
             placeholder="新导图标题…"
             value={newTitle}
@@ -502,7 +506,13 @@ export function MindMapCanvas() {
             )}
           </>
         ) : (
-          <div className="mindmap-empty">选择或新建一个导图</div>
+          /* P1-4：空态改为「标题 + 描述 + 唯一主 CTA + ghost 次 CTA」（ui/empty-states.html
+             MindMap 定稿原型）。主 CTA 聚焦标题输入框——handleCreateMap 要求标题非空，
+             直接调用会在空标题时静默 return，故引导先填标题，不臆造默认命名。 */
+          <MindMapEmptyState
+            onCreate={() => newTitleRef.current?.focus()}
+            onImport={() => void handleImport()}
+          />
         )}
       </div>
     </div>
