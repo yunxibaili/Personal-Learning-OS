@@ -38,6 +38,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     折叠偏好 localStorage 持久化；数据源切换 `/notes/tree`，
     本地建树 `buildNoteTree` 退役删除（单一树数据路径）
   - 真实 vault 4 层临时链 E2E 16/16（懒加载/折叠偏好跨刷新/物理清理）
+- **P1 UI/UX Bright Baseline（P1-1 至 P1-12，2026-09-03）**：
+  - **知识图谱布局坍塌修复**：两阶段布局（连通 dagre TB + 孤立节点 grid 散开）+
+    `<FitOnLayoutChange>` 修 fitView 异步时序（cc2ca49 前置 eb169ea）
+  - **stub 笔记降级显示**：`displayNoteTitle()` 覆盖空/纯数字/占位 pattern → `未命名笔记 · #<id>`（645a935）
+  - **settings.theme 零代码关闭**：取证后全库零 theme 引用，`theme=dark` 系 KV 孤儿数据（b7def80）
+  - **思维母图空态结构化**：标题+描述+唯一主 CTA+ghost 次 CTA（0b4aeaf）
+  - **编辑器未选中空态补 CTA**：「＋ 新建」主 CTA 补齐共享首屏（d9283f1）
+  - **业务组件字体层级统一提级**：50 条 <12px → `var(--fs-xs)` + 13 条交互控件 12px → `var(--fs-sm)`；
+    修 P1-6 片段级替换引入的 13 处无效声明 `font-size:font-size:`（160dabb + 640cedb）
+  - **minimap 尺寸 224 + token 化**：`--galaxy-mini-size` 驱动 3 处；supersample 2× 防摩尔纹（c9fd861 + 3657176）
+  - **minimap 启用自转**：`animate={false}` → `animate`（bf904eb）
+  - **全屏星系空轨道收敛**：`orbitCountFor(satCount)` 0→0/1→1/≥2→2 封顶；像素取证 0-卫星环带=0（cc2ca49）
+  - **文案语调 3 处机械修正**：`Concept/Note → 概念/笔记`、`AI Tutor → AI 导师`、`载入星系… → 加载星系…`（291bb4d）
+  - **HomeHero 产品入口页**：`activeView` 默认 `"home"`；品牌 + 点阵地球 480px + CTA「立即开始」→ notes（a890e1a）
+  - **编辑器标题 30px/600 独立层级**（b5093e9）；**680px 阅读列宽确认已有**（zero-code）
+  - **Header 对齐 / 圆角阴影 token**：取证后零代码关闭（3168e72 / 99927fa）
 
 ### Removed
 - 死代码：`SyncStatusPanel.tsx`（全库零引用，随 Dashboard 退场）、
