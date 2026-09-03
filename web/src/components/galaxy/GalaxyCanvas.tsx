@@ -45,6 +45,20 @@ const ORBITS = [
   { rx: 1.76, ry: 0.32, tilt: 0.85 },
 ];
 
+/**
+ * P1-9-P1：**轨道数量 = 卫星数的受限函数**（纯渲染层，零数据/算法改动）。
+ *
+ * 背景：ORBITS 是固定 4 条，原先无论有无卫星都全部绘制 → 0 卫星的星球仍画 4 圈空轨道，
+ * 放大「空旷」观感（P1-9 取证：18 颗星球里 16 颗 0 卫星）。
+ *
+ * 规则（确定性）：0 卫星 → 0 条；1 卫星 → 1 条；≥2 卫星 → 2 条。
+ * 纯函数 + 单测锁定（orbitCount.test.ts），防止回退成固定 4 圈。
+ */
+export function orbitCountFor(satCount: number): number {
+  if (!satCount || satCount <= 0) return 0;
+  return satCount === 1 ? 1 : 2;
+}
+
 const SAT_PERIOD = 72; // 契约：公转 72s/圈
 const TRAIL_RAD = 1.1;
 const TRAIL_SEGS = 9;
@@ -575,9 +589,14 @@ export function GalaxyCanvas({
     }
 
     /** 卫星溢出聚合「…+N」（契约：上限 16，超出聚合） */
-    function drawOverflow(c: { x: number; y: number; r: number }, n: number) {
+    function drawOverflow(
+      c: { x: number; y: number; r: number },
+      n: number,
+      orb: { rx: number; ry: number; tilt: number } = ORBITS[ORBITS.length - 1],
+    ) {
       if (n <= 0) return;
-      const orb = ORBITS[ORBITS.length - 1];
+      // P1-9-P1：轨道收敛后，溢出标记改画在**最后一条已绘制**的轨道上（调用方传入），
+      // 避免出现在未绘制的环位置。
       const p = ringPoint(c, orb, Math.PI * 1.25);
       ctx!.save();
       ctx!.beginPath();
@@ -601,18 +620,25 @@ export function GalaxyCanvas({
       const c = center();
       headPosRef.current = [];
 
-      ORBITS.forEach((orb) => drawRing(c, orb, false));
+      // P1-9-P1：轨道数收敛到「卫星数」——0 卫星不画空轨道，1 卫星 1 条，≥2 卫星 2 条。
+      // 卫星的 orbit 索引由 derivePlanets 按 ORBITS.length 取模得到（不改），
+      // 这里按已绘制轨道数再取模，保证每颗卫星都落在一条被绘制的环上。
+      const drawn = ORBITS.slice(0, orbitCountFor(satsRef.current.length));
+      const orbOf = (sat: SatNote) =>
+        drawn.length ? drawn[sat.orbit % drawn.length] : ORBITS[0];
+
+      drawn.forEach((orb) => drawRing(c, orb, false));
       satsRef.current.forEach((sat) => {
-        if (Math.sin(sat.phase) < 0) drawSatellite(c, ORBITS[sat.orbit], sat);
+        if (Math.sin(sat.phase) < 0) drawSatellite(c, orbOf(sat), sat);
       });
 
       drawPlanetBody(c, rotation);
       if (planet?.mastery != null) drawMasteryArc(c, planet.mastery);
-      if (planet) drawOverflow(c, planet.overflow);
+      if (planet) drawOverflow(c, planet.overflow, drawn[drawn.length - 1]);
 
-      ORBITS.forEach((orb) => drawRing(c, orb, true));
+      drawn.forEach((orb) => drawRing(c, orb, true));
       satsRef.current.forEach((sat) => {
-        if (Math.sin(sat.phase) >= 0) drawSatellite(c, ORBITS[sat.orbit], sat);
+        if (Math.sin(sat.phase) >= 0) drawSatellite(c, orbOf(sat), sat);
       });
     }
 
