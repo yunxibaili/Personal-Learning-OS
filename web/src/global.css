@@ -340,6 +340,42 @@ button, input, select, textarea {
   line-height: 1.2;
   color: var(--text);
 }
+
+/* P1-12-B2-A：概览/编辑模式切换 */
+.editor-mode-toggle {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: var(--sp-4);
+}
+.editor-mode-btn {
+  border: 0; background: none; color: var(--text-3);
+  padding: 6px 14px; font-size: var(--fs-sm); font-family: inherit;
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 150ms, border-color 150ms;
+}
+.editor-mode-btn.active { color: var(--brand-text); border-bottom-color: var(--brand); font-weight: 500; }
+.editor-mode-btn:hover { color: var(--text); }
+
+/* P1-12-B2-A：笔记概览统计 */
+.note-overview { padding: var(--sp-4) 0; }
+.note-overview__stats {
+  display: flex; flex-wrap: wrap; gap: var(--sp-6) var(--sp-8);
+  padding: var(--sp-4) 0;
+}
+.note-overview__stat b {
+  display: block; font-size: 24px; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.note-overview__stat span {
+  font-size: var(--fs-xs); color: var(--text-3);
+}
+.note-overview__tags {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+.note-overview__tag {
+  padding: 2px 10px; border-radius: var(--r-pill);
+  background: var(--brand-soft); color: var(--brand-text);
+  font-size: var(--fs-xs);
+}
 .editor-meta__save--saved { color: var(--ok-text); }
 .editor-meta__save--dirty { color: var(--warn-text); }
 .tiptap .ProseMirror {

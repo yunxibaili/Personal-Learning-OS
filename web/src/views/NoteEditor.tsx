@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/react";
 import { useUi } from "../stores/ui";
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiUpload } from "../lib/api";
 import { displayNoteTitle } from "../lib/noteTitle";
+import { computeNoteStats } from "../lib/noteStats";
 import type {
   NoteCreateBody,
   NoteDetail,
@@ -151,6 +152,7 @@ export function NoteEditorView() {
   const [detail, setDetail] = useState<NoteDetail | null>(null);
   const [error, setError] = useState<string>("");
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
+  const [viewMode, setViewMode] = useState<"edit" | "overview">("edit");
   const editorRef = useRef<Editor | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusNoteId = useUi((s) => s.focusNoteId);
@@ -367,29 +369,75 @@ export function NoteEditorView() {
             </div>
 
             {/* 工具栏只放格式控件（硬约束 2）——搜索在 TopBar，雷达在右栏 */}
-            <div className="editor-toolbar">
-              <input
-                ref={imageInput}
-                type="file"
-                accept="image/*,application/pdf"
-                hidden
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadAttachment(f);
-                  e.target.value = "";
-                }}
-              />
-              <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
+            {/* P1-12-B2-A：概览/编辑模式切换 */}
+            <div className="editor-mode-toggle">
+              <button
+                type="button"
+                className={`editor-mode-btn${viewMode === "overview" ? " active" : ""}`}
+                onClick={() => setViewMode("overview")}
+              >
+                概览
+              </button>
+              <button
+                type="button"
+                className={`editor-mode-btn${viewMode === "edit" ? " active" : ""}`}
+                onClick={() => setViewMode("edit")}
+              >
+                编辑
+              </button>
             </div>
 
-            <Suspense fallback={<EditorSkeleton />}>
-              <TiptapEditor
-                key={detail.id}
-                initialMarkdown={detail.content_md}
-                onChange={scheduleSave}
-                onReady={onEditorReady}
-              />
-            </Suspense>
+            {viewMode === "overview" ? (
+              <div className="note-overview">
+                <div className="note-overview__stats">
+                  {(() => {
+                    const s = computeNoteStats(detail.content_md);
+                    return (
+                      <>
+                        <div className="note-overview__stat"><b>{s.chars.toLocaleString("zh-CN")}</b><span>字符</span></div>
+                        <div className="note-overview__stat"><b>{s.wikilinks}</b><span>双链</span></div>
+                        <div className="note-overview__stat"><b>{s.formulas}</b><span>公式</span></div>
+                        <div className="note-overview__stat"><b>{s.codeBlocks}</b><span>代码块</span></div>
+                        <div className="note-overview__stat"><b>~{s.readingMin}</b><span>分钟阅读</span></div>
+                      </>
+                    );
+                  })()}
+                </div>
+                {detail.tags.length > 0 && (
+                  <div className="note-overview__tags">
+                    {detail.tags.map((t) => (
+                      <span key={t} className="note-overview__tag">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="editor-toolbar">
+                  <input
+                    ref={imageInput}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    hidden
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadAttachment(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button onClick={() => imageInput.current?.click()}>插图/PDF</button>
+                </div>
+
+                <Suspense fallback={<EditorSkeleton />}>
+                  <TiptapEditor
+                    key={detail.id}
+                    initialMarkdown={detail.content_md}
+                    onChange={scheduleSave}
+                    onReady={onEditorReady}
+                  />
+                </Suspense>
+              </>
+            )}
           </div>
         ) : (
           <div className="editor-empty">
