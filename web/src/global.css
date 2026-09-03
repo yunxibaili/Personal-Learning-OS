@@ -2640,6 +2640,133 @@ button, input, select, textarea {
   color: var(--brand-text);
 }
 
+/* ---- P1-12-B1 Bright UI Assembly G1：Home Hero（ui/home-hero.html 定稿） ---- */
+.home-hero {
+  min-height: 100vh;
+  background: var(--bg-soft);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-hero__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--nav-h, 64px);
+  padding: 0 var(--sp-8);
+  flex-shrink: 0;
+}
+.home-hero__brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 18px; letter-spacing: -0.01em;
+  border: 0; background: none; color: var(--text);
+  font-family: inherit; cursor: pointer; padding: 0;
+}
+.home-hero__brand-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--brand);
+}
+.home-hero__links {
+  display: flex; gap: 28px; margin-left: auto;
+  font-size: var(--fs-base); color: var(--text-2);
+}
+.home-hero__links button {
+  border: 0; background: none; color: inherit; font-family: inherit;
+  cursor: pointer; padding: 0; transition: color 150ms;
+}
+.home-hero__links button:hover { color: var(--text); }
+.home-hero__nav-cta {
+  border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  background: var(--surface); color: var(--text);
+  padding: 6px 16px; font-size: var(--fs-sm); font-family: inherit;
+  cursor: pointer; transition: border-color 150ms;
+}
+.home-hero__nav-cta:hover { border-color: var(--text-2); }
+
+.home-hero__section {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: var(--sp-12);
+  align-items: center;
+  width: 100%; max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--sp-8);
+}
+
+.home-hero__eyebrow {
+  display: inline-block; font-size: 12px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--brand-text); font-weight: 600;
+  padding: 6px 14px; background: var(--brand-soft);
+  border: 1px solid var(--brand-line);
+  border-radius: var(--r-pill);
+  margin-bottom: var(--sp-6);
+}
+.home-hero__h1 {
+  font-size: 56px; font-weight: 700;
+  line-height: 1.04; letter-spacing: -0.03em;
+  margin: 0 0 var(--sp-5);
+  color: var(--text);
+}
+.home-hero__accent {
+  color: var(--brand-text);
+}
+.home-hero__lede {
+  font-size: 18px; color: var(--text-2);
+  line-height: 1.6;
+  max-width: 540px;
+  margin: 0 0 var(--sp-8);
+}
+.home-hero__cta-row { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.home-hero__cta-primary {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: 12px 24px; border-radius: var(--r-md);
+  font-size: 14px; font-weight: 500; font-family: inherit;
+  border: 1px solid var(--brand-deep); cursor: pointer;
+  background: var(--brand-deep); color: #fff;
+  transition: background 150ms, border-color 150ms;
+}
+.home-hero__cta-primary:hover { background: var(--brand-text); border-color: var(--brand-text); }
+.home-hero__cta-primary:focus-visible { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+
+.home-hero__meta {
+  margin-top: var(--sp-8);
+  display: flex; gap: var(--sp-8);
+  font-size: 12.5px; color: var(--text-3);
+}
+.home-hero__meta b {
+  color: var(--text); font-weight: 600; font-size: var(--fs-base); display: block;
+}
+
+.home-hero__earth-wrap {
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+}
+.home-hero__earth-wrap canvas { width: 100%; height: 100%; display: block; }
+
+.home-hero__chip {
+  position: absolute;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-xs); color: var(--text-2); white-space: nowrap;
+}
+.home-hero__chip--tl { top: 8%; left: -2%; }
+.home-hero__chip--tr { top: 18%; right: -2%; }
+.home-hero__chip--bl { bottom: 12%; left: 0%; }
+.home-hero__chip-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--brand); flex-shrink: 0;
+}
+.home-hero__chip-dot--ink { background: #35618F; }
+.home-hero__chip-dot--green { background: #22C55E; }
+
 .settings-view {
   max-width: 560px;
   margin: 0 auto;

@@ -4,6 +4,7 @@ import { AppShell } from "./components/shell/AppShell";
 import { ContextRail } from "./components/shell/ContextRail";
 import { useUi } from "./stores/ui";
 import { NoteEditorView } from "./views/NoteEditor";
+import { HomeHero } from "./views/HomeHero";
 
 // 浮层视图按需加载（BUG-4 代码分割）：React Flow/dagre/cobe 等重组件只在
 // 首次进入对应视图时下载，主包回落到编辑器+骨架可用的体积。
@@ -66,6 +67,11 @@ function ActiveView() {
         </div>
       </>
     );
+  }
+
+  if (activeView === "home") {
+    // P1-12-B1 Bright UI Assembly G1：产品入口页（home-hero.html 定稿）
+    return <HomeHero />;
   }
 
   if (activeView === "notes") {

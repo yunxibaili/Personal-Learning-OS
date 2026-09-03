@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 /** UI 层唯一全局状态：当前激活视图。业务数据一律来自 API，不进 store。 */
 export type ViewKey =
+  | "home"
   | "notes"
   | "graph"
   | "universe"
@@ -50,7 +51,7 @@ interface UiState {
 }
 
 export const useUi = create<UiState>((set, get) => ({
-  activeView: "notes",
+  activeView: "home",
   focusNoteId: null,
   focusConceptId: null,
   activeNoteId: null,
