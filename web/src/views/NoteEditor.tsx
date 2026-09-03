@@ -399,9 +399,16 @@ export function NoteEditorView() {
                 <button className="primary" onClick={() => void createNote()}>＋ 新建</button>
               </>
             ) : (
+              /* P1-5：共享首屏空态（activeId=null 即默认首屏，也覆盖删除后 / Tutor 打开时）。
+                 补唯一主 CTA「＋ 新建」——868×836 的主工作区此前没有任何动作出口，
+                 唯一新建入口在左树工具栏。与第一分支完全同构的 `button.primary`
+                 （样式已在 global.css:303，零新 CSS），点击仍走 createNote()。 */
               <>
                 <p className="editor-empty__title">选一篇笔记开始</p>
-                <p className="editor-empty__sub">从左侧选，或点「＋ 新建」开新的。</p>
+                <p className="editor-empty__sub">从左侧选一篇笔记，或新建一篇开始写。</p>
+                <button className="primary" onClick={() => void createNote()}>
+                  ＋ 新建
+                </button>
               </>
             )}
           </div>
