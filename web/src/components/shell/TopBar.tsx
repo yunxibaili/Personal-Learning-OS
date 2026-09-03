@@ -13,7 +13,7 @@ const OVERLAY_TITLES: Partial<Record<ViewKey, string>> = {
   graph: "知识图谱",
   universe: "知识星系",
   mindmap: "思维导图",
-  tutor: "AI Tutor",
+  tutor: "AI 导师",
   review: "复习",
   settings: "设置",
 };

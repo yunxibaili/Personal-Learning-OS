@@ -766,7 +766,7 @@ export function GalaxyView() {
         {/* 骨架形状对齐真实视图：560 星球 + 标题条 + eyebrow 条。
             尺寸取自下方 <GalaxyCanvas size={560}>，故 chunk/数据到达后零位移
             （CLS 铁律：GalaxyMini 0.0454→0.0003 的教训）。 */}
-        <span className="sr-only">载入星系…</span>
+        <span className="sr-only">加载星系…</span>
         <Skeleton variant="circle" width={560} height={560} />
         <Skeleton height={18} width={220} />
         <Skeleton height={12} width={150} />

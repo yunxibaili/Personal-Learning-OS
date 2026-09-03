@@ -129,7 +129,7 @@ function NoteTreeList(props: {
                   onLoadMore(node);
                 }}
               >
-                {loadingMore === node.note.id ? "载入中…" : "…更多子层级"}
+                {loadingMore === node.note.id ? "加载中…" : "…更多子层级"}
               </button>
             )}
           </li>
@@ -331,7 +331,7 @@ export function NoteEditorView() {
         <div className="note-tree">
           {tree === null ? (
             <div className="note-tree__loading" role="status">
-              <span className="sr-only">载入笔记树…</span>
+              <span className="sr-only">加载笔记树…</span>
               <Skeleton height={18} width={"82%"} />
               <Skeleton height={18} width={"70%"} />
               <Skeleton height={18} width={"76%"} />

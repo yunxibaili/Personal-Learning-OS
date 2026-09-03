@@ -236,7 +236,7 @@ export function GraphView() {
               className={layerMode === m ? "active" : ""}
               onClick={() => setLayerMode(m)}
             >
-              {m === "mixed" ? "全部" : m === "concept" ? "Concept" : "Note"}
+              {m === "mixed" ? "全部" : m === "concept" ? "概念" : "笔记"}
             </button>
           ))}
         </div>

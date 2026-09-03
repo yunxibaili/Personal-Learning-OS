@@ -157,7 +157,7 @@ export function ContextRail({ activeNoteId }: { activeNoteId: number | null }) {
                 )
               }
             >
-              AI Tutor{activeNoteId != null && noteTitle ? `（引用「${noteTitle}」）` : ""}
+              AI 导师{activeNoteId != null && noteTitle ? `（引用「${noteTitle}」）` : ""}
             </button>
           </div>
         )}

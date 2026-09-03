@@ -58,7 +58,7 @@ function ActiveView() {
           className="tutor-drawer-overlay"
           onMouseDown={(e) => { if (e.target === e.currentTarget) closeTutor(); }}
         >
-          <aside className="tutor-drawer" role="dialog" aria-label="AI Tutor">
+          <aside className="tutor-drawer" role="dialog" aria-label="AI 导师">
             <Suspense fallback={<LazyFallback />}>
               <TutorDrawer />
             </Suspense>
