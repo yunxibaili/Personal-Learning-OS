@@ -751,6 +751,27 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      Graph 53/15 · MindMap 写路径闭环（500 系沙箱删除守护伪影，shim-free 复测 200）·
      Tutor 真实 qwen3 全链（Ollama 在线）· Memory 8 · Mistakes 3 · Sync status/manifest ·
      Settings。**P0 全部完成 → 进入 P1 UI/UX 打磨**
+[19l] ✅ P1-11 文案语调（2026-09-03，commit 291bb4d）：取证先于裁决——「语调不统一」这一审计
+     假设**不成立**（全角/半角感叹号 0·0、敬语混用 0、emoji 0、术语中文化稳定）。真实不一致仅
+     3 项机械问题，全部清零：① `GraphView.tsx:239` 图层切换 `Concept`/`Note` → **概念/笔记**
+     （同控件内「全部」为中文，另两项为英文）；② 统一为 **AI 导师**（所有者裁定方向）——
+     `App.tsx:61` aria-label · `TopBar.tsx:16` 浮层标题 · `ContextRail.tsx:160` 右栏入口
+     （`TutorPanel.tsx:274` 本已中文，不动）；③ 载入/加载 动词统一为**加载**——
+     `GalaxyCanvas.tsx:769` 载入星系…→加载星系…，并**修正取证遗漏 2 处**：
+     `NoteEditor.tsx:132` 载入中… · `:334` 载入笔记树…（取证记录称「载入」仅 1 处，实测 3 处；
+     只改 1/3 会把不一致从「3 处载入」变成「1 加载 + 2 载入」，故按同一原则一并统一）。
+     复查：Concept/Note 英文 0 · AI Tutor 英文 0 · 用户可见「载入」0。
+     Gate：tsc 0 / vitest **207**(16 文件) / build PASS 4.26s。Backlog #11 ✅。
+     未做（不在清单，留待 Bright Baseline 走查定）：`ReviewSessionView.tsx:317`
+     「提交中...」半角三点与全库 21 处「…」不一致。
+[20] ▶ **Bright Baseline（PC 亮色体验基线）——当前阶段（2026-09-03 起）**：
+     目标 = 先让亮色版**完整可体验**，用真实使用感受决定下一轮改什么，而非继续清 backlog。
+     范围锁定：**仅亮色 · ≥1440×900 · PC**。17 项验收清单见
+     `../Open Learning OS — Bright Baseline 亮色体验验收清单.md`（启动/新建/编辑/
+     Markdown·LaTeX/搜索/双链/图谱/导图/星系/掌握度/错题/复习/AI 导师/Memory/Settings/
+     重启持久化/Tauri 独立运行）。**明确暂缓**：P1-12 响应式中等屏（1280 断点）·
+     P1-13 暗色主题（全 token 镜像）· P1-11-B `ui/COPY.md` 文案规范（等真实反馈再固化）。
+     反馈按 A 真的别扭 / B 不像成熟产品 / C 功能缺口 / D 错觉 四类归档。
 ```
 
 ### 已完成的近期里程碑（存档）
