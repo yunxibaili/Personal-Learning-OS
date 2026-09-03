@@ -355,12 +355,13 @@ export function NoteEditorView() {
         {error && <div className="error-banner">{error}</div>}
         {detail ? (
           <div className="editor-reading">
+            {/* D2：标题从 meta 行分离为编辑器一级视觉层级（ui/note-workspace.html 定稿） */}
+            <h1 className="editor-title">{detail.title}</h1>
             {/* 元信息行：保存态极小字下沉（编辑器硬约束 3）——写作时不该看见它 */}
             <div className="editor-meta">
               <span className={`editor-meta__save editor-meta__save--${saveState}`}>
                 {saveState === "saved" ? "● 已保存" : saveState === "dirty" ? "● 保存中…" : ""}
               </span>
-              <span>{detail.title}</span>
               <span>{detail.content_md.length.toLocaleString("zh-CN")} 字</span>
               <span>更新于 {detail.updated_at.slice(11, 16)}</span>
             </div>

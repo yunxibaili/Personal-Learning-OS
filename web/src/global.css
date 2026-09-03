@@ -331,6 +331,15 @@ button, input, select, textarea {
   margin-bottom: var(--sp-2);
   font-variant-numeric: tabular-nums;
 }
+/* P1-12-B1 D2：编辑器标题独立为一级视觉层级（ui/note-workspace.html 定稿：30px/600） */
+.editor-title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text);
+}
 .editor-meta__save--saved { color: var(--ok-text); }
 .editor-meta__save--dirty { color: var(--warn-text); }
 .tiptap .ProseMirror {
