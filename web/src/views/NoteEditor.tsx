@@ -3,6 +3,7 @@ import type { Editor } from "@tiptap/react";
 
 import { useUi } from "../stores/ui";
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost, apiUpload } from "../lib/api";
+import { displayNoteTitle } from "../lib/noteTitle";
 import type {
   NoteCreateBody,
   NoteDetail,
@@ -65,6 +66,8 @@ function NoteTreeList(props: {
       {nodes.map((node) => {
         const expandable = node.children.length > 0 || node.truncated;
         const isCollapsed = collapsedIds.has(node.note.id);
+        // P1-2：占位/空/纯 ID 标题降级展示（纯展示层，title 真值不变）
+        const title = displayNoteTitle(node.note.title, node.note.id);
         return (
           <li key={node.note.id}>
             <div
@@ -76,7 +79,7 @@ function NoteTreeList(props: {
                   type="button"
                   className="note-tree__toggle"
                   aria-expanded={!isCollapsed}
-                  aria-label={`${isCollapsed ? "展开" : "折叠"}「${node.note.title}」`}
+                  aria-label={`${isCollapsed ? "展开" : "折叠"}「${title}」`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggle(node.note.id);
@@ -87,14 +90,14 @@ function NoteTreeList(props: {
               ) : (
                 <span className="note-tree__leaf" aria-hidden="true" />
               )}
-              <span className="note-tree__title" title={node.note.title}>
-                {node.note.title}
+              <span className="note-tree__title" title={title}>
+                {title}
               </span>
               <button
                 type="button"
                 className="note-tree__add-child"
-                title={`在「${node.note.title}」下新建副笔记`}
-                aria-label={`在「${node.note.title}」下新建副笔记`}
+                title={`在「${title}」下新建副笔记`}
+                aria-label={`在「${title}」下新建副笔记`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onCreateChild(node.note);
