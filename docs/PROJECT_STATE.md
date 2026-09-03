@@ -716,7 +716,12 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
 [19c] ✅ P1-2 stub 标题降级显示（2026-09-03，commit 645a935）：`displayNoteTitle()`
      覆盖空/纯空白/null/纯数字/占位 pattern「未命名笔记 <数字>」→「未命名笔记 · #<id>」。
      注：审计原描述「裸数字 ID」不准确，实测 title = `未命名笔记 193159`。
-[19d] ✅ P1-3 settings.theme[19e] ✅ P1-4 思维母图空态[19f] ✅ P1-5 编辑器未选中笔记共享空态[19g] ✅ P1-6 业务组件字体层级[19h] ✅ P1-7-P1 minimap 尺寸[19i] ✅ P1-8 顶栏/右栏 header 对齐：**零代码关闭**（2026-09-03，取证后无可量化错位）——顶栏元素
+[19d] ✅ P1-3 settings.theme[19e] ✅ P1-4 思维母图空态[19f] ✅ P1-5 编辑器未选中笔记共享空态[19g] ✅ P1-6 业务组件字体层级[19h] ✅ P1-7-P1 minimap 尺寸[19i] ✅ P1-8 顶栏/右栏 header 对齐[19j] ✅ P1-9-P1 知识星系全屏空轨道收敛（2026-09-03，commit cc2ca49，决策 A 渲染层）：
+     orbitCountFor(0/1/≥2)=0/1/2；drawFrame 仅画 drawn 轨道；卫星索引 drawn[sat.orbit%drawn.length] 仍落已绘环。
+     像素取证 0-卫星环带=0、1-卫星≈445。18 星球 / 2 卫星 / 巡览 / minimap 224×224 + 容器 268 +
+     flexShrink:0 全部不变。Gate: tsc 0 / vitest 207 / build / console 0。Backlog #9 ✅。
+     **B（卫星源=推断层级）按裁决暂缓 → 独立架构议题**（不动 derivePlanets / ADR）。
+：**零代码关闭**（2026-09-03，取证后无可量化错位）——顶栏元素
      中心均 31.5px（顶栏 32，≤0.5px 取整差）；review/settings 属性完全同构；「复习 9」非嵌套
      badge；右栏 5 tab 几何全等；tutor-header 同水平线；顶栏几何已 token 驱动。Backlog #8 ✅。
      保留观察：`.topbar__sync` 状态指示 vs pill 操作按钮 = 设计语义差异（非 bug），
