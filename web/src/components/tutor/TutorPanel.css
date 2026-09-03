@@ -33,7 +33,7 @@
 }
 
 .tutor-section-title {
-  font-size: 11px;
+  font-size: var(--fs-xs);   /* P1-6 T1: 原 11px < 标尺最小档 12px */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -115,7 +115,7 @@
 
 .tutor-relation {
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: var(--fs-xs);   /* P1-6 T1: 原 11px < 标尺最小档 12px */
 }
 
 /* Modes */
@@ -132,7 +132,7 @@
   padding: 6px 0;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-sm);   /* P1-6 T2: 交互控件 12px → 13px */
   transition: color 150ms, background 150ms;
 }
 
@@ -213,7 +213,7 @@
 .tutor-section-title { display: flex; justify-content: space-between; align-items: center; }
 .tutor-note-toggle {
   border: 1px solid var(--border); background: none; border-radius: 4px;
-  font-size: 11px; padding: 2px 8px; cursor: pointer; color: var(--muted, #8a8a8a);
+  font-size:font-size: var(--fs-xs); padding: 2px 8px; cursor: pointer; color: var(--muted, #8a8a8a);
 }
 .tutor-note-list { list-style: none; margin: 6px 0 0; padding: 0; }
 .tutor-note-list li {

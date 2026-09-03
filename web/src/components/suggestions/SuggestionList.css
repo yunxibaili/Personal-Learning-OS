@@ -13,7 +13,7 @@
 }
 
 .suggestion-title {
-  font-size: 11px;
+  font-size: var(--fs-xs);   /* P1-6 T1: 原 11px < 标尺最小档 12px */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -21,7 +21,7 @@
 }
 
 .suggestion-count {
-  font-size: 10px;
+  font-size: var(--fs-xs);   /* P1-6 T1: 原 10px < 标尺最小档 12px */
   background: var(--brand);
   color: #fff;
   padding: 1px 6px;
@@ -66,7 +66,7 @@
 }
 
 .suggestion-item-origin {
-  font-size: 10px;
+  font-size: var(--fs-xs);   /* P1-6 T1: 原 10px < 标尺最小档 12px */
   color: var(--text-tertiary);
   background: var(--bg-tertiary);
   padding: 1px 6px;
@@ -93,7 +93,7 @@
   padding: 4px 0;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-sm);   /* P1-6 T2: 交互控件 12px → 13px */
   transition: background 150ms;
 }
 
@@ -109,7 +109,7 @@
   padding: 4px 0;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-sm);   /* P1-6 T2: 交互控件 12px → 13px */
   transition: color 150ms, border-color 150ms;
 }
 
