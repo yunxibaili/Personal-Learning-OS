@@ -12,12 +12,10 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .db import APP_ROOT, FTS_REBUILD_VERSIONS, init_db
+from .db import FTS_REBUILD_VERSIONS, init_db
 from .core.reindex import reindex_vault
 from .routers.attachments import router as attachments_router
 from .routers.conversations import router as conversations_router
@@ -42,7 +40,6 @@ from .routers.memories import router as memories_router
 from .routers.mistakes import router as mistakes_router
 
 APP_VERSION = "0.1.0-dev"
-WEB_DIST = APP_ROOT / "web" / "dist"
 
 
 @asynccontextmanager
@@ -77,18 +74,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     app = FastAPI(title="Personal Learning OS", version=APP_VERSION,
                   lifespan=lifespan)
-    # P0-2b（方案 i）：桌面 WebView origin 为 http://tauri.localhost，
-    # 生产前端以绝对地址 VITE_API_BASE 跨源访问本机 sidecar——需放行 CORS。
-    # dev 5173 一并放行（vite proxy 同源转发不受影响，显式列出便于直连调试）。
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
-            "http://tauri.localhost", "https://tauri.localhost",
-            "http://localhost:5173",
-        ],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
     app.include_router(settings_router)
     app.include_router(notes_router)
     app.include_router(links_router)
@@ -147,10 +132,6 @@ def create_app() -> FastAPI:
             app.state.last_db_error = repr(exc)
         return {"status": "ok" if db_ok else "degraded",
                 "db": db_ok, "version": APP_VERSION}
-
-    # 生产形态（M6 起）：前端构建产物存在则由后端托管，浏览器单端口访问
-    if WEB_DIST.is_dir():
-        app.mount("/", StaticFiles(directory=str(WEB_DIST), html=True), name="web")
 
     return app
 

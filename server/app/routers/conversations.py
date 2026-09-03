@@ -168,7 +168,7 @@ def _chat_stream(body: ChatRequest, query: str, note_ids: list[int]) -> Iterator
     即便客户端中途断开（GeneratorExit 于某个 yield 触发），finally 依然
     以已累积的增量拼装整段回答落库，随后关闭连接。
 
-    SSE 帧契约（与 shared/types/tutor.ts 对齐）：
+    SSE 帧契约（与 core/tutor_types.py 对齐）：
       - 数据帧   ``data: {"text": "<chunk>"}`` ×N
       - 正常收尾 ``event: done``   ``data: {"conversation_id": N}``
       - 出错     ``event: error``  ``data: {"code": "...", "message": "..."}``

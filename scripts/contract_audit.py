@@ -1,9 +1,9 @@
 """Contract & Coverage Audit — Open Learning OS (stdlib-only, read-only).
 
 Purpose (maps to GPT P0-3 / P0-4):
-  P0-3  OpenAPI(88 endpoint) -> test reference 1:1 machine-auditable map.
-  P0-4  Detect shared/types/*.ts camelCase keys = likely snake_case contract drift
-        (the refId / ref_id class of bug).
+  P0-3  OpenAPI endpoints -> test reference 1:1 machine-auditable map.
+        （P0-4 shared/types camelCase 扫描随前端移除而废弃，已删除——
+         snake_case 契约由 Pydantic schema 与 pytest 断言守护。）
 
 Read-only: imports the FastAPI app to read its OpenAPI schema (no server start),
 and scans the repo text. Nothing is written to the DB or workspace.
@@ -24,7 +24,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent          # learning-os/
 SERVER_DIR = ROOT / "server"
 TESTS_DIR = SERVER_DIR / "tests"
-TYPES_DIR = ROOT / "shared" / "types"
 
 METHOD_RE = re.compile(r"\b(GET|POST|PUT|PATCH|DELETE)\b")
 
@@ -76,28 +75,11 @@ def endpoint_referenced(method: str, path: str, texts: dict[Path, str]) -> list[
     return [f for f, text in texts.items() if rx.search(text)]
 
 
-def camel_keys(ts_text: str) -> list[str]:
-    """Return camelCase property keys that backend/snake_case convention would
-    render as snake_case (e.g. refId -> ref_id). Exclude known single-lowercase."""
-    keys = set()
-    for m in re.finditer(r"([a-zA-Z_][a-zA-Z0-9_]*)\s*:", ts_text):
-        k = m.group(1)
-        # camelCase = starts lowercase / '_' then contains an uppercase.
-        if re.search(r"[a-z][A-Z]", k) or re.match(r"^_[a-z][A-Z]", k):
-            keys.add(k)
-    return sorted(keys)
-
-
-def snake_for(k: str) -> str:
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", k).lower()
-
-
 def main() -> int:
     texts = {f: f.read_text(encoding="utf-8", errors="replace") for f in test_files()}
     endpoints = load_openapi_paths()
     print(f"# OpenAPI endpoints:\t{len(endpoints)}")
     print(f"# Test files scanned:\t{len(texts)}")
-    print(f"# TS type files:\t{len(list(TYPES_DIR.glob('*.ts')))}")
     print()
 
     # ---- P0-3: endpoint -> test reference map ----
@@ -124,30 +106,14 @@ def main() -> int:
     for p, eps in sorted(by_file.items(), key=lambda kv: -len(kv[1])):
         print(f"  {len(eps):>3}\t{p}")
 
-    # ---- P0-4: shared/types cif-style camelCase drift scan ----
-    print()
-    print("## P0-4 shared/types/*.ts camelCase key drift scan")
-    found = 0
-    for ts in sorted(TYPES_DIR.glob("*.ts")):
-        keys = camel_keys(ts.read_text(encoding="utf-8", errors="replace"))
-        if keys:
-            found += 1
-            print(f"## {ts.name}")
-            for k in keys:
-                print(f"  {k}   -> snake: {snake_for(k)}")
-    if not found:
-        print("  (no camelCase keys detected)")
-
     print()
     print("## Notes")
     print("  - P0-3 'REF' = the route path appears in >=1 test file (regex, param/literal aware).")
     print("    Absence ('N') means NO test text references that path => strong signal it is")
     print("    uncovered OR exercised via a helper that never spells the full URL.")
-    print("    Treat 'N' as an actionable candidate for the 89-endpoint coverage audit.")
-    print("  - P0-4 flags camelCase keys as potential snake_case contract drift;")
-    print("    confirm each against backend Pydantic/tutor response before changing.")
+    print("    Treat 'N' as an actionable candidate for the endpoint coverage audit.")
     print("  - OpenAPI endpoint count is authoritative from app.openapi() — if it differs")
-    print("    from docs (88), the docs need updating (P0-1 baseline consistency).")
+    print("    from docs, the docs need updating.")
     return 0
 
 

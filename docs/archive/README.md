@@ -14,3 +14,8 @@
 | data-model/INDEX · learning-model · tutor-context · prompt-contract · language-contract · TABLE_AUDIT | docs/DATA_MODEL.md |
 | root-docs/TECH_DESIGN_REVIEW · PROJECT_STATE_SUMMARY · OPEN_SOURCE_REMEDIATION | 历史评审（结论已吸收进 PROJECT_STATE/TECH_DESIGN） |
 | root-docs/environment.md | AGENTS.md §17 |
+
+> 2026-09 纯后端化补充归档：
+> | 原位置 | 去向 |
+> |---|---|
+> | DESIGN.md（前端设计规格，冻结） | `archive/design/DESIGN.md`（见 AGENTS.md 顶部"项目形态"，权威后端信息以 `docs/backend/` 为准） |

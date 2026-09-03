@@ -4,7 +4,7 @@ workspace/
 # 本地归档区：旧代码快照/旧文档版本/临时脚本——仅存本机，永不入库
 _local/
 
-# 一次性实验沙盒（用完即删）与后端缓存产物——永不入库
+# 一次性实验沙盒（用完即删）——永不入库
 sandbox/
 server/.cache/
 
@@ -18,31 +18,16 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Node
+# Node（保留通用规则；纯后端化后 web/ 已移除）
 node_modules/
 dist/
-# 构建验证产物（vite build --outDir dist*）——两种连字符写法都忽略
-dist-verify/
-dist_verify*/
-dist-verify*/
-dist-m9check/
-dist-treecheck/
-dist-handoff-check/
 
 # 构建与测试产物
 coverage/
 *.log
 
-# vite 加载配置文件时产生的临时时间戳文件
-vite.config.ts.timestamp-*
-vitest.config.ts.timestamp-*
-
-# 打包产物（M6 起）
-# 注意：含内部斜杠的模式会被锚定到 .gitignore 所在目录，
-# 因此必须显式写出 web/ 前缀，否则匹配不到 web/src-tauri/target/。
-# （此前只写 src-tauri/target/，导致 1.4GB 构建产物一直显示为未跟踪。）
-web/src-tauri/target/
-web/src-tauri/gen/
+# 打包产物（PyInstaller sidecar）
+server/build/
 
 # OS
 .DS_Store
@@ -50,14 +35,3 @@ Thumbs.db
 
 # Agent 工作态（记忆 / 产物）：非项目源码，不入库
 .workbuddy/
-web/tsconfig.tsbuildinfo
-web/dist-check-0902/
-web/dist-i18ncheck/
-
-# Tauri sidecar 打包产物（P0-2b）：构建期生成，不入库
-web/src-tauri/binaries/
-server/build/
-
-# Tauri sidecar 打包产物（P0-2b）：构建期生成，不入库
-web/src-tauri/binaries/
-server/build/

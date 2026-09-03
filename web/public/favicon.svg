@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- 星球本体：白底 + 品牌橙描边（白空间线稿，与 GalaxyCanvas 同一语汇） -->
-  <circle cx="16" cy="16" r="7.5" fill="#FFFFFF" stroke="#FF6B35" stroke-width="2.5"/>
-  <!-- 卫星轨道：倾斜椭圆，细线 -->
-  <ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="#FF6B35" stroke-width="1.6"
-           opacity="0.45" transform="rotate(-20 16 16)"/>
-  <!-- 卫星：实心小圆 -->
-  <circle cx="27.5" cy="11.6" r="2.4" fill="#FF6B35"/>
-</svg>

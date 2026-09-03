@@ -2,13 +2,13 @@
 
 职责：
   - 查询 concepts + links + mastery
-  - 组装为前端 d3-force/React Flow 消费的 nodes/edges 格式
-  - 不做布局计算（布局属于前端 d3-force，ADR-007/018）
+  - 组装为后端定义的 nodes/edges 可视化格式
+  - 不做布局计算（布局属于可视化层，ADR-007/018）
 
 禁止：
   - 修改 concepts / links / mastery 表
   - 引入 FastAPI
-  - 引入 d3 / React Flow（前端职责）
+  - 引入前端可视化库（布局/渲染职责不在 core）
 """
 from __future__ import annotations
 

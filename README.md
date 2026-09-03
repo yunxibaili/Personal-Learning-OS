@@ -1,89 +1,100 @@
-# Personal Learning OS · Open Learning OS
+# Personal Learning OS · Open Learning OS（纯后端）
 
-> **Open Learning OS** is an open-source, local-first AI learning environment that helps people collect knowledge, understand concepts, practice skills, and build long-term memory.
+> **Open Learning OS** is a local-first AI learning system **backend**. It turns
+> an open Markdown knowledge base (vault) into a typed knowledge graph with
+> learning memory (4-dimension mastery / SM-2 reviews / mistake log / memory-aware
+> AI tutor) and LAN multi-device sync.
 >
-> 一个开源、本地优先的 AI 学习操作系统：帮助用户建立知识库、理解概念、练习技能，并形成长期记忆。
+> 一个开源、本地优先的 AI 学习系统后端：把开放 Markdown 知识库转化为类型化知识图谱，
+> 内置学习记忆（四维掌握度 / SM-2 复习 / 错误本 / 记忆感知 AI Tutor）与 LAN 多端同步。
 >
 > *Your knowledge is not a pile of notes. It is a universe that grows with you.*
 
-核心价值不是"记录信息"，而是**帮助用户学会信息**：
-Markdown 知识库 × 类型化知识图谱 × 学习记忆（四维掌握度 / SM-2 复习 / 错误本）× 记忆感知 AI Tutor。
+核心价值不是"记录信息"，而是**帮助用户学会信息**。
+正文事实源永远是开放 Markdown + SQLite 缓存，可在需要时一键全量导出、整库带走。
 
-**不做的事**：对标或击败 Obsidian/Notion · 商业 SaaS · 云端绑定 · 用户锁死。
-你的数据永远是开放的 Markdown + SQLite，随时可整库带走。
+**2026-09 纯后端化**：前端（`web/` React/Vite/Tauri、`ui/` 设计原型、`shared/types/` 共享 TS 契约）、
+本地 UI 归档与实验目录已移除。本仓库现为**可独立运行、测试、打包的纯后端项目**。
 
-**为谁而做**：备考与自学者（高等数学/编程/考证）· 长期知识库构建者 · 开源贡献者。
-架构对三者承诺：文档完善 · 一键运行 · 数据开放 · 可扩展（插件体系已预留设计）。
+**项目说明、架构、功能、依赖、测试、打包的权威档案见 [docs/backend/](docs/backend/README.md)。**
 
 ## 环境要求
 
 - Python 3.12+
-- Node 18+（本机开发验证于 24.x）
 
-## 启动（开发模式）
+## 启动 / 运行（开发模式）
 
 ```bash
-# 后端 :8000（绑 127.0.0.1；可用 $env:PORT 覆盖，如与 UpMark 共存设 8100）
 cd server
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
-
-# 前端 :5173（另开终端）
-cd web
-npm install
-npm run dev
+# 或：python -m app.main          # 读取 $env:PORT，默认 8000
 ```
 
-浏览器访问 http://localhost:5173 。
+- 只绑定 `127.0.0.1`。
+- 端口默认 8000；`$env:PORT=8100` 可覆盖（与 UpMark 共存）。
+- 用户数据目录默认 `workspace/`，可用 `$env:WORKSPACE_DIR` 覆盖。
 
-## 当前进度
+## 数据模型
 
-> **单一真相源原则（2026-09-02）**：项目进度的唯一权威登记处是
-> [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)（§10 闭环完成度 / §10.3 路线 / §12 技术债）；
-> 本表与任务看板只做引用与摘要，进度以 PROJECT_STATE 为准。
-
-📋 任务定义与完成报告存档：[docs/TASKS.md](docs/TASKS.md) · 里程碑验收标准：[docs/TECH_DESIGN.md](docs/TECH_DESIGN.md) §10
-
-| 里程碑 | 状态 | 内容 |
-|---|---|---|
-| M0 脚手架 | ✅ | FastAPI + React + migration runner + workspace |
-| M1 知识库核心 | ✅ | notes CRUD + TipTap + KaTeX + 附件 + FTS5 |
-| M2 双链·图谱 | ✅ | [[wikilink]] 解析 + 反链 API + 图谱读模型 + React Flow |
-| M2b 思维导图 | ✅ | React Flow 导图 · 节点 CRUD · 概念绑定 · 导入导出 roundtrip |
-| M3 Learning Graph | ✅ | 四维掌握度 + SM-2 复习 + 复习会话（键盘驱动） |
-| M3.5-A 知识雷达 | ✅ | 全知领域 Phase A：上下文匹配 + 图谱邻居 + Radar 面板 |
-| M3.5-B 全知领域 | ✅ | 掌握度联动 + 复习建议 + 错误历史 |
-| M4 AI Tutor | ✅ | 上下文感知 Tutor（三入口）· SSE 流式 + 停止 · 对话持久化 |
-| M6 桌面分发 | ✅ | Tauri 打包（2026-09-01，Windows MSI / NSIS 安装包） |
-| M7 LAN Sync | ✅ | Discover→Pair→Manifest→Diff→Transport→Apply→Reindex · E2E 双进程一致 |
-| M9 Visual Engine | 🟡 | tracer/API/IDE 步进组件已完成（M9-002~006）；待 M9-007 接入 web/ · M9-008 验收 |
-| M8 移动分发 | 🔜 | 未开始（ADR-006 设计就绪，等 P8 收尾后决策） |
-
-其他已完成：一键全量导出（B11，vault + 附件 + 导图 + 事件日志 + 概念/掌握度快照 · 脱敏）·
-主/副笔记层级树（ADR-024/026 地基）· AI 记忆管理与导入导出（B15/B19/B28）。
-
-> **AI Tutor 说明**：Tutor 的接口契约与流式链路已就绪并有守护测试；默认
-> `MockProvider` 返回占位文本，**真实问答需配置 LLM**——支持任意
-> OpenAI 兼容 API（如 DeepSeek，设置页填 base_url + key），或本地
-> [Ollama](https://ollama.com)（`ollama pull qwen3` 后设置页 base_url 填
-> `http://127.0.0.1:11434/v1`）。
-
-## 目录
+以 `workspace/` 为用户数据根（整体 `.gitignore`，永不入库）：
 
 ```
-workspace/ 用户私有数据（vault 笔记 + 附件 + 数据库）——永不入库，路径可在设置中改
-server/    FastAPI 后端（SQLite + 学习引擎 + AI）
-web/       React 前端
-docs/      技术设计唯一来源 + adr/(principles+ADR) + dependencies/(policy+registry)
-           + security/network-boundary + version-control/git-policy + TASKS
-AGENTS.md  工程宪法（强制约束，AI 与人类共同遵守；写码前必读四文件见文首）
-CHANGELOG.md 变更日志
+workspace/
+├── vault/            # Markdown 正文 + *.mindmap.json（事实源）
+├── attachments/      # 附件
+├── metadata/         # 元数据
+├── mind_maps/        # 导图导出
+└── db/               # SQLite：learning-os.db（可重建缓存）
+```
+
+- 正文唯一事实源：`workspace/vault/**/*.md`（ADR-001/005）。
+- SQLite（`workspace/db/learning-os.db`）只是可重建的本地缓存。
+- 全库 22 张表 + FTS5（CJK bigram，ADR-027）。详见 [data-model](docs/backend/data-model.md)。
+
+## 测试
+
+```bash
+cd server
+.venv\Scripts\python.exe -m pytest -q               # 全量（基线 1020 通过）
+.venv\Scripts\python.exe -m pytest tests/api -q     # 仅 API
+.venv\Scripts\python.exe -m pytest tests/unit -q    # 仅 unit
+```
+
+一键入口（仓库根）：`.\scripts\test.ps1`（全量/`-Smoke`/`-Watch`）。
+关闭闭环与契约：`scripts/scenario_a_closed_loop.py` · `scripts/scenarios_bc_closed_loop.py` · `scripts/contract_audit.py`。
+
+## 打包（PyInstaller sidecar）
+
+```bash
+cd server
+.venv\Scripts\python.exe -m PyInstaller plos_backend.spec --noconfirm
+# 产物：dist/plos-backend.exe
+```
+
+详见 [runtime](docs/backend/runtime.md)。
+
+## 目录结构
+
+```
+learning-os/
+├── server/            # 后端本体（app/main.py · db.py · routers/ · core/）
+│   ├── app/           # FastAPI + 业务 core + 数据访问
+│   ├── tests/         # 全部 pytest（unit/ api/ integration/）
+│   ├── migrations/    # 纯 SQL migration（001~010）
+│   ├── backend_main.py  # 打包态入口
+│   └── plos_backend.spec # PyInstaller 配置
+├── scripts/           # 后端运维/验证脚本
+├── docs/              # 治理文档（docs/backend/ 为权威档案）
+├── workspace/         # 用户私有数据（gitignore，永不入库）
+└── README.md
 ```
 
 ## 文档
 
-- 技术设计、数据模型、依赖取舍、里程碑：[docs/TECH_DESIGN.md](docs/TECH_DESIGN.md)
-- 重大架构决策（ADR）：[docs/adr/](docs/adr/)
-- 依赖注册表：[docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
+- 权威后端档案：**[docs/backend/](docs/backend/README.md)**（架构 · 技术栈 · 功能 · 数据模型 · API · 测试 · 运行态 · 历史）
+- 工程宪法：`AGENTS.md`（强制工程约束）
+- 重大架构决策（ADR）：`docs/adr/` · 状态唯一来源：`docs/PROJECT_STATE.md`
+- 依赖政策：`docs/DEPENDENCIES.md` · 网络边界：`docs/security/network-boundary.md` · Git 策略：`docs/version-control/git-policy.md`

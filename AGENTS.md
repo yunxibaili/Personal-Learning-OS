@@ -8,6 +8,13 @@
 > ① `docs/adr/principles.md`　② `docs/DEPENDENCIES.md`
 > ③ `docs/security/network-boundary.md`　④ `docs/version-control/git-policy.md`
 
+> **⚠️ 项目形态（2026-09 纯后端化，现行有效）**：本仓库现已收敛为**纯后端**项目。
+> 前端（`web/` React/Vite/Tauri、`ui/` 设计原型、`shared/types/` 共享 TS 契约）及本地
+> UI 归档/实验目录（`_backup/` `_local/` `sandbox/`）已移除。下文涉及 React/Vite/Tauri/
+> npm/前端阶段的章节（§9 技术栈冻结表、§16 Frontend Rules、§12 四层中的 Frontend 等）均为
+> **历史约束或已移除内容的说明，权威后端信息以 `docs/backend/` 为准**。
+> 权威后端档案：`docs/backend/README.md`（架构/技术栈/功能/数据模型/API/测试/运行态/历史）。
+
 ## 0. 核心工程原则
 
 Local-first · Minimal Dependencies · Open Source Reuse · Standard Library First ·
@@ -261,7 +268,7 @@ ADR-007 例外随之失效）
 | `docs/SYNC.md` | M7 同步全链：model/transport/conflict/recovery/边界审计 |
 | `docs/TESTING.md` | 测试策略 · 矩阵 · 回归 · 发布清单 |
 | `docs/EVALUATION.md` | Tutor 评估体系（plan/metrics/cases） |
-| `docs/DESIGN.md` | 前端设计规格（**冻结**：Learning Loop · UI Reference · Earth UI） |
+| `docs/archive/design/DESIGN.md` | 前端设计规格（**冻结 / 已归档**：Learning Loop · UI Reference · Earth UI） |
 
 ### 参考目录
 
@@ -437,7 +444,7 @@ docs/ai/
 
 AI 生成 UI 必须遵守 ADR-013 Frontend Design System。
 详细规范见 `docs/adr/ADR-013-frontend-design-system.md`。
-视觉参考见 `docs/DESIGN.md`。
+视觉参考见归档的 `docs/archive/design/DESIGN.md`（前端设计规格，纯后端化后已冻结，不再维护）。
 
 ### Design Philosophy
 

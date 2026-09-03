@@ -1,6 +1,6 @@
 """
 TraceRun v1 契约测试（ADR-025 §4）
-确保后端返回的 TraceRun 符合前端 TypeScript 类型定义
+确保后端返回的 TraceRun 符合后端契约定义（与 core/tracer 类型一致）
 """
 import pytest
 

@@ -1,7 +1,7 @@
 """Tutor Core Types（M4-B）：Python 侧类型定义。
 
-与 shared/types/tutor.ts 概念对齐，但不强耦合。
-shared/ 是 API contract，本文件是 Core 内部 contract。
+本文件是 Core 内部 contract（纯后端化后 shared/types 已移除），
+与 routers 层的 API contract 由 pytest 契约测试守护。
 """
 from __future__ import annotations
 

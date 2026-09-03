@@ -184,18 +184,6 @@ class TestReachability:
         r2 = client.get(f"/api/v1/tutor/context/{seeded['concept_id']}")
         assert r2.json().get("notes") == []
 
-    def test_focus_concept_id_store_contract(self):
-        """ui store 的 focusConceptId 必须遵循 focusNoteId 同款跳转目标模式。"""
-        import re
-        from pathlib import Path
-        src = (Path(__file__).resolve().parents[3] / "web" / "src"
-               / "stores" / "ui.ts").read_text(encoding="utf-8")
-        assert "focusConceptId" in src, "store 未接 focusConceptId——死 tab 回归"
-        # 跳转目标消费模式：必须有 open 动作与 clear（与 focusNoteId 同构）
-        assert re.search(r"focusConceptId:\s*null", src)
-        assert re.search(r"clearConceptFocus", src)
-
-
 # ── 4. 预算与边界 ───────────────────────────────────────────────────
 
 class TestBudgetAndBounds:

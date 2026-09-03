@@ -5,8 +5,8 @@
   .venv/Scripts/python.exe -m PyInstaller plos_backend.spec --noconfirm
 产物：
   dist/plos-backend.exe
-  → 拷贝为 web/src-tauri/binaries/plos-backend-x86_64-pc-windows-gnu.exe
-    （Tauri externalBin 要求带 target triple 后缀，triple 见 rustc -vV host）
+  （历史说明：P0-2b 曾拷贝为 web/src-tauri/binaries/plos-backend-x86_64-pc-windows-gnu.exe
+    作为 Tauri externalBin sidecar；纯后端化后 UI 壳已移除，exe 即为独立后端产物。）
 说明：
   - 仅构建期工具（pyinstaller 装在 server/.venv，不进 requirements.txt）；
   - migrations 以 datas 打进 _MEIPASS/server/migrations，
