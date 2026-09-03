@@ -37,6 +37,7 @@ import {
   type Edge,
   type Node,
   type NodeTypes,
+  useReactFlow,
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -284,6 +285,10 @@ export function GraphView() {
               React Flow 官方 --xy-background-color-default 即 transparent；
               MiniMap 是第二份缩略视图，与「单一焦点」冲突。 */}
           <Controls showInteractive={false} />
+          {/* P1-1：layout 异步到位（fetch 完成后才出 layoutResult），fitView prop
+              仅在 mount 触发一次会卡在 0 节点 zoom；这里在 ReactFlow 子树内用
+              useReactFlow().fitView() 在数据到位时重 fit。返回 null，不渲染 DOM。 */}
+          <FitOnLayoutChange nodesCount={layoutResult.nodes.length} />
         </ReactFlow>
       </div>
 
@@ -348,4 +353,19 @@ export function GraphView() {
       )}
     </section>
   );
+}
+
+/** P1-1：fitView 触发器——挂在 ReactFlow 子树内，layoutResult 变化时重 fit。
+ *  fitView prop 只在 mount 时跑一次；数据异步到达（fetch resp 后才有坐标），
+ *  mount 时 fit 0 节点 → camera 卡在空状态。子组件用 useReactFlow 在 deps 变化时
+ *  主动重 fit。返回 null，不渲染任何 DOM。
+ */
+function FitOnLayoutChange({ nodesCount }: { nodesCount: number }) {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    if (nodesCount > 0) {
+      fitView({ duration: 0, padding: 0.1, minZoom: 0.05, maxZoom: 1.5 });
+    }
+  }, [nodesCount, fitView]);
+  return null;
 }
