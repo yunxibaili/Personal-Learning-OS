@@ -6,6 +6,7 @@
 |---|---|---|
 | 1（唯一） | `workspace/vault/**/*.md` | Markdown 正文 |
 | 1（唯一） | `workspace/vault/**/*.mindmap.json` | 思维导图结构（旁车） |
+| 1（唯一） | `workspace/metadata/revisions/**/*.md` | 文档快照（ADR-028，见下） |
 | 2（可重建缓存） | `workspace/db/learning-os.db` | 元数据 / 索引 / 学习状态 |
 | 2（可重建索引） | `notes_fts` | 全文检索派生索引（DROP+CREATE 后需 reindex） |
 
@@ -56,6 +57,23 @@ notes_fts_docsize notes_fts_idx
 - 双链：`[[wikilink]]`，由 `autolink.py` / `knowledge.py` 解析并维护 `links`。
 - 思维导图大纲段：带 `generated:mindmap` 标记的大纲是**派生视图**，禁止手改（ADR-002）。
 - 附件：`workspace/attachments/`；元数据/旁车：`workspace/metadata/`、`workspace/mind_maps/`。
+
+## 文档快照（ADR-028）
+
+```
+workspace/metadata/revisions/<vault 相对路径>/<YYYYmmddTHHMMSSZ>-<hash8>.md
+```
+
+- 快照与笔记正文**都落文件系统，都不进 SQLite** —— SQLite 不在 `EXPORT_DIRS`
+  也不在 `SYNC_PATTERNS`，落表会让快照既不进导出包也不参与多端同步，
+  违反「用户数据永不锁死」（`AGENTS.md §3`）与 ADR-005。
+- **本功能零新增 migration**：`010_fts_bigram` 仍是链尾。
+- 目录键是 vault 相对路径而非 `note_id` —— `note_id` 是 SQLite 自增主键，
+  db 不同步，跨设备不保证一致。
+- 快照**不放在 `vault/` 下**：`reindex.py` 的 `rglob("*.md")` 会把它吞成正式笔记。
+- 快照文件本身即合法 Markdown：`compose_file({**笔记原 frontmatter, **rev_* 元数据}, body)`，
+  剥离 `rev_*` 后可无损还原原笔记文件。
+- 进 `EXPORT_DIRS`（可全量导出），**不进** `SYNC_PATTERNS`（本地便利能力，非跨设备事实）。
 
 ## 数据所有权
 

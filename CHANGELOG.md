@@ -6,6 +6,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Backend: Document Changes / Revision / Diff 基础能力（ADR-028）**：
+  - 与 Git 解耦的文档变更抽象层，revision source = `current`（vault 直读）/ `snapshot`
+    （历史快照）；`git` source 属后续独立任务，本轮**不预留 Adapter 抽象层**
+    （AGENTS §6：无真实复杂度不制造 Provider 层）
+  - `app/core/revisions.py`：快照落 `workspace/metadata/revisions/<vault 相对路径>/
+    <YYYYmmddTHHMMSSZ>-<hash8>.md`，**零新增 migration**（SQLite 不在 EXPORT_DIRS
+    也不在 SYNC_PATTERNS，落表会让快照既不导出也不同步，违反 AGENTS §3 + ADR-005）
+  - 快照文件即合法 Markdown：`compose_file({**笔记原 frontmatter, **rev_* 元数据}, body)`，
+    剥离 `rev_*` 可无损还原原笔记；目录键用路径而非 `note_id`（db 不同步，跨设备不一致）
+  - 写前去抖快照（内容哈希去重 + 300s 窗口）+ 手动打点；每篇上限 50 份按时间序淘汰
+  - 重命名迁移快照目录；删除笔记**保留**快照（可恢复），清理走 `DELETE /notes/{id}/revisions`
+  - `app/routers/revisions.py` 六个端点：`GET|POST /notes/{id}/revisions`、
+    `GET /notes/{id}/revisions/{rev_id}`、`GET /notes/{id}/changes`、
+    `POST /notes/{id}/diff`、`DELETE /notes/{id}/revisions`
+  - diff 双形态：`hunks`（0-based 左闭右开、只含非 equal 段，供 UI 块级高亮）+
+    `unified`（供人读/导出）。`SequenceMatcher(autojunk=False)` 为**必需**——
+    默认启发式会把高频行判 junk，实测 300 行只改 1 行时报 changed=150（正确值 1）
+  - 快照**进** `EXPORT_DIRS`（用户数据须可全量导出）、**不进** `SYNC_PATTERNS`
+    （本地便利能力，非跨设备事实）
+  - 快照失败**绝不阻断**笔记保存（vault 是唯一事实源，ADR-001）
+  - 测试 66 项新增（core 41 / http 25）；全量 `1085 passed`；路由 93→99、path 75→79
+
+### Changed
+- `AGENTS.md §4` 补作用域澄清：Git「唯一版本真相」限于应用侧资产；`workspace/`
+  用户数据整体 gitignore、不在 Git 覆盖范围内，其变更记录由文档变更抽象层承载，
+  该层永久禁用 branch / commit / merge / rebase 等 Git 概念与术语（冲突登记见 ADR-028 §7）
 - **P0-2b Tauri sidecar 接线——桌面版双击可用（P0 PC Stable Baseline）**：
   - `server/backend_main.py` + `plos_backend.spec`（PyInstaller onefile，15.5MB）：
     workspace 上溯解析（开发树自动命中 repo/workspace 真数据）、端口 8100

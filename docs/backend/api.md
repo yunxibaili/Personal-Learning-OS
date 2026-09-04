@@ -1,6 +1,6 @@
 # API · 契约
 
-> 权威端点数（OpenAPI introspection）：93 条 route / 75 个 path。
+> 权威端点数（OpenAPI introspection）：99 条 route / 79 个 path。
 > 所有版本化前缀 `/api/v1/*`。响应错误统一 `{error:{code,message}}`。
 
 ## 通用约定
@@ -18,6 +18,27 @@
 - `GET /notes` `POST /notes` `POST /notes/batch` `POST /notes/import`
 - `GET /notes/tree` `GET /notes/{note_id}` `PATCH /notes/{note_id}` `DELETE /notes/{note_id}`
 - `GET /notes/{note_id}/backlinks` `GET /notes/{note_id}/link-suggestions`
+
+### revisions / changes / diff（`routers/revisions.py`，prefix `/api/v1/notes`）
+
+> ADR-028：与 Git 解耦的文档变更抽象层。revision source = `current` | `snapshot`
+> （`git` 为后续独立任务）。不提供 branch / commit / merge 语义。
+
+- `GET /notes/{note_id}/revisions` — 版本列表，首位 `current` 虚拟项，其余快照时间倒序（`limit` 1–200，越界 422 `invalid_limit`）
+- `POST /notes/{note_id}/revisions` — 手动打点；内容未变返回 `created: false` / `reason: "unchanged"`
+- `GET /notes/{note_id}/revisions/{rev_id}` — 读指定版本内容（`rev_id="current"` 读 vault 当前内容）
+- `GET /notes/{note_id}/changes` — 当前 vs 最新快照的变更概览；无快照时 `compared_against: null`、stats 全零
+- `POST /notes/{note_id}/diff` — body `{from_ref:{source,ref}, to_ref:{source,ref}}` →
+  `{stats, hunks, unified}`；`source` 非法 400 `invalid_source`，ref 无法解析 404 `revision_not_found`
+- `DELETE /notes/{note_id}/revisions` — 清理该笔记全部快照
+
+**diff 两种形态**（前端各取所需）：
+
+- `hunks`：`{op: equal|insert|delete|replace, old_start, old_end, new_start, new_end}`，
+  0-based 左闭右开，**只含非 equal 段**，供块级高亮
+- `unified`：unified diff 文本，供人读与导出
+
+> 术语：`source` = revision source（`current`/`snapshot`）；`origin` = 快照触发方式（`auto`/`manual`）。
 
 ### admin（`routers/notes.py`，prefix `/api/v1/admin`）
 - `GET /admin/watcher/status` `POST /admin/watcher/start` `POST /admin/watcher/stop`
