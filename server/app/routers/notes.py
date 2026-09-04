@@ -94,22 +94,28 @@ def list_notes() -> dict:
 
 def _create_note_vault(
     conn, title: str, content_md: str, parent: str | None = None,
+    meta: dict | None = None, rel_path: str | None = None,
 ) -> tuple[str, int | None]:
     """写 vault 文件 + 更新 SQLite 索引（单篇）。返回 (status, note_id|None)。
 
-    供单篇 create_note 与批量导入（B15）共用，避免重复。
+    供单篇 create_note、批量导入（B15）与 ADR-028 孤儿快照重建共用，避免重复。
     status：ok | empty_title | duplicate_title | bad_attachment_path | io_error
     parent：ADR-024 主/副笔记——非 None 时写入 frontmatter `parent: "[[标题]]"`。
       红线 4：目标不存在/自指**不阻断创建**（保留原值，resolver 标 invalid）。
+    meta：ADR-028 快照重建用——完整的笔记原 frontmatter（不含 rev_*）；
+      与 parent 叠加时 parent 优先（显式参数语义更强）。tags 从 meta 派生进索引
+      （常规创建 meta 为空 → tags=[]，与既有行为一致）。
+    rel_path：快照重建用——显式指定 vault 相对路径（支持 importer 产生的嵌套路径）；
+      缺省仍为 `{title}.md`。
     """
     try:
         title = K.sanitize_title(title)
     except ValueError:
         return ("empty_title", None)
-    rel_path = f"{title}.md"
-    if conn.execute("SELECT 1 FROM notes WHERE path=?", (rel_path,)).fetchone():
+    rel = rel_path if rel_path else f"{title}.md"
+    if conn.execute("SELECT 1 FROM notes WHERE path=?", (rel,)).fetchone():
         return ("duplicate_title", None)
-    target = K.resolve_vault_file(rel_path)
+    target = K.resolve_vault_file(rel)
     if target.exists():  # 文件在但索引缺失——视为冲突，提示而非覆盖
         return ("duplicate_title", None)
     if K.has_forbidden_media_path(content_md):
@@ -118,25 +124,28 @@ def _create_note_vault(
     cur = conn.execute(
         "INSERT INTO notes (path, title, tags_json, content_hash) "
         "VALUES (?, ?, '[]', '')",
-        (rel_path, title),
+        (rel, title),
     )
     note_id = cur.lastrowid
     try:
-        meta: dict = {}
+        merged: dict = dict(meta) if meta else {}
         if parent is not None:
             raw_parent = parent.strip()
             if raw_parent:
                 # 统一写 `parent: "[[标题]]"`（与 PATCH 同语义）；无效目标不阻断（红线 4）
-                meta = K.set_meta_parent(meta, raw_parent)
-        K.atomic_write_file(target, K.compose_file(meta, content_md))
+                merged = K.set_meta_parent(merged, raw_parent)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        K.atomic_write_file(target, K.compose_file(merged, content_md))
         mtime = time.time()
         _, _, body_text = K.parse_frontmatter(target.read_text(encoding="utf-8"))
-        K.upsert_note_index(conn, note_id=note_id, path=rel_path, title=title,
-                            tags=[], body=body_text, mtime=mtime)
+        tags = [t.strip() for t in str(merged.get("tags", "") or "").split(",")
+                if t.strip()]
+        K.upsert_note_index(conn, note_id=note_id, path=rel, title=title,
+                            tags=tags, body=body_text, mtime=mtime)
         K.promote_stub_to_note(conn, note_id, title)
         K.rebuild_note_links(conn, note_id, body_text)
         # ADR-024 §2.4：创建带 parent 时同步镜像派生边（单篇语义，与 PATCH 一致）
-        if parent is not None:
+        if parent is not None or K.parse_parent(merged):
             from ..core.hierarchy import sync_note_parent
             sync_note_parent(conn, note_id)
         conn.commit()

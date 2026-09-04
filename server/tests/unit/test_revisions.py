@@ -305,3 +305,45 @@ class TestDiff:
         )
         assert d["stats"]["added"] == 0 and d["stats"]["removed"] == 0
         assert len(d["hunks"]) == 1
+
+
+# ── 孤儿快照清单（决策 D 收尾）───────────────────────────────────
+
+class TestOrphanPaths:
+    def test_live_note_not_listed(self, core_conn, tmp_workspace: Path):
+        from app.core.knowledge import atomic_write_file, compose_file
+
+        p = tmp_workspace / "vault" / "Live.md"
+        atomic_write_file(p, compose_file({}, "正文"))
+        from app.core.reindex import reindex_vault
+        reindex_vault(core_conn, tmp_workspace / "vault")
+        core_conn.commit()  # list_orphan_paths 用独立连接，看不到未提交行
+        R.create_snapshot("Live.md", {}, "正文")
+
+        assert R.list_orphan_paths() == []
+
+    def test_deleted_note_is_listed(self, core_conn, tmp_workspace: Path):
+        from app.core.knowledge import atomic_write_file, compose_file
+
+        p = tmp_workspace / "vault" / "Dead.md"
+        atomic_write_file(p, compose_file({"tags": "t"}, "正文 v1"))
+        from app.core.reindex import reindex_vault
+        reindex_vault(core_conn, tmp_workspace / "vault")
+        core_conn.commit()  # 同上：孤儿判定走独立连接，必须先落盘
+        R.create_snapshot("Dead.md", {}, "正文 v1")
+        R.create_snapshot("Dead.md", {}, "正文 v2")
+
+        row = core_conn.execute(
+            "SELECT id FROM notes WHERE path='Dead.md'").fetchone()
+        core_conn.execute("DELETE FROM notes WHERE id=?", (row["id"],))
+        core_conn.commit()
+
+        orphans = R.list_orphan_paths()
+        assert len(orphans) == 1
+        o = orphans[0]
+        assert o["path"] == "Dead.md"
+        assert o["snapshot_count"] == 2
+        assert o["latest_rev_id"].endswith(R._body_hash("正文 v2")[:8])
+
+    def test_empty_root(self, tmp_workspace: Path):
+        assert R.list_orphan_paths() == []

@@ -66,8 +66,10 @@ DEFAULT_MIN_INTERVAL_SECONDS = 300.0
 #: 单篇笔记保留的快照上限（超出按时间序淘汰最旧）。
 MAX_SNAPSHOTS_PER_NOTE = 50
 
-#: 快照文件名时间戳格式（定宽 → 字典序 == 时间序）。
-_TS_FORMAT = "%Y%m%dT%H%M%SZ"
+#: 快照文件名时间戳格式（含微秒，定宽 → 字典序 == 时间序）。
+#: 秒级精度不够：同一秒内可能产生多份快照（auto + manual），届时按 hash8
+#: 字典序排序会让"最新"失真——实测踩过。
+_TS_FORMAT = "%Y%m%dT%H%M%S%f"
 
 #: 快照 frontmatter 元数据键（全部 rev_ 前缀，避免与用户 key 冲突）。
 #: 术语区分：`source` = revision source（current/snapshot，抽象层轴）；
@@ -139,11 +141,13 @@ class Revision:
 class SnapshotMeta:
     """快照元数据（不含正文）。
 
-    `origin` 是**触发方式**（auto/manual），不是 revision source ——
+    `origin` 是**触发方式**，不是 revision source ——
     快照的 revision source 恒为 `snapshot`，由调用方在响应里补。
+    取值：`auto`（PATCH 写前去抖）| `manual`（显式打点）| `restore`（恢复前
+    对被覆盖状态的留存，保证恢复本身可逆）。
     """
     rev_id: str
-    origin: str          # auto | manual
+    origin: str          # auto | manual | restore
     content_hash: str
     prev_hash: str
     created_at: str
@@ -366,6 +370,49 @@ def list_snapshots(rel_path: str, *, limit: int | None = None) -> list[SnapshotM
     return out
 
 
+def list_orphan_paths() -> list[dict]:
+    """孤儿快照目录：`metadata/revisions/` 下存在、但 `notes` 表已无对应行。
+
+    决策 D「删除保留」的直接后果——快照还在，笔记没了。本函数给出可恢复清单；
+    重建走 `routers/revisions.py` 的 `POST /admin/revisions/restore`。
+
+    判定以 **notes 行**为准（文件在但索引缺失属 reindex 范畴，不算孤儿）。
+    返回按路径排序：`[{path, snapshot_count, latest_rev_id, latest_created_at}]`。
+    """
+    from ..db import connect  # 局部导入避免循环（db 不依赖本模块）
+
+    root = revisions_root()
+    if not root.is_dir():
+        return []
+    dirs: set[Path] = set()
+    for f in root.rglob("*.md"):
+        if f.is_file():
+            dirs.add(f.parent)
+    if not dirs:
+        return []
+
+    conn = connect()
+    try:
+        out: list[dict] = []
+        for d in sorted(dirs):
+            rel = d.relative_to(root).as_posix()
+            if conn.execute("SELECT 1 FROM notes WHERE path=?", (rel,)).fetchone():
+                continue
+            snaps = list_snapshots(rel)
+            if not snaps:
+                continue
+            latest = snaps[0]
+            out.append({
+                "path": rel,
+                "snapshot_count": len(snaps),
+                "latest_rev_id": latest.rev_id,
+                "latest_created_at": latest.created_at,
+            })
+        return out
+    finally:
+        conn.close()
+
+
 def latest_snapshot(rel_path: str) -> SnapshotMeta | None:
     """最新一份快照；无则 None。"""
     files = _snapshot_files(rel_path)
@@ -517,6 +564,6 @@ __all__ = [
     "create_snapshot", "maybe_snapshot", "prune_revisions", "purge_revisions",
     "rename_revision_dir",
     "list_snapshots", "latest_snapshot", "read_snapshot",
-    "read_current", "resolve_revision",
+    "read_current", "resolve_revision", "list_orphan_paths",
     "diff_texts",
 ]

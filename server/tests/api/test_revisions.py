@@ -188,9 +188,7 @@ class TestChangesAndDiff:
         assert r.json()["error"]["code"] == "revision_not_found"
 
 
-# ── 与 PATCH / DELETE 的集成 ──────────────────────────────────────
-
-class TestWritePathIntegration:
+# ── 与 PATCH / DELETE 的集成 ──────────────────────────────────────class TestWritePathIntegration:
     def test_patch_creates_pre_write_snapshot(self, client: TestClient,
                                               tmp_workspace: Path):
         """写前快照保存的是**被覆盖前的旧内容**。"""
@@ -289,3 +287,127 @@ class TestSyncBoundary:
                                  "vault/**/*.md")
         assert not _path_matches("metadata/revisions/N.md/x.md",
                                  "metadata/eventlogs/**/*.jsonl")
+
+
+# ── 恢复（决策 D 的承诺：保留 = 可恢复）──────────────────────────
+
+class TestRestore:
+    def _latest_rev(self, client: TestClient, nid: int) -> str:
+        revs = client.get(f"/api/v1/notes/{nid}/revisions").json()["revisions"]
+        return revs[1]["rev_id"]  # 首位是 current，次位是最新快照
+
+    def test_restore_body(self, client: TestClient):
+        nid = _mk(client, "N", "v1")
+        client.patch(f"/api/v1/notes/{nid}", json={"content_md": "v2"})
+        target = self._latest_rev(client, nid)          # v1 的快照
+        client.patch(f"/api/v1/notes/{nid}", json={"content_md": "v3"})
+
+        r = client.post(f"/api/v1/notes/{nid}/revisions/{target}/restore")
+        assert r.status_code == 200
+        assert r.json()["restored"] is True
+        assert r.json()["restored_from"]["rev_id"] == target
+
+        cur = client.get(f"/api/v1/notes/{nid}").json()["note"]["content_md"]
+        assert cur == "v1"
+
+    def test_restore_is_reversible(self, client: TestClient,
+                                   tmp_workspace: Path):
+        """恢复前对被覆盖状态打 origin=restore 快照 → 恢复本身可逆。"""
+        nid = _mk(client, "N", "v1")
+        client.patch(f"/api/v1/notes/{nid}", json={"content_md": "v2"})
+        client.patch(f"/api/v1/notes/{nid}", json={"content_md": "v3"})
+        target = self._latest_rev(client, nid)          # v1 的快照
+
+        client.post(f"/api/v1/notes/{nid}/revisions/{target}/restore")
+        revs = client.get(f"/api/v1/notes/{nid}/revisions").json()["revisions"]
+        restore_snaps = [x for x in revs if x.get("origin") == "restore"]
+        assert restore_snaps, "恢复前未留存被覆盖状态"
+        assert restore_snaps[0]["content_hash"] == R._body_hash("v3")
+
+    def test_restore_brings_back_frontmatter(self, client: TestClient):
+        """恢复是整文件回滚：tags/parent 等 frontmatter 一并还原。"""
+        nid = _mk(client, "N", "v1")
+        client.patch(f"/api/v1/notes/{nid}", json={"tags": ["a", "b"]})
+        client.patch(f"/api/v1/notes/{nid}", json={"content_md": "v2"})
+        client.post(f"/api/v1/notes/{nid}/revisions")    # 手动点：v2 + tags a,b
+        client.patch(f"/api/v1/notes/{nid}", json={"tags": ["c"]})
+        target = self._latest_rev(client, nid)
+
+        client.post(f"/api/v1/notes/{nid}/revisions/{target}/restore")
+        note = client.get(f"/api/v1/notes/{nid}").json()["note"]
+        assert note["tags"] == ["a", "b"]
+        assert note["content_md"] == "v2"
+
+    def test_restore_noop_when_identical(self, client: TestClient):
+        nid = _mk(client, "N", "v1")
+        client.post(f"/api/v1/notes/{nid}/revisions")
+        target = self._latest_rev(client, nid)
+        r = client.post(f"/api/v1/notes/{nid}/revisions/{target}/restore")
+        assert r.json()["restored"] is False
+        assert r.json()["reason"] == "unchanged"
+
+    def test_restore_to_current_rejected(self, client: TestClient):
+        nid = _mk(client, "N", "v1")
+        r = client.post(f"/api/v1/notes/{nid}/revisions/current/restore")
+        assert r.status_code == 400
+        assert r.json()["error"]["code"] == "invalid_target"
+
+    def test_restore_unknown_revision_404(self, client: TestClient):
+        nid = _mk(client, "N", "v1")
+        r = client.post(f"/api/v1/notes/{nid}/revisions/nope/restore")
+        assert r.status_code == 404
+
+    def test_restore_missing_note_404(self, client: TestClient):
+        r = client.post("/api/v1/notes/999999/revisions/x/restore")
+        assert r.status_code == 404
+
+
+# ── 孤儿快照（决策 D：删除保留 → 必须可重建）─────────────────────
+
+class TestOrphanRecovery:
+    def test_full_lifecycle(self, client: TestClient, tmp_workspace: Path):
+        """删笔记 → 孤儿可列举 → 重建（内容/标签还原）→ 孤儿消失 → 可继续编辑。"""
+        nid = _mk(client, "Gamma", "g1")
+        client.patch(f"/api/v1/notes/{nid}", json={"tags": ["x", "y"]})
+        client.patch(f"/api/v1/notes/{nid}", json={"content_md": "g2"})
+        client.post(f"/api/v1/notes/{nid}/revisions")    # g2 + tags x,y
+        client.delete(f"/api/v1/notes/{nid}")
+
+        orphans = client.get("/api/v1/admin/revisions/orphans").json()["orphans"]
+        assert [o["path"] for o in orphans] == ["Gamma.md"]
+        assert orphans[0]["snapshot_count"] >= 1
+
+        r = client.post("/api/v1/admin/revisions/restore",
+                        json={"path": "Gamma.md"})
+        assert r.status_code == 200, r.text
+        assert r.json()["restored"] is True
+        note = r.json()["note"]
+        assert note["title"] == "Gamma"
+        assert note["content_md"] == "g2"
+        assert note["tags"] == ["x", "y"]
+
+        # 重建后孤儿消失，且笔记可正常继续读写
+        orphans = client.get("/api/v1/admin/revisions/orphans").json()["orphans"]
+        assert orphans == []
+        assert client.patch(f"/api/v1/notes/{note['id']}",
+                            json={"content_md": "g3"}).status_code == 200
+
+    def test_restore_rejected_when_note_exists(self, client: TestClient):
+        nid = _mk(client, "Live", "v1")
+        r = client.post("/api/v1/admin/revisions/restore",
+                        json={"path": "Live.md"})
+        assert r.status_code == 409
+        assert r.json()["error"]["code"] == "duplicate_title"
+
+    def test_restore_rejected_without_snapshots(self, client: TestClient):
+        """路径不在快照根下 → invalid_path；在但无快照 → revision_not_found。"""
+        r = client.post("/api/v1/admin/revisions/restore",
+                        json={"path": "Ghost.md"})
+        assert r.status_code == 404
+        assert r.json()["error"]["code"] == "revision_not_found"
+
+    def test_restore_rejects_escape_path(self, client: TestClient):
+        r = client.post("/api/v1/admin/revisions/restore",
+                        json={"path": "../escape.md"})
+        assert r.status_code == 400
+        assert r.json()["error"]["code"] == "invalid_path"

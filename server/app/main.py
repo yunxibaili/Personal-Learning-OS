@@ -28,6 +28,7 @@ from .routers.mastery import router as mastery_router
 from .routers.notes import router as notes_router
 from .routers.notes import admin_router as admin_router
 from .routers.revisions import router as revisions_router
+from .routers.revisions import admin_router as revisions_admin_router
 from .routers.search import router as search_router
 from .routers.settings import router as settings_router
 from .routers.study import router as study_router
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(settings_router)
     app.include_router(notes_router)
     app.include_router(revisions_router)
+    app.include_router(revisions_admin_router)
     app.include_router(links_router)
     app.include_router(attachments_router)
     app.include_router(search_router)
