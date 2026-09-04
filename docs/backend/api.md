@@ -1,6 +1,6 @@
 # API · 契约
 
-> 权威端点数（OpenAPI introspection）：99 条 route / 79 个 path。
+> 权威端点数（OpenAPI introspection）：102 条 route / 82 个 path。
 > 所有版本化前缀 `/api/v1/*`。响应错误统一 `{error:{code,message}}`。
 
 ## 通用约定
@@ -31,6 +31,19 @@
 - `POST /notes/{note_id}/diff` — body `{from_ref:{source,ref}, to_ref:{source,ref}}` →
   `{stats, hunks, unified}`；`source` 非法 400 `invalid_source`，ref 无法解析 404 `revision_not_found`
 - `DELETE /notes/{note_id}/revisions` — 清理该笔记全部快照
+- `POST /notes/{note_id}/revisions/{rev_id}/restore` — 恢复到指定快照（frontmatter+正文整体回滚）；
+  恢复前先对被覆盖状态打 `origin=restore` 快照 → 恢复本身可逆；
+  `rev_id="current"` 400 `invalid_target`；与目标一致时 `restored: false` / `reason: "unchanged"`
+
+### admin · 孤儿快照（`routers/revisions.py`，prefix `/api/v1/admin`）
+
+> 决策 D 收尾：删除笔记**保留**快照，故必须提供可恢复路径，否则保留只是只读考古。
+
+- `GET /admin/revisions/orphans` — 快照目录存在但 notes 行已消失的路径
+  （`{path, snapshot_count, latest_rev_id, latest_created_at}`）
+- `POST /admin/revisions/restore` — body `{path}` → 从该路径**最新**快照重建笔记
+  （title 取 stem，path 原样保留，支持嵌套路径）；笔记已存在 409、无快照 404、
+  路径越界 400 `invalid_path`；走与常规创建相同的写路径（校验/防覆盖/索引/链接/父边）
 
 **diff 两种形态**（前端各取所需）：
 

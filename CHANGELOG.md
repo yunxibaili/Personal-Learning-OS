@@ -6,6 +6,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **ADR-028 收尾：快照恢复能力（决策 D 的承诺：保留 = 可恢复）**：
+  - `POST /notes/{id}/revisions/{rev_id}/restore`——既有笔记恢复到指定快照
+    （frontmatter + 正文整体回滚）；恢复前先对被覆盖状态打 `origin=restore` 快照，
+    **恢复本身可逆**；与目标一致时 no-op（`restored: false`）
+  - `GET /admin/revisions/orphans`——孤儿快照列举（笔记已删、快照仍在）；
+    判定以 notes 行为准
+  - `POST /admin/revisions/restore`——从孤儿快照重建已删笔记（取最新一份）；
+    `_create_note_vault` 扩展可选 `meta`/`rel_path` 参数（tags 从 meta 派生进索引、
+    支持嵌套路径），走与常规创建完全相同的写路径，存量调用方零影响
+  - `_create_note_vault` 的 parent 边同步条件扩展为
+    `parent is not None or parse_parent(meta)`（幂等，覆盖快照重建带 parent 的场景）
+  - **修复：快照时间戳秒级 → 微秒**。同秒内多份快照（auto+manual）按 hash8
+    字典序排序会让"最新"失真——实测踩中；`%Y%m%dT%H%M%S%f` 定宽微秒后字典序恒等于时间序
+  - 测试 +14（累计 +80）；全量 1099 passed；路由 99/79 → 102/82
+
+### Changed
 - **Backend: Document Changes / Revision / Diff 基础能力（ADR-028）**：
   - 与 Git 解耦的文档变更抽象层，revision source = `current`（vault 直读）/ `snapshot`
     （历史快照）；`git` source 属后续独立任务，本轮**不预留 Adapter 抽象层**

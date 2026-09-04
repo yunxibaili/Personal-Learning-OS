@@ -97,11 +97,21 @@ compose_file({**笔记原 frontmatter, **rev_* 元数据}, body)
 | 上限 | 每篇保留最近 50 份，超出按时间序淘汰最旧 |
 | 重命名 | 迁移快照目录；目标已存在则不覆盖（防御性兜底） |
 | 删除 | **保留**快照以支持误删恢复；人工清理走 `DELETE /notes/{id}/revisions` |
+| 恢复 | 既有笔记 `POST /notes/{id}/revisions/{rev_id}/restore`；已删笔记走
+  `GET /admin/revisions/orphans` + `POST /admin/revisions/restore` 重建 |
 | 导出 | **进** `EXPORT_DIRS`（用户数据，必须可全量导出） |
 | 同步 | **不进** `SYNC_PATTERNS`（历史是本地便利能力，不是跨设备事实） |
 
 > `rev_note_path` 记录**快照创建时**的路径，不随重命名回改 ——
 > 修订记录应当记录历史，而非当前状态。
+
+> `origin` 取值：`auto`（写前去抖）· `manual`（显式打点）· `restore`（恢复前对
+> 被覆盖状态的留存——恢复本身可逆的前提）。
+
+**已知边界（有意为之，非缺陷）**：去重键是**正文哈希**——仅 frontmatter 变化
+（tags/parent）不产生新快照；相应地，恢复在"仅 frontmatter 差异"时也不留
+pre-write 快照（差异仅 tags/parent，且是用户显式选择丢弃的状态）。
+正文仍是唯一去重与排序对象，与 `notes.content_hash` 语义一致。
 
 ### 4.1 失败不阻断
 
@@ -122,6 +132,14 @@ vault 是唯一事实源（ADR-001），快照是派生便利能力。
 | `GET` | `/notes/{note_id}/changes` | 当前 vs 最新快照的变更概览 |
 | `POST` | `/notes/{note_id}/diff` | 任意两版本结构化 diff |
 | `DELETE` | `/notes/{note_id}/revisions` | 清理该笔记全部快照 |
+| `POST` | `/notes/{note_id}/revisions/{rev_id}/restore` | 恢复到指定快照（恢复前留 `origin=restore` 快照，可逆） |
+
+前缀 `/api/v1/admin`（管理面）：
+
+| Method | Path | 说明 |
+|---|---|---|
+| `GET` | `/admin/revisions/orphans` | 孤儿快照列举（笔记已删、快照仍在） |
+| `POST` | `/admin/revisions/restore` | 从孤儿快照重建笔记（走常规创建写路径） |
 
 字段一律 `snake_case`；错误统一 `{"error":{"code","message"}}`。
 
@@ -175,7 +193,7 @@ vault 是唯一事实源（ADR-001），快照是派生便利能力。
 
 ## 8. 后续任务（不在本 ADR 范围）
 
+- ~~已删除笔记的孤儿快照回收~~ **已完成**（`GET /admin/revisions/orphans` +
+  `POST /admin/revisions/restore`）
+- ~~从快照恢复笔记的端点~~ **已完成**（既有笔记 restore + 孤儿重建两条路径）
 - Git revision source 适配器（独立任务，届时再提取 source 分派）
-- 已删除笔记的孤儿快照回收（当前仅 `DELETE /notes/{id}/revisions` 人工清理，
-  且该端点在笔记删除后不可达）
-- 从快照恢复笔记的端点
