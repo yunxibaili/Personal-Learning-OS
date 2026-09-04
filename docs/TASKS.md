@@ -47,6 +47,10 @@
 [13] [ ] P1-2 国际化（18 处硬编码英文）
 [14] [ ] M8 Mobile 可行性 / 架构决策（前置：[9][9b][10] 完成）
 [15] [ ] M8 Android MVP
+[16] [x] ADR-028 Backend: Document Changes / Revision / Diff 基础能力（2026-09-04 完成，报告见下文）
+     与 Git 解耦的文档版本层：快照（合法 Markdown 存 metadata/revisions/）+
+     changes/diff/restore + 孤儿快照回收。零 migration 零 Git 依赖。
+     Git source 适配器与前端消费均在任务书划界外（另立任务）。
 ```
 
 <details>
@@ -2054,3 +2058,56 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 - onefile 启动自解压有 ~1-2s 延迟（用户可感知的窗口空白期）；不可接受时改 onedir + resources。
 - 正式安装版（MSI）数据目录仍指向解析出的 workspace；迁移 userData 归 P2 发布基线任务。
 - PyInstaller 为**构建期工具**（server/.venv，6.22.2），不进 requirements.txt（DEPENDENCIES dev 依赖节登记）。
+
+## [16] ADR-028 Backend: Document Changes / Revision / Diff 基础能力 完成（2026-09-04）
+
+> 任务书：与 Git 解耦的文档变更/版本/diff 后端能力，仅 `current` + `snapshot` 两源
+> （Git 适配器明确另立任务）。先考察后实现，两轮交付 + 一轮恢复能力补全。
+
+### 做了什么
+
+- **代码考察先行**（任务书 §2）：确认版本能力为零（`sync/diff.py` 是 manifest 级、
+  `vault_watcher.snapshot` 仅状态快照）；migration 路线架构性不成立（SQLite 不在
+  EXPORT_DIRS/SYNC_PATTERNS，DB 不随同步迁移）；快照不能放 `vault/` 下
+  （`reindex.py` rglob 会吞成笔记）且目录键必须用 vault 相对路径（note_id 不随 DB 同步）。
+- **`core/revisions.py`**（新增 ~480 行）：快照目录安全校验（拒绝逃逸/反斜杠/绝对路径）、
+  `create_snapshot` / `maybe_snapshot`（正文 hash 去重 + 300s 去抖 + 每笔记上限 50 张先裁旧）、
+  `list_snapshots` / `latest_snapshot` / `read_snapshot` / `read_current` / `resolve_revision`、
+  `rename_revision_dir`（迁移）/ `prune_revisions` / `purge_revisions`、
+  `list_orphan_paths`（第二轮）、`diff_texts`（difflib `autojunk=False` 强制）。
+  快照文件本身是合法 Markdown（`compose_file` 注入 `rev_*` 元数据），时间戳精确到微秒。
+- **`routers/revisions.py`**（新增）：`/api/v1/notes/{id}/revisions`（GET 列表首位 current 虚拟项 /
+  POST 手动打点 / GET 单版读 / DELETE 清理 / POST restore 恢复）+ `/changes` + `/diff`；
+  admin：`GET /revisions/orphans` + `POST /revisions/restore`（从孤儿快照重建笔记）。
+- **`routers/notes.py`**：PATCH 写前去抖快照 + 重命名迁移、DELETE 保留快照（均失败仅记日志不阻塞保存）；
+  `_create_note_vault` 扩展 meta/rel_path 参数供恢复路径复用常规写路径。
+- **`core/export.py`**：EXPORT_DIRS 增加 `metadata/revisions`（所有者裁定：导出含、同步不含）。
+- **`db.py`**：WORKSPACE_SUBDIRS 增加 `metadata/revisions`。
+- **AGENTS §4 澄清**：Git 事实域=应用侧资产；workspace/ 用户数据在 Git 覆盖之外；
+  文档版本层永久禁用 Git 概念术语。
+- **ADR-028**（新增）+ 文档同步（api.md 102 route/82 path · data-model.md 快照节 ·
+  ADR_INDEX · architecture.md 模块图 · PROJECT_STATE §7 计数与行项）。
+- 已知边界：正文 hash 去重意味着**仅 frontmatter 变化不产生快照**（ADR-028 §4 登记）。
+
+### 改动文件
+
+`server/app/core/revisions.py`（新）· `server/app/routers/revisions.py`（新）·
+`server/app/routers/notes.py` · `server/app/core/export.py` · `server/app/db.py` ·
+`server/app/main.py` · `server/tests/unit/test_revisions.py`（新 ~48 用例）·
+`server/tests/api/test_revisions.py`（新 ~32 用例）· `docs/adr/ADR-028-document-revisions.md`（新）·
+`AGENTS.md` §4 · docs 五处登记 · `.workbuddy/artifacts/` 考察与交付报告
+
+### 测试了什么
+
+| 项 | 结果 |
+|---|---|
+| `pytest tests -q`（第一轮 / 第二轮 / 恢复轮） | 1019 → 1085 → **1099 passed** |
+| `python scripts/contract_audit.py` | 全部新端点契约审计 `Y` |
+| 端到端冒烟（隔离 workspace，未触碰真实 vault） | 快照→列表→diff→restore→删笔记→孤儿回收重建 全链路通 |
+| 关键防回归 | autojunk 反证（True→150 行误判 / False→1）；同秒快照微秒序；422 上限；sync 边界负向守卫 |
+
+### 遗留问题
+
+- Git source 适配器（任务书明确另立任务，禁 git CLI 依赖）。
+- 仅 frontmatter 变化不产生快照（去重边界，ADR-028 §4）。
+- 前端消费（版本面板/diff 视图）未排期。

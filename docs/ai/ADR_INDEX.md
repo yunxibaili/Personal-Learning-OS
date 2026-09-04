@@ -33,6 +33,7 @@
 | ADR-025 | Visual Engine V1（算法执行轨迹可视化） | M9 TraceRun / VisualEngine（IDE 步进，2026-09-01 裁定否决播放器）/ 三 Renderer · 组件入 ui 库 · 只执行预置示例 · 安全模型 | Accepted（2026-09-02 M9 验收通过关闭） |
 | ADR-026 | Note Hierarchy Tree（主笔记多级层级树，v3：批准 + 评审三修订） | `GET /notes/tree?depth=&root_id=` 经 resolve_hierarchy（depth 默认 3/安全上限 10，后端剪枝 + 懒加载）/ 默认展开 3 层 + 展开状态本地偏好，无产品硬上限 / 同层 `created_at` 升序 / 零 migration / 星系维持两层 / domain≠parent 语义边界（P1）/ 树·标签·双链正交分工 | Accepted（2026-09-01 批准，Q1–Q3 已裁决） |
 | ADR-027 | 中文 FTS——应用侧 CJK bigram 预分词（零新依赖） | 搜索相关（`core/cjk_bigram.py` 写入/查询共用切分 · `notes_fts` 检索文本 · migration 010 + 启动自动 reindex · 单字 LIKE 兜底 · `_cjk_search` 退役） | Accepted（2026-09-02 所有者裁定方案 A） |
+| ADR-028 | 文档变更抽象层（Document Revisions，与 Git 解耦） | 笔记版本/变更/diff（`core/revisions.py` 快照存于 `workspace/metadata/revisions/`（合法 Markdown · 随导出走 · 不入 sync）· `routers/revisions.py` 7 端点 + 2 admin 端点 · source=current\|snapshot 与 origin=auto\|manual\|restore 双轴 · difflib autojunk=False · 零 migration 零 Git 依赖） | Accepted（2026-09-04 所有者裁定四项：写前去抖+手动 · 导出含/同步不含 · 重命名迁移/删除保留 · AGENTS §4 澄清） |
 
 ## 快速查阅指南
 
@@ -41,6 +42,7 @@
 - 加 AI 功能 → 读 ADR-003 + ADR-010
 - 加依赖 → 读 ADR-004 + REGISTRY.md
 - 改搜索 → 读 ADR-027（ADR-011 已 Superseded）
+- 笔记版本/变更/diff/恢复 → 读 ADR-028
 - 改 Knowledge Radar → 读 ADR-012
 - M7+ 同步 → 读 ADR-005
 - M8+ 移动 → 读 ADR-006

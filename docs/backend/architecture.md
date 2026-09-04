@@ -67,6 +67,7 @@ core/
 ├── export.py    # 一键全量导出
 ├── reindex.py   vault_watcher.py # FTS / 文件源
 ├── cjk_bigram.py# 中文 FTS 预分词（ADR-027）
+├── revisions.py # 文档快照/diff/恢复（ADR-028，workspace/metadata/revisions/）
 ├── tutor_context.py tutor_types.py # Tutor 上下文组装 + 契约类型
 ├── timeutil.py  # 时间工具
 ├── ai/          # LLM 边界：config/constants/errors/service/tutor/extractor

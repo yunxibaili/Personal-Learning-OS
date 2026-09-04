@@ -484,7 +484,7 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ## §7 API Overview
 
-统一前缀 `/api/v1`，**20 APIRouter / 89 端点**（2026-08-31 实测）。
+统一前缀 `/api/v1`，**23 APIRouter / 102 route**（2026-09-04 实测，OpenAPI introspection）。
 
 | 类别 | 前缀 | 端点 |
 |---|---|---|
@@ -507,6 +507,7 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 | Attachments | `/api/v1/attachments` | `POST /attachments` · `GET /attachments/{name}` |
 | Admin | `/api/v1/admin` | `POST /admin/reindex`（`prune`/`changed_paths` 参数；Sync 接收后自动触发） · `POST /admin/watcher/{start,stop}` · `GET /admin/watcher/status`（B16） |
 | Conversations | `/api/v1` | `POST /chat`（SSE 流式，`stream=true`）· `GET/POST /conversations` · `GET /conversations/{id}/messages` · `DELETE /conversations/{id}` |
+| Revisions | `/api/v1/notes` + `/api/v1/admin` | `GET/POST /notes/{id}/revisions` · `GET /notes/{id}/revisions/{rev_id}` · `GET /notes/{id}/changes` · `POST /notes/{id}/diff` · `DELETE /notes/{id}/revisions` · `POST /notes/{id}/revisions/{rev_id}/restore`（ADR-028）· admin：`GET /revisions/orphans` · `POST /revisions/restore` |
 
 ---
 
