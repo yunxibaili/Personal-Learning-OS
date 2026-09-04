@@ -32,8 +32,11 @@ from pathlib import Path
 from ..db import connect, workspace_root
 from .ai.constants import is_sensitive_setting
 
-# 目录白名单（相对 workspace）；eventlogs 单列以便未来差异化处理
-EXPORT_DIRS = ("vault", "attachments", "mind_maps", "metadata/eventlogs")
+# 目录白名单（相对 workspace）；eventlogs / revisions 单列以便未来差异化处理
+# revisions（ADR-028）进导出包但不进 SYNC_PATTERNS —— 快照是本地便利能力，
+# 不是跨设备事实；但它是用户数据，必须可随「一键全量导出」带走（AGENTS §3）。
+EXPORT_DIRS = ("vault", "attachments", "mind_maps",
+               "metadata/eventlogs", "metadata/revisions")
 
 # 显式排除（防御性：白名单已排除，这里保证"哪怕白名单错配也不出包"）
 FORBIDDEN_EXPORT_NAMES = ("devices.json", "manifest.json")

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -17,11 +18,14 @@ from pydantic import BaseModel
 
 from ..core import knowledge as K
 from ..core import hierarchy as H
+from ..core import revisions as RV
 from ..core.autolink import suggest_note_links
 from ..core.importer import import_markdown
 from ..core.reindex import reindex_vault
 from ..core.vault_watcher import VaultWatcher, current_watcher, set_watcher
 from ..db import connect, workspace_root
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/notes", tags=["notes"])
 
@@ -262,6 +266,31 @@ def get_note(note_id: int) -> dict:
     return _detail(row, body, parent_of)
 
 
+def _snapshot_before_overwrite(rel_path: str, note_meta: dict, body: str) -> None:
+    """ADR-028 写前快照（决策 B：去抖自动）。
+
+    快照的是**即将被覆盖的旧内容**，故必须在 `atomic_write_file` 之前调用，
+    且键在 `old_path` 下（重命名由 `_migrate_revisions` 随后处理）。
+
+    vault 是唯一事实源（ADR-001），快照是派生便利能力 —— **快照失败绝不阻断
+    笔记保存**，只记日志。
+    """
+    try:
+        RV.maybe_snapshot(rel_path, note_meta, body, origin="auto")
+    except Exception:
+        logger.exception("写前快照失败（不阻断保存）：%s", rel_path)
+
+
+def _migrate_revisions(old_rel: str, new_rel: str) -> None:
+    """重命名后迁移快照目录（决策 D）。失败同样不阻断保存。"""
+    if old_rel == new_rel:
+        return
+    try:
+        RV.rename_revision_dir(old_rel, new_rel)
+    except Exception:
+        logger.exception("快照目录迁移失败：%s → %s", old_rel, new_rel)
+
+
 @router.patch("/{note_id}")
 def patch_note(note_id: int, body: NotePatch) -> dict:
     conn = connect()
@@ -310,9 +339,12 @@ def patch_note(note_id: int, body: NotePatch) -> dict:
                 conn.rollback()
                 return _err(400, "bad_attachment_path",
                             "禁止绝对盘符/file:// 附件路径，请先经附件上传获取相对 URL")
+            # ADR-028：写前快照（旧内容键在 old_path 下），失败不阻断保存
+            _snapshot_before_overwrite(old_path, cur_meta, cur_body)
             K.atomic_write_file(target, K.compose_file(new_meta, new_body))
             if new_rel != old_path:
                 os.unlink(K.resolve_vault_file(old_path))
+                _migrate_revisions(old_path, new_rel)
 
         K.upsert_note_index(conn, note_id=note_id, path=new_rel, title=new_title,
                             tags=new_tags, body=new_body, mtime=mtime)
@@ -352,6 +384,8 @@ def delete_note(note_id: int) -> dict:
         p = K.resolve_vault_file(row["path"])
         if p.exists():
             p.unlink()
+        # ADR-028 决策 D：**不清理** metadata/revisions/ 下的快照 —— 删除保留可恢复。
+        # 人工清理走 DELETE /notes/{id}/revisions（仅在笔记尚存时可达）。
         K.drop_note_index(conn, note_id)
         K.cascade_drop_entity(conn, "note", note_id)
         conn.commit()
