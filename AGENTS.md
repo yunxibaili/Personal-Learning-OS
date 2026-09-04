@@ -134,6 +134,12 @@ learning-os/            # 应用源码，Git 管理
 
 - Git 是 Source Code / Architecture / Configuration Template / Documentation 的**唯一版本真相**
 - 禁止自造 commit / diff / patch / branch / history 系统
+  - **作用域澄清（2026-09-04，ADR-028）**：上述"唯一版本真相"限于**应用侧资产**
+    （Source Code / Architecture / Configuration Template / Documentation）。
+    `workspace/` 下用户笔记数据整体 `.gitignore`（§18 §2），**不在 Git 覆盖范围内**，
+    其变更记录由「文档变更抽象层」（ADR-028）承载。该层永久禁止引入
+    branch / commit / merge / rebase / stash / cherry-pick 等 Git 概念与术语，
+    仅提供 `current` / `snapshot`（未来 `git`）三类 revision source 的只读投影。
 - Commit：小、清晰、可回滚、单一目的；conventional 风格
   （feat: / fix: / refactor: / docs: / chore:）；禁止巨大混合提交
 - Semver `MAJOR.MINOR.PATCH`；每个稳定里程碑 = Git tag + CHANGELOG 条目
