@@ -45,7 +45,7 @@
 | 旧前端阶段（2026-08-30 起，含 P1 UI 打磨 · Bright Baseline） | ⛔ **已终止**（历史政策，见下）——新前端与其**断代**，不构成恢复 |
 | ADR-028 后端核心 | 🔒 **已封口**（09-04 裁定），前端实现期间保持封口未被触动（scaffold 后 backend 零改动） |
 | 下一阶段 | **由 Owner 明确授权**，从基线 `728b34b` 另起任务；已登记残留（notes/concepts 响应 OpenAPI 宽 schema、`GET /mastery/{id}` 惰性创建、concept DELETE 语义文档冲突、AGENTS 历史表述清理）继续登记不处理；**双模型 / 副机 AI Node 冻结** |
-| **发布状态** | ✅ **`v0.2.0` RELEASED**（2026-09-05，Owner 授权 Release Execution）· annotated tag 指向发布元数据 commit（见 §10.1 发布登记）· 前一发布 `v0.1.0-rc.3`（`27c27b0`）为不可移动稳定锚点 |
+| **发布状态** | ✅ **`v0.2.0` RELEASED**（2026-09-05，Owner 授权 Release Execution）· release commit `0555764` · annotated tag `v0.2.0`（tag object `ea15dffb`）· 前一发布 `v0.1.0-rc.3`（`27c27b0`）为不可移动稳定锚点 |
 
 **前端消费的未来路径（已兑现，留存为历史记录）**：
 
@@ -170,7 +170,7 @@ UI 不承担核心业务逻辑/图计算/SM-2/同步核心 · 无理由不新增
 | 产品名 | **Open Learning OS**（中文：个人学习操作系统） |
 | 前端包名 | —（**Backend-only**：当前无前端包）· 历史 `plos-web`（`web/package.json`）已随 `3fe8d13` 纯后端化移除 |
 | 许可证 | Apache-2.0（`LICENSE` 已入库） |
-| 已发布 | **tag `v0.1.0-rc.3`（2026-09-05，指向 `27c27b0`，tag object `a7d6a829`，已推送 `origin`）** · 历史：tag `v0.1.0-rc.2`（2026-09-02，指向 `f011434`）· tag `v0.1.0-rc.1`（2026-09-01，指向 `13fa1bc`） |
+| 已发布 | **tag `v0.2.0`（2026-09-05，指向 `0555764`，tag object `ea15dffb`）** · tag `v0.1.0-rc.3`（2026-09-05，指向 `27c27b0`，tag object `a7d6a829`）· tag `v0.1.0-rc.2`（2026-09-02，指向 `f011434`）· tag `v0.1.0-rc.1`（2026-09-01，指向 `13fa1bc`） |
 
 ### 1.2 一句话定位
 
