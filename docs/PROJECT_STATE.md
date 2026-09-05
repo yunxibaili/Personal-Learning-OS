@@ -26,31 +26,37 @@
 
 ---
 
-## §0 当前开发政策：后端稳定阶段（Backend-only Stable Phase）
+## §0 当前开发政策：Frontend Consumer 已收口（F0 / MVP-01~06 DONE · FROZEN）
 
 > **2026-09-05 项目所有者裁定（现行最高政策，凌驾于本文档其余章节的历史表述）**：
-> 09-04 纯后端化已正式移除前端代码面（`web/` React/Vite/Tauri · `ui/` 设计原型 ·
-> `shared/types/` 共享 TS 契约）。项目自此进入 **Backend-only Stable Phase / 后端稳定阶段**。
+> ADR-029（Frontend Consumer Architecture）经 F0-GATE 正式 Accepted；新前端 `frontend/`
+> （React 19 + Vite + TS + CodeMirror 6 源码模式，Browser-first Consumer）已实现
+> **MVP 六项能力并全部收口**（逐项独立验收 + 收口审计通过）。项目自此进入
+> **Frontend Consumer 收口基线（`728b34b`，发布版本 `v0.2.0`）**。
+> 本节旧表述「Backend-only Stable Phase」降级为历史政策（见下）。
 > 本文最高优先级的规则，凌驾于本文档其余章节的历史表述。
 
 **当前状态：**
 
 | 事实 | 状态 |
 |---|---|
-| 前端代码 | **当前不存在**（`web/` `ui/` `shared/` 已移除；权威表述见 `AGENTS.md` 文首「项目形态」） |
-| 前端阶段（2026-08-30 起，含 P1 UI 打磨 · Bright Baseline） | ⛔ **已终止**——**不是延期**，随前端代码面删除而终止（`CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE`） |
-| ADR-028 后端核心 | 🔒 **已封口**（09-04 裁定）。其「前端 revision/history/diff UI」遗留项属**新任务**，**不得据此恢复前端** |
-| 下一阶段 | **由 Owner 明确解冻**。默认路线 = 后端稳定基线，**不得被隐式解释为前端** |
-| **发布状态** | ✅ **`v0.1.0-rc.3` RELEASED**（2026-09-05，Owner 授权）· release commit `27c27b0` · annotated tag 已推送 `origin` · 三方核验 PASS（tag peel / `origin/main` / working tree）。**该 tag 为不可移动的稳定锚点** |
+| 前端代码 | ✅ **存在**：`frontend/`（ADR-029 断代新前端，非旧 `web/` 恢复）；旧 `web/` `ui/` `shared/` 移除事实不变 |
+| MVP 六项（ADR-029 §8 冻结范围） | ✅ **DONE / FROZEN**：Notes `58a37a9` · Search `6eefb2f` · Knowledge `ab31b17` · Mastery `df96c0b` · Review `2078f97` · Tutor Context `728b34b`——逐项独立授权/验收，收口审计通过 |
+| 旧前端阶段（2026-08-30 起，含 P1 UI 打磨 · Bright Baseline） | ⛔ **已终止**（历史政策，见下）——新前端与其**断代**，不构成恢复 |
+| ADR-028 后端核心 | 🔒 **已封口**（09-04 裁定），前端实现期间保持封口未被触动（scaffold 后 backend 零改动） |
+| 下一阶段 | **由 Owner 明确授权**，从基线 `728b34b` 另起任务；已登记残留（notes/concepts 响应 OpenAPI 宽 schema、`GET /mastery/{id}` 惰性创建、concept DELETE 语义文档冲突、AGENTS 历史表述清理）继续登记不处理；**双模型 / 副机 AI Node 冻结** |
+| **发布状态** | ✅ **`v0.2.0` RELEASED**（2026-09-05，Owner 授权 Release Execution）· annotated tag 指向发布元数据 commit（见 §10.1 发布登记）· 前一发布 `v0.1.0-rc.3`（`27c27b0`）为不可移动稳定锚点 |
 
-**前端消费的未来路径**（需 Owner 明确宣布，任何文档不得设自动触发条件）：
+**前端消费的未来路径（已兑现，留存为历史记录）**：
 
 ```text
 Backend Stable Baseline（已随 v0.1.0-rc.3 发布）
-  → Owner 宣布 Frontend Consumer 解冻 → 前端侦察 → 按现有后端 API 消费
+  → Owner 宣布 Frontend Consumer 解冻（2026-09-05，ADR-029 F0）
+  → 前端侦察 → 契约核查 → frontend/ 脚手架 → MVP-01~06 逐项实现 → 收口审计 → v0.2.0
 ```
 
-即：后端 API 是**被消费的对象**，不是前端解冻的理由；ADR-028 后端核心在前端解冻后仍保持封口。
+即：后端 API 是**被消费的对象**；L1（Truth 单向）/ L2（Contract 单向）/ L3（Capability 不漂移）
+在新前端实现全程有效（收口审计为证：唯一 fetch 在 wrapper、零前端事实存储、零 AI 调用）。
 
 ---
 
@@ -664,20 +670,24 @@ UI 状态曾由 Zustand store 持有（`stores/ui.ts` 只存 `activeView` 等 UI
 
 ## §10 Verification & Scale
 
-### 10.1 验证状态（最近全量 Gate：**v0.1.0-rc.3** · 2026-09-05 · Backend-only）
+### 10.1 验证状态（最近全量 Gate：**v0.2.0** · 2026-09-05 · Backend + Frontend Consumer）
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **1099 passed**（v0.1.0-rc.3 Gate 实测，2026-09-05；工作 venv 165.26s / 干净重建 venv 163.82s，**双环境均通过**。⚠️ 本机 venv 未装 dev 依赖时先 `pip install -r requirements-dev.txt`。Windows 绕 safe-delete 守卫：`CODEBUDDY_SAFE_DELETE_ENABLED=0`，见 `docs/TESTING.md`） |
-| OpenAPI 路由计数 | **102 routes / 82 paths**（递归展开 fastapi 0.141.1 `_IncludedRouter` 后的真实值；顶层 `app.routes` 仅 28，属惰性容器表象，勿引为口径） |
-| `/api/v1/health` | **200** · version `0.1.0-rc.3` |
-| 干净环境重建 | **PASS**（`.workbuddy/tmp/` 新建 venv，仅按 `requirements.txt` + `requirements-dev.txt` 装 22 包） |
-| PyInstaller sidecar | **PASS**（clean build → `dist/plos-backend.exe` 15,566,443 B；`WORKSPACE_DIR` 临时目录隔离启动，真实 vault 零触碰；产物已清理） |
+| `pytest -q`（backend） | **1105 passed**（v0.2.0 Gate 实测，2026-09-05；= rc.3 基线 1099 + E1/E2 边界用例 6。⚠️ 本机 venv 未装 dev 依赖时先 `pip install -r requirements-dev.txt`。Windows 绕 safe-delete 守卫：`CODEBUDDY_SAFE_DELETE_ENABLED=0`，见 `docs/TESTING.md`） |
+| 前端门禁 | **vitest 45/45**（7 文件）· `tsc -b` PASS · `vite build` PASS · oxlint **0 errors**（2026-09-05，HEAD `728b34b`；`frontend/` 为 ADR-029 断代新前端，与历史 `web/` 数字无继承关系） |
+| OpenAPI 路由计数 | **102 routes / 82 paths**（递归展开 fastapi 0.141.1 `_IncludedRouter` 后的真实值；顶层 `app.routes` 仅 28，属惰性容器表象，勿引为口径；E1/E2 未新增端点，数字不变） |
+| `/api/v1/health` | **200** · version `0.1.0-rc.3`（APP_VERSION 常量未随发布流程升级，见 §10.1 注） |
+| 干净环境重建 | **PASS**（rc.3 Gate 实测：`.workbuddy/tmp/` 新建 venv，仅按 `requirements.txt` + `requirements-dev.txt` 装 22 包） |
+| PyInstaller sidecar | **PASS**（rc.3 Gate 实测：clean build → `dist/plos-backend.exe` 15,566,443 B；`WORKSPACE_DIR` 临时目录隔离启动，真实 vault 零触碰；产物已清理） |
+| §8.3 无 AI provider 闭环 | **实测成立**（2026-09-05 收口审计：settings 为空的隔离 workspace，MVP 六项链路全部可用） |
 
-> **前端门禁（`npx vitest run` / `tsc --noEmit` / `vite build`）已随 `3fe8d13` 纯后端化整体失效并移除**，
-> 不再是本项目 gate。历史值：vitest **87 passed**（2026-09-02，6 文件）· `tsc --noEmit` PASS ·
-> `vite build` PASS（707 modules / 4.12s / 10 chunk）。
-> 历史登记值（815/826/836/853/865/873/**1099**）为各阶段 Gate 快照，全量数字以 CHANGELOG 对应版本为准。
+> 注：`/health` 返回的 `version` 来自 `APP_VERSION` 常量（仍 `0.1.0-rc.3`），与 Git tag 版本
+> 是两个层面；是否随版本升级该常量属独立小任务，未纳入 v0.2.0 发布范围。
+>
+> **旧前端门禁（87 passed / 707 modules 等）随 `3fe8d13` 纯后端化失效**，属历史快照；
+> 现行前端门禁为 `frontend/` 的 vitest/tsc/vite build（上表）。历史登记值
+> （815/826/836/853/865/873/1099/**1105**）为各阶段 Gate 快照，全量数字以 CHANGELOG 对应版本为准。
 > **计数类冲突已在 2026-09-02 收口清理**：本文此后是唯一登记处，其他文档只引用。
 
 > Windows 环境注意：跑 pytest 需绕过 safe-delete 守卫——

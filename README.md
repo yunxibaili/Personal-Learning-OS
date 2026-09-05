@@ -1,11 +1,11 @@
-# Personal Learning OS · Open Learning OS（纯后端）
+# Personal Learning OS · Open Learning OS
 
-> **Open Learning OS** is a local-first AI learning system **backend**. It turns
+> **Open Learning OS** is a local-first AI learning system. It turns
 > an open Markdown knowledge base (vault) into a typed knowledge graph with
 > learning memory (4-dimension mastery / SM-2 reviews / mistake log / memory-aware
 > AI tutor) and LAN multi-device sync.
 >
-> 一个开源、本地优先的 AI 学习系统后端：把开放 Markdown 知识库转化为类型化知识图谱，
+> 一个开源、本地优先的 AI 学习系统：把开放 Markdown 知识库转化为类型化知识图谱，
 > 内置学习记忆（四维掌握度 / SM-2 复习 / 错误本 / 记忆感知 AI Tutor）与 LAN 多端同步。
 >
 > *Your knowledge is not a pile of notes. It is a universe that grows with you.*
@@ -13,14 +13,18 @@
 核心价值不是"记录信息"，而是**帮助用户学会信息**。
 正文事实源永远是开放 Markdown + SQLite 缓存，可在需要时一键全量导出、整库带走。
 
-**2026-09 纯后端化**：前端（`web/` React/Vite/Tauri、`ui/` 设计原型、`shared/types/` 共享 TS 契约）、
-本地 UI 归档与实验目录已移除。本仓库现为**可独立运行、测试、打包的纯后端项目**。
+**架构形态（2026-09-05，ADR-029）**：后端（`server/`，Python/FastAPI）+ 新前端
+Consumer（`frontend/`，React 19 + Vite + TS + CodeMirror 6 源码模式，Browser-first）。
+旧前端（`web/`、`ui/`、`shared/types/`）已于 2026-09 纯后端化期间移除且**未恢复**——
+新前端是 Backend API 的 Consumer（断代，非继承）。MVP 六项能力（Notes / Search /
+Knowledge / Mastery / Review / Tutor Context）已全部实现（v0.2.0）。
 
 **项目说明、架构、功能、依赖、测试、打包的权威档案见 [docs/backend/](docs/backend/README.md)。**
 
 ## 环境要求
 
 - Python 3.12+
+- Node.js 24+（仅前端开发需要）
 
 ## 启动 / 运行（开发模式）
 
@@ -33,8 +37,16 @@ uvicorn app.main:app --reload --port 8000
 # 或：python -m app.main          # 读取 $env:PORT，默认 8000
 ```
 
-- 只绑定 `127.0.0.1`。
-- 端口默认 8000；`$env:PORT=8100` 可覆盖（与 UpMark 共存）。
+前端（另开终端）：
+
+```bash
+cd frontend
+npm install
+npm run dev                   # http://localhost:5173；/api/v1 经 vite proxy 转发到后端
+```
+
+- 后端只绑定 `127.0.0.1`。
+- 端口默认 8000；`$env:PORT=8100` 可覆盖（与 UpMark 共存）；前端代理目标用 `API_PORT` 对齐。
 - 用户数据目录默认 `workspace/`，可用 `$env:WORKSPACE_DIR` 覆盖。
 
 ## 数据模型

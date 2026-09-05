@@ -7,6 +7,58 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 （暂无）
 
+## [v0.2.0] — 2026-09-05
+
+> 本版本引入**全新 Frontend Consumer 架构**（ADR-029，Browser-first，`frontend/`），
+> 并实现 MVP 六项能力：核心学习闭环（笔记 → 检索 → 概念 → 掌握度 → 复习 → 导师上下文）
+> 可被前端完整消费，且**全程不依赖 AI provider**（ADR-029 §8.3 硬条件经隔离环境实测成立）。
+> 旧前端（`web/`）未恢复——新前端是 Backend API 的 Consumer，不是旧前端延续（断代，非继承）。
+> 验证基线：`pytest` **1105 passed** · frontend **45/45**（vitest）·
+> `tsc -b` + `vite build` 绿 · oxlint 0 errors · OpenAPI 102 routes / 82 paths（不变）。
+
+### Added
+- **Frontend Consumer 架构（ADR-029 Accepted，F0）**（`6972baa`）：
+  - 纯静态 SPA：React 19 + Vite + TypeScript（strict），Browser-first；Tauri 2 仅为候选壳
+    （延后不实现）；禁 Electron / TipTap / Zustand / 路由 / CSS 框架（ADR-029 §3.2 排除清单）
+  - CodeMirror 6 Markdown **源码模式**（用户所见 = 落盘文本；WYSIWYG 冻结，B-3 → Superseded）
+  - 契约 = 后端 OpenAPI → `openapi-typescript` **types-only** 生成（path-keyed，82 paths），
+    **不以 operationId 为前端契约**（Python 函数重命名不影响前端，§5.2）
+  - 自写最小 fetch wrapper（base URL / JSON 头 / 统一错误解包 `ApiError{status,code,message}` /
+    path-based 类型化请求）；各端点独立窄化层做运行时校验（坏形状 → `contract_mismatch` 不静默漂移）
+- **MVP-01 Notes**（`58a37a9`）：列表 / 打开 / 编辑（CodeMirror 源码模式）/ 保存
+  （PATCH `content_md`，保存后 GET 回读确认持久化）/ 新建；loading/empty/error 三态；
+  中文、换行、Markdown 语法经浏览器验收逐字节保真
+- **MVP-02 Search**（`6eefb2f`）：搜索框 → `GET /search?q` → 结果列表 → 点击复用打开链路；
+  中文（CJK bigram）/ 英文命中实测；空输入不发请求（契约 400 missing_q）
+- **MVP-03 Knowledge**（`ab31b17`）：概念列表（domain/status 筛选 + limit/offset 分页，后端执行）/
+  详情（mastery 为后端投影原样消费）/ 关联笔记（`GET /graph?root_type=concept&depth=1`
+  只读投影，零前端语义计算）；unconfirmed 桩与 active 互斥展示、显式开关查看
+- **MVP-04 Mastery**（`df96c0b`）：薄弱概念区（`/mastery/weak/list`，后端升序）+ 全量掌握度
+  （`/mastery`，后端 DESC）；`effective` / `effective_now` 原样展示，前端零衰减/聚合/排序
+- **MVP-05 Review**（`2078f97`）：今日队列（保持后端排序）+ quality 0–5 提交 → 展示后端
+  SM-2 结果（next_review/interval/ease_factor）→ 刷新队列（重排期概念自然离队）；
+  统计（accuracy/current_streak/by_concept）与历史原样消费；mistakes 桥接经 UI 答题实测触发
+- **MVP-06 Tutor Context**（`728b34b`）：概念选择 + 笔记引用（≤2）+ `auto_notes` 开关（默认关）
+  → `POST /tutor/context` 全 section 结构化展示；mastery 全零对象与 review=null 两种语义
+  分别处理；memories 作为正式 section 纳入契约；**零 AI 调用**（/tutor/test、/chat 不消费）
+- **前端测试体系**：vitest（node 环境，无 jsdom）**45 用例**——wrapper 编码/错误解包、
+  各消费模块投影与 contract_mismatch 防御
+
+### Changed
+- **治理文档按 ADR-029 对齐**（F0-DOC-ALIGN，`75c7e7d`）：AGENTS §9/§10/§12/§16、
+  PROJECT_BRIEF §7、PRODUCT_PRINCIPLES §2——技术栈冻结表（React 19 / CodeMirror 6 /
+  openapi-typescript 生效；TipTap / React Flow / dagre / KaTeX 解除冻结）、契约条款
+  （后端 OpenAPI 唯一契约，`shared/types/` 不恢复）、架构裁决与实现授权分离、P8-FE-001 维持冻结
+- **README / PROJECT_STATE 形态声明**：纯后端化表述更新为「后端 + frontend Consumer」双形态；
+  验证基线数字对齐（pytest 1099 → 1105，新增 frontend 45）
+
+### Fixed
+- **E1**（`a0686ee`）：`POST /review/{id}/answer` 的 `quality` 限 0–5 整数（bool 拒绝），
+  越界 → `400 invalid_body`，不再静默落入 SM-2 clamp；合法输入行为不变
+- **E2**（`a0686ee`）：`POST /events` 的 `event_type` 限冻结枚举
+  （answer_correct|answer_wrong|explain|visualize|review|code_run，与 DATA_MODEL 同源），
+  未知值 → `400 invalid_body`，**消除 201 + silent no-op**；既有事件处理语义不变
+
 ## [v0.1.0-rc.3] — 2026-09-05
 
 > 本版本为**纯后端化后的第一个发布候选**。前端载体（`web/`、`ui/`、`shared/types/`、`src-tauri/`）
