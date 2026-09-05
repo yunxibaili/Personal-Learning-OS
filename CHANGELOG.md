@@ -5,143 +5,107 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Added
-- **ADR-028 收尾：快照恢复能力（决策 D 的承诺：保留 = 可恢复）**：
-  - `POST /notes/{id}/revisions/{rev_id}/restore`——既有笔记恢复到指定快照
-    （frontmatter + 正文整体回滚）；恢复前先对被覆盖状态打 `origin=restore` 快照，
-    **恢复本身可逆**；与目标一致时 no-op（`restored: false`）
-  - `GET /admin/revisions/orphans`——孤儿快照列举（笔记已删、快照仍在）；
-    判定以 notes 行为准
-  - `POST /admin/revisions/restore`——从孤儿快照重建已删笔记（取最新一份）；
-    `_create_note_vault` 扩展可选 `meta`/`rel_path` 参数（tags 从 meta 派生进索引、
-    支持嵌套路径），走与常规创建完全相同的写路径，存量调用方零影响
-  - `_create_note_vault` 的 parent 边同步条件扩展为
-    `parent is not None or parse_parent(meta)`（幂等，覆盖快照重建带 parent 的场景）
-  - **修复：快照时间戳秒级 → 微秒**。同秒内多份快照（auto+manual）按 hash8
-    字典序排序会让"最新"失真——实测踩中；`%Y%m%dT%H%M%S%f` 定宽微秒后字典序恒等于时间序
-  - 测试 +14（累计 +80）；全量 1099 passed；路由 99/79 → 102/82
+（暂无）
 
-### Changed
-- **Backend: Document Changes / Revision / Diff 基础能力（ADR-028）**：
-  - 与 Git 解耦的文档变更抽象层，revision source = `current`（vault 直读）/ `snapshot`
-    （历史快照）；`git` source 属后续独立任务，本轮**不预留 Adapter 抽象层**
-    （AGENTS §6：无真实复杂度不制造 Provider 层）
-  - `app/core/revisions.py`：快照落 `workspace/metadata/revisions/<vault 相对路径>/
-    <YYYYmmddTHHMMSSZ>-<hash8>.md`，**零新增 migration**（SQLite 不在 EXPORT_DIRS
-    也不在 SYNC_PATTERNS，落表会让快照既不导出也不同步，违反 AGENTS §3 + ADR-005）
+## [v0.1.0-rc.3] — 2026-09-05
+
+> 本版本为**纯后端化后的第一个发布候选**。前端载体（`web/`、`ui/`、`shared/types/`、`src-tauri/`）
+> 已在本周期内整体移除，本文件同步删除全部失效的前端条目与前端验收口径
+> （`vitest` / `tsc --noEmit` / `vite build` 已不存在）。「前端阶段」路线**终止，非延期**，
+> 详见 §Removed 与 §Changed。
+
+### Added
+- **ADR-028 文档变更抽象层（Revision / Snapshot / Diff / Restore）——与 Git 解耦**：
+  - revision source = `current`（vault 直读）/ `snapshot`（历史快照）；`git` source 属后续独立任务，
+    本轮**不预留 Adapter 抽象层**（AGENTS §6：无真实复杂度不制造 Provider 层）
+  - `app/core/revisions.py`：快照落 `workspace/metadata/revisions/<vault 相对路径>/<YYYYmmddTHHMMSS微秒>-<hash8>.md`，
+    **零新增 migration**（SQLite 不在 `EXPORT_DIRS` 也不在 `SYNC_PATTERNS`，落表会让快照既不导出也不同步，
+    违反 AGENTS §3 + ADR-005）
   - 快照文件即合法 Markdown：`compose_file({**笔记原 frontmatter, **rev_* 元数据}, body)`，
     剥离 `rev_*` 可无损还原原笔记；目录键用路径而非 `note_id`（db 不同步，跨设备不一致）
-  - 写前去抖快照（内容哈希去重 + 300s 窗口）+ 手动打点；每篇上限 50 份按时间序淘汰
-  - 重命名迁移快照目录；删除笔记**保留**快照（可恢复），清理走 `DELETE /notes/{id}/revisions`
+  - 写前去抖快照（内容哈希去重 + 300s 窗口）+ 手动打点；每篇上限 50 份按时间序淘汰；
+    重命名迁移快照目录；删除笔记**保留**快照；快照失败**绝不阻断**笔记保存（ADR-001）
   - `app/routers/revisions.py` 六个端点：`GET|POST /notes/{id}/revisions`、
-    `GET /notes/{id}/revisions/{rev_id}`、`GET /notes/{id}/changes`、
-    `POST /notes/{id}/diff`、`DELETE /notes/{id}/revisions`
-  - diff 双形态：`hunks`（0-based 左闭右开、只含非 equal 段，供 UI 块级高亮）+
-    `unified`（供人读/导出）。`SequenceMatcher(autojunk=False)` 为**必需**——
-    默认启发式会把高频行判 junk，实测 300 行只改 1 行时报 changed=150（正确值 1）
-  - 快照**进** `EXPORT_DIRS`（用户数据须可全量导出）、**不进** `SYNC_PATTERNS`
-    （本地便利能力，非跨设备事实）
-  - 快照失败**绝不阻断**笔记保存（vault 是唯一事实源，ADR-001）
-  - 测试 66 项新增（core 41 / http 25）；全量 `1085 passed`；路由 93→99、path 75→79
-
-### Changed
-- `AGENTS.md §4` 补作用域澄清：Git「唯一版本真相」限于应用侧资产；`workspace/`
-  用户数据整体 gitignore、不在 Git 覆盖范围内，其变更记录由文档变更抽象层承载，
-  该层永久禁用 branch / commit / merge / rebase 等 Git 概念与术语（冲突登记见 ADR-028 §7）
-- **P0-2b Tauri sidecar 接线——桌面版双击可用（P0 PC Stable Baseline）**：
-  - `server/backend_main.py` + `plos_backend.spec`（PyInstaller onefile，15.5MB）：
-    workspace 上溯解析（开发树自动命中 repo/workspace 真数据）、端口 8100
-    避让 dev 8000、host 恒 127.0.0.1
-  - `app/db.py` frozen 分支（打包态 migrations 路径）+ `app/main.py` CORS
-    （tauri.localhost / localhost:5173）
-  - `api.ts` 支持 `VITE_API_BASE` 覆盖；`web/.env.desktop`（--mode desktop）；
-    `tauri.conf.json` externalBin + beforeBuildCommand desktop 模式；
-    `lib.rs` sidecar spawn + 退出 kill（薄壳原则，端口/workspace 解析在 Python 侧）
-  - 端到端实测：双击 plos.exe 自动拉起 sidecar → 8100 全通（真库 20 篇）→
-    退出零残留；pytest 50 / vitest 186 / tsc PASS（详见 TASKS §T-P0-2b）
-- **中文 FTS 架构选型 + CJK bigram 实现（ADR-027，取代 ADR-011）**：
-  - 选型评审（只读）四案加权：bigram 预分词 70 > trigram+LIKE 67 > jieba 58 >
-    ICU 44；证伪 ADR-011 原首选 trigram（<3 字符查询静默 0 命中）；
-    **零新增运行时依赖**（六连问 ③ 即止，无 DEPENDENCIES 登记义务）
-  - `app/core/cjk_bigram.py`：纯切分模块（segment/tokens/is_single_cjk/has_token），
-    FTS 写入与查询共用同一切分 ⇒ 短语匹配 ≈ 子串命中；autolink.tokenize 复用底层
-    规则（保留其过滤单字 CJK 的历史语义），依赖方向 autolink → cjk_bigram
-  - migration `010_fts_bigram`（DROP+CREATE notes_fts）+ 启动链路自动全量 reindex
-    （`db.FTS_REBUILD_VERSIONS` → `main.lifespan` 触发 reindex_vault）
-  - `search_notes` 统一 FTS MATCH（bm25 rank）；单字中文 LIKE 兜底（不再静默 0 命中）；
-    **删除 `_cjk_search` 全表扫描**（B9 兜底退役，无第二套搜索逻辑）
-  - 语义边界（有意为之）：短语 = 连续子串（与 Obsidian 子串搜索一致），bigram 不跨词边界
-- **T-NOTE-TREE 主笔记多级层级树（ADR-026 v3，T1+T2+T3）**：
-  - `GET /api/v1/notes/tree?depth=&root_id=`：经唯一 `resolve_hierarchy()` 构建森林
-    （红线 2），depth 默认 3 / 安全上限 10 **后端剪枝**（越界手工 422），
-    `root_id` 懒加载子树入口，`truncated` 标剪枝处，同层 `created_at` 升序（v3 修订）；
-    cycle/orphan 复用既有 `_detect_cycles` 零新代码
-  - 前端左栏：默认展开 3 层 +「…更多子层级」懒加载入口 + 折叠箭头（aria-expanded）+
-    折叠偏好 localStorage 持久化；数据源切换 `/notes/tree`，
-    本地建树 `buildNoteTree` 退役删除（单一树数据路径）
-  - 真实 vault 4 层临时链 E2E 16/16（懒加载/折叠偏好跨刷新/物理清理）
-- **P1 UI/UX Bright Baseline（P1-1 至 P1-12，2026-09-03）**：
-  - **知识图谱布局坍塌修复**：两阶段布局（连通 dagre TB + 孤立节点 grid 散开）+
-    `<FitOnLayoutChange>` 修 fitView 异步时序（cc2ca49 前置 eb169ea）
-  - **stub 笔记降级显示**：`displayNoteTitle()` 覆盖空/纯数字/占位 pattern → `未命名笔记 · #<id>`（645a935）
-  - **settings.theme 零代码关闭**：取证后全库零 theme 引用，`theme=dark` 系 KV 孤儿数据（b7def80）
-  - **思维母图空态结构化**：标题+描述+唯一主 CTA+ghost 次 CTA（0b4aeaf）
-  - **编辑器未选中空态补 CTA**：「＋ 新建」主 CTA 补齐共享首屏（d9283f1）
-  - **业务组件字体层级统一提级**：50 条 <12px → `var(--fs-xs)` + 13 条交互控件 12px → `var(--fs-sm)`；
-    修 P1-6 片段级替换引入的 13 处无效声明 `font-size:font-size:`（160dabb + 640cedb）
-  - **minimap 尺寸 224 + token 化**：`--galaxy-mini-size` 驱动 3 处；supersample 2× 防摩尔纹（c9fd861 + 3657176）
-  - **minimap 启用自转**：`animate={false}` → `animate`（bf904eb）
-  - **全屏星系空轨道收敛**：`orbitCountFor(satCount)` 0→0/1→1/≥2→2 封顶；像素取证 0-卫星环带=0（cc2ca49）
-  - **文案语调 3 处机械修正**：`Concept/Note → 概念/笔记`、`AI Tutor → AI 导师`、`载入星系… → 加载星系…`（291bb4d）
-  - **HomeHero 产品入口页**：`activeView` 默认 `"home"`；品牌 + 点阵地球 480px + CTA「立即开始」→ notes（a890e1a）
-  - **编辑器标题 30px/600 独立层级**（b5093e9）；**680px 阅读列宽确认已有**（zero-code）
-  - **Header 对齐 / 圆角阴影 token**：取证后零代码关闭（3168e72 / 99927fa）
+    `GET /notes/{id}/revisions/{rev_id}`、`GET /notes/{id}/changes`、`POST /notes/{id}/diff`、
+    `DELETE /notes/{id}/revisions`
+  - diff 双形态：`hunks`（0-based 左闭右开、只含非 equal 段，供块级高亮）+ `unified`（供人读/导出）
+  - 快照**进** `EXPORT_DIRS`（用户数据须可全量导出）、**不进** `SYNC_PATTERNS`（本地便利能力，非跨设备事实）
+  - **恢复能力（决策 D 的承诺：保留 = 可恢复）**：
+    - `POST /notes/{id}/revisions/{rev_id}/restore`——既有笔记整体回滚（frontmatter + 正文）；
+      恢复前先对被覆盖状态打 `origin=restore` 快照，**恢复本身可逆**；与目标一致时 no-op
+    - `GET /admin/revisions/orphans` + `POST /admin/revisions/restore`——从孤儿快照重建已删笔记；
+      `_create_note_vault` 扩展可选 `meta`/`rel_path` 参数，走与常规创建完全相同的写路径，存量调用方零影响
+  - 测试 +80（core 41 / http 25 / 恢复 14）；路由 **93/75 → 102/82**
+- **ADR-027 中文 FTS 架构选型 + CJK bigram 实现**（取代 ADR-011，ADR-011 → Superseded）：
+  - 四案加权选型：bigram 预分词 70 > trigram+LIKE 67 > jieba 58 > ICU 44；
+    证伪 ADR-011 原首选 trigram（<3 字符查询静默 0 命中）；**零新增运行时依赖**
+  - `app/core/cjk_bigram.py` 纯切分模块，FTS 写入与查询共用同一切分（短语匹配 ≈ 子串命中）；
+    `autolink.tokenize` 复用底层规则（依赖方向 `autolink → cjk_bigram`）
+  - migration `010_fts_bigram`（DROP+CREATE `notes_fts`）+ 启动链路自动全量 reindex
+  - **删除 `_cjk_search` 全表扫描**（B9 兜底退役，无第二套搜索逻辑）；单字中文 LIKE 兜底
+- **MindMap sidecar producer 恢复**（`app/core/mindmap.py` + `app/routers/sync.py`）：
+  思维母图随 sync 导出为 sidecar 文件（原 P1-MINDMAP-TRUTH，M8 前置条件）
+- **后端 sidecar 打包（PyInstaller onefile）——桌面分发能力（原 P0-2b）**：
+  - `server/backend_main.py` + `server/plos_backend.spec`（onefile，15.5MB）：
+    workspace 上溯解析、端口 8100 避让 dev 8000、host 恒 127.0.0.1
+  - `app/db.py` frozen 分支（打包态 migrations 路径）+ `app/main.py` CORS（`tauri.localhost` / `localhost:5173`）
+  - 退出改为**进程树终止**（实测孤儿孙进程残留）
 
 ### Removed
-- 死代码：`SyncStatusPanel.tsx`（全库零引用，随 Dashboard 退场）、
-  `dev/ComponentGallery.tsx`（#gallery 入口从未接线）
-- 死 CSS：`.tabbar`、`.dashboard-view`/`.dash-section`（裁决 A 后无消费方）
-- 依赖审计更正：`marked` 从 REGISTRY 移除（从未安装）；
-  d3-force/cobe/@tiptap/pm 移入「已移除依赖」存档节（v0.1.0-rc.1 已移除）
+- **纯后端化：移除全部前端载体（`chore(pure-backend)`，`3fe8d13`）——本版本最大变更**：
+  - `web/`（React + Vite 应用）、`ui/`（HTML 设计系统与可视化组件库）、`shared/types/`（TS 契约层）
+    整体删除；`src-tauri/`（Rust 桌面壳）不在本仓库内
+  - 随之前端工程资产整体退役：`package.json` 依赖树、`vitest`、`tsc --noEmit`、`vite build`、
+    `tsconfig`、`web/.env.desktop`、live-smoke 脚本、`buildNoteTree` 等前端本地实现
+  - **保留**：PyInstaller sidecar（`server/backend_main.py` + `server/plos_backend.spec`）——
+    桌面分发走后端可执行档，不依赖任何前端构建
+  - **影响**：验收口径收敛为后端实测（pytest + OpenAPI + `/health` + 隔离 workspace 冒烟），
+    不再存在前端构建/单测门禁；docs 与 CI 已同步（`.github/workflows/ci.yml`、`scripts/test.ps1`）
+- 死代码（纯后端化前已清理）：`SyncStatusPanel.tsx`、`dev/ComponentGallery.tsx`、
+  死 CSS `.tabbar` / `.dashboard-view` / `.dash-section`
+- 依赖审计更正：`marked` 从 REGISTRY 移除（从未安装）；d3-force / cobe / @tiptap/pm 移入「已移除依赖」存档节
+
+### Changed
+- **项目路线重基线：前端阶段终止，进入后端稳定阶段（Backend-only Stable Phase）**：
+  - P1「UI 打磨」与 `[20]` Bright Baseline **作废（CANCELLED，非改名、非延期）**；
+    `docs/PROJECT_STATE.md` §0 由「前端阶段已开启」改为后端稳定阶段，补足此前缺失的纯后端化事实
+  - 路线新增节点 `[21]`–`[26]`（`[25]` Backend Stable Baseline = 当前，`[26]` Owner 解冻）；
+    前端消费层解冻须 Owner 明确宣布，不得隐式解释
+  - `AGENTS.md` §0 当前开发政策同步；§4 补作用域澄清：Git「唯一版本真相」限于应用侧资产，
+    `workspace/` 用户数据整体 gitignore，其变更记录由 ADR-028 承载，该层永久禁用 Git 概念与术语
+  - ADR-028 状态 → **已接受并封口**；四项残留（Git revision source adapter / 前端 revision UI /
+    frontmatter-only 是否触发快照 / 孤儿快照长期 GC）列为新任务，本轮不处理
+  - M8（Mobile）维持全线暂停：顺序恒为 PC Stable → M8-000
+- `APP_VERSION`：`0.1.0-dev` → `0.1.0-rc.3`
+- 文档计数对齐：`docs/backend/README.md` 端点数 93 → **102 route / 82 path**；
+  `docs/backend/testing.md` 基线 1020 → **1099 passed**
+
+### Fixed
+- 快照时间戳**秒级 → 微秒**（`%Y%m%dT%H%M%S%f`）：同秒内多份快照按 hash8 字典序排序会让「最新」失真——实测踩中
+- 文本 diff `difflib.SequenceMatcher(autojunk=False)`：默认启发式把 ≥200 行中频次 >1% 的行判 junk，
+  实测 300 行只改 1 行报 changed=150（正确值 1）
+- sidecar 退出孤儿孙进程：改为进程树终止
 
 ### Docs
-- **项目状态收口**：确立单一真相源原则（进度唯一登记于 PROJECT_STATE.md），
-  全部文档对齐至实际状态（详见 [v0.1.0-rc.1] 后的收口 commit 23c3eb3 系列）
+- **项目状态收口**：进度唯一登记于 `docs/PROJECT_STATE.md`（单一真相源原则），
+  其余文档只引用不自维护；本轮对齐重基线后的实际状态，并按 AGENTS §11 回填 `docs/TASKS.md` 完成报告
 
 ### Gate
-- pytest **977 passed** · vitest **161 passed / 9 files** · tsc PASS · vite build PASS ·
-  无头自检（M9 17/17 · 树 E2E 16/16 · 全 tab 14/14）· 依赖审计通过（零未使用零缺失）
-- **M9 Visual Engine 接入（M9-007）+ 验收关闭（M9-008）**（ADR-025 §7 最后一环）：
-  - `ui/visual-engine/` 16 文件逐字节回灌 `web/src/components/ui/visual-engine/`，
-    `components/ui/index.ts` 解冻导出（M9-007 前按 2026-09-01 裁定不导出）
-  - 图谱 Floating Inspector 新增「可视化」入口：按 `concepts.title` 匹配示例清单
-    （GET /trace/examples），无匹配概念不渲染按钮（ADR-025 守护 14）
-  - 业务壳 `VisualizeOverlay`：GET 源码 + POST /trace/run（子进程 settrace）→
-    IDE 步进可视化（CodePane 热力/当前行 + FrameStack/Array/General 三模板路由 +
-    ↓→↑空格←R 键位）；取数模块级 inflight 去重（防撞 §5.7 并发护栏 429）
-  - **visualize 学习事件**（§6.3 点击即记录）：TraceRun 成功 → POST /events →
-    practice +0.05×weight（mastery 侧映射早已就位）；openKey 去重 StrictMode 双实例
-  - 契约：`ExampleEntry.file` 补齐（场景 A）；`TraceValue` 收紧为封闭联合
-    （移除 `Record<string,unknown>`，对齐 §4.3 类型封闭 / 守护 2）
-- 守护测试补齐：test_trace_api +2（visualize → practice 增量 / 未知概念 404）；
-  wiring.test +4（解冻导出 / 副本一致锚点 / 业务壳消费 / 守护 14 条件渲染）
+- pytest **1099 passed**（约 156s）
+- OpenAPI：**102 route / 82 path**
+- `GET /api/v1/health` → 200，响应 `version` 与 `APP_VERSION` 一致
+- 依赖审计：runtime 3（fastapi / uvicorn / python-multipart）+ dev 2（pytest / httpx），
+  零未使用、零缺失；PyInstaller 6.22.2 登记为构建期工具
+- 孤儿模块 AST 扫描：0（6 个 `core/tracer/examples/*` 为按设计动态加载，非死代码）
+- 隔离 workspace 冷启动 OK；真实 vault 未被触碰
 
-### Docs
-- **项目状态收口（2026-09-02 所有者裁定「先收口，后开发」）**：确立单一真相源原则——
-  进度唯一登记于 `docs/PROJECT_STATE.md`，其他文档只能引用。全面对齐至 HEAD `12030ff`：
-  - `PROJECT_STATE.md`：§2.6/§3 技术栈清除 d3-force/cobe/marked 残留、§4 各「未实现」
-    小节对齐 B 系列后实况、§8 修正 #gallery/MiniMap 表述、§9.1 B9 闭环口径、
-    §10 数字更新（230 commits / 405 files / 9 migrations / 26 ADR / vitest 87）、
-    §10.3 登记路线（收口→技术债→M9-007/008→T-NOTE-TREE→P8 收尾→M8 决策）、
-    §12 重写为技术债 P1/P2 分级、§13 开源 P0 清零更新
-  - `docs/ai/CURRENT_STATE.md`：重写为薄快照（不再自维护进度表）
-  - `docs/ai/ACTIVE_TASK.md`：改为仅维护当前任务（= 本收口）+ 路线照录
-  - `docs/TASKS.md`：执行队列重排；P8-001B/C 标注「已完成后删除」、
-    P8-003 Home 冲突标注已裁决（方案 B）、两处「未提交」更正为实际 commit
-  - `README.md`：里程碑表对齐（M6 ✅ / M9 🟡 / M8 🔜）、进度改引用
-  - `AGENTS.md`：头部过期「后端优先」横幅替换、§2.2 d3-force 例外标记失效、
-    §9 冻结表更正、§10 加单一真相源原则
-  - ADR：007/018 标 Superseded（含取代说明）、016 目录树标注历史快照、ADR_INDEX 同步
+## [v0.1.0-rc.2] — 2026-09-02
+
+> 本节为**补记**：rc.2 打 tag（`f011434`）时未同步 CHANGELOG，属历史遗漏。
+> 提交区间 `v0.1.0-rc.1..v0.1.0-rc.2` 共 39 commits，主体为 T-NOTE-TREE（ADR-026 v3，T1+T2+T3）、
+> M9-007/008 Visual Engine 接入与 M9 关闭、P1 技术债收敛、项目状态收口（确立 `PROJECT_STATE.md`
+> 单一真相源）与 P8 正式收尾。其中前端部分（`web/`、`ui/`、`shared/types/`）已随 rc.3 纯后端化移除，
+> 不再逐条转录。
 
 ## [v0.1.0-rc.1] — 2026-09-01
 
