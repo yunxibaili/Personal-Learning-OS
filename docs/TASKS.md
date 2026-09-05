@@ -2120,3 +2120,50 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 - Git source 适配器（任务书明确另立任务，禁 git CLI 依赖）。
 - 仅 frontmatter 变化不产生快照（去重边界，ADR-028 §4）。
 - 前端消费（版本面板/diff 视图）未排期。
+
+## [17] 项目路线重基线（Rebaseline）+ 治理收口 完成（2026-09-05）
+
+> 背景：09-04 纯后端化移除 `web/` `ui/` `shared/` 后，旧「前端阶段」路线（P1 UI 打磨 →
+> P2 完整验收 → Bright Baseline）失去代码对象，但 `PROJECT_STATE.md`（进度唯一权威）
+> **零命中纯后端化**，§0 仍写「前端阶段已开启」。所有者裁定：**先修项目阶段真相，
+> 再谈下一阶段**——否则前端一解冻就会出现旧路线与新路线并存。
+> 本轮为**纯治理任务**：零代码改动、零后端实现改动。
+
+### 做了什么
+
+- **A1 旧前端阶段正式终止**（非延期、不改名）：P1 UI 打磨 / P2 完整验收 / `[20]` Bright Baseline
+  → `CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE`；D3 时间分组 / D4 统计行不留待办；
+  `[19b]–[19m]` 标注为「已完成的前端产物，代码已随纯后端化移除，非当前可维护对象」。
+- **A2 `PROJECT_STATE.md` §0 政策改写**：前端阶段已开启 → **Backend-only Stable Phase /
+  后端稳定阶段**；明确前端代码当前不存在、前端消费未来可作为新任务重新解冻、
+  **不因 ADR-028 留前端遗留项而自动恢复前端**、ADR-028 后端核心保持封口。
+- **A3 新路线节点 `[21]`–`[26]`**：纯后端化 → ADR-028 三段（Revision 后端 / Restore+孤儿回收 /
+  文档治理封口）→ **Backend Stable Baseline（当前阶段）** → `[26]` 下一阶段由 Owner 明确解冻。
+  编号从 `[21]` 起（`[20]` 已被 Bright Baseline 占用，不机械照搬建议编号）。
+- `AGENTS.md`：当前开发政策指向改为后端稳定阶段，旧政策（后端优先/前端阶段/P8 收尾）降级为历史存档。
+- `ADR-028`：状态改「**已接受并封口**」，四项遗留明确为新任务，并写明**不构成前端解冻理由**。
+- **Commit B 事实校正**（分开提交）：`[11][12][13]` 已闭环 · `[10b][10c]` CANCELLED ·
+  `[14]` 完成裁定 · `[15]` 暂停 · §12 P2-1~P2-6「已消失（载体已移除）」 · §5 发布行
+  23 ADR → 28 ADR 且 T-EXPORT/Tauri/i18n 更正为 ✅ · 计数更正（23 APIRouter / 102 route / 82 path、
+  1020 → 1099 passed）。
+
+### 改动文件
+
+`docs/PROJECT_STATE.md`（§0 · §2 · §5 · §10.3 · §12）· `docs/TASKS.md`（队列 + 图例 + 本报告）·
+`AGENTS.md` §0 · `docs/adr/ADR-028-document-revisions.md`（状态）·
+`docs/backend/README.md`（索引计数）· `docs/backend/testing.md`（基线计数）
+
+### 测试了什么
+
+| 项 | 结果 |
+|---|---|
+| `pytest tests -q`（纯文档改动后的回归确认，2026-09-05 终检） | **1099 passed**，158.76s |
+| `pytest tests -q`（当日首轮盘点复跑） | 1099 passed，162.28s |
+| 文档一致性检查（过时计数/状态扫描） | `93 端点` `89 端点` `20 APIRouter` `1020 passed` 零残留 |
+| `git status` | 两个 commit 后工作区 clean |
+
+### 遗留 / 下一阶段（均需 Owner 明确裁定，不自动成为默认路线）
+
+- ① Frontend Consumer 解冻（须显式宣布，届时走「侦察 → 按现有后端 API 消费」）
+- ② release rc.3（须明确发布裁定，不因「55 commits 未发版」自动打 tag）
+- ADR-028 四项遗留（Git adapter / 前端消费 / frontmatter-only 语义 / 孤儿快照 GC）保持新任务状态
