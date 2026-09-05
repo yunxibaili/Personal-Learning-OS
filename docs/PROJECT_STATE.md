@@ -100,14 +100,14 @@ Backend Stable Baseline（已随 v0.1.0-rc.3 发布）
 
 1. **以真实代码为准**：文档 ≠ 代码时先核实再动；已实现的不重复实现，已废弃的不重新引入。
 2. **解除「前端任务不改后端」的人为限制**：允许按真实需要修改
-   Frontend / Shared Types / Router / Core / Migration / Tests / Documentation——
+   Router / Core / Migration / Tests / Documentation——
    **但跨层修改必须有真实原因，禁止借任务名义无依据扩权**。
-3. **端到端闭环优先于「少改文件」**：用户操作 → Frontend → API → Router → Core →
-   Data → Response → Shared Type → UI 反馈，任一层语义不匹配都应修复，
-   不允许 frontend workaround / 类型强转 / 隐式 fallback 留到以后。
+3. **端到端闭环优先于「少改文件」**：**调用方 / 客户端 → API → Core → Markdown / SQLite**，
+   任一层语义不匹配都应修复；不允许类型强转 / 隐式 fallback 留到以后。
+   （**当前稳定基线为 Backend-only**；未来 Frontend / 客户端架构尚未确定。）
 4. **契约一致性是硬要求**：endpoint / method / body / response shape / nullable /
    enum / ID 类型 / 时间格式 / 错误码 / 空数据行为必须三层一致
-   （Backend 实际返回 = Shared Type 声明 = Frontend 消费）。
+   （Backend 实际返回 = OpenAPI schema 契约；当前无 Frontend 消费方，亦无 `Shared Types` 层）。
 5. **规格冲突处理**：按裁决优先级（最新明确裁决 > 最新 ADR 修订 > 当前代码真实行为 >
    旧任务文档 > 旧设计草案）；无法判断时发 `[ARCHITECTURE WARNING]` 停下报告。
 6. **验收标准：以当前 Backend-only 架构为准。** 不能只验证自己改的文件——
@@ -219,19 +219,19 @@ Small and Maintainable Codebase。
                           └──────┬──────┘
                                  ▼
         ┌────────────────────────────────────────────────┐
-        │  Frontend   React 18 + TypeScript + Vite       │
-        │  Zustand(UI state) · React Flow(图渲染)         │
-        │  TipTap(编辑) · KaTeX(数学) · Cobe(星球)         │
-        │  笔记优先（裁决 A）：无平级 tab，主区=三栏笔记工作区│
-        │  浮层态：Graph / Universe(星系) / MindMap / Tutor /│
-        │          Review（顶栏「← 返回笔记」回去）          │
-        │  ★ §0 后端优先政策下：仅最小接线，不做视觉★      │
+        │  调用方 / 客户端（Client / Consumer）          │
+        │  ★ 当前稳定基线 = Backend-only：               │
+        │    不存在内置 Frontend implementation          │
+        │  未来客户端架构 undecided（需裁定 + 解冻）     │
+        │  历史 Frontend 结构见 §2.6 / §8                │
+        │    （CANCELLED · SUPERSEDED BY BACKEND-ONLY）  │
         └──────┬─────────────────────────────────────────┘
                │  HTTP  REST  /api/v1
                ▼
         ┌────────────────────────────────────────────────┐
         │  Backend API   FastAPI  (127.0.0.1:8000)        │
-        │  14 APIRouter / 47 端点 —— 只做参数校验与序列化  │
+        │  82 OpenAPI paths / 102 routes                 │
+        │  —— 只做参数校验与序列化                       │
         │  不含业务逻辑（分层铁律）                        │
         └──────┬─────────────────────────────────────────┘
                ▼
@@ -358,7 +358,8 @@ DeepSeek 端到端实测（B1b）+ Ollama qwen3-14b 本地实测（B10），均 
 
 ### 4.1 知识输入
 
-已实现：Note CRUD · Markdown vault 文件存储 · TipTap v3 + Markdown 序列化 · KaTeX 渲染 ·
+已实现：Note CRUD · Markdown vault 文件存储 · Markdown 序列化 ·
+~~TipTap v3 编辑器~~ / ~~KaTeX 前端渲染~~（已随 `3fe8d13` 移除，见 §2.6 / §8）·
 附件上传与相对 URL 引用 · FTS5 全文检索（`sanitize_fts_query` 防注入）· YAML frontmatter + tags ·
 `content_hash` 增量索引 · 原子写入（write → fsync → rename）· `[[wikilink]]` 三级解析 + 自动建桩 ·
 附件路径守卫 · Vault → SQLite 索引恢复（`POST /api/v1/admin/reindex`）
@@ -392,7 +393,8 @@ code_symbol/formula/person/resource）· 9 种 relation · `origin` 字段 ·
 反链 API（`GET /notes/{id}/backlinks`）· 级联清理 `cascade_drop_entity` ·
 上下文感知建议（`/knowledge/suggest`：FTS + concept LIKE + 图谱邻居）
 
-**MindMap**：React Flow 画布 · Map/Node/Edge CRUD（14 个 API 端点）·
+**MindMap**：Map/Node/Edge CRUD（14 个 API 端点）·
+~~React Flow 画布~~（历史前端实现，已随 `3fe8d13` 移除，见 §2.6 / §8）·
 Concept Binding（引用 concept，不改 mastery/event）· Export/Import（`.map.json`，ADR-021 v1，
 含 ID 重映射）· 旁车 `*.mindmap.json` 为结构真相（ADR-002）· ADR-019 边界冻结
 
@@ -450,7 +452,7 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 
 | 模块 | 已实现 | 未实现 |
 |---|---|---|
-| **输入知识** | ✅ Note CRUD · Markdown vault · TipTap+KaTeX · 附件 · FTS5+CJK bigram · wikilink · 原子写 · Vault Reindex（含增量 changed_paths）· **Vault 自动监听**（B16 watcher + /admin/watcher/*） | ❌ 批量导入 · 外部格式导入 · 笔记模板 |
+| **输入知识** | ✅ Note CRUD · Markdown vault（Backend / API 能力保留）· 附件 · FTS5+CJK bigram · wikilink · 原子写 · Vault Reindex（含增量 changed_paths）· **Vault 自动监听**（B16 watcher + /admin/watcher/*） | ❌ 批量导入 · 外部格式导入 · 笔记模板 · ~~TipTap+KaTeX 前端渲染~~（SUPERSEDED：当前无 Frontend implementation） |
 | **组织知识** | ✅ 多态 links（9 种 relation）· 反链 API · MindMap CRUD · Concept Binding · 导入导出 · **大纲反解析**（B18 build_outline + GET /mindmaps/{id}/outline） | ❌ AI 生成导图 |
 | **理解知识** | ✅ Universe（Galaxy 多星球系统）· Graph V2 · Concept CRUD + origin · Knowledge Radar（M3.5-A+B 学习状态真实数据）· **AI 概念提取**（B5 /concepts/extract）· **自动链接建议**（B4 link-suggestions） | — |
 | **薄弱检测** | ✅ 四维掌握度 · effective 加权 · Ebbinghaus 衰减 · learning_events · Weak Area API · **错题本 API**（B12：列表/改已解决/删/统计） | ❌ 错题本独立 UI（仅 Tutor 上下文透视中展示）· AI 薄弱诊断 |
