@@ -255,3 +255,47 @@ button.linkish {
 .review-history li { font-size: 0.85rem; padding: 0.15rem 0; }
 .review-history .ok { color: #15803d; margin-right: 0.4rem; }
 .review-history .bad { color: #b91c1c; margin-right: 0.4rem; }
+
+/* ── MVP-06 Tutor 上下文视图 ─────────────────────────────────── */
+
+.tutor-layout { display: flex; flex-direction: column; gap: 1.25rem; }
+.tutor-layout h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+.tutor-layout h3 { font-size: 0.85rem; margin: 0 0 0.25rem; color: #374151; }
+
+.tutor-form { display: flex; flex-direction: column; gap: 0.6rem; max-width: 26rem; }
+.tutor-form select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font: inherit;
+}
+.tutor-form > button {
+  align-self: flex-start;
+  padding: 0.25rem 1rem;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.tutor-form > button:disabled { color: #9a9a9a; cursor: default; }
+
+.tutor-notes-picker {
+  border: 1px solid #ececec;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+.tutor-notes-picker legend { font-size: 0.8rem; color: #6b7280; padding: 0 0.25rem; }
+.tutor-notes-picker label.disabled { color: #b0b0b0; }
+
+.tutor-context { display: flex; flex-direction: column; gap: 0.75rem; }
+.tutor-section {
+  border: 1px solid #ececec;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+.tutor-section ul { margin: 0; padding-left: 1.1rem; }

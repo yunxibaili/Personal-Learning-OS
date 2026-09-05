@@ -3,10 +3,11 @@ import NotesView, { type NoteOpenRequest } from "./features/notes/NotesView";
 import ConceptsView from "./features/concepts/ConceptsView";
 import MasteryView from "./features/mastery/MasteryView";
 import ReviewView from "./features/review/ReviewView";
+import TutorView from "./features/tutor/TutorView";
 
 // MVP 顶层工作区：笔记 / 概念 / 掌握度 / 复习 四个 Consumer 视图
 // （单页，无路由——ADR-029 §3.2）。
-type Tab = "notes" | "concepts" | "mastery" | "review";
+type Tab = "notes" | "concepts" | "mastery" | "review" | "tutor";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("notes");
@@ -48,11 +49,19 @@ export default function App() {
         >
           复习
         </button>
+        <button
+          type="button"
+          className={tab === "tutor" ? "active" : ""}
+          onClick={() => setTab("tutor")}
+        >
+          Tutor
+        </button>
       </nav>
       {tab === "notes" && <NotesView openNoteRequest={noteRequest} />}
       {tab === "concepts" && <ConceptsView onOpenNote={openNoteFromConcept} />}
       {tab === "mastery" && <MasteryView />}
       {tab === "review" && <ReviewView />}
+      {tab === "tutor" && <TutorView />}
     </main>
   );
 }
