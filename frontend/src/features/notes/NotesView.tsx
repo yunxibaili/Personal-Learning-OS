@@ -34,7 +34,12 @@ function errText(e: unknown): string {
   return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
 }
 
-export default function NotesView() {
+export interface NoteOpenRequest {
+  id: number;
+  seq: number;
+}
+
+export default function NotesView({ openNoteRequest }: { openNoteRequest?: NoteOpenRequest }) {
   const [notes, setNotes] = useState<NoteSummary[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [selected, setSelected] = useState<NoteDetail | null>(null);
@@ -81,6 +86,14 @@ export default function NotesView() {
   useEffect(() => {
     reloadList();
   }, [reloadList]);
+
+  // 跨视图打开请求（MVP-03：概念详情的关联笔记 → 切回 Notes 打开）
+  const openSeq = openNoteRequest?.seq;
+  const openId = openNoteRequest?.id;
+  useEffect(() => {
+    if (openSeq !== undefined && openId !== undefined) openNote(openId);
+    // eslint 由 oxlint 承担；依赖仅 seq（同一笔记可重复请求时 id 不变）
+  }, [openSeq, openId, openNote]);
 
   // CodeMirror 生命周期：编辑器宿主渲染后才创建视图（空 vault 时宿主不在 DOM，
   // 不能在挂载期用 parent=null 创建脱离文档的视图）；宿主卸载即销毁，重建时
