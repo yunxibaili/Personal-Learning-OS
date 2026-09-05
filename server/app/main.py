@@ -41,7 +41,7 @@ from .routers.mindmap import router as mindmap_router
 from .routers.memories import router as memories_router
 from .routers.mistakes import router as mistakes_router
 
-APP_VERSION = "0.1.0-dev"
+APP_VERSION = "0.1.0-rc.3"
 
 
 @asynccontextmanager
