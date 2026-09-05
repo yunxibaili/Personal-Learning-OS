@@ -8,12 +8,16 @@
 > ① `docs/adr/principles.md`　② `docs/DEPENDENCIES.md`
 > ③ `docs/security/network-boundary.md`　④ `docs/version-control/git-policy.md`
 
-> **⚠️ 项目形态（2026-09 纯后端化，现行有效）**：本仓库现已收敛为**纯后端**项目。
+> **⚠️ 项目形态（2026-09 纯后端化，现行有效）**：本仓库现为**纯后端**项目。
 > 前端（`web/` React/Vite/Tauri、`ui/` 设计原型、`shared/types/` 共享 TS 契约）及本地
-> UI 归档/实验目录（`_backup/` `_local/` `sandbox/`）已移除。下文涉及 React/Vite/Tauri/
-> npm/前端阶段的章节（§9 技术栈冻结表、§16 Frontend Rules、§12 四层中的 Frontend 等）均为
-> **历史约束或已移除内容的说明，权威后端信息以 `docs/backend/` 为准**。
+> UI 归档/实验目录（`_backup/` `_local/` `sandbox/`）已移除。权威后端信息以 `docs/backend/` 为准。
 > 权威后端档案：`docs/backend/README.md`（架构/技术栈/功能/数据模型/API/测试/运行态/历史）。
+>
+> **前端架构裁决（2026-09-05，ADR-029 Accepted）**：新前端 = Browser-first 的 Backend API
+> Consumer（`frontend/`，React 19 + Vite + TypeScript + CodeMirror 6 源码模式）。
+> **架构已定 ≠ 实现已授权**：`frontend/` 目录当前不存在，实现须按 ADR-029 §14.2 顺序
+> 逐项授权（文档对齐 → E1/E2 后端校验 → 脚手架 → MVP 六项）。§9 / §12 / §16 中
+> 前端相关条款已按 ADR-029 §10.3 更新。
 
 ## 0. 核心工程原则
 
@@ -229,11 +233,20 @@ AI 禁止自行：安装依赖 · 修改系统环境 · 创建成批辅助文件
 
 ## 9. 技术栈冻结表
 
-**当前生效**：React · TypeScript · Vite · Zustand · TipTap · React Flow · KaTeX ·
-Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git · Tauri(M6 起) ·
-dagre（Graph 布局）· 自研 Canvas 2D（Galaxy/星系）
-（~~marked~~ 从未安装，Markdown 走 tiptap-markdown；~~d3-force / cobe~~ 已于 v0.1.0-rc.1 移除——
-ADR-007 例外随之失效）
+**当前生效（2026-09-05 依 ADR-029 §3/§4/§5 更新）**：React 19 · TypeScript · Vite ·
+CodeMirror 6（Markdown 源码模式，ADR-029 §4）· openapi-typescript（types-only 契约
+生成，ADR-029 §5）· Python 3.12 · FastAPI · sqlite3(stdlib) + FTS5 · Markdown · Git
+（Zustand 为唯一允许的状态库，MVP 脚手架暂不引入、确需时才装——ADR-029 §3.2/§3.3；
+`frontend/` 目录待 ADR-029 §14.2 脚手架授权后创建，此前本表为架构裁决而非现行实现）
+
+**已解除冻结（2026-09-05，ADR-029 §3.3 / §4 / §11.3）**：~~TipTap~~（B-3 →
+`Superseded by F0 Editor Decision`，编辑器改 CodeMirror 6 源码模式）·
+~~React Flow / dagre / KaTeX / 自研 Canvas 2D~~（属 Mindmaps / Universe / Visual
+Engine，均在 MVP 外，届时按需另立决策，不预设引入；~~marked~~ 从未安装；
+~~d3-force / cobe~~ 已于 v0.1.0-rc.1 移除——ADR-007 例外随之失效）
+
+**壳延后（ADR-029 §2 / §12）**：Tauri 2 为唯一候选桌面壳，当前不实现、不安装；
+禁止 Electron。重裁触发条件见 ADR-029 §12.4，在此之前壳是关闭话题。
 
 **规划中（触发条件达成前禁止安装，清单见 REGISTRY）**：
 - M8 Mobile：React Native · Expo · expo-sqlite 及 RN 系全部包
@@ -255,9 +268,14 @@ ADR-007 例外随之失效）
 
 ### 开发政策（最高优先级）
 
-**后端优先（Backend-First，2026-08-28 裁定）**：后端 backlog 清零之前禁止新增
-任何前端任务；前端仅允许最小接线 / 阻断性修复 / 类型契约同步三类。
-权威表述：`docs/PROJECT_STATE.md` §0（含解冻条件）。`P8-FE-001` 无限期冻结。
+**后端优先（Backend-First，2026-08-28 裁定；2026-09-05 依 ADR-029 §10.3/§14.2 更新）**：
+后端 backlog 清零之前禁止新增任何前端任务。状态权威仍为 `docs/PROJECT_STATE.md` §0。
+**架构裁决与实现授权分离**：ADR-029 Accepted 只是架构裁决，不构成任何前端实现授权；
+实现按 ADR-029 §14.2 顺序逐项单独授权（文档对齐 → E1/E2 后端校验 → `frontend/`
+脚手架 → MVP 六项逐个实现）。旧「最小接线 / 阻断性修复 / 类型契约同步」三类
+针对已移除的 `web/`，随其断代失效。
+`P8-FE-001` 维持冻结——ADR Accepted 不是其解冻的充分条件，解冻须 Owner 在脚手架
+授权之后单独裁定。
 
 ### 入口与权威来源
 
@@ -301,7 +319,8 @@ ADR-007 例外随之失效）
 
 ## 12. 分层架构纪律（前后端分离，强制）
 
-四层职责固定：**Frontend**(web/) · **Backend**(routers/) · **Core**(server/core/) · **Data**(workspace/)。
+四层职责固定：**Frontend**(frontend/，ADR-029 §7.1；旧 `web/` 已断代移除) ·
+**Backend**(routers/) · **Core**(server/core/) · **Data**(workspace/)。
 唯一合法调用链：
 
 ```
@@ -311,7 +330,9 @@ Frontend → HTTP /api/v1 → Router(校验) → Core(业务) → 数据访问�
 - Frontend 禁止：直连 SQLite/文件系统、业务规则、AI 调用、图谱算法、持久化核心数据
 - Backend 禁止：UI 代码、控制页面逻辑、保存前端状态
 - Core 不 import FastAPI；LLM 请求只允许在 `core/ai/*`；图谱算法只在 core；同步协议只在 syncengine
-- API 全部版本化 `/api/v1/*`；响应形状以 `shared/types/*.ts` 为唯一契约，pytest 契约测试锁定
+- API 全部版本化 `/api/v1/*`；响应形状以后端 OpenAPI 为唯一契约，前端经
+  `openapi-typescript` 生成类型消费（ADR-029 §5 / §13）；`shared/types/` 已随旧前端
+  移除，禁止恢复。后端 pytest 契约测试继续锁定响应形状
 - 白名单/黑名单与模块隔离细则见 `docs/adr/separation.md`
 
 ### 写码前输出协议（强制）
@@ -387,7 +408,7 @@ commit hash 与 working tree 状态。
 | 事项 | 约定 |
 |---|---|
 | 后端 | Python 3.12 + FastAPI + sqlite3（venv + pip + requirements.txt） |
-| 前端 | React + TypeScript + Vite + Zustand + 单一 global.css |
+| 前端 | React 19 + TypeScript + Vite + CodeMirror 6（源码模式）+ 单一 global.css（ADR-013）——ADR-029 §3/§4；`frontend/` 尚未创建 |
 | 端口 | FastAPI 默认 :8000（绑 127.0.0.1），环境变量 `PORT` 可覆盖——与 UpMark 共存时用 `PORT=8100`；Vite :5173（proxy `/api/v1` → 后端） |
 | 测试 | pytest（server/tests），vitest（web）——以 core/契约/源码审计为主，UI 层用 renderToStaticMarkup 与源码接线测试（无 jsdom） |
 | 任务跟踪 | docs/TASKS.md（完成必须回填测试报告） |
@@ -452,7 +473,12 @@ docs/ai/
 
 ## 16. Frontend Generation Rules
 
-AI 生成 UI 必须遵守 ADR-013 Frontend Design System。
+**架构依据（2026-09-05 起，ADR-029 §10.3）**：新前端为 Backend API Consumer
+（`frontend/`，Browser-first，ADR-029 §1.2/§2）。本文规则在新前端实现期生效；
+实现授权与架构裁决分离（ADR-029 §14.2）。
+
+AI 生成 UI 必须遵守 ADR-013 Frontend Design System（ADR-029 §11.2：**保留为产品/设计
+原则，解除对旧实现 `web/src/...` 的绑定，不标 Superseded**）。
 详细规范见 `docs/adr/ADR-013-frontend-design-system.md`。
 视觉参考见归档的 `docs/archive/design/DESIGN.md`（前端设计规格，纯后端化后已冻结，不再维护）。
 

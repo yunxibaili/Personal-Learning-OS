@@ -115,14 +115,18 @@ Embedding/RAG 延后（触发：概念 >2000 或匹配质量不足）。
 
 ## 7. 技术栈确认
 
+> **2026-09-05 更新（ADR-029 Accepted）**：本节原为 2026-08-26 历史快照，前端相关行
+> 已按 ADR-029 §2（Browser-first）/ §3（React 19）/ §4（CodeMirror 6）对齐，旧值以
+> 「旧：」保留 provenance。Mobile 行按 ADR-029 §11.1：M8 维持暂停、不改 ADR-006 状态行。
+
 | 层 | 选型 | 备注 |
 |---|---|---|
-| Desktop | Tauri 2（M6） | sidecar: PyInstaller 打包 FastAPI |
-| Frontend | React 18 + TS + Vite + Zustand | 单 global.css；TipTap v3 线编辑 |
+| Desktop | Browser-first 本地 Web（壳延后） | 旧：Tauri 2（M6）sidecar: PyInstaller 打包 FastAPI。Tauri 2 降为唯一候选壳，当前不实现；禁 Electron；重裁条件见 ADR-029 §12.4 |
+| Frontend | React 19 + TS + Vite + CodeMirror 6（源码模式） | 旧：React 18 + TipTap v3（B-3 已 Superseded，ADR-029 §4.3）。契约 = 后端 OpenAPI + openapi-typescript 生成类型（ADR-029 §5）；目录 `frontend/`（§7）；MVP 六项冻结（§8） |
 | Backend | Python 3.12 + FastAPI | 仅绑 127.0.0.1；PORT 可覆盖 |
-| Mobile | React Native（Expo，Android 先行） | M8；iOS 待 macOS 条件 |
+| Mobile | React Native（Expo，Android 先行） | M8；iOS 待 macOS 条件（ADR-029 §11.1：「M8 = Tauri 2 Mobile」前提失效，重启 Mobile 时须重裁 ADR-006 相关节） |
 | Database | SQLite(stdlib sqlite3)+FTS5 | 无 ORM；图查询递归 CTE |
-| 图渲染 | @xyflow/react | 仅渲染；d3-force 布局在 M3b |
+| 图渲染 | 不预设引入 | 旧：@xyflow/react 仅渲染；d3-force 布局在 M3b。ADR-029 §3.3：React Flow / dagre 随旧前端断代解除冻结，可视化能力进入 MVP 外议题，届时按需另立决策 |
 
 ---
 
