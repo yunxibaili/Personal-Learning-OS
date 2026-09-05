@@ -91,13 +91,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   其余文档只引用不自维护；本轮对齐重基线后的实际状态，并按 AGENTS §11 回填 `docs/TASKS.md` 完成报告
 
 ### Gate
-- pytest **1099 passed**（约 156s）
-- OpenAPI：**102 route / 82 path**
-- `GET /api/v1/health` → 200，响应 `version` 与 `APP_VERSION` 一致
+- pytest **1099 passed**（工作 venv 165.26s / 干净重建 venv 163.82s，双环境均通过）
+- OpenAPI：**102 route / 82 path**（递归展开 `_IncludedRouter` 后的真实值；
+  fastapi 0.141.1 顶层 `app.routes` 仅 28，属惰性容器表象，勿引为口径）
+- `GET /api/v1/health` → 200，`version` = `0.1.0-rc.3` 与 `APP_VERSION` 一致
 - 依赖审计：runtime 3（fastapi / uvicorn / python-multipart）+ dev 2（pytest / httpx），
   零未使用、零缺失；PyInstaller 6.22.2 登记为构建期工具
 - 孤儿模块 AST 扫描：0（6 个 `core/tracer/examples/*` 为按设计动态加载，非死代码）
-- 隔离 workspace 冷启动 OK；真实 vault 未被触碰
+- **干净环境重建**：`python -m venv` + 仅 `requirements.txt` / `requirements-dev.txt`
+  全新安装（22 个包），全量 pytest 1099 passed
+- **sidecar 干净构建**：`PyInstaller plos_backend.spec --noconfirm` →
+  `dist/plos-backend.exe` 15,566,443 bytes；隔离 workspace 启动 → `/api/v1/health` 200 →
+  `POST /api/v1/notes` 201 → `GET /api/v1/notes` 200 → 进程树终止后端口释放；产物已清理
+- 全程隔离 workspace 冷启动；真实 vault 未被触碰
 
 ## [v0.1.0-rc.2] — 2026-09-02
 
