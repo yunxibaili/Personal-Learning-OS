@@ -74,6 +74,10 @@
 - `GET /mastery` `GET /mastery/{concept_id}` `GET /mastery/weak/list`
 - `GET /review/today` `GET /review/stats` `GET /review/history`
 - `POST /review/{concept_id}/answer`
+- 输入校验（2026-09-05 E1/E2）：`POST /review/{id}/answer` 的 `quality` 限 0–5 整数
+  （bool 拒绝）；`POST /events` 的 `event_type` 限冻结枚举
+  `answer_correct|answer_wrong|explain|visualize|review|code_run`——
+  非法值一律 `400 {"error":{"code":"invalid_body",...}}`，不再静默 clamp / silent no-op
 
 ### study（`routers/study.py`）
 - `GET /study/sessions` `GET /study/sessions/{session_id}`

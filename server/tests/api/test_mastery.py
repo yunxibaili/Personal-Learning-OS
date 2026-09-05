@@ -247,3 +247,64 @@ def test_review_priority_wrong_boost(client: TestClient) -> None:
     # c1 (wrong) 应排在 c2 (correct) 前面
     if c1 in ids and c2 in ids:
         assert ids.index(c1) < ids.index(c2)
+
+
+# ── E1/E2 输入校验（2026-09-05，独立授权）───────────────────────────
+
+def test_e1_quality_boundary_accepts_0_and_5(client: TestClient) -> None:
+    """quality 合法边界 0 与 5：行为与既有合法输入一致（200 + 排期生效）。"""
+    cid = _create_concept(client, "QualBound")
+    for q in (0, 5):
+        r = client.post(f"/api/v1/review/{cid}/answer", json={"quality": q})
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["mastery"]["concept_id"] == cid
+        assert body["interval"] >= 1
+
+
+def test_e1_quality_rejects_out_of_range(client: TestClient) -> None:
+    """quality <0 / >5：400 invalid_body（统一错误形状），不再静默 clamp。"""
+    cid = _create_concept(client, "QualRange")
+    for q in (-1, 6, 99):
+        r = client.post(f"/api/v1/review/{cid}/answer", json={"quality": q})
+        assert r.status_code == 400, r.text
+        assert r.json()["error"]["code"] == "invalid_body"
+
+
+def test_e1_quality_rejects_invalid_types(client: TestClient) -> None:
+    """quality 非法类型（非整数值）：400 invalid_body。"""
+    cid = _create_concept(client, "QualType")
+    for q in ("abc", 3.5, None, True):
+        r = client.post(f"/api/v1/review/{cid}/answer", json={"quality": q})
+        assert r.status_code == 400, f"quality={q!r} should be rejected, got {r.status_code}"
+        assert r.json()["error"]["code"] == "invalid_body"
+
+
+def test_e2_valid_event_types_match_documented_enum() -> None:
+    """合法 event_type 事实集合 = DATA_MODEL.md「event_type 枚举（冻结）」6 值。"""
+    assert M.VALID_EVENT_TYPES == {
+        "answer_correct", "answer_wrong", "explain",
+        "visualize", "review", "code_run",
+    }
+
+
+def test_e2_event_type_accepts_documented_enum(client: TestClient) -> None:
+    """六个合法 event_type 全部仍 201，原有维度增量行为不变。"""
+    cid = _create_concept(client, "EvTypes")
+    for et in ("answer_correct", "answer_wrong", "explain",
+               "visualize", "review", "code_run"):
+        r = client.post("/api/v1/events", json={"concept_id": cid, "event_type": et})
+        assert r.status_code == 201, r.text
+
+
+def test_e2_unknown_event_type_rejected_not_silent_noop(client: TestClient) -> None:
+    """未知 event_type：400 invalid_body，不再 201 + silent no-op。"""
+    cid = _create_concept(client, "EvUnknown")
+    before = client.get(f"/api/v1/mastery/{cid}").json()["mastery"]
+    r = client.post("/api/v1/events", json={
+        "concept_id": cid, "event_type": "totally_bogus"})
+    assert r.status_code == 400, r.text
+    assert r.json()["error"]["code"] == "invalid_body"
+    # 拒绝在入口处发生：维度与事件日志均无变化
+    after = client.get(f"/api/v1/mastery/{cid}").json()["mastery"]
+    assert after["dimensions"] == before["dimensions"]

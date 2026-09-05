@@ -113,6 +113,12 @@ mastery         = 状态缓存
 
 约束：增量后 clamp 到 [0.0, 1.0]。
 
+> 2026-09-05（E1/E2）：`POST /api/v1/events` 输入层按本枚举校验 `event_type`
+> （`core.mastery.VALID_EVENT_TYPES` 与本表同源），非法值 → `400 invalid_body`，
+> 不再 201 + silent no-op；枚举本身与事件处理语义不变。
+> `POST /review/{id}/answer` 的 `quality` 输入层限 0–5 整数（bool 拒绝），
+> SM-2 内部 clamp 行为不变。
+
 **source 枚举**（冻结）：
 
 | source | 说明 |

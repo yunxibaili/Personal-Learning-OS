@@ -5,7 +5,7 @@ import json
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from ..core import mastery as M
 from ..core.mastery import get_effective_now
@@ -22,14 +22,35 @@ def _err(status: int, code: str, message: str) -> JSONResponse:
 
 class EventCreate(BaseModel):
     concept_id: int
+    # E2（2026-09-05）：枚举校验——非法值 400 invalid_body，不再 201 + silent no-op。
+    # 合法集合 = core.mastery.VALID_EVENT_TYPES（与 DATA_MODEL.md 冻结枚举同源）。
     event_type: str
     dimension: str | None = None
     weight: float = 1.0
     source: str = "manual"
 
+    @field_validator("event_type")
+    @classmethod
+    def _event_type_allowed(cls, v: str) -> str:
+        if v not in M.VALID_EVENT_TYPES:
+            raise ValueError(
+                f"unknown event_type {v!r}; "
+                f"allowed: {sorted(M.VALID_EVENT_TYPES)}")
+        return v
+
 
 class AnswerSubmit(BaseModel):
-    quality: int  # 0-5
+    # E1（2026-09-05）：SM-2 quality 语义 0-5；越界 400 invalid_body，
+    # 不再落入 sm2_schedule 的静默 clamp。
+    quality: int = Field(ge=0, le=5)
+
+    @field_validator("quality", mode="before")
+    @classmethod
+    def _reject_bool(cls, v: object) -> object:
+        # pydantic lax 会把 True/False 强转为 1/0——quality 是布尔在语义上非法
+        if isinstance(v, bool):
+            raise ValueError("quality must be an integer, not a boolean")
+        return v
 
 
 # ── 掌握度 ──────────────────────────────────────────────────────────

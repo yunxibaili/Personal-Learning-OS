@@ -393,6 +393,12 @@ _REPLAY_INCREMENTS = {
     "code_run": 0.08,
 }
 
+# 合法 event_type 事实集合（E2 输入校验，2026-09-05）。
+# 来源 = _REPLAY_INCREMENTS 的键，与 DATA_MODEL.md「event_type 枚举（冻结）」
+# 及 TECH_DESIGN §5.2 同源；仅约束 API 输入层（routers/mastery.py），
+# 不改变事件处理语义。
+VALID_EVENT_TYPES = frozenset(_REPLAY_INCREMENTS)
+
 
 def _replay_eventlog_files(conn, eventlog_dir: Path, stats: dict) -> None:
     """回放 eventlogs/*.jsonl → learning_events + 维度增量。
