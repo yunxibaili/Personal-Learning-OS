@@ -706,7 +706,7 @@ UI 状态曾由 Zustand store 持有（`stores/ui.ts` 只存 `activeView` 等 UI
 
 | 闭环 | 链路 | 状态 |
 |---|---|---|
-| **输入** | 编辑器 → Markdown vault → SQLite 索引 + FTS | ✅ 已通 |
+| **输入** | `PATCH /notes/{id}`（原子写）→ Markdown vault → SQLite 索引 + FTS | ✅ 已通 |
 | **组织** | wikilink → links 表 → 反链 / MindMap 绑定 | ✅ 已通 |
 | **理解** | 概念 → 图谱 API（`GET /api/v1/graph` / `GET /api/v1/universe` 读模型） | ✅ 已通（**Backend capability**）· ~~（Graph/Universe/Planet）可视化~~ **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8） |
 | **复习** | SM-2 队列 → 答题 → mastery 更新 → 衰减 → 重排期 | ✅ 已通 |
