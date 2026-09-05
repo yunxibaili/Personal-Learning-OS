@@ -1,0 +1,26 @@
+/* 全局样式（ADR-013 原则：Minimal Scientific Workspace；禁 gradient/毛玻璃/装饰性效果） */
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2328;
+  background: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+h1 { font-size: 1.25rem; }
+
+/* CodeMirror 编辑器边框（subtle border，无装饰） */
+.cm-editor { border: 1px solid #d0d7de; border-radius: 4px; }
+.cm-editor.cm-focused { outline: none; border-color: #ff6b35; }
