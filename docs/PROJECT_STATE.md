@@ -156,7 +156,7 @@ UI 不承担核心业务逻辑/图计算/SM-2/同步核心 · 无理由不新增
 | 项 | 值 |
 |---|---|
 | 产品名 | **Open Learning OS**（中文：个人学习操作系统） |
-| 前端包名 | `plos-web`（`web/package.json`，version `0.1.0-rc.1`） |
+| 前端包名 | —（**Backend-only**：当前无前端包）· 历史 `plos-web`（`web/package.json`）已随 `3fe8d13` 纯后端化移除 |
 | 许可证 | Apache-2.0（`LICENSE` 已入库） |
 | 已发布 | **tag `v0.1.0-rc.3`（2026-09-05，指向 `27c27b0`，tag object `a7d6a829`，已推送 `origin`）** · 历史：tag `v0.1.0-rc.2`（2026-09-02，指向 `f011434`）· tag `v0.1.0-rc.1`（2026-09-01，指向 `13fa1bc`） |
 
@@ -292,7 +292,14 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 - Layer 2 本地重建：`concepts` / `links` / `concept_mastery` / `review_queue`
 - Layer 3 永不同步：`settings` / API keys / SQLite
 
-### 2.6 前端
+### 2.6 前端（CANCELLED · SUPERSEDED BY BACKEND-ONLY）
+
+> **本节保留此前 Frontend 阶段的设计 / 规格 provenance，不属于当前系统架构。**
+> `web/`、`ui/` 及 React / Vite / Zustand 实现与前端代码规模已随 `3fe8d13` 纯后端化移除。
+> 未来 Frontend Consumer 若经 Owner 显式解冻，本节可作为历史输入重新评估——
+> **「规格还在」≠「前端还存在」**。
+> 其中「无 tabbar · 笔记优先三栏 240 / 680 / 320」属**未来 UI 的历史决策**，
+> 不迁移进当前 Backend-only 章节，也非当前系统事实。
 
 | 维度 | 实现 |
 |---|---|
@@ -301,16 +308,18 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 | 可视化 | 三套独立管线（ADR-023 边界冻结）：**Universe/星系**（自研 Canvas 2D，`GalaxyCanvas.tsx`，主笔记=星球/副笔记=卫星）· **Graph**（React Flow + dagre 层级）· **MindMap**（React Flow）。~~d3-force / Cobe~~ 已于 v0.1.0-rc.1 移除（`dd4f40c`/`13fa1bc`） |
 | UI 架构 | 单一 `global.css`（无 CSS 框架、无 UI 组件库、无图标库）；**无 tabbar**——笔记优先三栏 + 浮层视图（裁决 A，`008ea4e`） |
 | 编辑器 | TipTap v3 + KaTeX + tiptap-markdown |
-| 样式策略 | 手写 CSS 变量（`ui/tokens.css` 为权威源，`web/src/styles/tokens.css` 为镜像），ADR-013 前端设计系统冻结 |
+| 样式策略 | 手写 CSS 变量（`ui/tokens.css` 为权威源），ADR-013 前端设计系统冻结 |
 | 代码规模 | TS/TSX ≈ 6,168 行（2026-09-02 实测，非测试 5,275 + 测试 893） |
 
 ---
 
 ## §3 Technology Stack
 
-**Frontend**：React 18.3 · TypeScript 5.9 · Vite 5.4 · Zustand 5 · @xyflow/react 12.11 ·
-dagre 0.8.5（Graph 布局）· TipTap 3.30 + tiptap-markdown + @aarkue/tiptap-math-extension ·
-KaTeX 0.16 · Tauri 2.x（桌面壳，M6）。
+**Frontend**：**CANCELLED · SUPERSEDED BY BACKEND-ONLY** —— **当前不存在受支持的 Frontend
+implementation；未来 Frontend 架构未定（undecided）**，需新的架构裁定与 Owner 显式解冻。
+历史技术栈（React 18.3 · TypeScript 5.9 · Vite 5.4 · Zustand 5 · @xyflow/react 12.11 ·
+dagre 0.8.5 · TipTap 3.30 + tiptap-markdown + @aarkue/tiptap-math-extension · KaTeX 0.16 ·
+Tauri 2.x）已随 `3fe8d13` 纯后端化移除，仅作历史留痕。
 ~~d3-force 3.0.0~~（已于 v0.1.0-rc.1 移除——唯一消费者 P8-001B Universe V2 已删 `dd4f40c`，
 现 Universe/星系 = 自研 Canvas 2D）· ~~cobe 0.6.5~~（同批移除）· ~~marked~~（从未安装；
 Markdown 序列化由 tiptap-markdown 的传递依赖 markdown-it 承担）
@@ -542,9 +551,12 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 
 ---
 
-## §8 Frontend Structure（§0 政策下仅供接线参考）
+## §8 Frontend Structure（CANCELLED · SUPERSEDED BY BACKEND-ONLY · 历史 Frontend 接线参考）
 
-### 8.1 View 清单（`web/src/App.tsx` · **2026-08-31 按裁决 A 更新为笔记优先**）
+> 本节整体为**历史 Frontend 接线参考**，保留 provenance，**不属于当前系统架构**。
+> §8.1 完整保留；§8.2 仅保留通用架构原则，失效的前端实现路径单独标记。
+
+### 8.1 View 清单（`web/src/App.tsx` · **2026-08-31 按裁决 A 更新为笔记优先**）— **CANCELLED · SUPERSEDED BY BACKEND-ONLY**
 
 **主界面（默认）**：笔记工作区 = 三栏，列表 240 + 编辑器 680 + 右栏 320。
 **无平级 tab、无独立首页/Dashboard**（裁决 A）。
@@ -570,8 +582,12 @@ App 无 hash 路由分发），并非「DEV 生效」——该文件当前为无
 
 ### 8.2 分层铁律
 
-UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/layout.ts`、`lib/universe/layout.ts`）。
-业务数据一律来自 API，不进 Zustand store（`stores/ui.ts` 只存 `activeView` 等 UI 状态）。
+**原则（仍适用）**：UI 组件内禁止图计算；业务数据一律来自 API，不由 UI 层持有业务状态。
+
+**历史实现引用（CANCELLED · SUPERSEDED BY BACKEND-ONLY · 随 `3fe8d13` 移除）**：
+布局引擎曾为独立纯函数模块（`lib/graph/layout.ts`、`lib/universe/layout.ts`）；
+UI 状态曾由 Zustand store 持有（`stores/ui.ts` 只存 `activeView` 等 UI 状态）。
+上述前端实现路径当前不存在，不作为现行实现描述。
 
 ---
 
@@ -635,25 +651,31 @@ UI 组件内禁止图计算；布局引擎为独立纯函数模块（`lib/graph/
 
 ## §10 Verification & Scale
 
-### 10.1 验证状态（最近全量 Gate：v0.1.0-rc.1，2026-09-01；前端复测 2026-09-02）
+### 10.1 验证状态（最近全量 Gate：**v0.1.0-rc.3** · 2026-09-05 · Backend-only）
 
 | 命令 | 结果 |
 |---|---|
-| `pytest -q` | **873 passed**（v0.1.0-rc.1 Gate 实测，2026-09-01；⚠️ 本机 venv 未装 dev 依赖，复跑先 `pip install -r requirements-dev.txt`。Windows 绕 safe-delete 守卫：`CODEBUDDY_SAFE_DELETE_ENABLED=0`，见 `docs/TESTING.md`） |
-| `npx vitest run` | **87 passed（6 文件）**（2026-09-02 实测；v0.1.0-rc.1 Gate 时为 36/4，组件接线测试 +51 后增长） |
-| `tsc --noEmit` | **PASS**（2026-09-02 复测） |
-| `vite build` | **PASS**（2026-09-02 复测：707 modules / 4.12s / 10 chunk，主包 179kB；TiptapEditor chunk 807KB 为已知警告） |
+| `pytest -q` | **1099 passed**（v0.1.0-rc.3 Gate 实测，2026-09-05；工作 venv 165.26s / 干净重建 venv 163.82s，**双环境均通过**。⚠️ 本机 venv 未装 dev 依赖时先 `pip install -r requirements-dev.txt`。Windows 绕 safe-delete 守卫：`CODEBUDDY_SAFE_DELETE_ENABLED=0`，见 `docs/TESTING.md`） |
+| OpenAPI 路由计数 | **102 routes / 82 paths**（递归展开 fastapi 0.141.1 `_IncludedRouter` 后的真实值；顶层 `app.routes` 仅 28，属惰性容器表象，勿引为口径） |
+| `/api/v1/health` | **200** · version `0.1.0-rc.3` |
+| 干净环境重建 | **PASS**（`.workbuddy/tmp/` 新建 venv，仅按 `requirements.txt` + `requirements-dev.txt` 装 22 包） |
+| PyInstaller sidecar | **PASS**（clean build → `dist/plos-backend.exe` 15,566,443 B；`WORKSPACE_DIR` 临时目录隔离启动，真实 vault 零触碰；产物已清理） |
 
-> 历史登记值（815/826/836/853/865/873）为各阶段 Gate 快照，全量数字以 CHANGELOG 对应版本为准。
+> **前端门禁（`npx vitest run` / `tsc --noEmit` / `vite build`）已随 `3fe8d13` 纯后端化整体失效并移除**，
+> 不再是本项目 gate。历史值：vitest **87 passed**（2026-09-02，6 文件）· `tsc --noEmit` PASS ·
+> `vite build` PASS（707 modules / 4.12s / 10 chunk）。
+> 历史登记值（815/826/836/853/865/873/**1099**）为各阶段 Gate 快照，全量数字以 CHANGELOG 对应版本为准。
 > **计数类冲突已在 2026-09-02 收口清理**：本文此后是唯一登记处，其他文档只引用。
 
 > Windows 环境注意：跑 pytest 需绕过 safe-delete 守卫——
 > `cd server && CODEBUDDY_SAFE_DELETE_ENABLED=0 ./.venv/Scripts/python.exe -m pytest -q`
-> 前端构建需绕过 `web/dist` 清空守卫——`npx vite build --outDir dist-verify`
 > （2026-09-02 实测：环境删除守卫曾整体故障，复用旧 outDir 也会触发 bulk guard；
 > 遇 `[SAFE_DELETE_FAIL_CLOSED]` 时改用**全新 outDir**。）
 
-### 10.2 代码规模（2026-09-02 实测）
+### 10.2 代码规模（DATED SNAPSHOT · 2026-09-02）
+
+> ⚠️ **以下为 2026-09-02 历史快照，不代表当前 Backend Stable Baseline 的代码规模或 Git 状态。**
+> 纯后端化（`3fe8d13`，2026-09-04）后各项均已变动；**当前值以 §10.1 与 CHANGELOG 为准**。
 
 | 项 | 数值 |
 |---|---|
