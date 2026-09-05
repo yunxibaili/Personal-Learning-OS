@@ -37,11 +37,13 @@
 | 前端阶段（2026-08-30 起，含 P1 UI 打磨 · Bright Baseline） | ⛔ **已终止**——**不是延期**，随前端代码面删除而终止（`CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE`） |
 | ADR-028 后端核心 | 🔒 **已封口**（09-04 裁定）。其「前端 revision/history/diff UI」遗留项属**新任务**，**不得据此恢复前端** |
 | 下一阶段 | **由 Owner 明确解冻**。默认路线 = 后端稳定基线，**不得被隐式解释为前端** |
+| **发布状态** | ✅ **`v0.1.0-rc.3` RELEASED**（2026-09-05，Owner 授权）· release commit `27c27b0` · annotated tag 已推送 `origin` · 三方核验 PASS（tag peel / `origin/main` / working tree）。**该 tag 为不可移动的稳定锚点** |
 
 **前端消费的未来路径**（需 Owner 明确宣布，任何文档不得设自动触发条件）：
 
 ```text
-Backend Stable Baseline → Owner 宣布 Frontend Consumer 解冻 → 前端侦察 → 按现有后端 API 消费
+Backend Stable Baseline（已随 v0.1.0-rc.3 发布）
+  → Owner 宣布 Frontend Consumer 解冻 → 前端侦察 → 按现有后端 API 消费
 ```
 
 即：后端 API 是**被消费的对象**，不是前端解冻的理由；ADR-028 后端核心在前端解冻后仍保持封口。
@@ -156,7 +158,7 @@ UI 不承担核心业务逻辑/图计算/SM-2/同步核心 · 无理由不新增
 | 产品名 | **Open Learning OS**（中文：个人学习操作系统） |
 | 前端包名 | `plos-web`（`web/package.json`，version `0.1.0-rc.1`） |
 | 许可证 | Apache-2.0（`LICENSE` 已入库） |
-| 已发布 | tag `v0.1.0-rc.1`（2026-09-01，指向 `13fa1bc`） |
+| 已发布 | **tag `v0.1.0-rc.3`（2026-09-05，指向 `27c27b0`，tag object `a7d6a829`，已推送 `origin`）** · 历史：tag `v0.1.0-rc.2`（2026-09-02，指向 `f011434`）· tag `v0.1.0-rc.1`（2026-09-01，指向 `13fa1bc`） |
 
 ### 1.2 一句话定位
 
@@ -441,7 +443,7 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 > Vault 监听/用户记忆」均标注未实现，与 B12/B13/B17/B18/B2-B/B5/B16/B28
 > 实际交付不符，已更正——**每一项都有对应 router/core 文件为证**。
 | **同步** | ✅ Core · Discovery · Transport · Apply · Conflict UI · E2E Demo · Release Audit | ❌ 移动设备同步 · 自动定时同步 |
-| **发布** | ✅ 本地双端运行 · migration runner · **28 ADR**（ADR-001…028）· **数据全量导出 T-EXPORT**（`GET /api/v1/export`，2026-08-29）· **Tauri 打包 M6**（MSI/NSIS；纯后端化后保留后端 sidecar 打包能力，UI 壳已移除）· **i18n**（2026-09-02 用户可见英文清零） | ❌ Docker · ❌ 发版 tag（距 `v0.1.0-rc.2` 未打新 tag——**发版需 Owner 明确裁定，不自动进行**） |
+| **发布** | ✅ 本地双端运行 · migration runner · **28 ADR**（ADR-001…028）· **数据全量导出 T-EXPORT**（`GET /api/v1/export`，2026-08-29）· **Tauri 打包 M6**（MSI/NSIS；纯后端化后保留后端 sidecar 打包能力，UI 壳已移除）· **i18n**（2026-09-02 用户可见英文清零） · **发版 tag `v0.1.0-rc.3`**（2026-09-05 Owner 授权发布，指向 `27c27b0`，annotated tag 已推送 `origin`，三方核验 PASS） | ❌ Docker |
 
 > 本行 2026-09-05 事实校正：原「23 ADR」「❌ T-EXPORT / Tauri / i18n」与代码及 §9 backlog
 > 不符（B11 已实现、M6 已完成、ADR 已至 028、i18n 已闭环），已按实测更正。
@@ -829,12 +831,21 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      api/data-model/ADR_INDEX/architecture/PROJECT_STATE/TASKS 登记 + 完成报告回填。
      **ADR-028 后端核心封口**；遗留四项（Git adapter / 前端消费 / frontmatter-only 语义 /
      孤儿快照 GC）均为**新任务**，不在封口上下文扩权。
-[25] ▶ **Backend Stable Baseline / 后端稳定基线——当前阶段（2026-09-05 起）**：
-     目标 = 保持后端能力稳定、文档与代码一致、测试基线不回退（pytest **1099 passed**）。
-     范围：**只做治理与一致性**，不新增后端能力、不恢复前端、不打 tag。
+[25] ✅ **Backend Stable Baseline / 后端稳定基线——RELEASED（2026-09-05）**：
+     **已随 `v0.1.0-rc.3` 发布并封存为稳定锚点。**
+     - release commit = `27c27b02bd22bd9b08701d0b44a11d726329b323`（`27c27b0`）
+     - annotated tag = `v0.1.0-rc.3`，tag object `a7d6a8293d54205c166509c1bb46ac3ecd137bf3`，
+       本地/远端一致，已推送 `origin`（fast-forward，无 force push）
+     - 三方核验 PASS：tag peel → `27c27b0` ✅ · `origin/main` → `27c27b0` ✅ · working tree clean ✅
+     - Gate：pytest **1099 passed**（工作 venv 165.26s / 干净重建 venv 163.82s 双环境）·
+       OpenAPI **82 paths / 102 routes** · `/api/v1/health` 200 · version `0.1.0-rc.3` ·
+       干净环境重建（22 包）通过 · PyInstaller clean build + 隔离运行通过 · 产物已清理
+     - **该 tag 为不可移动的稳定锚点**：后续任何变更（含治理登记、P2 工程清理）
+       均另立 commit，不移动 tag、不改 `APP_VERSION`、不回改 CHANGELOG。
 [26] ⏸ **下一阶段由 Owner 明确解冻**：候选方向 = ① Frontend Consumer（需显式宣布解冻）
-     ② release rc.3（需明确发布裁定）。
-     **二者均不得因「55 commits 未发版」或「ADR-028 留有前端遗留项」自动成为默认路线。**
+     ② 后续工程清理（5 项 P2 观察项，见 §12）。
+     ~~② release rc.3（需明确发布裁定）~~ —— 已于 2026-09-05 经 Owner 授权完成，不再是候选。
+     **候选方向均不得因「55 commits 未发版」或「ADR-028 留有前端遗留项」自动成为默认路线。**
 ```
 
 ### 已完成的近期里程碑（存档）

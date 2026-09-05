@@ -60,6 +60,14 @@
      Bright Baseline [20] 全部 CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE；
      D3 时间分组 / D4 统计行不留待办。PROJECT_STATE §0 政策改「后端稳定阶段」；
      新路线 [21]-[26] 登记。**下一阶段须 Owner 明确解冻，不得隐式解释为前端。**
+[18] [x] v0.1.0-rc.3 Release + Release Registration（2026-09-05 Owner 授权完成，报告见下文）
+     Release Readiness → B1 CHANGELOG 归档 → B2 依赖审计更正 →
+     APP_VERSION 0.1.0-dev → 0.1.0-rc.3 → D2 干净环境重建（22 包）→
+     D3 PyInstaller clean build + 隔离运行 → 双环境全量回归（1099 passed×2）→
+     三方核验 → **annotated tag `v0.1.0-rc.3` @ `27c27b0` 已创建并推送 origin**。
+     release 边界：不夹带 P2 修复、不重开 ADR-028、不解冻 Frontend Consumer、
+     不改 CHANGELOG/代码/测试。**tag 为不可移动的稳定锚点。**
+     本条为事后治理登记（Release Registration），不修改 APP_VERSION 与 CHANGELOG。
 ```
 
 <details>
@@ -2166,4 +2174,61 @@ P1-5-A 设置 UI（LLM Provider 配置页）落地后，本任务完成「配置
 
 - ① Frontend Consumer 解冻（须显式宣布，届时走「侦察 → 按现有后端 API 消费」）
 - ② release rc.3（须明确发布裁定，不因「55 commits 未发版」自动打 tag）
+  → **已于 2026-09-05 经 Owner 授权完成，见 `[18]`。**
 - ADR-028 四项遗留（Git adapter / 前端消费 / frontmatter-only 语义 / 孤儿快照 GC）保持新任务状态
+
+---
+
+## [18] v0.1.0-rc.3 Release + Release Registration 完成（2026-09-05）
+
+> 背景：`[17]` 重基线后项目处于 Backend Stable Baseline。Owner 裁定**先发版收口，
+> 再谈 Frontend Consumer 解冻**；经 Release Candidate Readiness Check（只读）确认 2 项阻塞
+> （CHANGELOG 未归档、依赖审计记录失效）后，Owner 授权按
+> `B1 → B2 → APP_VERSION → D2 → D3 → 回归 → 核验 → STOP` 执行，随后单独授权 tag + push。
+> 本条为**事后治理登记（Release Registration）**：不修改 `APP_VERSION`、CHANGELOG、
+> 代码、测试，也不移动 tag。
+
+### 执行序列（全部实测）
+
+| 步骤 | 结果 |
+|---|---|
+| B1 CHANGELOG 重写/归档 | ✅ `020e2b9`：`[Unreleased]` → `[v0.1.0-rc.3]`；删失效前端条目；补 `chore(pure-backend)` Removed；**补记历史遗漏的 `[v0.1.0-rc.2]`** |
+| B2 依赖审计更正 | ✅ `4b1bb1b`：运行时 11 项 → **3 项**；AST 实测证据（155 个 `.py`） |
+| `APP_VERSION` → `0.1.0-rc.3` | ✅ `66843aa`：`server/app/main.py:44` 单行 |
+| D2 干净环境重建 | ✅ 隔离目录新建 venv（Python 3.12.10），仅按 requirements 装 **22 包** |
+| D3 PyInstaller clean build | ✅ `plos-backend.exe` **15,566,443 B**；隔离 workspace → health 200 → POST/GET `/notes` 201/200 → 进程树终止后端口释放；产物已清理 |
+| 全量回归 | ✅ 工作 venv **1099 passed / 165.26s**；干净 venv **1099 passed / 163.82s** |
+| 最终核验 | ✅ 82 paths / 102 routes / health `0.1.0-rc.3` |
+| PROJECT_STATE 事故复查 | ✅ 979 行 · git clean · 2 处重基线断言在位 |
+| Release（tag + push） | ✅ 见下 |
+
+### Release 锚点（三方核验 PASS）
+
+```text
+v0.1.0-rc.3
+→ 27c27b02bd22bd9b08701d0b44a11d726329b323   (release commit)
+→ tag object a7d6a8293d54205c166509c1bb46ac3ecd137bf3（本地/远端一致）
+→ tag pushed to origin（fast-forward，无 force push）
+→ three-way verification PASS
+    · tag peel        → 27c27b0   ✅
+    · origin/main     → 27c27b0   ✅
+    · working tree    → clean     ✅
+```
+
+### Release 边界（明确未混入）
+
+- ❌ 未夹带 5 项 P2 修复（PyInstaller `requirements-build.txt` / Starlette-httpx2 deprecation /
+  README `1020→1099` / `docs/ai/*` 失效门禁 / `origin/main [gone]` 显示）
+  —— **1、2 属工程改进任务，非 release blocker，修了会污染 RC 稳定锚点**
+- ❌ 未重开 ADR-028；❌ 未解冻 Frontend Consumer
+- ❌ 未修改 `APP_VERSION`、CHANGELOG、代码、测试；❌ 未移动 tag
+
+### 改动文件（本条登记本身）
+
+`docs/PROJECT_STATE.md`（§0 发布状态行 · §1.1 已发布行 · §5 发布行 · 路线 `[25]`/`[26]`）·
+`docs/TASKS.md`（队列 `[18]` + 本报告）
+
+### 后续（需 Owner 单独裁定，不自动成为默认路线）
+
+- ① 后续工程清理（5 项 P2，另立任务）
+- ② Frontend Consumer 解冻（须 Owner 显式宣布，路线 `[26]`）
