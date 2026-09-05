@@ -11,11 +11,15 @@
 > 基线：**2026-09-02 状态收口**（收口任务：对齐全部文档至 HEAD `12030ff` 实际状态）
 > · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
 > · License Apache-2.0
-> 验证：`pytest` / `vitest` / `tsc --noEmit` / `vite build` 以最近一次全量 Gate 实测为准
-> （2026-09-01 Gate：pytest **873** · vitest **36**；2026-09-02 P8 收尾 Gate：
-> pytest **977** · vitest **161**（9 文件）· tsc PASS · build PASS。
-> **pytest 本机 venv 未装 dev 依赖（pytest/httpx）无法复跑**，最近实测值以 CHANGELOG
-> v0.1.0-rc.1 记载的 873 为准，安装 `requirements-dev.txt` 后即可复跑。）
+> **当前验证基线（Backend-only）**：
+> - `pytest`：**1099 passed**
+> - OpenAPI：**102 routes / 82 paths**
+> - `/health`：**200**
+> - clean-environment install + test：**通过**
+> - PyInstaller clean build + 独立 sidecar health：**通过**
+>
+> 前端 `vitest` / `tsc --noEmit` / `vite build` **已不属于当前项目验证门禁**；
+> 历史前端验证结果仅保留于对应历史快照（详见 §10.1）。
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，
 > 工程约束见根 `AGENTS.md`。
@@ -106,9 +110,11 @@ Backend Stable Baseline（已随 v0.1.0-rc.3 发布）
    （Backend 实际返回 = Shared Type 声明 = Frontend 消费）。
 5. **规格冲突处理**：按裁决优先级（最新明确裁决 > 最新 ADR 修订 > 当前代码真实行为 >
    旧任务文档 > 旧设计草案）；无法判断时发 `[ARCHITECTURE WARNING]` 停下报告。
-6. **验收标准升级**：不能只验证自己改的文件——跨层功能必须
-   pytest + vitest + tsc + vite build 全绿；旧测试因设计变更失败时，
-   先判断过时/设计变更/真回归，不许删测试了事。
+6. **验收标准：以当前 Backend-only 架构为准。** 不能只验证自己改的文件——
+   后端测试、API 路由契约、`/health`、clean-environment 验证及可独立运行的
+   PyInstaller sidecar 构建构成**当前有效验证体系**。已移除的 Frontend
+   **不再拥有现行测试或构建门禁**；历史前端验证仅作为历史记录保留。
+   旧测试因设计变更失败时，先判断过时/设计变更/真回归，不许删测试了事。
 7. **质量标准**：功能正确 + 架构正确 + 数据一致 + API 一致 + 类型一致 +
    UI 一致 + 测试完整 + 文档同步 + 未来可维护——**不是一个能单独通过的指标，
    而是全部**。
@@ -335,12 +341,16 @@ Markdown 序列化由 tiptap-markdown 的传递依赖 markdown-it 承担）
 DeepSeek 端到端实测（B1b）+ Ollama qwen3-14b 本地实测（B10），均 2026-08-30）·
 手写 `build_prompt()` · Token 截断 + 双重敏感字段过滤 · **SSE 流式已落地**（B2）
 
-**Testing**：pytest 8 + httpx（FastAPI TestClient）→ 最近全量 Gate **873 passed**（v0.1.0-rc.1，2026-09-01；
-本机 venv 未装 dev 依赖，复跑需先 `pip install -r requirements-dev.txt`）·
-vitest 2.1 → **87 passed**（2026-09-02 实测，6 文件：ui store 8 / buildNoteTree 6 /
-derivePlanets 15 / graph layout 7 / ui components 21 / ui wiring 30）
+**Testing**：
+- Backend：`pytest` 8 + httpx（FastAPI TestClient）→ 最近全量 Gate **1099 passed**
+  （v0.1.0-rc.3，2026-09-05；本机 venv 未装 dev 依赖时复跑需先 `pip install -r requirements-dev.txt`）
+- Frontend：当前不存在受支持的 Frontend implementation，因此 `vitest` **不属于当前验证门禁**；
+  历史值（87 passed / 2026-09-02）仅保留于历史快照。
 
-**Build**：Vite 5.4 · `tsc --noEmit` 门禁 · `scripts/test.ps1` · `scripts/seed_demo.py`
+**Build**：当前构建验证**以 Backend-only 为准**——Python / FastAPI backend 可在 clean environment
+安装、启动并通过 `/health` 检查；PyInstaller clean build 可生成并独立启动 sidecar executable。
+后端脚本：`scripts/seed_demo.py` · `scripts/test.ps1`。
+`Vite` / `tsc --noEmit` 及 frontend build **不属于当前项目构建门禁**。
 
 ---
 
