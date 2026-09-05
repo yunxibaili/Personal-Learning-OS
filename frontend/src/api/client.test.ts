@@ -62,3 +62,12 @@ describe("api wrapper", () => {
     expect(init.method).toBe("PATCH");
   });
 });
+
+describe("api query params", () => {
+  it("get 附加 query 参数（URLSearchParams 编码）", async () => {
+    const fetchMock = mockFetch(200, { results: [] });
+    await api.get("/api/v1/search", { q: "中文x" });
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toBe(`/api/v1/search?q=${encodeURIComponent("中文x")}`);
+  });
+});

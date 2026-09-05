@@ -7,6 +7,7 @@
 // response model 后，此处的窄化可整体退化为直用生成类型。
 // 绕过本模块直接 `as` 断言响应字段视为违反 L2。
 import { api, ApiError } from "./client";
+import { asString, isRecord } from "./validate";
 
 export interface NoteSummary {
   id: number;
@@ -19,17 +20,6 @@ export interface NoteSummary {
 
 export interface NoteDetail extends NoteSummary {
   content_md: string;
-}
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
-}
-
-function asString(v: unknown, field: string): string {
-  if (typeof v !== "string") {
-    throw new ApiError(0, "contract_mismatch", `note.${field} 非字符串`);
-  }
-  return v;
 }
 
 function asSummary(v: unknown): NoteSummary {

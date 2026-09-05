@@ -10,16 +10,24 @@ import {
   type NoteDetail,
   type NoteSummary,
 } from "../../api/notes";
+import { searchNotes, type SearchResult } from "../../api/search";
 
 // MVP-01：最小 Markdown Note Consumer（ADR-029 §8 第 1 项）。
 // 链路：列表 → 打开 → 编辑 → 保存（PATCH）→ 重读确认。
+// MVP-02：搜索框 → GET /search?q → 结果列表 → 点击走既有打开链路（第 2 项）。
 // L1：内容只来自 backend，本地 draft 是编辑缓冲，不是 canonical 副本；
-// 无 localStorage / 无持久化。无 autosave、无 tree/search/links（MVP 外）。
+// 无 localStorage / 无持久化。无 autosave、无 tree/links（MVP 外）。
 
 type SaveState =
   | { kind: "idle" }
   | { kind: "saving" }
   | { kind: "saved"; at: string }
+  | { kind: "error"; message: string };
+
+type SearchState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "done"; results: SearchResult[]; query: string }
   | { kind: "error"; message: string };
 
 function errText(e: unknown): string {
@@ -36,6 +44,8 @@ export default function NotesView() {
   const [saveState, setSaveState] = useState<SaveState>({ kind: "idle" });
   const [newTitle, setNewTitle] = useState("");
   const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState("");
+  const [search, setSearchState] = useState<SearchState>({ kind: "idle" });
 
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -148,6 +158,19 @@ export default function NotesView() {
     }
   }
 
+  // MVP-02：空输入不发请求（契约：空 q → 400 missing_q，UI 侧直接禁用）
+  async function handleSearch() {
+    const q = query.trim();
+    if (!q || search.kind === "loading") return;
+    setSearchState({ kind: "loading" });
+    try {
+      const results = await searchNotes(q);
+      setSearchState({ kind: "done", results, query: q });
+    } catch (e) {
+      setSearchState({ kind: "error", message: errText(e) });
+    }
+  }
+
   return (
     <div className="notes-layout">
       <aside className="notes-sidebar">
@@ -168,6 +191,43 @@ export default function NotesView() {
         {notes === null && !listError && <p className="state-loading">加载中…</p>}
         {notes !== null && notes.length === 0 && (
           <p className="state-empty">vault 为空——用上方「新建」创建第一篇 Markdown 笔记。</p>
+        )}
+        <div className="notes-search">
+          <input
+            value={query}
+            placeholder="搜索笔记"
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
+          />
+          <button type="button" onClick={handleSearch} disabled={!query.trim() || search.kind === "loading"}>
+            {search.kind === "loading" ? "…" : "搜索"}
+          </button>
+        </div>
+        {search.kind === "loading" && <p className="state-loading">搜索中…</p>}
+        {search.kind === "error" && (
+          <p className="state-error">搜索失败：{search.message}</p>
+        )}
+        {search.kind === "done" && (
+          <div className="search-results">
+            <p className="search-summary">
+              「{search.query}」{search.results.length} 条结果
+              <button type="button" className="linkish" onClick={() => setSearchState({ kind: "idle" })}>
+                清除
+              </button>
+            </p>
+            {search.results.length === 0 && <p className="state-empty">无结果</p>}
+            <ul className="notes-list">
+              {search.results.map((r) => (
+                <li key={r.note_id}>
+                  <button type="button" onClick={() => openNote(r.note_id)}>
+                    {r.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <ul className="notes-list">
           {(notes ?? []).map((n) => (

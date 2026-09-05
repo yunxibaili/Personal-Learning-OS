@@ -42,8 +42,10 @@ async function request<M extends Method, P extends keyof paths & string>(
   method: M,
   path: P,
   body?: BodyOf<P, M>,
+  params?: Record<string, string>,
 ): Promise<ResponseOf<P, M>> {
-  const res = await fetch(`${BASE}${path}`, {
+  const qs = params ? `?${new URLSearchParams(params).toString()}` : "";
+  const res = await fetch(`${BASE}${path}${qs}`, {
     method: method.toUpperCase(),
     headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -69,7 +71,8 @@ async function request<M extends Method, P extends keyof paths & string>(
 }
 
 export const api = {
-  get: <P extends keyof paths & string>(path: P) => request("get", path),
+  get: <P extends keyof paths & string>(path: P, params?: Record<string, string>) =>
+    request("get", path, undefined, params),
   post: <P extends keyof paths & string>(path: P, body: BodyOf<P, "post">) =>
     request("post", path, body),
   patch: <P extends keyof paths & string>(path: P, body: BodyOf<P, "patch">) =>
