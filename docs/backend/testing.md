@@ -9,7 +9,8 @@
 | Integration | `server/tests/integration/`（含 `sync/`） | TestClient + 临时 workspace | 跨模块闭环 |
 | Smoke | `server/tests/test_smoke.py` `test_tutor_smoke.py` `api/test_m2_smoke.py` | TestClient 全流程 | 里程碑验收 |
 
-当前基线：**1020 passed**（`python -m pytest tests/ -q`）。67 个 `test_*.py` 文件。
+当前基线：**1099 passed**（2026-09-05 实测，`python -m pytest tests -q`，162s）。
+（演进：1020 → 1085（ADR-028 revision 层）→ **1099**（ADR-028 恢复能力））
 
 ## fixture（`server/tests/conftest.py`）
 

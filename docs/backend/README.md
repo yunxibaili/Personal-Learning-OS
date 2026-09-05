@@ -12,8 +12,8 @@
 | [technology](technology.md) | 技术栈、真实依赖、工程约束 |
 | [features](features.md) | 全部后端功能档案（背景/问题/作用/位置/状态） |
 | [data-model](data-model.md) | 数据模型：22 张表 · migration · vault 事实源 · FTS |
-| [api](api.md) | API 契约：93 端点 · 错误形状 · SSE 流式 |
-| [testing](testing.md) | 测试体系：四条管道 · 1000+ 用例 · 如何运行 |
+| [api](api.md) | API 契约：**102 route / 82 path**（2026-09-04 实测）· 错误形状 · SSE 流式 |
+| [testing](testing.md) | 测试体系：四条管道 · **1099 passed**（2026-09-05 实测） · 如何运行 |
 | [runtime](runtime.md) | 本地运行 · 环境变量 · 打包（PyInstaller sidecar） |
 | [history](history.md) | 决策记录提炼（ADR 摘要 · 里程碑） |
 

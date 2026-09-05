@@ -12,7 +12,8 @@
 > 完成报告存档**；本文件的状态列若与 PROJECT_STATE 或实际代码冲突，以二者为准并回改本文件。
 > 本文件已完成部分的过时表述（如已被取代的架构）在 2026-09-02 收口中标注，历史原文进 git。
 >
-> 状态：`[ ]` 待办 · `[~]` 进行中 · `[x]` 完成（附报告锚点）
+> 状态：`[ ]` 待办 · `[~]` 进行中 · `[x]` 完成（附报告锚点） ·
+> `⏸` 暂停（Owner 裁定） · `⛔` CANCELLED（随代码面移除而终止，非延期）
 
 ## 执行队列（2026-09-02 所有者裁定「先收口，后开发」重排）
 
@@ -40,13 +41,16 @@
 
 [10] [x] P1-5 Backend/UI 能力裁定（2026-09-02 四组弹窗完成，裁定结果见 PROJECT_STATE §12）
 [10a] [x] P1-5-A 设置 UI：LLM Provider 配置页（GET/PUT /settings；2026-09-02 完成）
-[10b] [ ] P1-5-B 错题本 UI：列表/标记已解决/删除/统计（/mistakes/*）
-[10c] [ ] P1-5-C 会话历史最小 UI：Tutor 抽屉内列表+删除（/conversations）
-[11] [ ] P1-3 MockProvider 演示路径
-[12] [ ] P1-4 中文 FTS
-[13] [ ] P1-2 国际化（18 处硬编码英文）
-[14] [ ] M8 Mobile 可行性 / 架构决策（前置：[9][9b][10] 完成）
-[15] [ ] M8 Android MVP
+[10b] ⛔ P1-5-B 错题本 UI —— **CANCELLED**（2026-09-05 事实校正：前端代码面已移除，
+      UI 任务无对象；后端 `/mistakes/*` 能力仍然可用、未受影响）
+[10c] ⛔ P1-5-C 会话历史最小 UI —— **CANCELLED**（同上；后端 `/conversations` 仍可用）
+[11] [x] P1-3 MockProvider 演示路径（2026-09-02 完成，报告见 §T-P1-4）
+[12] [x] P1-4 中文 FTS（2026-09-02 完成：ADR-027 CJK bigram 预分词；该条目在
+     PROJECT_STATE §12 中编号为 P1-3，同一事项两处编号不一致，历史遗留不改）
+[13] [x] P1-2 国际化（2026-09-02 完成：46 处/5 组件用户可见英文清零，报告见 §T-P1-2）
+[14] [x] M8 Mobile 可行性 / 架构决策（2026-09-03 最终裁定：主路线 Tauri 2 Mobile
+     **conditional on M8-000**；M8 全线暂停含 spike，PC Stable 优先）
+[15] ⏸ M8 Android MVP（**暂停**；顺序 = PC Stable → M8-000 → 再启动）
 [16] [x] ADR-028 Backend: Document Changes / Revision / Diff 基础能力（2026-09-04 完成，报告见下文）
      与 Git 解耦的文档版本层：快照（合法 Markdown 存 metadata/revisions/）+
      changes/diff/restore + 孤儿快照回收。零 migration 零 Git 依赖。

@@ -258,7 +258,7 @@ L3 Learning Memory  concept_mastery + learning_events + mistakes + memories
 |---|---|
 | 服务框架 | Python 3.12 + FastAPI 0.115 + uvicorn，仅绑 `127.0.0.1`（`$env:PORT` 可覆盖） |
 | 数据库 | SQLite（标准库 `sqlite3` 直写 SQL）+ FTS5；**无 ORM**（`AGENTS.md` §2.2 永久禁止） |
-| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；**20 APIRouter / 89 端点**（2026-08-31 实测自 `app.openapi()`）；错误统一 `{error:{code,message}}`；**参数校验亦映射 400 `invalid_body`**（非 FastAPI 默认 422，`main.py` 全局处理器） |
+| API 架构 | REST，统一前缀 `/api/v1`（版本化，破坏性变更升 `/v2`）；**23 APIRouter / 102 route / 82 path**（2026-09-04 实测自 `app.openapi()`）；错误统一 `{error:{code,message}}`；**参数校验亦映射 400 `invalid_body`**（非 FastAPI 默认 422，`main.py` 全局处理器） |
 | 分层 | Router（HTTP）→ Core（纯业务）→ DB；图计算与布局不越层；core 层零 fastapi 依赖（守护测试锁定） |
 | 图查询 | 递归 CTE（`local_graph`），不引图数据库 |
 | 代码规模 | `server/app` Python ≈ 9,722 行（2026-08-30 实测） |
@@ -441,7 +441,10 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 > Vault 监听/用户记忆」均标注未实现，与 B12/B13/B17/B18/B2-B/B5/B16/B28
 > 实际交付不符，已更正——**每一项都有对应 router/core 文件为证**。
 | **同步** | ✅ Core · Discovery · Transport · Apply · Conflict UI · E2E Demo · Release Audit | ❌ 移动设备同步 · 自动定时同步 |
-| **发布** | ✅ 本地双端运行 · migration runner · 23 ADR | ❌ 数据全量导出（T-EXPORT）· Tauri 打包（M6）· Docker · i18n |
+| **发布** | ✅ 本地双端运行 · migration runner · **28 ADR**（ADR-001…028）· **数据全量导出 T-EXPORT**（`GET /api/v1/export`，2026-08-29）· **Tauri 打包 M6**（MSI/NSIS；纯后端化后保留后端 sidecar 打包能力，UI 壳已移除）· **i18n**（2026-09-02 用户可见英文清零） | ❌ Docker · ❌ 发版 tag（距 `v0.1.0-rc.2` 未打新 tag——**发版需 Owner 明确裁定，不自动进行**） |
+
+> 本行 2026-09-05 事实校正：原「23 ADR」「❌ T-EXPORT / Tauri / i18n」与代码及 §9 backlog
+> 不符（B11 已实现、M6 已完成、ADR 已至 028、i18n 已闭环），已按实测更正。
 
 ---
 
@@ -921,15 +924,18 @@ NSIS 102MB，GNU 工具链。
 
 ### P2（低风险，顺手修）
 
-| # | 项 | 位置 |
-|---|---|---|
-| P2-1 | 死代码：`SyncStatusPanel.tsx` 全库零引用（随 Dashboard 退场未清理） | `web/src/components/sync/` |
-| P2-2 | 死代码：`ComponentGallery.tsx` 零引用，且 `#gallery` dev 入口实际不生效（App 无 hash 路由） | `web/src/dev/` |
-| P2-3 | 死 CSS：`.dashboard-view`（`global.css:714`）· `.tabbar`（`global.css:89-114`） | `web/src/global.css` |
-| P2-4 | `lazy(GalaxyView)` 分包失效——`ContextRail.tsx:7` 静态 import 同模块 `GalaxyMini`，Galaxy 代码打进入口 chunk | `web/src/App.tsx:14` / `ContextRail.tsx:7` |
-| P2-5 | TiptapEditor chunk 807KB 超限警告（已有挂载预热，体验可接受） | `web/src/components/editor/` |
-| P2-6 | 过期注释/残留：`App.tsx:8` 注释提 cobe · `ui.ts` 的 `MindMapCanvas.tsx:81` `searchingConcept` 有 setter 无消费方 · 同一次开笔记 `NoteEditor:132` 与 `ContextRail:59` 重复请求 `GET /notes/{id}` | 各处 |
-| P2-7 | git 追踪引用 `[gone]`（本地 `origin/main` 跟踪引用失效，远端实际同步） | 一次 `git fetch origin` 即恢复 |
+> **2026-09-05 事实校正**：P2-1 ~ P2-6 全部指向 `web/**`，该目录已在 09-04 纯后端化中移除，
+> **债的载体已不存在**——六条统一标记为 `已消失（载体已移除）`，不再作为待修项。
+
+| # | 项 | 位置 | 现状 |
+|---|---|---|---|
+| ~~P2-1~~ | ~~死代码：`SyncStatusPanel.tsx` 全库零引用~~ | ~~`web/src/components/sync/`~~ | ✅ **已消失**（载体已移除） |
+| ~~P2-2~~ | ~~死代码：`ComponentGallery.tsx` 零引用~~ | ~~`web/src/dev/`~~ | ✅ **已消失**（载体已移除） |
+| ~~P2-3~~ | ~~死 CSS：`.dashboard-view` · `.tabbar`~~ | ~~`web/src/global.css`~~ | ✅ **已消失**（载体已移除） |
+| ~~P2-4~~ | ~~`lazy(GalaxyView)` 分包失效~~ | ~~`web/src/App.tsx` / `ContextRail.tsx`~~ | ✅ **已消失**（载体已移除） |
+| ~~P2-5~~ | ~~TiptapEditor chunk 807KB 超限警告~~ | ~~`web/src/components/editor/`~~ | ✅ **已消失**（载体已移除） |
+| ~~P2-6~~ | ~~过期注释/残留（cobe 注释 · `searchingConcept` · 重复请求 `GET /notes/{id}`）~~ | ~~各处（均 `web/`）~~ | ✅ **已消失**（载体已移除） |
+| P2-7 | git 无远程跟踪分支（本地无 `origin/main` ref，远端实际同步，实测 `git ls-remote` 一致） | 仓库 | 仍存在（无害）；`git fetch origin main` 即恢复 |
 
 ### 持续风险（非债，边界内接受）
 
