@@ -805,8 +805,9 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      只改 1/3 会把不一致从「3 处载入」变成「1 加载 + 2 载入」，故按同一原则一并统一）。
      复查：Concept/Note 英文 0 · AI Tutor 英文 0 · 用户可见「载入」0。
      Gate：tsc 0 / vitest **207**(16 文件) / build PASS 4.26s。Backlog #11 ✅。
-     未做（不在清单，留待 Bright Baseline 走查定）：`ReviewSessionView.tsx:317`
-     「提交中...」半角三点与全库 21 处「…」不一致。
+     ~~未做（不在清单，留待 Bright Baseline 走查定）~~：~~`ReviewSessionView.tsx:317`
+     「提交中...」半角三点与全库 21 处「…」不一致~~
+     → 2026-09-05：Bright Baseline 已 CANCELLED，且该组件随 `web/` 移除，**本项终止，不留待办**。
 [20] ⛔ ~~Bright Baseline（PC 亮色体验基线）——当前阶段（2026-09-03 起）~~
      **CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE（2026-09-05 裁定）**。
      原为前端体验基线（17 项亮色验收清单 · ≥1440×900 PC · Tauri 独立运行），
