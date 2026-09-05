@@ -22,12 +22,38 @@
 
 ---
 
-## §0 当前开发政策：前端阶段（Frontend Phase）
+## §0 当前开发政策：后端稳定阶段（Backend-only Stable Phase）
 
-> **2026-08-30 项目所有者显式宣布「解冻前端任务」，政策自「后端优先」（2026-08-28 裁定）切换。**
+> **2026-09-05 项目所有者裁定（现行最高政策，凌驾于本文档其余章节的历史表述）**：
+> 09-04 纯后端化已正式移除前端代码面（`web/` React/Vite/Tauri · `ui/` 设计原型 ·
+> `shared/types/` 共享 TS 契约）。项目自此进入 **Backend-only Stable Phase / 后端稳定阶段**。
 > 本文最高优先级的规则，凌驾于本文档其余章节的历史表述。
 
-**当前状态：前端阶段已开启。**
+**当前状态：**
+
+| 事实 | 状态 |
+|---|---|
+| 前端代码 | **当前不存在**（`web/` `ui/` `shared/` 已移除；权威表述见 `AGENTS.md` 文首「项目形态」） |
+| 前端阶段（2026-08-30 起，含 P1 UI 打磨 · Bright Baseline） | ⛔ **已终止**——**不是延期**，随前端代码面删除而终止（`CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE`） |
+| ADR-028 后端核心 | 🔒 **已封口**（09-04 裁定）。其「前端 revision/history/diff UI」遗留项属**新任务**，**不得据此恢复前端** |
+| 下一阶段 | **由 Owner 明确解冻**。默认路线 = 后端稳定基线，**不得被隐式解释为前端** |
+
+**前端消费的未来路径**（需 Owner 明确宣布，任何文档不得设自动触发条件）：
+
+```text
+Backend Stable Baseline → Owner 宣布 Frontend Consumer 解冻 → 前端侦察 → 按现有后端 API 消费
+```
+
+即：后端 API 是**被消费的对象**，不是前端解冻的理由；ADR-028 后端核心在前端解冻后仍保持封口。
+
+---
+
+### 历史：前端阶段政策（2026-08-30 – 2026-09-04，已终止，不再约束当前开发）
+
+> **2026-08-30 项目所有者宣布「解冻前端任务」；2026-09-05 因纯后端化而终止。**
+> 以下仅作历史留存。
+
+**当前状态：~~前端阶段已开启~~（已终止）。**
 
 **规则四（前端阶段前置条件）已满足：**
 
@@ -701,7 +727,13 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      fallback；**M8 全线暂停（含 spike），PC Stable Baseline 优先**）
 [15] ⏸ M8 Android MVP（暂停；顺序 = PC Stable → M8-000 → 再启动）
 
-── 2026-09-03 所有者裁定：PC Stable Baseline 优先（P0 启动与运行基线 → P1 UI 打磨 → P2 完整验收）──
+── 2026-09-03 所有者裁定（部分已失效）：PC Stable Baseline 优先
+   （P0 启动与运行基线 ✅ 已完成 → ~~P1 UI 打磨~~ → ~~P2 完整验收~~）──
+   ⚠️ **2026-09-05 重基线**：P1 UI 打磨 / P2 完整验收 / [20] Bright Baseline 均属前端阶段，
+   随 09-04 纯后端化移除 `web/` 而**终止（CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE）**。
+   下方 [19b]–[19m] 为当时已完成的**前端**产物（commit 指向 `web/src/**`），
+   其代码已不在仓库中——**条目保留为历史记录，不代表当前可维护对象**；
+   [16]–[19] 的 P0 后端基线（启动/sidecar/vault CRUD/冒烟）仍然有效。
 [16] ✅ P0-1 PC 开发环境完整启动（2026-09-03：uvicorn 重启至当前代码 → 真实 DB 自动应用
      010_fts_bigram + FTS 重建（20 篇笔记保留）；vite 5173 页面 200 + /api 代理通；
      中文短语/单字/rank 搜索真库生效；live-smoke 16/16 · 0 console errors）
@@ -757,7 +789,8 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      D1 680px 锁宽 zero-code；D2 标题 30px/600 独立层级；D6 wikilink 零代码（需 TipTap 扩展）；
      minimap animate 启用 + supersample 2× 防摩尔纹；B2-A 概览模式（统计+标签+概览/编辑切换，
      纯前端 computeNoteStats 零 fetch）。Gate: tsc 0 / vitest 213 / build / pytest 1020。
-     D3 时间分组 ⏳（IA 冲突需产品裁决）/ D4 统计行 ⏳（需跨组件数据）。
+     ~~D3 时间分组 ⏳ / D4 统计行 ⏳~~ → ⛔ **CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE**
+     （2026-09-05 所有者裁定：随前端代码面删除而终止，不改名、不延期、不留待办）
 （2026-09-03，commit 291bb4d）：取证先于裁决——「语调不统一」这一审计
      假设**不成立**（全角/半角感叹号 0·0、敬语混用 0、emoji 0、术语中文化稳定）。真实不一致仅
      3 项机械问题，全部清零：① `GraphView.tsx:239` 图层切换 `Concept`/`Note` → **概念/笔记**
@@ -771,14 +804,33 @@ a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字�
      Gate：tsc 0 / vitest **207**(16 文件) / build PASS 4.26s。Backlog #11 ✅。
      未做（不在清单，留待 Bright Baseline 走查定）：`ReviewSessionView.tsx:317`
      「提交中...」半角三点与全库 21 处「…」不一致。
-[20] ▶ **Bright Baseline（PC 亮色体验基线）——当前阶段（2026-09-03 起）**：
-     目标 = 先让亮色版**完整可体验**，用真实使用感受决定下一轮改什么，而非继续清 backlog。
-     范围锁定：**仅亮色 · ≥1440×900 · PC**。17 项验收清单见
-     `../Open Learning OS — Bright Baseline 亮色体验验收清单.md`（启动/新建/编辑/
-     Markdown·LaTeX/搜索/双链/图谱/导图/星系/掌握度/错题/复习/AI 导师/Memory/Settings/
-     重启持久化/Tauri 独立运行）。**明确暂缓**：P1-12 响应式中等屏（1280 断点）·
-     P1-13 暗色主题（全 token 镜像）· P1-11-B `ui/COPY.md` 文案规范（等真实反馈再固化）。
-     反馈按 A 真的别扭 / B 不像成熟产品 / C 功能缺口 / D 错觉 四类归档。
+[20] ⛔ ~~Bright Baseline（PC 亮色体验基线）——当前阶段（2026-09-03 起）~~
+     **CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE（2026-09-05 裁定）**。
+     原为前端体验基线（17 项亮色验收清单 · ≥1440×900 PC · Tauri 独立运行），
+     随 09-04 纯后端化移除 `web/` 而终止——**非延期**。清单文件
+     `../Open Learning OS — Bright Baseline 亮色体验验收清单.md` 转为历史存档，
+     仅在未来 Owner 宣布 Frontend Consumer 解冻后才有复用价值。
+
+── 2026-09-05 所有者裁定：项目路线重基线（Rebaseline）——前端阶段终止，后端稳定基线 ──
+
+[21] ✅ **纯后端化**（2026-09-04）：移除 `web/` `ui/` `shared/types/`（及 `_backup/`
+     `_local/` `sandbox/`），仓库收敛为可独立运行/测试/打包的纯后端项目；
+     保留后端打包能力（`backend_main.py` + `plos_backend.spec` PyInstaller sidecar），UI 壳移除。
+[22] ✅ **ADR-028 Revision / Changes backend**（2026-09-04）：`core/revisions.py` +
+     `routers/revisions.py`；`current` / `snapshot` 双源；零 migration 零新增依赖零 Git 依赖。
+[23] ✅ **ADR-028 Restore / Orphan recovery**（2026-09-04）：
+     `POST /notes/{id}/revisions/{rev_id}/restore`（恢复前打 `origin=restore` 快照→可逆）+
+     `GET /admin/revisions/orphans` + `POST /admin/revisions/restore`。
+[24] ✅ **ADR-028 documentation / governance close**（2026-09-04）：ADR + AGENTS §4 澄清 +
+     api/data-model/ADR_INDEX/architecture/PROJECT_STATE/TASKS 登记 + 完成报告回填。
+     **ADR-028 后端核心封口**；遗留四项（Git adapter / 前端消费 / frontmatter-only 语义 /
+     孤儿快照 GC）均为**新任务**，不在封口上下文扩权。
+[25] ▶ **Backend Stable Baseline / 后端稳定基线——当前阶段（2026-09-05 起）**：
+     目标 = 保持后端能力稳定、文档与代码一致、测试基线不回退（pytest **1099 passed**）。
+     范围：**只做治理与一致性**，不新增后端能力、不恢复前端、不打 tag。
+[26] ⏸ **下一阶段由 Owner 明确解冻**：候选方向 = ① Frontend Consumer（需显式宣布解冻）
+     ② release rc.3（需明确发布裁定）。
+     **二者均不得因「55 commits 未发版」或「ADR-028 留有前端遗留项」自动成为默认路线。**
 ```
 
 ### 已完成的近期里程碑（存档）

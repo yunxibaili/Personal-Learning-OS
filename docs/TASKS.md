@@ -51,6 +51,11 @@
      与 Git 解耦的文档版本层：快照（合法 Markdown 存 metadata/revisions/）+
      changes/diff/restore + 孤儿快照回收。零 migration 零 Git 依赖。
      Git source 适配器与前端消费均在任务书划界外（另立任务）。
+[17] [x] 项目路线重基线（Rebaseline）+ 治理收口（2026-09-05 完成，报告见下文）
+     纯后端化后旧前端阶段正式终止（**非延期**）：P1 UI 打磨 / P2 完整验收 /
+     Bright Baseline [20] 全部 CANCELLED · SUPERSEDED BY BACKEND-ONLY REBASELINE；
+     D3 时间分组 / D4 统计行不留待办。PROJECT_STATE §0 政策改「后端稳定阶段」；
+     新路线 [21]-[26] 登记。**下一阶段须 Owner 明确解冻，不得隐式解释为前端。**
 ```
 
 <details>
