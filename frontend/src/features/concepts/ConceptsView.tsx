@@ -34,7 +34,7 @@ function errText(e: unknown): string {
 }
 
 function masteryLine(effective: number): string {
-  return `掌握度（后端投影）：effective ${effective}`;
+  return `掌握度：effective ${effective}`;
 }
 
 export default function ConceptsView({

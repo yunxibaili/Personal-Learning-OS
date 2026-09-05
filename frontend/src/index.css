@@ -201,3 +201,16 @@ button.linkish {
 .concept-fields dt { color: #6b7280; }
 .concept-fields dd { margin: 0; }
 .mastery-line { font-size: 0.85rem; color: #374151; background: #f7f7f7; padding: 0.4rem 0.6rem; border-radius: 4px; }
+
+/* ── MVP-04 掌握度视图 ───────────────────────────────────────── */
+
+.mastery-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+.mastery-layout h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+
+.mastery-table { border-collapse: collapse; font-size: 0.85rem; }
+.mastery-table th, .mastery-table td {
+  text-align: left;
+  padding: 0.25rem 0.75rem 0.25rem 0;
+  border-bottom: 1px solid #ececec;
+}
+.mastery-table th { color: #6b7280; font-weight: 500; }

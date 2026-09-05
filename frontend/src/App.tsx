@@ -1,9 +1,10 @@
 import { useState } from "react";
 import NotesView, { type NoteOpenRequest } from "./features/notes/NotesView";
 import ConceptsView from "./features/concepts/ConceptsView";
+import MasteryView from "./features/mastery/MasteryView";
 
-// MVP 顶层工作区：笔记 / 概念两个 Consumer 视图（单页，无路由——ADR-029 §3.2）。
-type Tab = "notes" | "concepts";
+// MVP 顶层工作区：笔记 / 概念 / 掌握度三个 Consumer 视图（单页，无路由——ADR-029 §3.2）。
+type Tab = "notes" | "concepts" | "mastery";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("notes");
@@ -31,12 +32,17 @@ export default function App() {
         >
           概念
         </button>
+        <button
+          type="button"
+          className={tab === "mastery" ? "active" : ""}
+          onClick={() => setTab("mastery")}
+        >
+          掌握度
+        </button>
       </nav>
-      {tab === "notes" ? (
-        <NotesView openNoteRequest={noteRequest} />
-      ) : (
-        <ConceptsView onOpenNote={openNoteFromConcept} />
-      )}
+      {tab === "notes" && <NotesView openNoteRequest={noteRequest} />}
+      {tab === "concepts" && <ConceptsView onOpenNote={openNoteFromConcept} />}
+      {tab === "mastery" && <MasteryView />}
     </main>
   );
 }
