@@ -44,6 +44,46 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["conversations"])
 
+
+# ── Response models（Contract Hardening Phase A：Tutor v0.3 前置契约）──
+
+
+class ConversationSummary(BaseModel):
+    id: int
+    title: str
+    created_at: str
+    message_count: int
+
+
+class ConversationsResponse(BaseModel):
+    conversations: list[ConversationSummary]
+
+
+class ConversationCreated(BaseModel):
+    id: int
+    title: str
+
+
+class MessageItem(BaseModel):
+    id: int
+    role: str
+    content: str
+    context: dict  # build_tutor_context 快照；无 concept 时为 {}
+    created_at: str
+
+
+class MessagesResponse(BaseModel):
+    messages: list[MessageItem]
+
+
+class OkResponse(BaseModel):
+    ok: bool
+
+
+class ChatResponse(BaseModel):
+    conversation_id: int
+    answer: str
+
 MAX_QUERY_CHARS = 2000  # 与 core/ai/constants.QUERY_CHAR_LIMIT 对齐：超限 400 拒绝，避免"落库原文≠模型所见"的静默截断不一致
 
 # 流式错误事件码 ← TutorError 子类：与主对话错误码保持一致（前端按 event: error 分支）
@@ -74,7 +114,7 @@ class ConversationCreate(BaseModel):
 
 
 @router.get("/conversations")
-def get_conversations() -> dict:
+def get_conversations() -> ConversationsResponse:
     conn = connect()
     try:
         return {"conversations": list_conversations(conn)}
@@ -83,7 +123,7 @@ def get_conversations() -> dict:
 
 
 @router.post("/conversations", status_code=201)
-def post_conversation(body: ConversationCreate) -> dict:
+def post_conversation(body: ConversationCreate) -> ConversationCreated:
     conn = connect()
     try:
         conv_id = create_conversation(conn, body.title or "")
@@ -93,7 +133,7 @@ def post_conversation(body: ConversationCreate) -> dict:
 
 
 @router.get("/conversations/{conversation_id}/messages")
-def get_conversation_messages(conversation_id: int) -> dict:
+def get_conversation_messages(conversation_id: int) -> MessagesResponse:
     conn = connect()
     try:
         return {"messages": get_messages(conn, conversation_id)}
@@ -105,7 +145,7 @@ def get_conversation_messages(conversation_id: int) -> dict:
 
 
 @router.delete("/conversations/{conversation_id}")
-def delete_conversation_by_id(conversation_id: int) -> dict:
+def delete_conversation_by_id(conversation_id: int) -> OkResponse:
     conn = connect()
     try:
         delete_conversation(conn, conversation_id)
@@ -250,8 +290,15 @@ def _chat_stream(body: ChatRequest, query: str, note_ids: list[int]) -> Iterator
         yield _sse("error", {"code": "provider_error", "message": "stream interrupted"})
 
 
-@router.post("/chat", response_model=None)
-def post_chat(body: ChatRequest) -> dict | StreamingResponse:
+@router.post("/chat", response_model=None, responses={
+    # Contract Hardening Phase A：非流式分支获得正式 OpenAPI schema；
+    # 运行时保持 response_model=None——stream=true 的 SSE 分支零校验、零回归
+    200: {
+        "model": ChatResponse,
+        "description": "stream=false → 非流式 JSON；stream=true → SSE（text/event-stream，无结构化 schema）",
+    },
+})
+def post_chat(body: ChatRequest) -> ChatResponse | StreamingResponse:
     query = body.query.strip()
     if not query:
         return _err(400, "empty_query", "query 不能为空")

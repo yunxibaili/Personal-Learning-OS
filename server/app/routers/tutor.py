@@ -31,8 +31,86 @@ def _err(status: int, code: str, message: str) -> JSONResponse:
     )
 
 
+# ── Response models（Contract Hardening Phase A：Tutor v0.3 前置契约）──
+# 形状与 core.tutor_types.TutorContext / MVP-06 前端窄化层同源（2026-09-05 探针核实）。
+# 语义注意：mastery 无记录 = 全零对象（非 null）；review 无队列行 = null。
+
+
+class ContextConcept(BaseModel):
+    id: int
+    title: str
+
+
+class ContextMastery(BaseModel):
+    knowledge: float
+    practice: float
+    recall: float
+    transfer: float
+    effective: float
+
+
+class ContextMistake(BaseModel):
+    id: int
+    description: str
+    occurred_at: str
+
+
+class ContextRelated(BaseModel):
+    id: int
+    title: str
+    relation: str
+
+
+class ContextReview(BaseModel):
+    next_review: str
+    priority: float
+    last_result: str | None = None
+
+
+class ContextEvent(BaseModel):
+    event_type: str
+    source: str
+    created_at: str
+
+
+class ContextNote(BaseModel):
+    note_id: int
+    title: str
+    excerpt: str
+
+
+class ContextMemory(BaseModel):
+    kind: str
+    content: str
+    importance: float
+    last_used_at: str | None = None
+
+
+class TutorContextResponse(BaseModel):
+    concept: ContextConcept
+    mastery: ContextMastery
+    mistakes: list[ContextMistake]
+    related: list[ContextRelated]
+    review: ContextReview | None = None
+    recent_events: list[ContextEvent]
+    notes: list[ContextNote]
+    memories: list[ContextMemory]
+
+
+class TutorTestMetadata(BaseModel):
+    mode: str
+    concept: str | None = None
+    mastery_effective: float | None = None
+    provider: str
+
+
+class TutorTestResponse(BaseModel):
+    answer: str
+    metadata: TutorTestMetadata
+
+
 @router.get("/context/{concept_id}")
-def get_tutor_context(concept_id: int) -> dict:
+def get_tutor_context(concept_id: int) -> TutorContextResponse:
     """返回 AI Tutor 所需的结构化学习上下文（无笔记引用，notes=[]）。"""
     conn = connect()
     try:
@@ -52,7 +130,7 @@ class TutorContextRequest(BaseModel):
 
 
 @router.post("/context")
-def post_tutor_context(body: TutorContextRequest) -> dict:
+def post_tutor_context(body: TutorContextRequest) -> TutorContextResponse:
     """带可选笔记引用的结构化上下文。
 
     note_ids 由用户在 UI 显式选择（TutorPanel 选择器）——不自动检索；
@@ -85,7 +163,7 @@ class TutorTestRequest(BaseModel):
 
 
 @router.post("/test")
-def tutor_smoke_test(body: TutorTestRequest) -> dict:
+def tutor_smoke_test(body: TutorTestRequest) -> TutorTestResponse:
     """Smoke：验证 Context → Prompt → Provider → Response 全链路（用配置的 provider）。
 
     若 settings 已配 openai_compat（base_url/key/model），此端点即为**一次真实补全**、

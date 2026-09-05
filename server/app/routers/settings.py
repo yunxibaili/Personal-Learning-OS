@@ -30,14 +30,26 @@ class SettingsBody(BaseModel):
     settings: dict[str, str]
 
 
+# Response models（Contract Hardening Phase A：Tutor v0.3 前置契约；
+# GET 的敏感键脱敏（******）在 router 层完成，model 只描述载体形状）
+
+
+class SettingsResponse(BaseModel):
+    settings: dict[str, str]
+
+
+class OkResponse(BaseModel):
+    ok: bool
+
+
 @router.get("")
-def get_settings() -> dict:
+def get_settings() -> SettingsResponse:
     raw = get_all_settings()
     return {"settings": {k: _mask(k, v) for k, v in raw.items()}}
 
 
 @router.put("")
-def put_settings_endpoint(body: SettingsBody) -> dict:
+def put_settings_endpoint(body: SettingsBody) -> OkResponse:
     try:
         put_settings(body.settings)
     except Exception as exc:

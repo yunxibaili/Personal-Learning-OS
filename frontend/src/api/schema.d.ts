@@ -1682,6 +1682,13 @@ export interface components {
              */
             stream: boolean;
         };
+        /** ChatResponse */
+        ChatResponse: {
+            /** Conversation Id */
+            conversation_id: number;
+            /** Answer */
+            answer: string;
+        };
         /** ConceptCreate */
         ConceptCreate: {
             /** Title */
@@ -1722,10 +1729,109 @@ export interface components {
             /** Status */
             status?: string | null;
         };
+        /** ContextConcept */
+        ContextConcept: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+        };
+        /** ContextEvent */
+        ContextEvent: {
+            /** Event Type */
+            event_type: string;
+            /** Source */
+            source: string;
+            /** Created At */
+            created_at: string;
+        };
+        /** ContextMastery */
+        ContextMastery: {
+            /** Knowledge */
+            knowledge: number;
+            /** Practice */
+            practice: number;
+            /** Recall */
+            recall: number;
+            /** Transfer */
+            transfer: number;
+            /** Effective */
+            effective: number;
+        };
+        /** ContextMemory */
+        ContextMemory: {
+            /** Kind */
+            kind: string;
+            /** Content */
+            content: string;
+            /** Importance */
+            importance: number;
+            /** Last Used At */
+            last_used_at?: string | null;
+        };
+        /** ContextMistake */
+        ContextMistake: {
+            /** Id */
+            id: number;
+            /** Description */
+            description: string;
+            /** Occurred At */
+            occurred_at: string;
+        };
+        /** ContextNote */
+        ContextNote: {
+            /** Note Id */
+            note_id: number;
+            /** Title */
+            title: string;
+            /** Excerpt */
+            excerpt: string;
+        };
+        /** ContextRelated */
+        ContextRelated: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Relation */
+            relation: string;
+        };
+        /** ContextReview */
+        ContextReview: {
+            /** Next Review */
+            next_review: string;
+            /** Priority */
+            priority: number;
+            /** Last Result */
+            last_result?: string | null;
+        };
         /** ConversationCreate */
         ConversationCreate: {
             /** Title */
             title?: string | null;
+        };
+        /** ConversationCreated */
+        ConversationCreated: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+        };
+        /** ConversationSummary */
+        ConversationSummary: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Created At */
+            created_at: string;
+            /** Message Count */
+            message_count: number;
+        };
+        /** ConversationsResponse */
+        ConversationsResponse: {
+            /** Conversations */
+            conversations: components["schemas"]["ConversationSummary"][];
         };
         /** DiffBody */
         DiffBody: {
@@ -1799,6 +1905,26 @@ export interface components {
             /** Concepts */
             concepts?: string[] | null;
         };
+        /** MessageItem */
+        MessageItem: {
+            /** Id */
+            id: number;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Context */
+            context: {
+                [key: string]: unknown;
+            };
+            /** Created At */
+            created_at: string;
+        };
+        /** MessagesResponse */
+        MessagesResponse: {
+            /** Messages */
+            messages: components["schemas"]["MessageItem"][];
+        };
         /** MindmapSuggestBody */
         MindmapSuggestBody: {
             /** Topic */
@@ -1871,6 +1997,11 @@ export interface components {
             tags?: string[] | null;
             /** Parent */
             parent?: string | null;
+        };
+        /** OkResponse */
+        OkResponse: {
+            /** Ok */
+            ok: boolean;
         };
         /** PairBody */
         PairBody: {
@@ -1954,6 +2085,13 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** SettingsResponse */
+        SettingsResponse: {
+            /** Settings */
+            settings: {
+                [key: string]: string;
+            };
+        };
         /** TutorContextRequest */
         TutorContextRequest: {
             /** Concept Id */
@@ -1966,6 +2104,33 @@ export interface components {
              */
             auto_notes: boolean;
         };
+        /** TutorContextResponse */
+        TutorContextResponse: {
+            concept: components["schemas"]["ContextConcept"];
+            mastery: components["schemas"]["ContextMastery"];
+            /** Mistakes */
+            mistakes: components["schemas"]["ContextMistake"][];
+            /** Related */
+            related: components["schemas"]["ContextRelated"][];
+            review?: components["schemas"]["ContextReview"] | null;
+            /** Recent Events */
+            recent_events: components["schemas"]["ContextEvent"][];
+            /** Notes */
+            notes: components["schemas"]["ContextNote"][];
+            /** Memories */
+            memories: components["schemas"]["ContextMemory"][];
+        };
+        /** TutorTestMetadata */
+        TutorTestMetadata: {
+            /** Mode */
+            mode: string;
+            /** Concept */
+            concept?: string | null;
+            /** Mastery Effective */
+            mastery_effective?: number | null;
+            /** Provider */
+            provider: string;
+        };
         /** TutorTestRequest */
         TutorTestRequest: {
             /** Concept Id */
@@ -1977,6 +2142,12 @@ export interface components {
              * @default explain
              */
             mode: string;
+        };
+        /** TutorTestResponse */
+        TutorTestResponse: {
+            /** Answer */
+            answer: string;
+            metadata: components["schemas"]["TutorTestMetadata"];
         };
         /** ValidationError */
         ValidationError: {
@@ -2015,9 +2186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SettingsResponse"];
                 };
             };
         };
@@ -2041,9 +2210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3120,9 +3287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["TutorContextResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3155,9 +3320,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["TutorContextResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3190,9 +3353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["TutorTestResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4328,9 +4489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ConversationsResponse"];
                 };
             };
         };
@@ -4354,9 +4513,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ConversationCreated"];
                 };
             };
             /** @description Validation Error */
@@ -4387,9 +4544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["MessagesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4420,9 +4575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["OkResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4449,13 +4602,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description stream=false → 非流式 JSON；stream=true → SSE（text/event-stream，无结构化 schema） */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ChatResponse"];
                 };
             };
             /** @description Validation Error */
