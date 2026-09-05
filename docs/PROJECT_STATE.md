@@ -369,16 +369,16 @@ DeepSeek 端到端实测（B1b）+ Ollama qwen3-14b 本地实测（B10），均 
 
 ### 4.2 知识理解
 
-**Universe（现 = Galaxy 多星球系统）**：`GET /api/v1/universe` 投影端点（保留）·
-前端渲染 **`GalaxyView`**（`components/galaxy/GalaxyCanvas.tsx`，自研 Canvas 2D）——
-主笔记=星球、副笔记=卫星（层级消费 `resolve_hierarchy()` 权威 parent 边，
-无 parent 边时回退 wikilink 拓扑启发式）· 全屏巡览 4s 可暂停 / 右栏 GalaxyMini 272px 静止 ·
-卫星 ≤16 聚合「+N」· 30fps 节流 + dpr 上限 + 离屏暂停 + reduced-motion 全停。
+**Universe**：`GET /api/v1/universe` 投影端点（**当前 Backend capability，保留**）·
+层级消费 `resolve_hierarchy()` 权威 parent 边，无 parent 边时回退 wikilink 拓扑启发式。
+~~前端渲染 `GalaxyView` / `GalaxyCanvas.tsx`（自研 Canvas 2D）· 星球-卫星视觉隐喻 ·
+全屏巡览 / 右栏 GalaxyMini 272px · 卫星 ≤16 聚合「+N」· 30fps 节流 + dpr 上限~~
+~~+ 离屏暂停 + reduced-motion 全停~~ —— **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8）。
 ~~d3-force Universe V2（`lib/universe/layout.ts` + PlanetNode/ConceptNode）~~ 已删除（`dd4f40c`，2026-08-31）
 
-**Graph**：`GET /api/v1/graph` 读模型（递归 CTE，depth 1~3）· dagre 层级布局 ·
-Concept（圆形）/ Note（方形）双视觉 · Layer Toggle（Mixed / Concept / Note）·
-Edge 视觉层次（9 种 relation）· hover relation label + domain 过滤 · Floating Inspector ·
+**Graph**：`GET /api/v1/graph` 读模型（递归 CTE，depth 1~3）· 9 种 relation 数据模型
+（**当前 Backend capability，保留**）·
+~~dagre 层级布局 · Concept（圆形）/ Note（方形）双视觉 · Layer Toggle · Edge 视觉层次 · hover relation label + domain 过滤 · Floating Inspector~~ —— **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8） ·
 ~~MiniMap~~ 已移除（2026-08-29）
 
 **Concept**：`/api/v1/concepts` CRUD（无 DELETE，ADR-023 边界）· `origin` 唯一来源字段
@@ -411,7 +411,8 @@ Concept Binding（引用 concept，不改 mastery/event）· Export/Import（`.m
  **`event_id` 落库**（migration 007 + UNIQUE 索引；术语统一 migration 009；历史行保持 NULL，按追加式约束不回填）·
  **设备身份单一来源**（`core/sync/device.py` 的 `load_or_create_device()`，eventlog 与 M7 共用）
 
-**Weak Area**：`GET /mastery/weak/list`（`get_weak_concepts`，limit 10）· Universe / Graph 视觉标记
+**Weak Area**：`GET /mastery/weak/list`（`get_weak_concepts`，limit 10；**当前 Backend capability，保留**）·
+~~Universe / Graph 视觉标记~~ —— **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8）
 
 ### 4.5 复习系统
 
@@ -431,7 +432,8 @@ Concept Binding（引用 concept，不改 mastery/event）· Export/Import（`.m
 
 已实现：上下文构建（白名单 6 类 + memories B8 + 显式笔记引用 P8-003D）· Prompt 组装 + 截断 + 敏感过滤 ·
 ProviderProtocol 三实现（Mock / openai_compat / 剥 `<think>`）· `TutorService.ask()` / `build_prompt_only()` ·
-`TutorPanel` 多模式 + 上下文透视面板 + **SSE 流式渲染 + Stop**（P8-007）· `GET /tutor/context/{concept_id}` ·
+**SSE 流式 + Stop**（P8-007；后端流式输出能力，**当前保留**）· `GET /tutor/context/{concept_id}` ·
+~~`TutorPanel` 多模式 + 上下文透视面板 + 前端流式渲染~~ —— **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8） ·
 `POST /tutor/context`（显式笔记引用）· `POST /tutor/test`（全链路 Smoke）· 掌握度感知（读衰减后值）·
 **Extractor**（B3 回合后抽取，失败不影响主回答）· **对话持久化**（B7 conversations/messages）·
 **用户记忆**（B8 注入 + B28 管理面）· **Tutor 三入口**（P8-006：Note→Explain / Weak→Tutor / Review 错答→Hint + Graph 概念→Tutor）· M4-E 评估体系
@@ -454,10 +456,10 @@ Conflict UI（mindmap artifacts）· E2E LAN Demo（双进程字节级一致）�
 |---|---|---|
 | **输入知识** | ✅ Note CRUD · Markdown vault（Backend / API 能力保留）· 附件 · FTS5+CJK bigram · wikilink · 原子写 · Vault Reindex（含增量 changed_paths）· **Vault 自动监听**（B16 watcher + /admin/watcher/*） | ❌ 批量导入 · 外部格式导入 · 笔记模板 · ~~TipTap+KaTeX 前端渲染~~（SUPERSEDED：当前无 Frontend implementation） |
 | **组织知识** | ✅ 多态 links（9 种 relation）· 反链 API · MindMap CRUD · Concept Binding · 导入导出 · **大纲反解析**（B18 build_outline + GET /mindmaps/{id}/outline） | ❌ AI 生成导图 |
-| **理解知识** | ✅ Universe（Galaxy 多星球系统）· Graph V2 · Concept CRUD + origin · Knowledge Radar（M3.5-A+B 学习状态真实数据）· **AI 概念提取**（B5 /concepts/extract）· **自动链接建议**（B4 link-suggestions） | — |
+| **理解知识** | ✅ **Universe API**（`GET /api/v1/universe`）· **Graph API**（`GET /api/v1/graph`）· Concept CRUD + origin · Knowledge Radar（M3.5-A+B 学习状态真实数据）· **AI 概念提取**（B5 /concepts/extract）· **自动链接建议**（B4 link-suggestions） | ❌ ~~Galaxy 多星球系统 / Graph V2 前端可视化~~（SUPERSEDED：当前无 Frontend implementation） |
 | **薄弱检测** | ✅ 四维掌握度 · effective 加权 · Ebbinghaus 衰减 · learning_events · Weak Area API · **错题本 API**（B12：列表/改已解决/删/统计） | ❌ 错题本独立 UI（仅 Tutor 上下文透视中展示）· AI 薄弱诊断 |
 | **复习** | ✅ SM-2 · Review Queue · Review Session · Mastery Decay · **复习历史分析**（B13 /review/stats）· **Study Session**（B14 /study/sessions） | ❌ 自定义卡组 |
-| **AI** | ✅ Context 构建 · Prompt 组装 · ProviderProtocol+Mock+OpenAICompat · **真实流式 SSE**（B2-B）· **Extractor**（B3）· **对话持久化**（/conversations）· **用户记忆**（B8 上下文注入 + B28 管理面）· TutorPanel | ❌ 自定义卡组（同复习行）· AI 薄弱诊断 |
+| **AI** | ✅ Context 构建 · Prompt 组装 · ProviderProtocol+Mock+OpenAICompat · **真实流式 SSE**（B2-B）· **Extractor**（B3）· **对话持久化**（/conversations）· **用户记忆**（B8 上下文注入 + B28 管理面） | ❌ ~~TutorPanel 多模式 UI + 上下文透视面板~~（SUPERSEDED：当前无 Frontend implementation）· 自定义卡组（同复习行）· AI 薄弱诊断 |
 
 > 本表 2026-08-31 逐项对照代码核实（B 后端闭环批 + M3.5-B 交付后）。
 > 此前「大纲反解析/错题本 API/复习历史分析/流式输出/概念提取/自动链接/
