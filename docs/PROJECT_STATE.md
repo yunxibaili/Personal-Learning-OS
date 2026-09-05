@@ -420,9 +420,8 @@ Concept Binding（引用 concept，不改 mastery/event）· Export/Import（`.m
   标准公式 + 可注入 `now` 参数（测试确定性）
 - **Review Queue**：`review_queue` 表 · `GET /review/today` 排序
   （错答优先 → `effective_now` 低优先 → 到期早优先）· 错答提升优先级（0.8），正答默认（0.5）
-- **Review Session**（P8-003A）：`ReviewSessionView.tsx` 状态机
-  idle → loading → ready → answering → feedback → done · 三按钮评分 ·
-  `POST /review/{id}/answer` → feedback（mastery 变化 + 下次复习日期）· 完成统计
+- **Review Session**（P8-003A）：`POST /review/{id}/answer` → feedback（mastery 变化 + 下次复习日期）· 完成统计（**当前 Backend capability，保留**）·
+  ~~`ReviewSessionView.tsx` 状态机 idle → loading → ready → answering → feedback → done · 三按钮评分~~ —— **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8）
 - **Mastery Decay**（P8-003B）：Ebbinghaus 衰减 · `review_today` 用 `effective_now` 排序 ·
   Tutor context 读衰减后掌握度 · API 输出 `effective_now` · 14 项测试
 - **P8-003E Review Bridge**：`update_mastery()` 在 `answer_wrong` 时同步落 `mistakes`
@@ -709,23 +708,25 @@ UI 状态曾由 Zustand store 持有（`stores/ui.ts` 只存 `activeView` 等 UI
 |---|---|---|
 | **输入** | 编辑器 → Markdown vault → SQLite 索引 + FTS | ✅ 已通 |
 | **组织** | wikilink → links 表 → 反链 / MindMap 绑定 | ✅ 已通 |
-| **理解** | 概念 → 图谱（Graph/Universe/Planet）可视化 | ✅ 已通 |
+| **理解** | 概念 → 图谱 API（`GET /api/v1/graph` / `GET /api/v1/universe` 读模型） | ✅ 已通（**Backend capability**）· ~~（Graph/Universe/Planet）可视化~~ **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8） |
 | **复习** | SM-2 队列 → 答题 → mastery 更新 → 衰减 → 重排期 | ✅ 已通 |
 | **同步** | Discover → Pair → Manifest → Diff → Transport → Apply → Workspace → Reindex | ✅ 已通（M7-008 补齐 HTTP 层；E2E 双进程字节级一致） |
-| **AI** | Context → Prompt → Provider → Response（流式 SSE）→ UI | ✅ 已通（后端 B1b/B2 实测；前端 P8-007 于 2026-08-31 接线：TutorPanel 流式渲染 + 停止，headless 实检通过） |
+| **AI** | Context → Prompt → Provider → Response（流式 SSE） | ✅ 已通（后端 B1b/B2 实测；SSE 流式 + Stop 为 **Backend capability**）· ~~→ UI：TutorPanel 流式渲染 + 停止（前端 P8-007 于 2026-08-31 接线，headless 实检通过）~~ **SUPERSEDED BY BACKEND-ONLY**（已移除的 UI，见 §2.6 / §8） |
 
 **后端闭环状态（2026-08-30）**：§9 全部条目已闭环（B10 于 2026-08-30 以本机
 Ollama qwen3-14b 实测通过）。剩余均属外部依赖或后端范围之外。
 
 **仍未闭环（非后端范围）**：移动分发（M8）。桌面分发（M6）已于 2026-09-01 完成
 （`3db327a`，MSI 65MB + NSIS 102MB）。
-前端视觉打磨（P8-FE-001）已于 2026-08-31 解冻并完成 Round 1–3（`907ff74` /
-`888ecd2` / `3182465`）：层次（body 灰底 + 编辑器白纸面 + 列表内边距）· 状态色
+前端视觉打磨（P8-FE-001）**CANCELLED · SUPERSEDED BY BACKEND-ONLY · 2026-09-05**（历史状态，保留 provenance）：
+原于 2026-08-31 解冻并完成 Round 1–3（`907ff74` / `888ecd2` / `3182465`）——
+层次（body 灰底 + 编辑器白纸面 + 列表内边距）· 状态色
 a11y（`--ok-text`/`--warn-text`/`--err-text` 实测全 AA）· 原生控件字体继承 ·
 空态文案 · 删除按钮数据态=UI态 · 150ms 微交互。**MiSans woff2 已裁定放弃**
-（授权红线：禁止衍生/子集化 + 可撤销许可），UI_DESIGN §依赖策略已如实改写，
-**FE-001 收尾**。唯一遗留为 ADR-013 §2.12 记录的「ADR 与设计资产」政策冲突
-（待所有者显式裁决，代码不动）。
+（授权红线：禁止衍生/子集化 + 可撤销许可），UI_DESIGN §依赖策略已如实改写。
+**Frontend implementation 随后在 Backend-only rebaseline 中移除；因此 P8-FE-001 不再构成当前实现状态或验收门禁**——
+未来重新设计 Frontend 时可据此了解曾做过什么，但**不得据此认为这些实现现在还存在**。
+另：ADR-013 §2.12 记录的「ADR 与设计资产」政策冲突，为仍待所有者显式裁决的独立项（代码不动）。
 
 ### 当前任务与路线（2026-09-02 项目所有者裁定「先收口，后开发」）
 
