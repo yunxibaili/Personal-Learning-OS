@@ -214,3 +214,44 @@ button.linkish {
   border-bottom: 1px solid #ececec;
 }
 .mastery-table th { color: #6b7280; font-weight: 500; }
+
+/* ── MVP-05 复习视图 ─────────────────────────────────────────── */
+
+.review-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+.review-layout h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+
+.review-queue, .review-history { list-style: none; margin: 0; padding: 0; }
+
+.review-item {
+  border: 1px solid #ececec;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.review-item-head { margin-bottom: 0.35rem; }
+.review-meta { font-size: 0.78rem; color: #6b7280; margin-left: 0.5rem; }
+
+.quality-row { display: flex; gap: 0.35rem; align-items: center; }
+.quality-row button {
+  width: 2rem;
+  padding: 0.2rem 0;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.quality-row button:hover:not(:disabled) { border-color: #ff6b35; }
+.quality-row button:disabled { color: #9a9a9a; cursor: default; }
+
+.answer-result {
+  font-size: 0.85rem;
+  background: #f7f7f7;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+}
+.stats-line { font-size: 0.85rem; margin: 0 0 0.5rem; }
+
+.review-history li { font-size: 0.85rem; padding: 0.15rem 0; }
+.review-history .ok { color: #15803d; margin-right: 0.4rem; }
+.review-history .bad { color: #b91c1c; margin-right: 0.4rem; }
