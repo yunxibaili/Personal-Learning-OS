@@ -34,21 +34,42 @@
 > 已完成设计与实现，Phase 2（Real Provider E2E）已完成架构验证。本节为**当前最高状态**；
 > 本节以下 §0 正文中 `728b34b` / `v0.2.0` 的表述降级为历史基线。
 
+**Phase 2 Provider Compatibility Closure（2026-09-06 深夜 · 收口结论）：**
+
+> **REAL PROVIDER E2E = BLOCKED** · **REAL STOP E2E = BLOCKED**（被上游阻塞，非新增缺陷）。
+> **BLOCKER = model/provider incompatibility**（两层，全部环境级，无代码缺陷）：
+> - **RC-1**：真实 settings `llm.model=qwen3-14b-uncensored-16k:latest` 在本机 Ollama 0.33.3 不存在 → `/v1` 404；
+> - **RC-2**：本机唯一模型 `qwen3.5:9b` 为 thinking 模型，`/v1/chat/completions` 未发送
+>   `reasoning_effort` 时自动开启 thinking（且忽略 `think:false` / `options.think` /
+>   `chat_template_kwargs` / `enable_thinking`），真实 `llm.max_tokens=256` 被 reasoning 吃满
+>   → **content 恒空（静默失败：HTTP 200、status=complete、空 content）**。
+> - **实测有效的 `/v1` 控制方式**：请求体加 `reasoning_effort:"none"`（0.4–0.5s 出正常
+>   content；extractor 的 `response_format:json_object` 形态同样有效）；原生
+>   `/api/chat + think:false` 亦正常。
+> - **本阶段不修改 provider 源码。** 唯一代码级修法（`openai_compat._payload()` 补
+>   `reasoning_effort`，约 1 行）仅登记不实现。
+> - **后续若重新启用真实 Ollama，最小路径**：settings `llm.model` → `qwen3.5:9b`（E0，必做）
+>   ＋ 本地注入代理追加 `reasoning_effort:"none"`（E-B，零代码）；或届时新授权的代码级 E-D。
+> - 详细证据（5 轮探针与测量数据）在仓库外 `.workbuddy/artifacts/phase2-provider-compat-closure.md`。
+> - **Phase 2 结束，不因该 blocker 继续扩展开发。** 另登记产品级观测项（不动 UX 冻结项）：
+>   「assistant 空内容静默失败」在 UX-001 / UX-004 现有分类中不可见。
+
 **阶段进度：**
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | Phase 1-A | Contract / UI Design（最小 State / Call Contract） | ✅ 完成并拍板 |
 | Phase 1-B | Tutor Chat Consumer 实现 | ✅ 完成，commit `bf89042` |
-| Phase 2 | Real Provider E2E | ⚠️ 真实文本生成环境阻塞；**架构验证通过** |
-| Push | `origin/main` | ✅ `bf89042` |
+| Phase 2 | Real Provider E2E | ✅ **收口：结论 BLOCKED**（BLOCKER = model/provider incompatibility，环境级，原因定位到 RC-1 / RC-2，报告已归档） |
+| UX 收尾 | UX-001 / 002 / 004+008 / 005 | ✅ `890860f` / `f7dbf2d` / `82f2812`+`87963f5` / `cd06f64`（均验收冻结） |
+| Push | `origin/main` | ✅ `cd06f64` |
 | Worktree | clean | ✅ |
 
-**Git 权威状态（2026-09-06，以 `git ls-remote` 为准）：**
+**Git 权威状态（2026-09-06 深夜，以 `git ls-remote` 为准）：**
 
 ```text
-main        = bf89042
-origin/main = bf89042
+main        = cd06f64（+ 本节 docs 收口 commit）
+origin/main = cd06f64
 ahead       = 0
 worktree    = clean
 v0.2.0 tag  = ea15dffb
@@ -1081,6 +1102,9 @@ NSIS 102MB，GNU 工具链。
   而 `configured ≠ model exists ≠ model generates usable content`（Phase 2 实测断在第一段：
   配置的 `qwen3-14b-uncensored-16k:latest` 在本机 Ollama 不存在）。
   **性质**：Provider readiness 第二层问题，**不是 Phase 1-B 的缺陷**，勿写成 Phase 1-B 缺陷。
+  **2026-09-06 Phase 2 收口补充**：完整结论见 §0.0「Phase 2 Provider Compatibility Closure」
+  （RC-1 模型不存在 + RC-2 thinking 挤占 token 预算 → content 静默为空；
+  `/v1` 实测有效开关 = `reasoning_effort:"none"`）。
   **未来方向（仅登记）**：`UNKNOWN → CONFIGURED → AVAILABLE → GENERATING` 四态。
   **当前处置**：待真实使用 Tutor Chat 收集 UX 问题后再裁决是否实现。
 
