@@ -58,8 +58,9 @@ sessionStorage
 
 | 维度 | localStorage | sessionStorage |
 | --- | --- | --- |
-| 刷新 / 切 tab | 保留 | 保留 |
-| 关标签页 / 重启浏览器 | 保留 | 丢失 |
+| 刷新页面 | 保留 | 保留 |
+| **离开 Tutor tab 后重新进入**（TutorView 卸载 / 重挂，同一浏览器 document） | 保留 | 保留 |
+| **浏览器标签页关闭 / 浏览器重启** | 保留 | 丢失 |
 | 多标签页共享 | 共享（A 页删会话 → B 页 stale） | 隔离（无 stale 冲突） |
 | 语义 | 用户偏好 / 长期记忆 | 当前 UI transient 状态 |
 
@@ -74,7 +75,8 @@ UX-002 要解决的是**刷新 / Tutor 卸载重挂后的当前 UI 状态**，�
 `AGENTS.md:330` 禁止 Frontend「持久化核心数据」。本决策不构成违反，理由：
 
 - 持久化的只是**一个 id 指针**，不是内容；
-- Conversation 与 message 的 canonical truth 仍在 backend（SQLite），前端每次恢复都要回源校验；
+- Conversation 与 message 的**持久化由 backend 管理**（当前实现为 SQLite）；
+  前端不保存其内容，只保存 ID 指针，每次恢复都要回源校验；
 - 指针失效时**自动清除并降级为空态**，前端不持有任何不可回源的状态。
 
 **后端仍是 Conversation / message 的真相。前端只记住「在看哪一个」。**
@@ -146,7 +148,7 @@ TutorView mount
 messages  title  draft  mode  conceptId  auto_notes  streamingText  scroll position
 ```
 
-以上一律**不持久化**。切 tab 回来后 TutorView 的 conceptId / 选中笔记 / auto_notes 仍会重置 ——
+以上一律**不持久化**。**离开 Tutor tab 后重新进入**时，TutorView 的 conceptId / 选中笔记 / auto_notes 仍会重置 ——
 这是另一份 state，**不在本 ADR 范围**，不得据此扩权。
 
 ---
@@ -191,5 +193,5 @@ NEW   frontend/src/api/currentConversation.test.ts
 3. 有 key + id 已被删除 → 清除 key → 空态，**不报错**
 4. `listConversations` 失败 → 保留 key + 显示错误（非静默）
 5. 删除当前会话 → key 被清除；再刷新 → 空态
-6. 切到别的 tab 再回来 → 会话仍被恢复（concept 选择允许重置）
+6. **离开 Tutor tab 再重新进入** → current conversation 仍被恢复（concept 选择允许重置）
 7. 发送失败 / Stop → **key 不变**
