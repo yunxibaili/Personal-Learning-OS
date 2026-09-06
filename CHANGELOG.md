@@ -3,9 +3,37 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [Unreleased] — v0.3：AI Tutor Generation（Frontend Consumer）＋ 结项
 
-（暂无）
+> 验证基线（2026-09-06 结项审计实测）：`pytest` **1118 passed** · frontend `vitest`
+> **148 passed** · `tsc -b` + `vite build` 绿 · oxlint **0 errors** ·
+> OpenAPI **102 endpoints**（contract audit P0-3 无未覆盖候选）· GitHub Actions **success**。
+
+### Added
+- **Tutor Chat Consumer（v0.3 Phase 1-B，`bf89042`）**：AI Tutor Chat 最小消费闭环
+  （13 files +1470/−17，仅 `frontend/`，`server/` 零改）
+- **UX-001 Provider readiness 状态机（`890860f`）**：readiness 三态 + 中文错误呈现，
+  不新增 endpoint
+- **UX-002 当前会话 UI 状态持久化（`f7dbf2d`）**：`sessionStorage` id 指针，
+  ADR-030（`ad5f5e0` + 修订 `2fa581d`）——UI 指针非权威数据，不碰 `client.ts`/SSE parser
+- **UX-004/008 消息生命周期契约（`82f2812`，backend）**：migration
+  `011_message_status.sql`，`messages.status` 三态 `complete`/`failed`/`stopped`
+  （DEFAULT `'complete'`，向后兼容扩展）；断连与 Stop = stopped、provider 错误 = failed
+- **UX-004/008 消息级生命周期呈现（`87963f5`，frontend）**：`assistantMessageView`
+  纯函数 + ChatPanel 渲染；移除瞬时 `.chat-stopped`
+
+### Changed
+- **UX-005 错误呈现统一收口（`cd06f64`）**：`api/errors.ts` `presentError` 单一收口
+  （code → 中文文案表 → status 分档 → 兜底），`classifyChatError` 删除 backendMessage
+  形参（结构性禁止拼接 backend detail），6 个错误消费者去重
+- 权威状态落档：`docs/PROJECT_STATE.md`（Phase 2 收口结论 `18f23da`；结项审计基线同步）
+
+### 裁定
+- **Phase 2 Provider Compatibility Closure：CLOSED / BLOCKED**——
+  `REAL PROVIDER E2E = BLOCKED`，BLOCKER = model/provider incompatibility
+  （RC-1 配置模型本机不存在 → 404；RC-2 thinking 挤占 token 预算 → content 静默为空；
+  `/v1` 实测有效开关 = `reasoning_effort:"none"`）。不修改 provider 源码；
+  复用真实 Ollama 的最小路径（E0 + E-B / 代码级 E-D）已登记，不因该 blocker 继续开发。
 
 ## [v0.2.0] — 2026-09-05
 

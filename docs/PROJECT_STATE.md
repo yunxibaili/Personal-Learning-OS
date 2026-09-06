@@ -11,15 +11,15 @@
 > 基线：**2026-09-02 状态收口**（收口任务：对齐全部文档至 HEAD `12030ff` 实际状态）
 > · Branch `main` · Commits 以 `git rev-list --count HEAD` 实测为准（基线必然滞后）
 > · License Apache-2.0
-> **当前验证基线（Backend-only）**：
-> - `pytest`：**1099 passed**
-> - OpenAPI：**102 routes / 82 paths**
-> - `/health`：**200**
-> - clean-environment install + test：**通过**
-> - PyInstaller clean build + 独立 sidecar health：**通过**
+> **当前验证基线（2026-09-06 结项审计实测）**：
+> - `pytest`：**1118 passed**（`server/`，本地 `server/.venv`，167s）
+> - frontend：`vitest` **148 passed**（13 files）· `tsc -b` + `vite build` 绿 · oxlint **0 errors**（3 warnings）
+> - OpenAPI：**102 endpoints**（`scripts/contract_audit.py` 实测，P0-3 无未覆盖候选；路径口径 82 paths 不变）
+> - `/health`：**200** · GitHub Actions CI：**success**（HEAD `18f23da`）
+> - clean-environment install + test 与 PyInstaller clean build + sidecar：2026-09-02 基线通过（本轮未复跑）
 >
-> 前端 `vitest` / `tsc --noEmit` / `vite build` **已不属于当前项目验证门禁**；
-> 历史前端验证结果仅保留于对应历史快照（详见 §10.1）。
+> 前端 `vitest` / `tsc -b` / `vite build` / `oxlint` 自 v0.3（Frontend Consumer 交付）起
+> **重新属于验证门禁**；下方 backend-only 时代的旧表述为历史口径（详见 §10.1）。
 >
 > **本文陈述事实，不含建议与规划。** 设计意图见 `TECH_DESIGN.md`，任务与路线见 `TASKS.md`，
 > 工程约束见根 `AGENTS.md`。
@@ -622,6 +622,8 @@ Review  (review_queue：due_at + priority + last_result；SM-2 排期)
 | 007_event_uuid | learning_events 增加 `event_id` + UNIQUE 索引 |
 | 008_study_sessions | study_sessions 表（B14） |
 | 009_event_id_rename | `event_uuid` → `event_id` 术语统一 |
+| 010_fts_bigram | notes_fts 重建为 bigram 分词（纯派生索引；`FTS_REBUILD_VERSIONS` 需 reindex） |
+| 011_message_status | messages 增加 `status` 三态 `complete`/`failed`/`stopped`（DEFAULT `'complete'`，向后兼容扩展；UX-004/008） |
 
 **延后建表（禁止提前创建）**：`blocks` · `embeddings`（RAG 立项且概念数 >2000）· `concept_demos`
 
@@ -1090,7 +1092,7 @@ NSIS 102MB，GNU 工具链。
 - 本地 LLM 默认路径未配置（B10 Ollama qwen3 实测通过，但需用户自行配 settings）
 - TipTap 数学扩展为社区维护（@aarkue），非官方
 - UI 无 jsdom 交互测试（现有策略 = renderToStaticMarkup + 源码审计 + 无头浏览器自检）
-- `pytest` 本机 venv 缺 dev 依赖（CI 现场安装不受影响）
+- ~~`pytest` 本机 venv 缺 dev 依赖（CI 现场安装不受影响）~~ ✅ **已消失**（2026-09-06 结项审计实测 `server/.venv` 可跑全量 1118 passed）
 - AI 第一目标「记忆感知 Tutor」开箱为 MockProvider——对外需明确标注配置方法（README 已写）
 
 ### 待所有者裁决（维持原登记）
