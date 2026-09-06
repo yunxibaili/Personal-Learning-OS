@@ -4,61 +4,90 @@
  * 每个状态选择器与行为矩阵一一对应，Phase 2B 在 Component Lab 可视化验证。
  * ============================================================ */
 
-/* ── Button（矩阵 §1）────────────────────────────────────── */
+/* ── Button（矩阵 §1）──────────────────────────────────────
+ * 视觉校准（visual-calibration v2）：
+ * - 字重 600（按钮标签），不走 500 万能方案 [指令书 §12]
+ * - Hover = 材质/高度变化，禁止 scale 放大 [指令书 §5]
+ * - Press = 物理压缩：scale 0.96 + 亮度下沉 + 影收紧（像按有厚度的物体）[指令书 §5]
+ * - Release = spring 回弹带微 settle（--spring-snappy 自带过冲） */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
+  gap: 6px;
   min-height: 44px; /* [A] hit region ≥44pt */
-  padding: 0 var(--space-md);
-  border: 1px solid transparent;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-capsule);
   font: inherit;
-  font-size: var(--text-body-ui);
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--color-text-primary);
   background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-1); /* 静止即有极轻高度：控件浮于页面之上 */
   cursor: pointer;
   user-select: none;
   transition:
-    transform var(--motion-fast) var(--spring-snappy),
-    background-color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+    transform 180ms var(--spring-snappy),
+    background-color 120ms var(--ease-standard),
+    border-color 120ms var(--ease-standard),
+    box-shadow 180ms var(--ease-standard),
+    filter 120ms var(--ease-standard),
+    color 120ms var(--ease-standard);
 }
-.btn:active { transform: scale(0.97); } /* [A] "Always include a press state" */
+.btn:hover {
+  background: color-mix(in srgb, var(--color-surface-elevated) 82%, var(--color-background));
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-2); /* 高度线索，不缩放 */
+}
+.btn:active {
+  transform: scale(0.96);
+  filter: brightness(0.96);
+  box-shadow: var(--shadow-1);
+  transition-duration: 60ms; /* 按下更快：物理压缩感 */
+}
 .btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 .btn[disabled],
-.btn[aria-disabled="true"] { opacity: 0.45; cursor: default; pointer-events: none; }
+.btn[aria-disabled="true"] { opacity: 0.4; cursor: default; pointer-events: none; box-shadow: none; }
 
 /* prominence（[A] "one or two prominent buttons per view"） */
 .btn--prominent {
   background: var(--color-accent);
-  border-color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 80%, #000);
   color: #fff;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
-.btn--prominent:hover { box-shadow: var(--shadow-2); }
-.btn--regular:hover { background: var(--color-surface-elevated); border-color: var(--color-border-strong); box-shadow: var(--shadow-1); }
+.btn--prominent:hover {
+  background: color-mix(in srgb, var(--color-accent) 88%, #fff);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+.btn--prominent:active { filter: brightness(0.9); }
+.btn--regular:hover { background: color-mix(in srgb, var(--color-surface-elevated) 82%, var(--color-background)); border-color: var(--color-border-strong); box-shadow: var(--shadow-2); }
 .btn--plain {
   background: transparent;
   border-color: transparent;
   color: var(--color-accent-text);
   padding-inline: var(--space-sm);
+  box-shadow: none;
 }
-.btn--plain:hover { background: var(--color-accent-soft); }
+.btn--plain:hover { background: var(--color-accent-soft); box-shadow: none; }
 .btn--destructive { color: var(--color-error); }
 .btn--destructive:hover { background: color-mix(in srgb, var(--color-error) 10%, transparent); }
-/* glass prominence：仅 functional layer 内使用；不做第二层玻璃叠加 [A] glass-on-glass 禁 */
+/* glass prominence：仅 functional layer 内使用；边缘高光模拟玻璃厚度 [A] glass-on-glass 禁 */
 .btn--glass {
   background: var(--color-surface-glass);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   border-color: var(--color-border-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), var(--shadow-1);
   color: var(--color-text-primary);
 }
-.btn--glass:hover { background: color-mix(in srgb, var(--color-surface-glass) 88%, #fff); }
+.btn--glass:hover {
+  background: color-mix(in srgb, var(--color-surface-glass) 88%, #fff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), var(--shadow-2);
+}
+.btn--glass:active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), var(--shadow-1); }
 
 /* sizes */
 .btn--sm { min-height: 32px; padding: 0 var(--space-sm); font-size: var(--text-callout); }
@@ -173,28 +202,36 @@
   will-change: transform, width;
 }
 
-/* ── Popover（矩阵 §7：Material Reference 母版）──────────── */
+/* ── Popover（矩阵 §7：Material Reference 母版）────────────
+ * 视觉校准（visual-calibration v2）：
+ * - 双层影（环境 + 投射）[A] "casts deeper, richer shadows"
+ * - 顶部内侧高光 = 玻璃边缘 specular（真玻璃的 edge treatment）
+ * - materialize 过冲由 --spring-gentle 承担（scale 0.96 起步，从触发点"长出来"） */
 .popover {
   position: absolute;
   z-index: var(--z-popover);
-  min-width: 220px;
+  min-width: 240px;
   max-width: 360px;
   padding: var(--space-md);
-  /* glass-regular 材质（functional layer [A]），radial 高光为交互反馈近似的起点帧 */
   background: var(--color-surface-glass);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-4);
+  border: 1px solid color-mix(in srgb, #fff 55%, var(--color-border-subtle));
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 12px 32px rgba(0, 0, 0, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.08);
   color: var(--color-text-primary);
   transform-origin: top left; /* 由 JS 按触发点覆写 */
-  animation: popover-materialize var(--motion-standard) var(--spring-gentle) both;
+  animation: popover-materialize 300ms var(--spring-gentle) both;
 }
-.popover.is-closing { animation: popover-dissolve var(--motion-fast) var(--ease-exit) both; }
+.popover.is-closing { animation: popover-dissolve 120ms var(--ease-exit) both; }
 @keyframes popover-materialize {
-  from { opacity: 0.96; transform: scale(0.98) translateY(4px); filter: blur(2px); }
-  to   { opacity: 1;    transform: scale(1)    translateY(0);    filter: blur(0); }
+  from { opacity: 0.9; transform: scale(0.96) translateY(3px); filter: blur(3px) saturate(0.9); }
+  60%  { opacity: 1; }
+  to   { opacity: 1;  transform: scale(1)    translateY(0);    filter: blur(0) saturate(1); }
 }
 @keyframes popover-dissolve {
   from { opacity: 1; filter: blur(0); }
@@ -279,3 +316,89 @@
 .icon-replace { position: relative; display: block; }
 .icon-replace__layer { transition: opacity var(--motion-fast) var(--ease-standard); }
 .icon-replace__layer[aria-hidden="true"] { opacity: 0; }
+
+/* ── Toolbar（矩阵 §6：Functional Layer）──────────────────
+ * 校准（v2）：glass-regular + 顶部 specular；分组靠 divider 不靠每项加框 [A] */
+.toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 48px;
+  padding: 6px;
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid color-mix(in srgb, #fff 55%, var(--color-border-subtle));
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.toolbar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.toolbar__divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 4px;
+  background: var(--color-border-subtle);
+}
+
+/* ── SearchField（矩阵 §5）────────────────────────────────
+ * 校准（v2）：sunken→elevated 的 focus 响应（面升起）+ 图标 accent 化 + hint 退场 */
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 40px;
+  width: 280px;
+  padding: 0 var(--space-md);
+  background: var(--color-surface-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--radius-capsule);
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+.search:hover { background: color-mix(in srgb, var(--color-surface-sunken) 80%, var(--color-surface-elevated)); }
+.search:focus-within {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-2), var(--shadow-focus);
+}
+.search:focus-within .search__icon { color: var(--color-accent-text); }
+.search__icon { display: inline-flex; color: var(--color-text-tertiary); transition: color var(--motion-fast) var(--ease-standard); }
+.search__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-body-ui);
+  color: var(--color-text-primary);
+}
+.search__input::placeholder { color: var(--color-text-tertiary); }
+.search__hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 1px 5px;
+  background: var(--color-surface-elevated);
+}
+.search:focus-within .search__hint { opacity: 0; }
+.search__clear { margin-left: auto; }
+
+/* ── 视觉校准补充（visual-calibration v2）────────────────── */
+.btn.is-focus { box-shadow: var(--shadow-focus); } /* 文档态：focus 矩阵展示 */
+.tabs2__tab { font-weight: 400; }                   /* [指令书 §12] 禁 500 万能 */
+.tabs2__tab[aria-selected="true"] { font-weight: 600; }
+.seg__option { font-weight: 400; }
+.seg__option[aria-pressed="true"] { font-weight: 600; }

@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
  */
 
 const uiDir = fileURLToPath(new URL(".", import.meta.url));
-const feRoot = `${uiDir}../../`;
+// ui/ → components/ → src/ → frontend/ → 仓库根
+const feRoot = `${uiDir}../../../../`;
 
 function read(rel: string): string {
   return readFileSync(`${feRoot}${rel}`, "utf-8");

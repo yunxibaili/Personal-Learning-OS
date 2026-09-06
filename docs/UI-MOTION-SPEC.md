@@ -103,3 +103,12 @@ Why · What · Relationship · Meaning · Timing · Interruptibility · Reduced 
 - 允许：CSS transitions/animations（含 `linear()` spring）、Web Animations API、SVG 动画、Canvas（immersive）。
 - 禁止（未经审批）：Framer Motion 等第三方动画库 [C]（红线：现有栈够用即零依赖；确需按指令书 §17 流程立项）。
 - 性能预算 [C]：动效仅 transform/opacity/filter（合成层属性）；同屏 backdrop-filter 面 ≤3；任何动画不得引发布局抖动（layout thrash）。
+
+---
+
+## §实测校准值（2026-09-07 Visual Calibration Round 1，详见 UI-VISUAL-CALIBRATION.md）
+
+- Button press：`scale(.96) + brightness(.96)`，按下段 `60ms`，release 走 `--spring-snappy` 回弹——opacity 方案已废。
+- Popover materialize：`opacity .9→1 · scale .96→1 · blur 3→0 · saturate .9→1 · 300ms --spring-gentle`；dissolve `120ms --ease-exit`。
+- Materialize 起点参数从 §3 的 [.98/.2px] 收紧为 [.96/3px]——"长出来"的可感度更高（真实浏览器截图比对结论）。
+- 全局禁 `font-weight:500` 万能：标签层 400 / 选中与控件 600 / 大标题 700。

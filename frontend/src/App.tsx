@@ -6,6 +6,7 @@ import ReviewView from "./features/review/ReviewView";
 import TutorView from "./features/tutor/TutorView";
 import DesignPlayground from "./design/DesignPlayground";
 import ComponentLab from "./dev/ComponentLab";
+import ReferenceGallery from "./dev/ReferenceGallery";
 
 // MVP 顶层工作区：笔记 / 概念 / 掌握度 / 复习 四个 Consumer 视图
 // （单页，无路由——ADR-029 §3.2；Workbench 化路线见 docs/UI-REBUILD-DESIGN-AUDIT.md）。
@@ -20,10 +21,12 @@ export default function App() {
     setTab("notes");
   }
 
-  // dev-only 设计系统入口（UI-REBUILD-DESIGN-AUDIT §40 / 指令书 §29）：
-  // ?design → Foundation；?design=components → Component Laboratory。不进导航。
+  // dev-only 设计系统入口（UI-REBUILD-DESIGN-AUDIT §40 / 指令书 §20/§29）：
+  // ?design → Foundation；?design=components → Component Laboratory；
+  // ?design=reference → 视觉校准 Reference Gallery。不进导航。
   const designParam = new URLSearchParams(window.location.search).get("design");
   if (designParam === "components") return <ComponentLab />;
+  if (designParam === "reference") return <ReferenceGallery />;
   if (designParam !== null) return <DesignPlayground />;
 
   return (

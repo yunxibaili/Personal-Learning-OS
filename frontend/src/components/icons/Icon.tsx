@@ -46,6 +46,22 @@ export interface IconProps {
   style?: CSSProperties;
 }
 
+/** 光学重量校准（visual-calibration v2）：几何越密 stroke 越细，保证同尺寸视觉重量接近 [指令书 §11] */
+const STROKE_OVERRIDE: Partial<Record<IconName, number>> = {
+  settings: 1.5,
+  galaxy: 1.8,
+  mindmap: 1.8,
+  notes: 1.9,
+  graph: 1.9,
+  review: 1.9,
+  save: 1.9,
+  tutor: 1.9,
+  algorithm: 1.9,
+  error: 1.9,
+  sync: 2.1,
+  success: 2.2,
+};
+
 /** 装饰性使用必须传 aria-hidden（默认 true）；语义图标由外层 label 承担 [ICON-MOTION-SPEC §5]。 */
 export function Icon({ name, size = 20, activity = false, className, style }: IconProps) {
   const def = PATHS[name];
@@ -59,7 +75,7 @@ export function Icon({ name, size = 20, activity = false, className, style }: Ic
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={STROKE_OVERRIDE[name] ?? 2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
