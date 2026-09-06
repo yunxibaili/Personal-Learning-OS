@@ -28,6 +28,74 @@
 
 ## §0 当前开发政策：Frontend Consumer 已收口（F0 / MVP-01~06 DONE · FROZEN）
 
+### §0.0 v0.3 阶段状态：AI Tutor Generation（2026-09-06 · 最新，凌驾于本节 v0.2.0 表述）
+
+> **2026-09-06 项目所有者授权与裁定**：v0.3 Phase 1（AI Tutor Generation — Frontend Consumer）
+> 已完成设计与实现，Phase 2（Real Provider E2E）已完成架构验证。本节为**当前最高状态**；
+> 本节以下 §0 正文中 `728b34b` / `v0.2.0` 的表述降级为历史基线。
+
+**阶段进度：**
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| Phase 1-A | Contract / UI Design（最小 State / Call Contract） | ✅ 完成并拍板 |
+| Phase 1-B | Tutor Chat Consumer 实现 | ✅ 完成，commit `bf89042` |
+| Phase 2 | Real Provider E2E | ⚠️ 真实文本生成环境阻塞；**架构验证通过** |
+| Push | `origin/main` | ✅ `bf89042` |
+| Worktree | clean | ✅ |
+
+**Git 权威状态（2026-09-06，以 `git ls-remote` 为准）：**
+
+```text
+main        = bf89042
+origin/main = bf89042
+ahead       = 0
+worktree    = clean
+v0.2.0 tag  = ea15dffb
+```
+
+> 注：本机 `.git/refs/remotes/origin/` 缺失（已登记 P2-7，见 §12），`git branch -vv` 会显示
+> `[origin/main: gone]`，`git fetch` 亦不落盘。**这不是远端同步失败**——远端状态一律以
+> `git ls-remote` 判定，勿据本地引用误判。
+
+**Phase 2 Real Provider E2E 结论（2026-09-06 实测；workspace 副本隔离运行，真实 workspace 零写入）：**
+
+已验证成立：
+
+- 真实 Provider 确实被调用（非 Mock fallback——Mock 永不失败，实测抛出 `provider_error`）
+- Conversation 持久化成立（`POST /conversations` → `POST /chat` → user/assistant 双消息落库）
+- Context → generation 链路成立
+- `concept_id` 正确进入 Context（context 快照 8 个 section 齐全，`concept.title` 正确）
+- Markdown 真相边界未被污染（vault 20 个 `.md` 文件 MD5 零变化、零增删）
+- 失败情况下空 assistant 持久化（落库 `content=""`）——Phase 1 的前端 placeholder
+  「本次生成失败，无内容」设计得到真实行为验证
+- 无 `done` 帧时后端仍完成持久化——Phase 1「先建 conversation 再 chat」的设计被证实为必需
+  （流式下 `conversation_id` 仅在 `event: done` 返回，Stop/error 时前端拿不到）
+
+真实文本生成阻塞原因（**环境问题，不是代码缺陷**）：
+
+- settings 配置的 `llm.model = qwen3-14b-uncensored-16k:latest` **在本机 Ollama 中不存在**
+  （实际仅有 `qwen3.5:9b`），`/v1/chat/completions` 返回 404 `model not found`
+- 本机无 NVIDIA GPU，纯 CPU 推理
+- 唯一可用模型 `qwen3.5:9b` 为思考模型，经 `/v1` 端点将输出置于 `reasoning` 字段、`content` 恒空
+
+**新登记项 `P2-PROVIDER-001`：Provider 配置存在 ≠ 模型实际可用**
+
+```text
+configured  ≠  model exists  ≠  model generates usable content
+```
+
+`/settings` 仅反映第一段（`provider=openai_compat` + `base_url` 非空 → 前端判定 `READY`），
+不反映后两段。**这是 Provider readiness 的第二层问题，不是 Phase 1-B 的缺陷**——
+Phase 1 §5「不得从 `/chat` 成败反推 provider 状态」的裁定正确且维持。
+未来方向（仅登记，不实现）：`UNKNOWN → CONFIGURED → AVAILABLE → GENERATING`。详见 §12。
+
+**本阶段明确未做（边界声明）**：不改 `openai_compat.py` · 不做 reasoning→content 适配 ·
+不改 Provider 状态协议与 `/settings` · 不新增模型健康检查 endpoint · 不改 ChatPanel ·
+不 Pull 新模型 · 不处理 P2-PROVIDER-001。
+
+---
+
 > **2026-09-05 项目所有者裁定（现行最高政策，凌驾于本文档其余章节的历史表述）**：
 > ADR-029（Frontend Consumer Architecture）经 F0-GATE 正式 Accepted；新前端 `frontend/`
 > （React 19 + Vite + TS + CodeMirror 6 源码模式，Browser-first Consumer）已实现
@@ -1008,6 +1076,13 @@ NSIS 102MB，GNU 工具链。
 
 - ADR-013 §2.12「ADR 与设计资产」政策冲突（`.topbar` 毛玻璃 vs §2.10 禁 glassmorphism）
 - §13 开源就绪度的路线问题（i18n / 块级引用 / FSRS / 是否吸引外部贡献）
+- **`P2-PROVIDER-001`（2026-09-06 新增登记，不处理）**：**Provider 配置存在 ≠ 模型实际可用**。
+  `/settings` 只反映 `configured` 一段（`provider=openai_compat` + `base_url` 非空 → 前端 `READY`），
+  而 `configured ≠ model exists ≠ model generates usable content`（Phase 2 实测断在第一段：
+  配置的 `qwen3-14b-uncensored-16k:latest` 在本机 Ollama 不存在）。
+  **性质**：Provider readiness 第二层问题，**不是 Phase 1-B 的缺陷**，勿写成 Phase 1-B 缺陷。
+  **未来方向（仅登记）**：`UNKNOWN → CONFIGURED → AVAILABLE → GENERATING` 四态。
+  **当前处置**：待真实使用 Tutor Chat 收集 UX 问题后再裁决是否实现。
 
 ---
 
