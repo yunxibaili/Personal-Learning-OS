@@ -1,0 +1,11 @@
+-- 011_message_status: 消息生命周期状态（UX-004 / UX-008）
+--
+-- status 取值（与 core/conversations.py 的 MESSAGE_STATUS_* 一致）：
+--   complete = 生成正常收尾（非流式成功 / 流式收到 done）
+--   failed   = generation error（provider 错误，与是否已产出部分内容无关）
+--   stopped  = streaming 连接中断（用户 Stop / 浏览器中止 / 网络断开）
+--              后端只能证明「连接没有正常走完」，不能证明「用户主动点了 Stop」。
+--
+-- 向后兼容扩展：老行取 DEFAULT 'complete'，既有字段语义不变；
+-- user 消息同样带 status（恒为 complete，无生成生命周期）。
+ALTER TABLE messages ADD COLUMN status TEXT NOT NULL DEFAULT 'complete';

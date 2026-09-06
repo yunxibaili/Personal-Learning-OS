@@ -1913,6 +1913,11 @@ export interface components {
             role: string;
             /** Content */
             content: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "complete" | "failed" | "stopped";
             /** Context */
             context: {
                 [key: string]: unknown;

@@ -323,3 +323,132 @@ class TestChatStreaming:
         n = core_conn.execute("SELECT COUNT(*) FROM messages WHERE conversation_id=?",
                               (conv_id,)).fetchone()[0]
         assert n == 4  # 两轮 user+assistant
+
+
+# ── UX-004/008 消息生命周期状态（messages.status）────────────────────
+
+def _latest_conversation_id(core_conn) -> int:
+    return core_conn.execute(
+        "SELECT id FROM conversations ORDER BY id DESC LIMIT 1").fetchone()["id"]
+
+
+def _assistant_row(core_conn, conv_id: int):
+    return core_conn.execute(
+        "SELECT status, content FROM messages WHERE conversation_id=? "
+        "AND role='assistant'", (conv_id,)).fetchone()
+
+
+class TestMessageLifecycleStatus:
+    """messages.status 三态：complete / failed / stopped。
+
+    契约要点：status 只由后端控制流产生——不从 content 推断、不从 extractor 推断。
+    真实浏览器 Stop / 网络断连的 E2E 仍为 Blocked（UX-009 同因），
+    本组 stopped 用例是 L0-Stub：直接关闭生成器（等价 GeneratorExit）。
+    """
+
+    def test_legacy_insert_defaults_to_complete(self, core_conn):
+        """向后兼容：老形态 INSERT（不含 status 列）→ complete。"""
+        from app.core.conversations import create_conversation
+
+        conv_id = create_conversation(core_conn, "legacy")
+        core_conn.execute(
+            "INSERT INTO messages (conversation_id, role, content, context_json) "
+            "VALUES (?, 'assistant', 'legacy answer', '{}')", (conv_id,))
+        core_conn.commit()
+        assert _assistant_row(core_conn, conv_id)["status"] == "complete"
+
+    def test_append_message_persists_and_replays_status(self, core_conn):
+        from app.core.conversations import append_message, create_conversation, get_messages
+
+        conv_id = create_conversation(core_conn, "lifecycle")
+        append_message(core_conn, conv_id, role="user", content="q")
+        append_message(core_conn, conv_id, role="assistant", content="部分",
+                       status="stopped")
+        assert [m["status"] for m in get_messages(core_conn, conv_id)] == [
+            "complete", "stopped"]
+
+    def test_invalid_status_rejected(self, core_conn):
+        from app.core.conversations import append_message, create_conversation
+
+        conv_id = create_conversation(core_conn, "bad status")
+        with pytest.raises(ValueError):
+            append_message(core_conn, conv_id, role="assistant", content="a",
+                           status="bogus")
+
+    def test_messages_api_exposes_status(self, client: TestClient):
+        cid = _mk_concept(client, "状态概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid, "query": "q"})
+        conv_id = r.json()["conversation_id"]
+        msgs = client.get(
+            f"/api/v1/conversations/{conv_id}/messages").json()["messages"]
+        assert [m["status"] for m in msgs] == ["complete", "complete"]
+
+    def test_stream_complete_status(self, client: TestClient, core_conn):
+        cid = _mk_concept(client, "完成概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        done = [f for f in _parse_sse(r.text) if f["event"] == "done"][0]["data"]
+        assert _assistant_row(core_conn, done["conversation_id"])["status"] == "complete"
+
+    def test_stream_provider_error_marks_failed_not_stopped(
+        self, client: TestClient, core_conn, monkeypatch):
+        """控制流边界：provider 错误 → failed（不得因异常落库而误标 stopped）。"""
+        from app.core.ai.errors import ProviderError
+        from app.core.ai.service import TutorService
+
+        def boom(self, context, query, mode="explain"):
+            raise ProviderError("HTTP 500")
+            yield  # generator function：调用时不抛，迭代时才抛
+
+        monkeypatch.setattr(TutorService, "ask_stream", boom)
+        cid = _mk_concept(client, "失败概念")
+        r = client.post("/api/v1/chat", json={"concept_id": cid,
+                                              "query": "q", "stream": True})
+        frames = _parse_sse(r.text)
+        assert [f for f in frames if f["event"] == "error"], "应有 event:error"
+        row = _assistant_row(core_conn, _latest_conversation_id(core_conn))
+        assert row["status"] == "failed"
+
+    def test_stream_unexpected_exception_marks_failed(
+        self, client: TestClient, core_conn, monkeypatch):
+        """非 TutorError 的生成期异常也属于 failed（外层兜底发 error 帧）。"""
+        from app.core.ai.service import TutorService
+
+        def boom(self, context, query, mode="explain"):
+            raise RuntimeError("unexpected")
+            yield
+
+        monkeypatch.setattr(TutorService, "ask_stream", boom)
+        r = client.post("/api/v1/chat", json={"query": "q", "stream": True})
+        frames = _parse_sse(r.text)
+        assert frames and frames[-1]["event"] == "error"
+        row = _assistant_row(core_conn, _latest_conversation_id(core_conn))
+        assert row["status"] == "failed"
+
+    def test_stream_stopped_status_when_generator_closed(
+        self, core_conn, monkeypatch):
+        """L0-Stub：生成器被关闭（GeneratorExit）→ stopped，已生成部分照常落库。
+
+        对应真实场景：用户 Stop / 浏览器中止 / 网络断开。后端只能证明
+        「连接没有正常走完」，因此语义是 stopped（= 中断），不是「用户点了停止」。
+        """
+        from app.core.ai.service import TutorService
+        from app.routers.conversations import ChatRequest, _chat_stream
+
+        def chunks(self, context, query, mode="explain"):
+            for t in ("部", "分", "内", "容"):
+                yield t
+
+        monkeypatch.setattr(TutorService, "ask_stream", chunks)
+        from app.core.conversations import create_conversation
+
+        conv_id = create_conversation(core_conn, "中断会话")
+        gen = _chat_stream(
+            ChatRequest(query="q", stream=True, conversation_id=conv_id), "q", [])
+        first = next(gen)
+        assert b'"text"' in first, "首帧应为 data 帧"
+        gen.close()  # 客户端断开 → GeneratorExit 抛入生成器 → finally 落库
+
+        row = _assistant_row(core_conn, conv_id)
+        assert row["status"] == "stopped"
+        assert row["content"] == "部", "中断前已生成的部分应保留"

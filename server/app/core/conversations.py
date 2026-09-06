@@ -5,14 +5,29 @@
 上下文透视与审计的数据基础。
 
 B3 新增：update_message_context() 将 extractor 结果写进消息 context_json。
+
+UX-004/008 新增：messages.status 记录单条消息的生成生命周期
+（complete / failed / stopped）。默认 complete —— 对既有 persistence
+contract 的一次向后兼容扩展（老行取 DEFAULT），不是重写。
 """
 from __future__ import annotations
 
 import json
+from typing import Literal, get_args
 
 from .tutor_types import TutorContext
 
 DEFAULT_TITLE = "新对话"
+
+# 消息生成生命周期（UX-004/008 冻结契约）：
+#   complete = 正常收到 done
+#   failed   = generation error
+#   stopped  = streaming 连接中断（含网络断连——后端只能证明连接未正常走完）
+MessageStatus = Literal["complete", "failed", "stopped"]
+MESSAGE_STATUS_COMPLETE: MessageStatus = "complete"
+MESSAGE_STATUS_FAILED: MessageStatus = "failed"
+MESSAGE_STATUS_STOPPED: MessageStatus = "stopped"
+MESSAGE_STATUSES: tuple[str, ...] = get_args(MessageStatus)
 
 
 class ConversationNotFoundError(Exception):
@@ -48,11 +63,11 @@ def conversation_exists(conn, conversation_id: int) -> bool:
 
 
 def get_messages(conn, conversation_id: int) -> list[dict]:
-    """某对话的全部消息（角色/内容/快照/时间）。不存在抛错。"""
+    """某对话的全部消息（角色/内容/生命周期状态/快照/时间）。不存在抛错。"""
     if not conversation_exists(conn, conversation_id):
         raise ConversationNotFoundError(conversation_id)
     rows = conn.execute(
-        "SELECT id, role, content, context_json, created_at "
+        "SELECT id, role, content, status, context_json, created_at "
         "FROM messages WHERE conversation_id=? ORDER BY id",
         (conversation_id,),
     ).fetchall()
@@ -68,15 +83,22 @@ def get_messages(conn, conversation_id: int) -> list[dict]:
 
 
 def append_message(conn, conversation_id: int, *, role: str,
-                   content: str, context: TutorContext | dict | None = None) -> int:
-    """追加一条消息；assistant 消息携带 context 快照（上下文透视）。"""
+                   content: str, context: TutorContext | dict | None = None,
+                   status: MessageStatus = MESSAGE_STATUS_COMPLETE) -> int:
+    """追加一条消息；assistant 消息携带 context 快照（上下文透视）。
+
+    status 只在 assistant 消息上有语义（user 消息恒为 complete）；
+    调用方不传即取默认 complete —— 既有调用点零改动仍成立。
+    """
     if role not in ("user", "assistant"):
         raise ValueError(f"invalid role: {role}")
+    if status not in MESSAGE_STATUSES:
+        raise ValueError(f"invalid message status: {status}")
     snapshot = json.dumps(context or {}, ensure_ascii=False, default=str)
     cur = conn.execute(
-        "INSERT INTO messages (conversation_id, role, content, context_json) "
-        "VALUES (?, ?, ?, ?)",
-        (conversation_id, role, content, snapshot),
+        "INSERT INTO messages (conversation_id, role, content, status, context_json) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (conversation_id, role, content, status, snapshot),
     )
     conn.commit()
     return cur.lastrowid
@@ -117,4 +139,6 @@ __all__ = [
     "ConversationNotFoundError", "create_conversation", "list_conversations",
     "conversation_exists", "get_messages", "append_message",
     "delete_conversation", "update_message_context", "DEFAULT_TITLE",
+    "MessageStatus", "MESSAGE_STATUS_COMPLETE", "MESSAGE_STATUS_FAILED",
+    "MESSAGE_STATUS_STOPPED", "MESSAGE_STATUSES",
 ]

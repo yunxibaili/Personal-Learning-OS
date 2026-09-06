@@ -34,12 +34,13 @@ def test_migration_creates_all_tables_and_idempotent(client: TestClient) -> None
         "review_queue", "study_sessions",
     }
     assert expected <= tables, f"缺表: {expected - tables}"
-    # 幂等：重复执行不再新增版本记录（001~010；010 FTS bigram 重建，ADR-027）
+    # 幂等：重复执行不再新增版本记录（001~011；010 FTS bigram 重建，ADR-027；
+    # 011 messages.status 生命周期，UX-004/008）
     before = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
     newly = migrate()
     after = conn.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
     conn.close()
-    assert newly == [] and before == after == 10
+    assert newly == [] and before == after == 11
 
 
 def test_workspace_layout_created(tmp_workspace: Path, client: TestClient) -> None:

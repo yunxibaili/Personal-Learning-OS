@@ -25,6 +25,10 @@ from ..core.ai.errors import ProviderError, ProviderTimeout, TutorError
 from ..core.ai.service import TutorService
 from ..core.conversations import (
     ConversationNotFoundError,
+    MESSAGE_STATUS_COMPLETE,
+    MESSAGE_STATUS_FAILED,
+    MESSAGE_STATUS_STOPPED,
+    MessageStatus,
     append_message,
     conversation_exists,
     create_conversation,
@@ -68,6 +72,8 @@ class MessageItem(BaseModel):
     id: int
     role: str
     content: str
+    # UX-004/008：消息生成生命周期。后端唯一权威来源，前端不得从 content 推断。
+    status: MessageStatus
     context: dict  # build_tutor_context 快照；无 concept 时为 {}
     created_at: str
 
@@ -212,6 +218,12 @@ def _chat_stream(body: ChatRequest, query: str, note_ids: list[int]) -> Iterator
       - 数据帧   ``data: {"text": "<chunk>"}`` ×N
       - 正常收尾 ``event: done``   ``data: {"conversation_id": N}``
       - 出错     ``event: error``  ``data: {"code": "...", "message": "..."}``
+
+    UX-004/008 生命周期赋值（``messages.status``）：
+      - 生成器在任意 ``yield`` 被关闭（客户端断开 / abort / 网络中断 →
+        GeneratorExit 抛入本生成器）时不会走到赋值，取初值 ``stopped``；
+      - 循环正常跑完 → ``complete``；``TutorError`` 与其它生成期异常 → ``failed``。
+        二者边界必须清楚：**provider 错误 ≠ 客户端断连**，不得用宽 except 一律标 stopped。
     """
     conn = connect()
     try:
@@ -243,23 +255,32 @@ def _chat_stream(body: ChatRequest, query: str, note_ids: list[int]) -> Iterator
         tokens: list[str] = []
         assistant_msg_id: int | None = None
         failed = False
+        # UX-004/008：初值 stopped —— 生成器被关闭（GeneratorExit）时不会走到
+        # 下面的赋值，finally 即以 stopped 落库；只有循环正常跑完才改写为 complete。
+        status: MessageStatus = MESSAGE_STATUS_STOPPED
         try:
             for chunk in svc.ask_stream(context, query, mode=body.mode):
                 if not chunk:
                     continue
                 tokens.append(chunk)
                 yield _sse(None, {"text": chunk})
+            status = MESSAGE_STATUS_COMPLETE
         except TutorError as exc:
             failed = True
+            status = MESSAGE_STATUS_FAILED
             yield _sse("error", {
                 "code": _TUTOR_ERROR_CODES.get(type(exc).__name__, "provider_error"),
                 "message": exc.user_message,
             })
+        except Exception:  # noqa: BLE001 — 非 TutorError 也是「生成失败」：交给外层兜底发 error 帧
+            status = MESSAGE_STATUS_FAILED
+            raise
         finally:
             try:
                 answer = "".join(tokens)
                 assistant_msg_id = append_message(
-                    conn, conv_id, role="assistant", content=answer, context=context)
+                    conn, conv_id, role="assistant", content=answer, context=context,
+                    status=status)
                 _apply_turn_extractor(
                     conn, query=query, answer=answer,
                     assistant_msg_id=assistant_msg_id, concept_id=body.concept_id,
@@ -338,8 +359,10 @@ def post_chat(body: ChatRequest) -> ChatResponse | StreamingResponse:
         if conv_id is None:
             conv_id = create_conversation(conn, title=query[:50])
         append_message(conn, conv_id, role="user", content=query)
+        #    UX-004/008：非流式没有中断语义——ask 成功即 complete（失败在上面已 return）
         assistant_msg_id = append_message(conn, conv_id, role="assistant",
-                                          content=answer, context=context)
+                                          content=answer, context=context,
+                                          status=MESSAGE_STATUS_COMPLETE)
 
         # 5. B3 extractor：回合后抽取（闲聊也提取偏好/事实——无 concept 门控）
         # R6：concepts_json 记概念标题（DDL 注释语义 ["特征值", ...]，B8 按此过滤）
