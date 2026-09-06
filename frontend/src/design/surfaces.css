@@ -33,9 +33,10 @@
   box-shadow: var(--shadow-3);
 }
 
-/* glass：浮层交互功能层。活材质 = blur + saturate + hairline + 柔影。
- * 禁止用于阅读内容；禁止叠加 glow / gradient。 */
-.surface-glass {
+/* glass-regular：默认玻璃材质（UI-DESIGN-SYSTEM-SPEC §4）。
+ * [A] regular 变体："provides legibility regardless of context... text-heavy safe"。
+ * 自适应近似：.is-over-content 态（覆盖滚动内容时）加深影——影是可读性机制，非装饰。 */
+.surface-glass-regular {
   background: var(--color-surface-glass);
   color: var(--color-text-primary);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -43,6 +44,35 @@
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-3);
+  transition: box-shadow var(--motion-standard) var(--ease-standard);
+}
+.surface-glass-regular.is-over-content {
+  box-shadow: var(--shadow-4);
+}
+
+/* glass-clear：仅富媒体/沉浸背景上的瞬时控件（[A] clear 变体）。
+ * 无自适应行为、永久高透；**必须**叠加 .glass-dim 压暗层（[A] 35% dimming），
+ * 且其上内容必须粗壮明亮。与 regular 不得在同一视图随意混用。 */
+.surface-glass-clear {
+  background: color-mix(in srgb, var(--color-surface-glass) 45%, transparent);
+  color: var(--color-text-primary);
+  -webkit-backdrop-filter: saturate(150%) blur(8px);
+  backdrop-filter: saturate(150%) blur(8px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-3);
+  position: relative;
+}
+/* 压暗层：置于内容之下（[A] "a dark dimming layer of 35% opacity"） */
+.glass-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.surface-glass-clear > *:not(.glass-dim) {
+  position: relative;
 }
 
 /* popover / sheet：弹层（材质同 glass，几何不同）。 */

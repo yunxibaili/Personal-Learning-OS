@@ -128,8 +128,8 @@ export default function DesignPlayground() {
               <div className="t-callout">Explorer / ContextRail 静止态。</div>
             </div>
             <BackdropStrip>
-              <div className="surface-glass" style={{ padding: "var(--space-lg)" }}>
-                <div className="t-headline">surface-glass</div>
+              <div className="surface-glass-regular" style={{ padding: "var(--space-lg)" }}>
+                <div className="t-headline">surface-glass-regular</div>
                 <div className="t-callout">Floating TopBar / Palette / Peek / Sheet 专用。</div>
               </div>
             </BackdropStrip>

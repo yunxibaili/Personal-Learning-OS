@@ -1,0 +1,281 @@
+/* ============================================================
+ * Reference Components — Phase 2A（UI-COMPONENT-BEHAVIOR-MATRIX）
+ * 依赖 design/ 层 token；本文件不得写死颜色/圆角/时长。
+ * 每个状态选择器与行为矩阵一一对应，Phase 2B 在 Component Lab 可视化验证。
+ * ============================================================ */
+
+/* ── Button（矩阵 §1）────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 44px; /* [A] hit region ≥44pt */
+  padding: 0 var(--space-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-capsule);
+  font: inherit;
+  font-size: var(--text-body-ui);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: var(--color-surface-elevated);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform var(--motion-fast) var(--spring-snappy),
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+.btn:active { transform: scale(0.97); } /* [A] "Always include a press state" */
+.btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.btn[disabled],
+.btn[aria-disabled="true"] { opacity: 0.45; cursor: default; pointer-events: none; }
+
+/* prominence（[A] "one or two prominent buttons per view"） */
+.btn--prominent {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+.btn--prominent:hover { box-shadow: var(--shadow-2); }
+.btn--regular:hover { background: var(--color-surface-elevated); border-color: var(--color-border-strong); box-shadow: var(--shadow-1); }
+.btn--plain {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-accent-text);
+  padding-inline: var(--space-sm);
+}
+.btn--plain:hover { background: var(--color-accent-soft); }
+.btn--destructive { color: var(--color-error); }
+.btn--destructive:hover { background: color-mix(in srgb, var(--color-error) 10%, transparent); }
+/* glass prominence：仅 functional layer 内使用；不做第二层玻璃叠加 [A] glass-on-glass 禁 */
+.btn--glass {
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-primary);
+}
+.btn--glass:hover { background: color-mix(in srgb, var(--color-surface-glass) 88%, #fff); }
+
+/* sizes */
+.btn--sm { min-height: 32px; padding: 0 var(--space-sm); font-size: var(--text-callout); }
+.btn--lg { min-height: 52px; padding: 0 var(--space-lg); font-size: var(--text-headline); }
+
+/* loading（[A] activity indicator + 行时态标签由使用方处理） */
+.btn__spinner {
+  width: 14px; height: 14px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
+/* 文档态（Component Lab 状态矩阵展示用，与伪类样式一致） */
+.btn.is-hover--regular { background: var(--color-surface-elevated); border-color: var(--color-border-strong); box-shadow: var(--shadow-1); }
+.btn.is-pressed { transform: scale(0.97); }
+
+/* ── IconButton（矩阵 §2）────────────────────────────────── */
+.icon-btn {
+  width: 44px; height: 44px;
+  padding: 0;
+  border-radius: 50%; /* [A] icon-only 用圆形 */
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--spring-snappy);
+}
+.icon-btn:hover { background: var(--color-surface-sunken); color: var(--color-text-primary); }
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.icon-btn[disabled] { opacity: 0.45; pointer-events: none; }
+
+/* ── Tabs（矩阵 §3：selection continuity，单一指示器实体）── */
+.tabs2 {
+  position: relative;
+  display: inline-flex;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-md);
+}
+.tabs2__tab {
+  position: relative;
+  z-index: 1;
+  min-height: 36px;
+  padding: 0 var(--space-md);
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius-md) - var(--space-3xs)); /* concentricity */
+  font: inherit; font-size: var(--text-body-ui); font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+.tabs2__tab:hover { color: var(--color-text-primary); }
+.tabs2__tab[aria-selected="true"] { color: var(--color-text-primary); }
+.tabs2__tab:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.tabs2__tab[disabled] { opacity: 0.45; cursor: default; }
+/* 单一活动指示器：同一个空间实体在 tab 间移动（FLIP） */
+.tabs2__indicator {
+  position: absolute;
+  top: var(--space-3xs);
+  left: 0;
+  height: calc(100% - var(--space-3xs) * 2);
+  background: var(--color-surface-elevated);
+  border-radius: calc(var(--radius-md) - var(--space-3xs));
+  box-shadow: var(--shadow-1);
+  transition: transform var(--motion-standard) var(--spring-gentle),
+    width var(--motion-standard) var(--spring-gentle);
+  will-change: transform, width;
+}
+
+/* ── SegmentedControl（矩阵 §4：capsule = 持续空间实体）──── */
+.seg {
+  position: relative;
+  display: inline-flex;
+  padding: var(--space-3xs);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-capsule);
+}
+.seg__option {
+  position: relative;
+  z-index: 1;
+  min-height: 32px;
+  padding: 0 var(--space-md);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-capsule);
+  font: inherit; font-size: var(--text-callout); font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+.seg__option[aria-pressed="true"] { color: var(--color-text-primary); }
+.seg__option:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.seg__capsule {
+  position: absolute;
+  top: var(--space-3xs); left: 0;
+  height: calc(100% - var(--space-3xs) * 2);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-capsule);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--motion-standard) var(--spring-gentle),
+    width var(--motion-standard) var(--spring-gentle);
+  will-change: transform, width;
+}
+
+/* ── Popover（矩阵 §7：Material Reference 母版）──────────── */
+.popover {
+  position: absolute;
+  z-index: var(--z-popover);
+  min-width: 220px;
+  max-width: 360px;
+  padding: var(--space-md);
+  /* glass-regular 材质（functional layer [A]），radial 高光为交互反馈近似的起点帧 */
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-4);
+  color: var(--color-text-primary);
+  transform-origin: top left; /* 由 JS 按触发点覆写 */
+  animation: popover-materialize var(--motion-standard) var(--spring-gentle) both;
+}
+.popover.is-closing { animation: popover-dissolve var(--motion-fast) var(--ease-exit) both; }
+@keyframes popover-materialize {
+  from { opacity: 0.96; transform: scale(0.98) translateY(4px); filter: blur(2px); }
+  to   { opacity: 1;    transform: scale(1)    translateY(0);    filter: blur(0); }
+}
+@keyframes popover-dissolve {
+  from { opacity: 1; filter: blur(0); }
+  to   { opacity: 0; filter: blur(2px); }
+}
+.popover__title { margin: 0 0 var(--space-xs); }
+/* reduced motion：materialize → opacity 快切（≤60ms，UI-MOTION-SPEC §7） */
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: popover-materialize-rm 60ms linear both;
+  }
+  @keyframes popover-materialize-rm {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .popover.is-closing { animation-duration: 1ms; }
+}
+
+/* ── Toast（矩阵 §10：feedback system）───────────────────── */
+.toast-region {
+  position: fixed;
+  right: var(--space-lg);
+  bottom: var(--space-lg);
+  z-index: var(--z-toast);
+  display: grid;
+  gap: var(--space-sm);
+  justify-items: end;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  min-width: 280px;
+  max-width: 380px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--color-border-subtle);
+  border-left: 3px solid var(--toast-tone, var(--color-text-secondary)); /* 语义色唯一用色处 */
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  color: var(--color-text-primary);
+  transform-origin: bottom right;
+  animation: toast-materialize var(--motion-standard) var(--spring-gentle) both;
+}
+.toast.is-leaving { animation: toast-dissolve var(--motion-fast) var(--ease-exit) both; }
+@keyframes toast-materialize {
+  from { opacity: 0.96; transform: scale(0.98) translateY(4px); filter: blur(2px); }
+  to   { opacity: 1;    transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes toast-dissolve {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translateY(4px); }
+}
+.toast--success { --toast-tone: var(--color-success); }
+.toast--info    { --toast-tone: var(--color-accent); }
+.toast--warning { --toast-tone: var(--color-warning); }
+.toast--error   { --toast-tone: var(--color-error); }
+.toast__close {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: toast-materialize-rm 60ms linear both; }
+  .toast.is-leaving { animation-duration: 1ms; }
+  @keyframes toast-materialize-rm { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* ── Icon（UI-ICON-MOTION-SPEC）──────────────────────────── */
+.icon { display: block; flex-shrink: 0; }
+/* Breathe：持续活动（Sync/生成中）；reduced-motion 下由组件切常亮态 */
+.icon--breathe { animation: icon-breathe 2s var(--ease-standard) infinite; }
+@keyframes icon-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon--breathe { animation: none; opacity: 0.8; }
+}
+/* Replace：同位置状态对切换（Play↔Pause 等）——由组件控制两层 opacity */
+.icon-replace { position: relative; display: block; }
+.icon-replace__layer { transition: opacity var(--motion-fast) var(--ease-standard); }
+.icon-replace__layer[aria-hidden="true"] { opacity: 0; }

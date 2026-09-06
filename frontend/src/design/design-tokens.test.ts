@@ -79,12 +79,17 @@ describe("design tokens 清单完整性", () => {
   });
 });
 
-describe("Liquid Glass 范围守护（ADR-013 §2.7.1）", () => {
+describe("Liquid Glass 范围守护（ADR-013 §2.7.1 + DESIGN-SYSTEM-SPEC §4）", () => {
   const surfaces = css("surfaces.css");
 
-  it("backdrop-filter 只允许出现在 glass / popover / sheet 三个 surface 中", () => {
+  it("backdrop-filter 只允许出现在 glass-regular / glass-clear / popover / sheet 中", () => {
     const blocks = surfaces.split(/(?=\.surface-)/g).filter((b) => b.startsWith(".surface-"));
-    const allowed = new Set([".surface-glass", ".surface-popover", ".surface-sheet"]);
+    const allowed = new Set([
+      ".surface-glass-regular",
+      ".surface-glass-clear",
+      ".surface-popover",
+      ".surface-sheet",
+    ]);
     const offenders = blocks
       .filter((b) => b.includes("backdrop-filter"))
       .map((b) => b.slice(0, b.indexOf("{")).trim())
@@ -92,12 +97,22 @@ describe("Liquid Glass 范围守护（ADR-013 §2.7.1）", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("glass/popover/sheet 必须真实定义 backdrop-filter（材质不能只留在注释里）", () => {
-    for (const name of ["surface-glass", "surface-popover", "surface-sheet"]) {
+  it("glass 双变体必须真实定义 backdrop-filter（材质不能只留在注释里）", () => {
+    for (const name of ["surface-glass-regular", "surface-glass-clear", "surface-popover", "surface-sheet"]) {
       const block = surfaces.split(/(?=\.surface-)/g).find((b) => b.startsWith(`.${name}`));
       expect(block, `${name} 缺失`).toBeDefined();
       expect(block).toContain("backdrop-filter");
     }
+  });
+
+  it("glass-clear 必须定义压暗层 .glass-dim（[A] 35% dimming，不可只留注释）", () => {
+    const dim = surfaces.match(/\.glass-dim\s*\{[^}]*\}/);
+    expect(dim).not.toBeNull();
+    expect(dim![0]).toContain("rgba(0, 0, 0, 0.35)");
+  });
+
+  it("不再允许旧的单一定义 .surface-glass（已被 regular/clear 取代）", () => {
+    expect(surfaces).not.toMatch(/\.surface-glass\s*[,{]/);
   });
 
   it("decor 禁令：design/ 全目录不得引入 gradient/text-shadow 装饰", () => {
@@ -109,12 +124,26 @@ describe("Liquid Glass 范围守护（ADR-013 §2.7.1）", () => {
   });
 });
 
-describe("Motion 可达性", () => {
+describe("Motion System（UI-MOTION-SPEC）", () => {
   it("motion.css 必须全局响应 prefers-reduced-motion", () => {
     const m = css("motion.css");
     expect(m).toContain("prefers-reduced-motion: reduce");
     expect(m).toContain("transition-duration: 0.01ms");
     expect(m).toContain("animation-duration: 0.01ms");
+  });
+
+  it("reduced-motion 必须带透明度语义保底（≠ 信息丢失）", () => {
+    const m = css("motion.css");
+    expect(m).toContain(".rm-opacity");
+    expect(m).toContain("opacity 60ms");
+  });
+
+  it("spring 三模型必须定义（transform 类物理属性 → spring）", () => {
+    const m = css("motion.css");
+    for (const t of ["--spring-snappy", "--spring-gentle", "--spring-bouncy"]) {
+      expect(m).toContain(`${t}:`);
+    }
+    expect(m).toContain("linear(");
   });
 });
 
@@ -132,7 +161,7 @@ describe("Playground 与入口接线", () => {
 
   it("DesignPlayground 必须存在并消费 surface 语义 class", () => {
     const tsx = readFileSync(`${designDir}DesignPlayground.tsx`, "utf-8");
-    for (const cls of ["surface-base", "surface-raised", "surface-glass", "surface-immersive"]) {
+    for (const cls of ["surface-base", "surface-raised", "surface-glass-regular", "surface-immersive"]) {
       expect(tsx).toContain(cls);
     }
     expect(tsx).toContain('data-surface="immersive"');
@@ -140,7 +169,7 @@ describe("Playground 与入口接线", () => {
 
   it("App.tsx 必须以 ?design 查询参数分流 Playground（dev-only 入口）", () => {
     const app = readFileSync(`${designDir}../App.tsx`, "utf-8");
-    expect(app).toContain('has("design")');
+    expect(app).toContain('get("design")');
     expect(app).toContain("DesignPlayground");
   });
 });

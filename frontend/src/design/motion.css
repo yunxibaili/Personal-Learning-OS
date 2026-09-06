@@ -18,6 +18,18 @@
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* ── Spring 模型（UI-MOTION-SPEC §2，[C] OLOS 参数，linear() 零依赖）──
+   * 选型规则：transform 类 → spring；opacity/color 类 → duration curve。 */
+  --spring-snappy: linear(
+    0, 0.16 9%, 0.55 19%, 0.85 30%, 1.01 42%, 1.03 50%, 1 62%, 0.998 78%, 1
+  ); /* ~280ms · 控件按压/hover/toggle */
+  --spring-gentle: linear(
+    0, 0.25 14%, 0.62 30%, 0.92 47%, 1.02 62%, 1 78%
+  ); /* ~360ms · 面板/浮层/Tab 指示器 */
+  --spring-bouncy: linear(
+    0, 0.4 11%, 0.75 24%, 1.06 40%, 1.09 50%, 1.02 64%, 0.99 80%, 1
+  ); /* ~420ms · 确认反馈/Magic Replace，仅确认语义 */
+
   /* 常用复合（组件层引用，保证全局一致） */
   --transition-colors: color var(--motion-fast) var(--ease-standard),
     background-color var(--motion-fast) var(--ease-standard),
@@ -44,7 +56,10 @@
   to   { opacity: 0; }
 }
 
-/* Accessibility：全局降级。任何动画/过渡都必须在此失效。 */
+/* Accessibility：全局降级（兜底层）。任何动画/过渡都必须在此失效。
+ * UI-MOTION-SPEC §7：reduced-motion ≠ 信息丢失——组件层按语义降级覆写
+ * （Movement→即时状态切换；Materialize→opacity 快切；Breathe→常亮状态色），
+ * 覆写写在各组件样式表的同名 media 块中。 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -53,5 +68,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* 语义保底：透明度反馈保留 ≤60ms 快切（[A] "Make motion optional" ≠ 信息丢失） */
+  .rm-opacity {
+    transition: opacity 60ms linear !important;
   }
 }
