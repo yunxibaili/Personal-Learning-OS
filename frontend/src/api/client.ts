@@ -38,6 +38,44 @@ export type BodyOf<P extends keyof paths & string, M extends Method> =
     ? B
     : never;
 
+// 422 HTTPValidationError 的 detail 形如 [{type,loc,msg,input}]；取首条 msg 作为可读提示。
+// 该形状与项目统一错误契约 {error:{code,message}} 不同——两条错误通道必须区分（见 §2.4）。
+function validationMessage(detail: unknown): string | null {
+  if (typeof detail === "string" && detail !== "") return detail;
+  if (!Array.isArray(detail)) return null;
+  for (const item of detail) {
+    if (typeof item === "string") return item;
+    if (typeof item === "object" && item !== null) {
+      const msg = (item as { msg?: unknown }).msg;
+      if (typeof msg === "string") return msg;
+    }
+  }
+  return null;
+}
+
+async function toApiError(res: Response): Promise<ApiError> {
+  let code = `http_${res.status}`;
+  let message = res.statusText;
+  try {
+    const body: unknown = await res.json();
+    const err = (body as { error?: { code?: string; message?: string } } | null)?.error;
+    if (err?.code !== undefined) {
+      code = err.code;
+      message = err.message ?? message;
+    } else {
+      const detail = (body as { detail?: unknown } | null)?.detail;
+      const msg = validationMessage(detail);
+      if (msg !== null) {
+        code = "validation_error";
+        message = msg;
+      }
+    }
+  } catch {
+    // 非 JSON 错误体：保持默认 code/message
+  }
+  return new ApiError(res.status, code, message);
+}
+
 async function request<M extends Method, P extends keyof paths & string>(
   method: M,
   path: P,
@@ -50,24 +88,28 @@ async function request<M extends Method, P extends keyof paths & string>(
     headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) {
-    let code = `http_${res.status}`;
-    let message = res.statusText;
-    try {
-      const err = (await res.json())?.error as
-        | { code?: string; message?: string }
-        | undefined;
-      if (err?.code !== undefined) {
-        code = err.code;
-        message = err.message ?? message;
-      }
-    } catch {
-      // 非 JSON 错误体：保持默认 code/message
-    }
-    throw new ApiError(res.status, code, message);
-  }
+  if (!res.ok) throw await toApiError(res);
   if (res.status === 204) return undefined as ResponseOf<P, M>;
   return (await res.json()) as ResponseOf<P, M>;
+}
+
+// SSE 流式请求（Phase 1）：与 request() 平行，不复用其内部实现。
+// 差异：① 不带 Content-Type 之外的约定 ② 必须传 signal（Stop 的唯一入口）
+// ③ 成功时不消费 body——返回 Response 由调用方 getReader()，避免 res.json() 破坏流。
+// HTTP 层错误（400/404/422/502/504）仍走 JSON 通道；生成期错误走 SSE event: error 帧。
+export async function postStream<P extends keyof paths & string>(
+  path: P,
+  body: BodyOf<P, "post">,
+  signal: AbortSignal,
+): Promise<Response> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res;
 }
 
 export const api = {

@@ -3,6 +3,7 @@ import { ApiError } from "../../api/client";
 import { listConcepts, type ConceptSummary } from "../../api/concepts";
 import { listNotes, type NoteSummary } from "../../api/notes";
 import { postTutorContext, type TutorContext } from "../../api/tutor";
+import ChatPanel from "./ChatPanel";
 
 // MVP-06：最小 Tutor Context Consumer（ADR-029 §8 第 6 项）。
 // 概念选择（/concepts active）+ 可选笔记引用（≤2，来自 /notes）+ auto_notes 开关
@@ -77,6 +78,13 @@ export default function TutorView() {
   }
 
   const ctx = state.kind === "done" ? state.context : null;
+
+  // ChatPanel 只读回显当前上下文选择，不参与构建 TutorContext（L1/L3）。
+  // 唯一来源就是本视图的 conceptId / selectedNoteIds / autoNotes——不做第二份状态。
+  const conceptLabel = concepts.find((c) => c.id === conceptId)?.title ?? null;
+  const noteLabels = selectedNoteIds
+    .map((id) => notes.find((n) => n.id === id)?.title)
+    .filter((title): title is string => typeof title === "string");
 
   return (
     <div className="tutor-layout">
@@ -233,6 +241,14 @@ export default function TutorView() {
       {state.kind === "idle" && (
         <p className="state-empty">选择概念后点击「获取上下文」。</p>
       )}
+
+      <ChatPanel
+        conceptId={conceptId}
+        conceptLabel={conceptLabel}
+        noteIds={selectedNoteIds}
+        noteLabels={noteLabels}
+        autoNotes={autoNotes}
+      />
     </div>
   );
 }
