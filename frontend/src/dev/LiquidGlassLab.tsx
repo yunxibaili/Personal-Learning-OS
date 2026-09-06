@@ -104,19 +104,34 @@ export function LiquidGlassCard({ tier }: LiquidGlassCardProps) {
   return (
     <figure style={{ margin: 0, display: "grid", gap: "var(--space-xs)" }}>
       <div style={{ position: "relative", width: W, height: H, borderRadius: RADIUS, overflow: "hidden" }}>
-        {/* 实验背景：低饱和（Owner 裁定不能太花哨），但保留色块边缘供折射可见性判定 */}
+        {/* 实验背景：近单色（Owner 裁定颜色简约）——用文字与细线做折射判定参照物 */}
         <div
           aria-hidden
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "radial-gradient(120px circle at 25% 32%, rgba(255,107,53,.85), transparent 70%)," +
-              "radial-gradient(150px circle at 72% 68%, rgba(59,130,246,.75), transparent 70%)," +
-              "radial-gradient(110px circle at 68% 22%, rgba(46,158,91,.7), transparent 70%)," +
-              "linear-gradient(180deg, #e9e7e2 0%, #d9d6d0 100%)",
+            background: "linear-gradient(180deg, #eceae6 0%, #d7d4ce 55%, #c4c1ba 100%)",
           }}
         />
+        <div
+          aria-hidden
+          style={{
+            position: "absolute", inset: 0, padding: "16px 20px",
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(0,0,0,.72)", letterSpacing: ".04em" }}>
+            LOREM IPSUM · 学习即栖息
+          </div>
+          <div style={{ display: "grid", gap: 6 }}>
+            <div style={{ height: 6, width: "72%", borderRadius: 3, background: "rgba(0,0,0,.22)" }} />
+            <div style={{ height: 6, width: "52%", borderRadius: 3, background: "rgba(0,0,0,.16)" }} />
+            <div style={{ height: 6, width: "84%", borderRadius: 3, background: "rgba(255,107,53,.55)" }} />
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(0,0,0,.5)" }}>
+            矩阵的特征值 · eigenvalue · λ
+          </div>
+        </div>
         <div
           ref={ref}
           style={{

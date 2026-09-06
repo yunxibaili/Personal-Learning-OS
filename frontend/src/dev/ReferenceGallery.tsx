@@ -25,7 +25,7 @@ function Block({ title, note, children }: { title: string; note?: string; childr
   );
 }
 
-/** 丰富背景条：验证玻璃/影的真实观感——低饱和色斑，判定玻璃但不喧宾夺主（Owner 裁定「颜色不能太花哨」） */
+/** 玻璃判定背景：近单色（Owner 裁定「玻璃保留、颜色简约」）——用灰阶层次+细线供折射/透出可见，无彩色斑点 */
 function RichBackdrop({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ position: "relative", padding: "var(--space-lg)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
@@ -34,11 +34,20 @@ function RichBackdrop({ children }: { children: React.ReactNode }) {
         style={{
           position: "absolute", inset: 0,
           background:
-            "radial-gradient(260px circle at 12% 25%, rgba(255,107,53,.30), transparent 70%)," +
-            "radial-gradient(300px circle at 88% 15%, rgba(59,130,246,.22), transparent 70%)," +
-            "radial-gradient(280px circle at 78% 85%, rgba(46,158,91,.20), transparent 70%)," +
-            "radial-gradient(240px circle at 35% 80%, rgba(255,214,10,.20), transparent 70%)," +
-            "#f0efec",
+            "radial-gradient(300px circle at 15% 20%, rgba(0,0,0,.06), transparent 70%)," +
+            "radial-gradient(340px circle at 90% 90%, rgba(0,0,0,.08), transparent 70%)," +
+            "linear-gradient(180deg, #f4f3f0 0%, #e5e3de 100%)",
+        }}
+      />
+      {/* 细线网格：玻璃透出与折射的判定参照物 */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0,
+          backgroundImage:
+            "linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px)," +
+            "linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
         }}
       />
       <div style={{ position: "relative" }}>{children}</div>
