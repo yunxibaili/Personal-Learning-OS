@@ -16,6 +16,8 @@ import {
   type ChatMessage,
   type ConversationSummary,
 } from "../../api/conversations";
+// UX-005：错误呈现唯一收口点——不得再拼 `${status} ${code}: ${message}`。
+import { presentError } from "../../api/errors";
 import {
   classifyChatError,
   loadProviderState,
@@ -77,10 +79,6 @@ function reducer(state: ChatState, action: ChatAction): ChatState {
   }
 }
 
-function errText(e: unknown): string {
-  return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
-}
-
 function isAbort(e: unknown): boolean {
   return e instanceof DOMException && e.name === "AbortError";
 }
@@ -121,7 +119,7 @@ export default function ChatPanel({
       setConversations(await listConversations());
       setListError(null);
     } catch (e) {
-      setListError(errText(e));
+      setListError(presentError(e));
     }
   }
 
@@ -177,7 +175,7 @@ export default function ChatPanel({
       dispatch({ type: "select", conversationId: created.id });
       setMessages([]);
     } catch (e) {
-      setListError(errText(e));
+      setListError(presentError(e));
     }
   }
 
@@ -193,7 +191,7 @@ export default function ChatPanel({
       }
       await refreshConversations();
     } catch (e) {
-      setListError(errText(e));
+      setListError(presentError(e));
     }
   }
 
@@ -219,9 +217,10 @@ export default function ChatPanel({
             setProvider("OK");
             dispatch({ type: "settled" });
           },
-          onError: (code, message) => {
-            // UX-001：按 code 分类，只给用户中文文案，绝不拼接内部 code。
-            const failure = classifyChatError(code, message);
+          onError: (code, _message) => {
+            // UX-001 + UX-005：只按 code 分类；SSE 帧里的 backend message 是
+            // 诊断信息（流式下恒为英文类常量），不得进入用户文案。
+            const failure = classifyChatError(code);
             setProvider(failure.readiness);
             dispatch({ type: "failed", message: failure.message });
           },
@@ -231,9 +230,8 @@ export default function ChatPanel({
       // UX-004/008：abort 不做任何前端断言——「是否中断、中断到哪」以后端
       // messages.status 为准（前端无从证明后端一定完成了持久化）。
       if (!isAbort(e)) {
-        const code = e instanceof ApiError ? e.code : "";
-        const detail = e instanceof ApiError ? e.message : String(e);
-        const failure = classifyChatError(code, detail);
+        // UX-005：只把 code 交给分类，backend message 不再进入用户文案。
+        const failure = classifyChatError(e instanceof ApiError ? e.code : "");
         setProvider(failure.readiness);
         dispatch({ type: "failed", message: failure.message });
       }

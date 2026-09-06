@@ -10,6 +10,7 @@
 //   · 从未配置过 llm.* 时，GET /settings 里可能根本没有 llm.provider 这个键
 //     （后端 DEFAULT_PROVIDER="mock" 是读取期的缺省，不是落库值）→ 必须按 undefined 处理
 import { api, ApiError } from "./client";
+import { presentErrorCode } from "./errors";
 import { isRecord } from "./validate";
 
 // UX-001 / P2-PROVIDER-001：CONFIGURED 不等于 AVAILABLE。
@@ -55,27 +56,17 @@ export interface ChatFailure {
 /**
  * /chat 错误码 → 就绪状态 + 中文文案。
  *
- * 硬边界：`provider_error` / `provider_timeout` 等内部 code **不得直接呈现给用户**。
- * 细分原因（HTTP 401 认证 / 404 模型不存在 / 服务异常）属 Option B（后端 error contract
- * 改动），已登记不实现——本轮只做粗分类。
+ * 硬边界：`provider_error` / `provider_timeout` 等内部 code **不得直接呈现给用户**，
+ * backend diagnostic message 也不得拼进用户文案 —— 统一由 `presentErrorCode()`
+ * 收口（UX-005）。细分原因（HTTP 401 认证 / 404 模型不存在 / 服务异常）属
+ * Option B（后端 error contract 改动），已登记不实现。
+ *
+ * 状态语义（UX-001 冻结，不重开）：provider_timeout → UNREACHABLE；其余 → FAILED。
  */
-export function classifyChatError(code: string, backendMessage?: string): ChatFailure {
-  if (code === "provider_timeout") {
-    return {
-      readiness: "UNREACHABLE",
-      message: "连不上模型服务：请求超时或网络不可达。请确认模型服务已启动、base_url 正确。",
-    };
-  }
-  if (code === "provider_error") {
-    return {
-      readiness: "FAILED",
-      message: "模型服务返回错误，本次生成失败。请检查模型名称与 API key 是否正确。",
-    };
-  }
-  const detail = backendMessage?.trim();
+export function classifyChatError(code: string): ChatFailure {
   return {
-    readiness: "FAILED",
-    message: detail ? `生成失败：${detail}` : "生成失败，请稍后重试。",
+    readiness: code === "provider_timeout" ? "UNREACHABLE" : "FAILED",
+    message: presentErrorCode(code, 0),
   };
 }
 

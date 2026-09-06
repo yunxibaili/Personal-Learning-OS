@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "../../api/client";
+import { presentError } from "../../api/errors";
 import {
   getConcept,
   getConceptDomains,
@@ -28,10 +28,6 @@ type DetailState =
   | { kind: "loading" }
   | { kind: "done"; concept: ConceptSummary; related: RelatedNote[] }
   | { kind: "error"; message: string };
-
-function errText(e: unknown): string {
-  return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
-}
 
 function masteryLine(effective: number): string {
   return `掌握度：effective ${effective}`;
@@ -64,7 +60,7 @@ export default function ConceptsView({
       });
       setList({ kind: "done", concepts });
     } catch (e) {
-      setList({ kind: "error", message: errText(e) });
+      setList({ kind: "error", message: presentError(e) });
     }
   }, [domain, status]);
 
@@ -90,12 +86,12 @@ export default function ConceptsView({
       } catch (e) {
         // 关系投影失败不阻断详情本体，明确标注而非静默
         setDetail({ kind: "done", concept, related: [] });
-        setDetail({ kind: "error", message: `详情已加载，但关联笔记加载失败：${errText(e)}` });
+        setDetail({ kind: "error", message: `详情已加载，但关联笔记加载失败：${presentError(e)}` });
         return;
       }
       setDetail({ kind: "done", concept, related });
     } catch (e) {
-      setDetail({ kind: "error", message: errText(e) });
+      setDetail({ kind: "error", message: presentError(e) });
     }
   }
 

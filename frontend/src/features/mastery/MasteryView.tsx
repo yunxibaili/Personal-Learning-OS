@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError } from "../../api/client";
+import { presentError } from "../../api/errors";
 import {
   listMastery,
   listWeakConcepts,
@@ -16,10 +16,6 @@ type SectionState =
   | { kind: "loading" }
   | { kind: "done"; entries: MasteryEntry[] }
   | { kind: "error"; message: string };
-
-function errText(e: unknown): string {
-  return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
-}
 
 function fmt(n: number): string {
   return String(n);
@@ -63,10 +59,10 @@ export default function MasteryView() {
   useEffect(() => {
     listWeakConcepts()
       .then((entries) => setWeak({ kind: "done", entries }))
-      .catch((e: unknown) => setWeak({ kind: "error", message: errText(e) }));
+      .catch((e: unknown) => setWeak({ kind: "error", message: presentError(e) }));
     listMastery()
       .then((entries) => setAll({ kind: "done", entries }))
-      .catch((e: unknown) => setAll({ kind: "error", message: errText(e) }));
+      .catch((e: unknown) => setAll({ kind: "error", message: presentError(e) }));
   }, []);
 
   return (

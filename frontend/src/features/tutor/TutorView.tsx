@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ApiError } from "../../api/client";
+import { presentError } from "../../api/errors";
 import { listConcepts, type ConceptSummary } from "../../api/concepts";
 import { listNotes, type NoteSummary } from "../../api/notes";
 import { postTutorContext, type TutorContext } from "../../api/tutor";
@@ -18,10 +18,6 @@ type FetchState =
   | { kind: "loading" }
   | { kind: "done"; context: TutorContext }
   | { kind: "error"; message: string };
-
-function errText(e: unknown): string {
-  return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
-}
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -51,7 +47,7 @@ export default function TutorView() {
         setConcepts(cs);
         setNotes(ns);
       })
-      .catch((e: unknown) => setLoadError(errText(e)));
+      .catch((e: unknown) => setLoadError(presentError(e)));
   }, []);
 
   function toggleNote(noteId: number) {
@@ -73,7 +69,7 @@ export default function TutorView() {
       });
       setState({ kind: "done", context });
     } catch (e) {
-      setState({ kind: "error", message: errText(e) });
+      setState({ kind: "error", message: presentError(e) });
     }
   }
 

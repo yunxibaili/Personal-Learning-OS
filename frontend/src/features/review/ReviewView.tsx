@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "../../api/client";
+import { presentError } from "../../api/errors";
 import {
   getReviewHistory,
   getReviewStats,
@@ -24,10 +24,6 @@ type SectionState<T> =
   | { kind: "done"; data: T }
   | { kind: "error"; message: string };
 
-function errText(e: unknown): string {
-  return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
-}
-
 interface LastResult {
   title: string;
   quality: number;
@@ -46,13 +42,13 @@ export default function ReviewView() {
     const jobs: Promise<void>[] = [
       getTodayQueue()
         .then((items) => setQueue({ kind: "done", data: items }))
-        .catch((e: unknown) => setQueue({ kind: "error", message: errText(e) })),
+        .catch((e: unknown) => setQueue({ kind: "error", message: presentError(e) })),
       getReviewStats()
         .then((data) => setStats({ kind: "done", data }))
-        .catch((e: unknown) => setStats({ kind: "error", message: errText(e) })),
+        .catch((e: unknown) => setStats({ kind: "error", message: presentError(e) })),
       getReviewHistory()
         .then((data) => setHistory({ kind: "done", data }))
-        .catch((e: unknown) => setHistory({ kind: "error", message: errText(e) })),
+        .catch((e: unknown) => setHistory({ kind: "error", message: presentError(e) })),
     ];
     await Promise.all(jobs);
   }, []);
@@ -71,7 +67,7 @@ export default function ReviewView() {
       // 重排期概念离开今日队列；统计/历史随之变化，一并刷新（非轮询）
       await reloadAll();
     } catch (e) {
-      setAnswerError(`${title}（quality ${quality}）提交失败：${errText(e)}`);
+      setAnswerError(`${title}（quality ${quality}）提交失败：${presentError(e)}`);
     } finally {
       setSubmitting(null);
     }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { basicSetup, EditorView } from "codemirror";
 import { markdown } from "@codemirror/lang-markdown";
-import { ApiError } from "../../api/client";
+import { presentError } from "../../api/errors";
 import {
   createNote,
   getNote,
@@ -29,10 +29,6 @@ type SearchState =
   | { kind: "loading" }
   | { kind: "done"; results: SearchResult[]; query: string }
   | { kind: "error"; message: string };
-
-function errText(e: unknown): string {
-  return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
-}
 
 export interface NoteOpenRequest {
   id: number;
@@ -66,7 +62,7 @@ export default function NotesView({ openNoteRequest }: { openNoteRequest?: NoteO
       setSelected(note);
       setDraft(note.content_md);
     } catch (e) {
-      setNoteError(errText(e));
+      setNoteError(presentError(e));
       setSelected(null);
     } finally {
       setNoteLoading(false);
@@ -78,7 +74,7 @@ export default function NotesView({ openNoteRequest }: { openNoteRequest?: NoteO
     try {
       setNotes(await listNotes());
     } catch (e) {
-      setListError(errText(e));
+      setListError(presentError(e));
     }
   }, []);
 
@@ -150,7 +146,7 @@ export default function NotesView({ openNoteRequest }: { openNoteRequest?: NoteO
       setSaveState({ kind: "saved", at: saved.updated_at });
       await reloadList();
     } catch (e) {
-      setSaveState({ kind: "error", message: errText(e) });
+      setSaveState({ kind: "error", message: presentError(e) });
     }
   }
 
@@ -165,7 +161,7 @@ export default function NotesView({ openNoteRequest }: { openNoteRequest?: NoteO
       await reloadList();
       await openNote(note.id);
     } catch (e) {
-      setNoteError(errText(e));
+      setNoteError(presentError(e));
     } finally {
       setCreating(false);
     }
@@ -180,7 +176,7 @@ export default function NotesView({ openNoteRequest }: { openNoteRequest?: NoteO
       const results = await searchNotes(q);
       setSearchState({ kind: "done", results, query: q });
     } catch (e) {
-      setSearchState({ kind: "error", message: errText(e) });
+      setSearchState({ kind: "error", message: presentError(e) });
     }
   }
 

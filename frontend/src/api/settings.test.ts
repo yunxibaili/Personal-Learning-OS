@@ -75,35 +75,32 @@ describe("loadProviderState", () => {
 
 describe("classifyChatError", () => {
   it("provider_timeout → UNREACHABLE + 中文文案", () => {
-    const f = classifyChatError("provider_timeout", "LLM 服务连接失败：x");
+    const f = classifyChatError("provider_timeout");
     expect(f.readiness).toBe("UNREACHABLE");
     expect(f.message).toContain("连不上模型服务");
   });
 
   it("provider_error → FAILED + 中文文案", () => {
-    const f = classifyChatError("provider_error", "Tutor encountered an error. Please try again.");
+    const f = classifyChatError("provider_error");
     expect(f.readiness).toBe("FAILED");
     expect(f.message).toContain("模型服务返回错误");
   });
 
-  it("未知 code → FAILED，保留后端 message（中文）", () => {
-    const f = classifyChatError("contract_mismatch", "conversations.conversations 非数组");
+  it("未知 code → FAILED，且不再拼接 backend message（UX-005）", () => {
+    const f = classifyChatError("contract_mismatch");
     expect(f.readiness).toBe("FAILED");
-    expect(f.message).toBe("生成失败：conversations.conversations 非数组");
+    expect(f.message).toBe("数据格式异常，请刷新重试。");
+    expect(f.message).not.toContain("conversations.conversations 非数组");
   });
 
-  it("未知 code 且无 message → 默认文案", () => {
-    expect(classifyChatError("").message).toBe("生成失败，请稍后重试。");
+  it("未知 code → 安全中文兜底（无内部信息）", () => {
+    expect(classifyChatError("").message).toBe("操作失败，请稍后重试。");
   });
 
   // 硬边界：内部 code 绝不出现给用户
   it("任何分支的文案都不得包含 provider_error / provider_timeout 原文", () => {
-    for (const [code, msg] of [
-      ["provider_timeout", "LLM 服务连接失败：x"],
-      ["provider_error", "LLM 服务返回错误（HTTP 404）"],
-      ["", ""],
-    ] as const) {
-      const f = classifyChatError(code, msg);
+    for (const code of ["provider_timeout", "provider_error", ""] as const) {
+      const f = classifyChatError(code);
       expect(f.message).not.toContain("provider_error");
       expect(f.message).not.toContain("provider_timeout");
     }
