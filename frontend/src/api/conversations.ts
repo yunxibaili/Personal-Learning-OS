@@ -9,7 +9,11 @@
 //
 // 与 /chat 的关系：/chat 负责落库 user/assistant 双消息；本模块只读回放。
 // 本模块不感知流式——Stop 之后由调用方重新拉取 messages 以对齐后端已落库内容。
+//
+// UX-004/008：消息生命周期 status 由后端产生（messages.status），类型取自
+// generated schema（ADR-029 L2），前端不手写枚举、不从 content 推断。
 import { api, ApiError } from "./client";
+import type { components } from "./schema";
 import { asString, isRecord } from "./validate";
 
 export interface ConversationSummary {
@@ -19,10 +23,14 @@ export interface ConversationSummary {
   message_count: number;
 }
 
+/** 生命周期状态：唯一真相源是后端 MessageItem.status（generated contract）。 */
+export type MessageStatus = components["schemas"]["MessageItem"]["status"];
+
 export interface ChatMessage {
   id: number;
   role: string;
   content: string;
+  status: MessageStatus;
   context: Record<string, unknown>;
   created_at: string;
 }
@@ -56,14 +64,61 @@ function asConversation(v: unknown): ConversationSummary {
   };
 }
 
+const MESSAGE_STATUSES: readonly MessageStatus[] = ["complete", "failed", "stopped"];
+
+/**
+ * status 窄化。旧后端 / 字段缺失 → 回退 `complete`：
+ * 回放不阻断，但也**不伪造**失败或中断语义（UX-004：状态只能来自后端）。
+ */
+export function asMessageStatus(v: unknown): MessageStatus {
+  return MESSAGE_STATUSES.includes(v as MessageStatus) ? (v as MessageStatus) : "complete";
+}
+
 function asMessage(v: unknown): ChatMessage {
   if (!isRecord(v)) throw new ApiError(0, "contract_mismatch", "message 非对象");
   return {
     id: v.id as number,
     role: asString(v.role, "message.role"),
     content: asString(v.content, "message.content"),
+    status: asMessageStatus(v.status),
     context: isRecord(v.context) ? v.context : {},
     created_at: asString(v.created_at, "message.created_at"),
+  };
+}
+
+// ── UX-004/008：status → 呈现（纯函数，便于无 DOM 测试）──────────────
+
+export interface AssistantMessageView {
+  /** 主文本；内容为空时是占位文案。 */
+  text: string;
+  /** 状态提示；null = 不显示。 */
+  note: string | null;
+}
+
+const EMPTY_FAILED_TEXT = "本次生成失败，无内容";
+const EMPTY_STOPPED_TEXT = "生成已中断，无内容";
+const PARTIAL_FAILED_NOTE = "本次生成失败";
+const PARTIAL_STOPPED_NOTE = "生成已中断，仅显示已生成部分";
+
+/**
+ * assistant 消息的呈现视图。user 消息直接回原文、无提示。
+ *
+ * 三态契约（Owner 冻结）：complete → 正常内容；failed → 失败；stopped → 中断。
+ * 文案不声称「用户点击了 Stop」——后端只能证明连接未正常走完。
+ */
+export function assistantMessageView(message: ChatMessage): AssistantMessageView {
+  if (message.role !== "assistant" || message.status === "complete") {
+    return { text: message.content, note: null };
+  }
+  if (message.content === "") {
+    return {
+      text: message.status === "stopped" ? EMPTY_STOPPED_TEXT : EMPTY_FAILED_TEXT,
+      note: null,
+    };
+  }
+  return {
+    text: message.content,
+    note: message.status === "stopped" ? PARTIAL_STOPPED_NOTE : PARTIAL_FAILED_NOTE,
   };
 }
 

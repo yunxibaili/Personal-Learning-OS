@@ -30,7 +30,14 @@ function conv(id: number): ConversationSummary {
 }
 
 function msg(id: number, role: string): ChatMessage {
-  return { id, role, content: "x", context: {}, created_at: "2026-09-06T10:00:00" };
+  return {
+    id,
+    role,
+    content: "x",
+    status: "complete",
+    context: {},
+    created_at: "2026-09-06T10:00:00",
+  };
 }
 
 afterEach(() => {

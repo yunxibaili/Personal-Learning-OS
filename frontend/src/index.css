@@ -381,7 +381,8 @@ button.linkish {
 .chat-content { white-space: pre-wrap; word-break: break-word; }
 
 .chat-failed { color: #b91c1c; font-style: italic; }
-.chat-stopped { font-size: 0.8rem; color: #92400e; margin: 0; }
+/* UX-004/008：消息级生命周期提示（替代瞬时 .chat-stopped）。 */
+.chat-msg-status { font-size: 0.8rem; color: #92400e; margin: 0.2rem 0 0; }
 
 .chat-input { display: flex; flex-direction: column; gap: 0.4rem; }
 .chat-input label { font-size: 0.8rem; color: #6b7280; }

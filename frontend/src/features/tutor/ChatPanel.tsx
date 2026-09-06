@@ -8,6 +8,7 @@ import {
   type TutorMode,
 } from "../../api/chat";
 import {
+  assistantMessageView,
   createConversation,
   deleteConversation,
   getMessages,
@@ -40,7 +41,6 @@ type ChatStatus =
   | "no_conversation"
   | "idle"
   | "streaming"
-  | "stopped"
   | "error";
 
 interface ChatState {
@@ -55,7 +55,6 @@ type ChatAction =
   | { type: "deselect" }
   | { type: "start" }
   | { type: "chunk"; text: string }
-  | { type: "stopped" }
   | { type: "failed"; message: string }
   | { type: "settled" };
 
@@ -71,16 +70,12 @@ function reducer(state: ChatState, action: ChatAction): ChatState {
       return state.status === "streaming"
         ? { ...state, streamingText: state.streamingText + action.text }
         : state;
-    case "stopped":
-      return { ...state, status: "stopped" };
     case "failed":
       return { ...state, status: "error", errorMessage: action.message };
     case "settled":
       return state.status === "streaming" ? { ...state, status: "idle" } : state;
   }
 }
-
-const EMPTY_ASSISTANT_PLACEHOLDER = "本次生成失败，无内容";
 
 function errText(e: unknown): string {
   return e instanceof ApiError ? `${e.status} ${e.code}: ${e.message}` : String(e);
@@ -233,8 +228,9 @@ export default function ChatPanel({
         },
       );
     } catch (e) {
-      if (isAbort(e)) dispatch({ type: "stopped" });
-      else {
+      // UX-004/008：abort 不做任何前端断言——「是否中断、中断到哪」以后端
+      // messages.status 为准（前端无从证明后端一定完成了持久化）。
+      if (!isAbort(e)) {
         const code = e instanceof ApiError ? e.code : "";
         const detail = e instanceof ApiError ? e.message : String(e);
         const failure = classifyChatError(code, detail);
@@ -323,18 +319,25 @@ export default function ChatPanel({
       ) : (
         <>
           <ol className="chat-messages" aria-live="polite" aria-label="消息记录">
-            {messages.map((m) => (
-              <li key={m.id} className={`chat-msg chat-msg-${m.role === "user" ? "user" : "assistant"}`}>
-                <span className="chat-role">{m.role === "user" ? "我" : "Tutor"}</span>
-                <div className="chat-content">
-                  {m.role === "assistant" && m.content === "" ? (
-                    <span className="chat-failed">{EMPTY_ASSISTANT_PLACEHOLDER}</span>
-                  ) : (
-                    m.content
-                  )}
-                </div>
-              </li>
-            ))}
+            {messages.map((m) => {
+              // UX-004/008：生命周期呈现完全由后端 status 决定（不从 content 推断）。
+              const view = assistantMessageView(m);
+              return (
+                <li key={m.id} className={`chat-msg chat-msg-${m.role === "user" ? "user" : "assistant"}`}>
+                  <span className="chat-role">{m.role === "user" ? "我" : "Tutor"}</span>
+                  <div className="chat-content">
+                    {m.role === "assistant" && m.status !== "complete" && m.content === "" ? (
+                      <span className="chat-failed">{view.text}</span>
+                    ) : (
+                      view.text
+                    )}
+                    {view.note !== null && (
+                      <p className="chat-msg-status">{view.note}</p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
             {streaming && (
               <li className="chat-msg chat-msg-assistant">
                 <span className="chat-role">Tutor</span>
@@ -349,9 +352,6 @@ export default function ChatPanel({
             )}
           </ol>
 
-          {state.status === "stopped" && (
-            <p className="chat-stopped">已停止（后端已保存已生成部分）</p>
-          )}
           {state.status === "error" && state.errorMessage !== null && (
             <p className="state-error">{state.errorMessage}</p>
           )}
