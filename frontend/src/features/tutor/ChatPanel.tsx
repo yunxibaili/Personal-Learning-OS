@@ -15,7 +15,11 @@ import {
   type ChatMessage,
   type ConversationSummary,
 } from "../../api/conversations";
-import { loadProviderState, type ProviderState } from "../../api/settings";
+import {
+  classifyChatError,
+  loadProviderState,
+  type ProviderReadiness,
+} from "../../api/settings";
 import {
   clearCurrentConversationId,
   restoreCurrentConversation,
@@ -109,7 +113,8 @@ export default function ChatPanel({
   } satisfies ChatState);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [provider, setProvider] = useState<ProviderState>("UNKNOWN");
+  // UX-001：就绪状态机只存内存（ADR-030：sessionStorage 只允许 current_conversation_id）。
+  const [provider, setProvider] = useState<ProviderReadiness>("UNKNOWN");
   const [mode, setMode] = useState<TutorMode>("explain");
   const [query, setQuery] = useState("");
   const [listError, setListError] = useState<string | null>(null);
@@ -208,19 +213,34 @@ export default function ChatPanel({
     const controller = new AbortController();
     controllerRef.current = controller;
     dispatch({ type: "start" });
+    setProvider("GENERATING");
     try {
       await streamChat(
         { conversationId, query: trimmed, mode, conceptId, noteIds, autoNotes },
         controller.signal,
         {
           onText: (text) => dispatch({ type: "chunk", text }),
-          onDone: () => dispatch({ type: "settled" }),
-          onError: (code, message) => dispatch({ type: "failed", message: `${code}: ${message}` }),
+          onDone: () => {
+            setProvider("OK");
+            dispatch({ type: "settled" });
+          },
+          onError: (code, message) => {
+            // UX-001：按 code 分类，只给用户中文文案，绝不拼接内部 code。
+            const failure = classifyChatError(code, message);
+            setProvider(failure.readiness);
+            dispatch({ type: "failed", message: failure.message });
+          },
         },
       );
     } catch (e) {
       if (isAbort(e)) dispatch({ type: "stopped" });
-      else dispatch({ type: "failed", message: errText(e) });
+      else {
+        const code = e instanceof ApiError ? e.code : "";
+        const detail = e instanceof ApiError ? e.message : String(e);
+        const failure = classifyChatError(code, detail);
+        setProvider(failure.readiness);
+        dispatch({ type: "failed", message: failure.message });
+      }
     } finally {
       controllerRef.current = null;
       setQuery("");
@@ -239,11 +259,22 @@ export default function ChatPanel({
     <section className="chatPanel" aria-label="Tutor 对话">
       <h2>提问</h2>
 
-      {provider !== "READY" && (
+      {provider === "UNKNOWN" && (
+        <p className="chat-provider-warn">模型配置状态未知（读取 /settings 失败）。</p>
+      )}
+      {provider === "NOT_CONFIGURED" && (
         <p className="chat-provider-warn">
-          {provider === "UNKNOWN"
-            ? "模型配置状态未知（读取 /settings 失败）。"
-            : "未配置真实模型：当前回答来自 Mock provider（/chat 仍返回 200，但非真实生成）。"}
+          未配置真实模型：当前回答来自 Mock provider（/chat 仍返回 200，但非真实生成）。
+        </p>
+      )}
+      {provider === "UNREACHABLE" && (
+        <p className="state-error">
+          连不上模型服务：请求超时或网络不可达。请确认模型服务已启动、base_url 正确。
+        </p>
+      )}
+      {provider === "FAILED" && (
+        <p className="state-error">
+          模型不可用：已配置，但最近一次生成失败。请检查模型名称与 API key 是否正确。
         </p>
       )}
 
@@ -322,7 +353,7 @@ export default function ChatPanel({
             <p className="chat-stopped">已停止（后端已保存已生成部分）</p>
           )}
           {state.status === "error" && state.errorMessage !== null && (
-            <p className="state-error">生成失败：{state.errorMessage}</p>
+            <p className="state-error">{state.errorMessage}</p>
           )}
 
           <div className="chat-input">

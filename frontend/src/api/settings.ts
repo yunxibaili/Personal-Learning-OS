@@ -12,7 +12,17 @@
 import { api, ApiError } from "./client";
 import { isRecord } from "./validate";
 
-export type ProviderState = "UNKNOWN" | "READY" | "NOT_CONFIGURED";
+// UX-001 / P2-PROVIDER-001：CONFIGURED 不等于 AVAILABLE。
+// 它只表示「配置看起来完整」，尚未通过一次实际生成证明 provider 可用。
+export type ProviderState = "UNKNOWN" | "CONFIGURED" | "NOT_CONFIGURED";
+
+/** UX-001 就绪状态机（内部状态；仅存 React 内存，不持久化）。 */
+export type ProviderReadiness =
+  | ProviderState
+  | "GENERATING"
+  | "OK"
+  | "UNREACHABLE"
+  | "FAILED";
 
 export async function getSettings(): Promise<Record<string, string>> {
   const res = await api.get("/api/v1/settings");
@@ -31,9 +41,42 @@ export function resolveProviderState(settings: Record<string, string>): Provider
   const provider = settings["llm.provider"];
   const baseUrl = settings["llm.base_url"];
   if (provider === "openai_compat" && typeof baseUrl === "string" && baseUrl.trim() !== "") {
-    return "READY";
+    return "CONFIGURED";
   }
   return "NOT_CONFIGURED";
+}
+
+export interface ChatFailure {
+  readiness: "UNREACHABLE" | "FAILED";
+  /** 用户可见文案：绝不拼接内部 code（UX-001 硬边界）。 */
+  message: string;
+}
+
+/**
+ * /chat 错误码 → 就绪状态 + 中文文案。
+ *
+ * 硬边界：`provider_error` / `provider_timeout` 等内部 code **不得直接呈现给用户**。
+ * 细分原因（HTTP 401 认证 / 404 模型不存在 / 服务异常）属 Option B（后端 error contract
+ * 改动），已登记不实现——本轮只做粗分类。
+ */
+export function classifyChatError(code: string, backendMessage?: string): ChatFailure {
+  if (code === "provider_timeout") {
+    return {
+      readiness: "UNREACHABLE",
+      message: "连不上模型服务：请求超时或网络不可达。请确认模型服务已启动、base_url 正确。",
+    };
+  }
+  if (code === "provider_error") {
+    return {
+      readiness: "FAILED",
+      message: "模型服务返回错误，本次生成失败。请检查模型名称与 API key 是否正确。",
+    };
+  }
+  const detail = backendMessage?.trim();
+  return {
+    readiness: "FAILED",
+    message: detail ? `生成失败：${detail}` : "生成失败，请稍后重试。",
+  };
 }
 
 /** 加载并判定。查询失败不抛——降级为 UNKNOWN（UI 只提示，不阻断）。 */
