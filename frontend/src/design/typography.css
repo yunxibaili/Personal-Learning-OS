@@ -1,0 +1,51 @@
+/* ============================================================
+ * Typography — UI-REBUILD-DESIGN-AUDIT §2
+ * 双尺度语义继承：阅读正文 17px/1.75；UI 文字 13–14px。
+ * 字体栈只用系统字体，零 webfont 依赖。
+ * ============================================================ */
+
+:root {
+  /* Apple-ish 系统栈（本地优先，无网络字体） */
+  --font-ui: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  --font-reading: var(--font-ui);          /* 阅读与 UI 同栈，靠字阶区分 */
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono",
+    Consolas, monospace;
+
+  /* 字阶（size/line-height 成对） */
+  --text-display: 34px;   --lh-display: 40px;    --weight-display: 700;
+  --text-largeTitle: 28px; --lh-largeTitle: 34px; --weight-largeTitle: 700;
+  --text-title: 22px;     --lh-title: 28px;      --weight-title: 700;
+  --text-headline: 17px;  --lh-headline: 24px;   --weight-headline: 600;
+  --text-body-ui: 14px;   --lh-body-ui: 20px;    --weight-body-ui: 400;
+  --text-callout: 13px;   --lh-callout: 18px;    --weight-callout: 400;
+  --text-subheadline: 12px; --lh-subheadline: 16px; --weight-subheadline: 400;
+  --text-caption: 11px;   --lh-caption: 14px;    --weight-caption: 500;
+  --text-code: 13px;      --lh-code: 20px;
+
+  /* 阅读双尺度（Note Workspace 专用，Phase 4 消费） */
+  --text-reading: 17px;   --lh-reading: 1.75;
+
+  --tracking-tight: -0.015em;  /* 大标题轻微收字距 */
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-body-ui);
+  line-height: var(--lh-body-ui);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 语义 class（组件层可直接用；Phase 2 组件内一律走这些） */
+.t-display     { font-size: var(--text-display);     line-height: var(--lh-display);     font-weight: var(--weight-display);     letter-spacing: var(--tracking-tight); }
+.t-largeTitle  { font-size: var(--text-largeTitle);  line-height: var(--lh-largeTitle); font-weight: var(--weight-largeTitle);  letter-spacing: var(--tracking-tight); }
+.t-title       { font-size: var(--text-title);       line-height: var(--lh-title);      font-weight: var(--weight-title); }
+.t-headline    { font-size: var(--text-headline);    line-height: var(--lh-headline);   font-weight: var(--weight-headline); }
+.t-body-ui     { font-size: var(--text-body-ui);     line-height: var(--lh-body-ui); }
+.t-callout     { font-size: var(--text-callout);     line-height: var(--lh-callout);    color: var(--color-text-secondary); }
+.t-subheadline { font-size: var(--text-subheadline); line-height: var(--lh-subheadline); color: var(--color-text-tertiary); }
+.t-caption     { font-size: var(--text-caption);     line-height: var(--lh-caption);    font-weight: var(--weight-caption); color: var(--color-text-secondary); }
+.t-code        { font-family: var(--font-mono); font-size: var(--text-code); line-height: var(--lh-code); }
+.t-reading     { font-size: var(--text-reading);     line-height: var(--lh-reading); }

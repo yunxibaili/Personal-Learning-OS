@@ -1,0 +1,6 @@
+/* Design Foundation 汇总入口（import 顺序 = 层级顺序，勿调整） */
+@import "./tokens.css";
+@import "./typography.css";
+@import "./motion.css";
+@import "./surfaces.css";
+@import "./layout.css";

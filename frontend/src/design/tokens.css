@@ -1,0 +1,99 @@
+/* ============================================================
+ * Design Tokens — Open Learning OS「Scientific Spatial UI」
+ * UI-REBUILD-DESIGN-AUDIT §2 · Phase 1 Design Foundation
+ *
+ * 品牌 DNA 只继承语义（暖白 / 石墨 / 橙=注意力指针），实现全部重写。
+ * 规则：组件**禁止**写死颜色/圆角/阴影，一律消费这里的 token。
+ * ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Color（指令书 §4 清单）────────────────────────────── */
+  --color-background: #f6f6f4;            /* warm neutral，不做纯灰 */
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-glass: rgba(255, 255, 255, 0.72); /* 仅 glass surface */
+  --color-surface-sunken: #efefec;        /* 输入框/代码底等下沉面 */
+
+  --color-text-primary: #1d1d1f;          /* graphite */
+  --color-text-secondary: #6e6e73;
+  --color-text-tertiary: #aeaeb2;
+  --color-text-inverse: #f5f5f7;
+
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.16);
+
+  --color-accent: #ff6b35;                /* 注意力指针（语义继承自白橙 v1） */
+  --color-accent-soft: rgba(255, 107, 53, 0.12);
+  --color-accent-text: #e0531f;           /* 文本中的橙（对比度优先于品牌色） */
+
+  --color-success: #2e9e5b;
+  --color-warning: #c77800;
+  --color-error: #d63b30;
+
+  /* 语义别名（组件层只允许用语义名） */
+  --color-focus-ring: rgba(255, 107, 53, 0.45);
+  --color-highlight: rgba(255, 214, 0, 0.45); /* 荧光笔黄：双链/记忆点 */
+
+  /* ── Radius（concentricity：内层 = 外层 − padding，取整到 2px）── */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-capsule: 999px;
+
+  /* ── Space（4pt 基准）────────────────────────────────── */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* ── Elevation（浅色工作台，影只表达高度，不做 glow）────── */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.07);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.14);
+  --shadow-focus: 0 0 0 3px var(--color-focus-ring);
+
+  /* ── Z-index（层级协议，禁止随意取值）─────────────────── */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-rail: 100;        /* Activity Rail / Floating TopBar */
+  --z-popover: 200;
+  --z-drawer: 300;
+  --z-modal: 400;
+  --z-palette: 500;     /* Command Palette 永远最上 */
+  --z-toast: 600;
+
+  /* ── 阅读度量（语义继承：680px 行宽）────────────────────── */
+  --measure-reading: 680px;
+}
+
+/* ── Immersive 暗色子树（Galaxy / Graph / Algorithm 可视化 / 代码区）
+ *    用法：<div data-surface="immersive"> 内部自动切到暗色 token。
+ *    只允许包裹可视化与代码，禁止包裹阅读内容（ADR-013 §2.7.1）。 */
+[data-surface="immersive"] {
+  color-scheme: dark;
+  --color-background: #101013;
+  --color-surface: #17171b;
+  --color-surface-elevated: #1e1e24;
+  --color-surface-sunken: #0b0b0e;
+  --color-surface-glass: rgba(20, 20, 24, 0.66);
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #a1a1a8;
+  --color-text-tertiary: #6c6c74;
+  --color-text-inverse: #1d1d1f;
+  --color-border-subtle: rgba(255, 255, 255, 0.10);
+  --color-border-strong: rgba(255, 255, 255, 0.20);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.55);
+}

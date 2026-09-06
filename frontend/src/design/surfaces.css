@@ -1,0 +1,83 @@
+/* ============================================================
+ * Surfaces — UI-REBUILD-DESIGN-AUDIT §3
+ *
+ * 七种 surface：base / raised / floating / glass / popover / sheet / immersive
+ * ⚠️ ADR-013 §2.7.1（2026-09-06 带日期附录）：
+ *   backdrop-filter 仅允许出现在 glass / popover / sheet 三个定义中，
+ *   且 glass 只服务浮层交互（TopBar/Rail/Palette/Peek/Popover/Sheet/Drawer）。
+ *   本文件由 design-tokens.test.ts 源码门禁强制执行该约束。
+ *   gradient / glow 装饰仍全局禁止（§2.7 不因附录解除）。
+ * ============================================================ */
+
+/* base：页面与阅读内容。平色，零装饰。 */
+.surface-base {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+/* raised：次级面板（Explorer / ContextRail 静止态 / 卡片）。hairline + 微影。 */
+.surface-raised {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+/* floating：Floating TopBar / Activity Rail。raised 之上再加高度。 */
+.surface-floating {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-3);
+}
+
+/* glass：浮层交互功能层。活材质 = blur + saturate + hairline + 柔影。
+ * 禁止用于阅读内容；禁止叠加 glow / gradient。 */
+.surface-glass {
+  background: var(--color-surface-glass);
+  color: var(--color-text-primary);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-3);
+}
+
+/* popover / sheet：弹层（材质同 glass，几何不同）。 */
+.surface-popover {
+  background: var(--color-surface-glass);
+  color: var(--color-text-primary);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-4);
+}
+
+.surface-sheet {
+  background: var(--color-surface-glass);
+  color: var(--color-text-primary);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-4);
+}
+
+/* immersive：暗色沉浸面（Galaxy/Graph/Algorithm/代码）。
+ * 切换方式 = data-surface="immersive" 属性（token 在 tokens.css 重定义）。 */
+.surface-immersive {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* 交互态公理：focus 一律 ring，不用默认 outline 硬框 */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}

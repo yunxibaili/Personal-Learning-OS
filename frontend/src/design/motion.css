@@ -1,0 +1,57 @@
+/* ============================================================
+ * Motion — UI-REBUILD-DESIGN-AUDIT §4
+ * 动画必须表达关系（从哪来 / 到哪去 / 什么引起 / 什么在焦点）。
+ * 禁止 bounce / 旋转 / 随机发光 / 大面积粒子。
+ * 组件禁止自造 transition：一律消费这里的 token。
+ * ============================================================ */
+
+:root {
+  /* 时长 */
+  --motion-instant: 80ms;
+  --motion-fast: 120ms;
+  --motion-standard: 180ms;
+  --motion-slow: 240ms;
+  --motion-spatial: 320ms;
+
+  /* 缓动：standard 用于绝大多数过渡；spring 仅确认类反馈；exit 用于离场 */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 常用复合（组件层引用，保证全局一致） */
+  --transition-colors: color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+  --transition-surface: box-shadow var(--motion-standard) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-standard);
+  --transition-spatial: opacity var(--motion-spatial) var(--ease-standard),
+    transform var(--motion-spatial) var(--ease-standard);
+}
+
+/* 进场/离场语义 class（Phase 3 Shell 起统一使用） */
+.anim-materialize {
+  animation: ol-os-materialize var(--motion-standard) var(--ease-standard) both;
+}
+.anim-dissolve {
+  animation: ol-os-dissolve var(--motion-fast) var(--ease-exit) both;
+}
+@keyframes ol-os-materialize {
+  from { opacity: 0; transform: translateY(4px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes ol-os-dissolve {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Accessibility：全局降级。任何动画/过渡都必须在此失效。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

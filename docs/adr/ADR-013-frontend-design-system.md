@@ -353,3 +353,35 @@ AGENTS.md §16 强制所有前端生成遵守本 ADR。
 
 本 ADR 冻结的是设计方向和约束，不是具体实现。
 具体布局实现随里程碑演进，但必须在本 ADR 框架内。
+
+---
+
+## §2.7.1 附录（2026-09-06，带日期修订）：Liquid Glass 有限解除
+
+> **修订依据**：项目所有者 2026-09-06《Open Learning OS — UI System Rebuild》指令书
+> （Apple-inspired / Liquid Glass / Learning Workbench 方向），在当前 `frontend/`
+> 白纸上重建 UI 系统。本附录为带日期附录节，不改 §2.7 原有措辞。
+> 同时解决 §2.12 的历史悬置：旧 `web/` 已于 `3fe8d13` 整体删除，§2.12 所列
+> `global.css` 移植载体已消失，该冲突**随之终结**（旧资产仅存于 git 历史，不再被消费）。
+
+**解除范围（仅此三项，且仅限浮层交互面）**：
+
+| Surface | 允许的属性 |
+|---|---|
+| `glass`（浮层交互层） | `backdrop-filter: blur() saturate()` |
+| `popover` / `sheet`（弹层） | 同上 |
+
+**glass 只允许用于**：Floating TopBar、Activity Rail、Command Palette / QuickOpen、
+PeekPanel、Popover、Sheet/Drawer、浮层 Context Controls。
+**继续禁止（不因本附录解除）**：
+
+- 全站/大面积玻璃化，以及 reading content（笔记正文、列表、表格）上的任何 backdrop-filter；
+- `gradient` / `glow`（box-shadow 彩色发光）/ 粒子 / 随机动画等装饰性处理——§2.7 原禁令维持；
+- 无第三方 UI/CSS/icon 框架的禁令维持。
+
+**守护机制**：使用范围由 `frontend/src/design/surfaces.css` 注释 +
+`frontend/src/design/design-tokens.test.ts` 源码门禁强制（`backdrop-filter` 仅允许出现在
+glass/popover/sheet 三个 surface 定义中）。设计依据见 `docs/UI-REBUILD-DESIGN-AUDIT.md` §3。
+
+**优先级声明**：Content > Hierarchy > Interaction > Context > Material > Decoration。
+若视觉效果与阅读效率/信息层级/可操作性/性能/Accessibility 冲突，删除效果，而非放宽本附录。

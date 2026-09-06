@@ -4,9 +4,10 @@ import ConceptsView from "./features/concepts/ConceptsView";
 import MasteryView from "./features/mastery/MasteryView";
 import ReviewView from "./features/review/ReviewView";
 import TutorView from "./features/tutor/TutorView";
+import DesignPlayground from "./design/DesignPlayground";
 
 // MVP 顶层工作区：笔记 / 概念 / 掌握度 / 复习 四个 Consumer 视图
-// （单页，无路由——ADR-029 §3.2）。
+// （单页，无路由——ADR-029 §3.2；Workbench 化路线见 docs/UI-REBUILD-DESIGN-AUDIT.md）。
 type Tab = "notes" | "concepts" | "mastery" | "review" | "tutor";
 
 export default function App() {
@@ -16,6 +17,11 @@ export default function App() {
   function openNoteFromConcept(noteId: number) {
     setNoteRequest({ id: noteId, seq: Date.now() });
     setTab("notes");
+  }
+
+  // dev-only 设计系统预览（UI-REBUILD-DESIGN-AUDIT §40）：?design 进入，不进导航。
+  if (new URLSearchParams(window.location.search).has("design")) {
+    return <DesignPlayground />;
   }
 
   return (

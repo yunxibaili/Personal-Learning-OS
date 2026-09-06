@@ -1,0 +1,46 @@
+/* ============================================================
+ * Layout — UI-REBUILD-DESIGN-AUDIT §6
+ * App Shell 网格与断点。Phase 3 Shell 消费；Phase 1 仅供 Playground 预览。
+ *
+ * 目标几何：
+ *  ┌─────────────────────────────────────────────────┐
+ *  │ Floating TopBar（glass）                        │
+ *  ├────────┬──────────────────────────┬─────────────┤
+ *  │ Rail + │ Workbench（Tabs + 视图）  │ ContextRail │
+ *  │Explorer│                          │             │
+ *  └────────┴──────────────────────────┴─────────────┘
+ *  Status / Utility
+ * ============================================================ */
+
+:root {
+  /* 列宽基准（Phase 3 起 ResizablePanels 覆写为内联值） */
+  --shell-rail-width: 56px;          /* Activity Rail：icon-first */
+  --shell-explorer-width: 248px;
+  --shell-context-width: 288px;
+  --shell-topbar-height: 52px;
+  --shell-status-height: 28px;
+  --shell-gutter: var(--space-sm);
+
+  /* 断点（指令书 §33：1280/1440/1920/2560） */
+  --bp-narrow: 1280px;   /* Explorer 收起 */
+  --bp-wide: 1440px;     /* 三栏全开 */
+  --bp-max: 1920px;      /* ContextRail 可加宽 */
+}
+
+/* Shell 网格：三列可收缩；窄窗口 Explorer/ContextRail 折叠由 Phase 3 控制 */
+.shell-grid {
+  display: grid;
+  grid-template-columns:
+    var(--shell-rail-width)
+    var(--shell-explorer-width)
+    minmax(0, 1fr)
+    var(--shell-context-width);
+  gap: var(--shell-gutter);
+  min-height: 0;
+}
+
+/* 阅读度量：正文永远不超过 680px（语义继承） */
+.measure-reading {
+  max-width: var(--measure-reading);
+  margin-inline: auto;
+}
