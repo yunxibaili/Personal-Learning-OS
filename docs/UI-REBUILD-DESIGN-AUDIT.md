@@ -1,5 +1,11 @@
 # UI-REBUILD-DESIGN-AUDIT — UI System Rebuild 设计审计（Phase 0 交付物）
 
+> **2026-09-07 状态更新（项目所有者裁定）**：本文档的**工程结构与实施序列仍然有效**；
+> 但其**设计决定已被 Research 阶段推翻重审**——以以下三份基于真实 Apple 官方资料的研究文档为准：
+> `UI-APPLE-DESIGN-RESEARCH.md` · `UI-APPLE-MOTION-RESEARCH.md` · `UI-WEB-DESIGN-LANGUAGE.md`。
+> 上一轮 Phase 1 代码仅代表"CSS foundation 工程完成"，不构成"Apple-inspired 设计系统完成"；
+> 其中 glass 单一定义、motion 时长-only、reduced-motion 全零等决定按研究裁定修订（见 WEB-DESIGN-LANGUAGE §9）。
+
 日期：2026-09-06 · 授权：项目所有者《Open Learning OS — UI System Rebuild》指令书
 基线：`main = 31c328b` · 性质：Phase 0 只读审计 + Phase 1 设计基础层的依据文档
 方向：**Apple-inspired / Liquid Glass / Learning Workbench**，在当前 `frontend/` 白纸上重建，

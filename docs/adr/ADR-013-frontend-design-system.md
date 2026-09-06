@@ -385,3 +385,13 @@ glass/popover/sheet 三个 surface 定义中）。设计依据见 `docs/UI-REBUI
 
 **优先级声明**：Content > Hierarchy > Interaction > Context > Material > Decoration。
 若视觉效果与阅读效率/信息层级/可操作性/性能/Accessibility 冲突，删除效果，而非放宽本附录。
+
+**2026-09-07 研究依据补充**：本附录的解除范围经真实 Apple 官方资料研究后**确认并细化**——
+研究来源与逐字引用见 `docs/UI-APPLE-DESIGN-RESEARCH.md`（HIG Materials/Buttons/Motion、
+WWDC25-219《Meet Liquid Glass》转录、《Adopting Liquid Glass》）；关键确认点：
+1. Apple 本身即规定 "Don't use Liquid Glass in the content layer"、"Use Liquid Glass effects
+   sparingly"、"always avoid glass on glass"——本附录的范围限制与 Apple 官方边界一致，并非放宽；
+2. Liquid Glass 分 **regular / clear** 两变体且不得混用（clear 仅限富媒体背景 + 35% 压暗层），
+   Web 实现按 `docs/UI-WEB-DESIGN-LANGUAGE.md` §2 的 `glass-regular` / `glass-clear` 双材质执行；
+3. 交互发光反馈（"illuminates from within as a form of feedback"）属材质行为而非装饰 glow，
+   仅允许在上述三类玻璃面内作为交互反馈实现；base/raised 内容面维持 §2.7 原禁令。
