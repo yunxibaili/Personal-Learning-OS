@@ -16,6 +16,12 @@ import {
   type ConversationSummary,
 } from "../../api/conversations";
 import { loadProviderState, type ProviderState } from "../../api/settings";
+import {
+  clearCurrentConversationId,
+  restoreCurrentConversation,
+  shouldClearForDeletion,
+  writeCurrentConversationId,
+} from "../../api/currentConversation";
 
 // Phase 1：Tutor Generation Consumer（MVP-06 是 context preview，本组件才是真正提问 AI）。
 //
@@ -107,6 +113,7 @@ export default function ChatPanel({
   const [mode, setMode] = useState<TutorMode>("explain");
   const [query, setQuery] = useState("");
   const [listError, setListError] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
   async function refreshConversations() {
@@ -119,7 +126,28 @@ export default function ChatPanel({
   }
 
   useEffect(() => {
-    void refreshConversations();
+    // ADR-030 §6.1：mount 时恢复「当前会话」。
+    // 恢复失败（list / messages）一律显式呈现，**不静默吞掉**。
+    void (async () => {
+      const outcome = await restoreCurrentConversation({ listConversations, getMessages });
+      if (outcome.kind === "list_failed") {
+        // 列表失败：key 保留，等下次 mount 再试。
+        setListError(`会话列表加载失败：${outcome.message}`);
+        return;
+      }
+      setConversations(outcome.conversations);
+      setListError(null);
+      if (outcome.kind === "restored") {
+        dispatch({ type: "select", conversationId: outcome.conversationId });
+        setMessages(outcome.messages);
+        setRestoreError(null);
+      } else if (outcome.kind === "messages_failed") {
+        // 会话存在：保持选中并保留 key，只报消息加载失败。
+        dispatch({ type: "select", conversationId: outcome.conversationId });
+        setRestoreError(`消息加载失败：${outcome.message}`);
+      }
+      // stale：key 已在 restoreCurrentConversation 内清除，保持空态、不报错。
+    })();
     void loadProviderState().then(setProvider);
     return () => controllerRef.current?.abort();
   }, []);
@@ -134,6 +162,7 @@ export default function ChatPanel({
 
   async function selectConversation(id: number) {
     if (state.status === "streaming") return; // STREAMING 期间禁止切换会话
+    writeCurrentConversationId(id);
     dispatch({ type: "select", conversationId: id });
     setMessages([]);
     await reloadMessages(id);
@@ -143,6 +172,7 @@ export default function ChatPanel({
     if (state.status === "streaming") return;
     try {
       const created = await createConversation();
+      writeCurrentConversationId(created.id);
       await refreshConversations();
       dispatch({ type: "select", conversationId: created.id });
       setMessages([]);
@@ -156,7 +186,8 @@ export default function ChatPanel({
     if (!window.confirm("删除该会话及其全部消息？此操作不可撤销。")) return;
     try {
       await deleteConversation(id);
-      if (state.conversationId === id) {
+      if (shouldClearForDeletion(id, state.conversationId)) {
+        clearCurrentConversationId();
         dispatch({ type: "deselect" });
         setMessages([]);
       }
@@ -222,6 +253,8 @@ export default function ChatPanel({
         {noteLabels.length > 0 ? ` · 引用 ${noteLabels.join("、")}` : ""}
         {autoNotes ? " · 自动检索相关笔记" : ""}
       </p>
+
+      {restoreError !== null && <p className="state-error">{restoreError}</p>}
 
       <div className="chat-conversations">
         <button type="button" onClick={newConversation} disabled={streaming}>
