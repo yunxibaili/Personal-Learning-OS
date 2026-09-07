@@ -103,3 +103,25 @@ v3 截图结论：B/C 档玻璃下网格线与橙条在边缘弯折放大，折�
 
 - **简约 ≠ 素白**：玻璃判定需要背后有结构（网格线、文字、条带），但结构用灰阶即可——颜色越少，玻璃的"材质感"越突出。
 - 橙色使用进一步收紧：实验页仅保留一条橙条作折射参照（与"橙=注意力指针"语义一致）。
+
+---
+
+## Round 3 — Apple Spatial UI Refinement（3R.1，2026-09-07）
+
+依据：WWDC26-278（App adaptivity / tab bars / nav bars）、HIG Scroll Views（2026-06 scroll edge effects：*"Only use a scroll edge effect when a scroll view is behind floating interface elements... Apply one scroll edge effect per view; keep them consistent in height"*）、HIG Tab Bars（"Use a tab bar to support navigation, not to provide actions"；"Don't disable or hide tab bar buttons"）、WWDC25-219/356 复习。截图集：`tmp/apple-refinement/{before,round1,round2,final}/`。
+
+### 三 weakest × 两轮
+
+| Round | 最弱三点 | 修复 |
+|---|---|---|
+| R1 | ① Rail 选中=全屏最大橙色块 ② header 无分组、无 scroll edge ③ 搜索=暗幕大 Modal | ① 选中改中性底+accent 字形 ② header 分组（tabs│divider│查找/Context/Focus）+ soft scroll edge（::after 渐隐+滚动态 shadow/紧凑）③ 去暗幕、透明捕获层、palette 锚定 header 下 60px；Compare focus depth（`:has(:focus-within)` 对侧 opacity .86 可逆）；标题升档 largeTitle；移除 disabled 设置钮（[A] HIG Tab Bars） |
+| R2 | ① S3 下孤立查找钮 ② Side bar 与主 header 高度不一致且缺自身 scroll edge ③ 768 断点复核 | ① S3 隐藏（⌘F 保留）② side bar min-height 56 + sticky + 独立 scroll edge（[A] "each pane can have its own scroll edge effect; keep them consistent in height"）③ 768 移动式布局确认（非桌面压扁） |
+
+### 空间语言结论（沉淀）
+
+1. **App Frame = 连续空间**：内容滚入功能层之下 + scroll edge 渐隐，替代硬边切开。
+2. **导航 minimize**：滚动后 header 紧凑（padding 收 + shadow 强化）= 自动式 scroll edge。
+3. **Rail 选中**：中性底 + accent 字形（accent 不做色块）。
+4. **打开动词分级**：click=替换 / ⌘=tab / ⇧=并置（Tana 转译，键盘具体值 OLOS 自定）。
+5. **Compare focus depth**：焦点侧全亮、对侧 .86 退后（:has 实现，可逆）。
+6. **Glass 位置冻结**：Rail 头部渐隐/Palette/Peek=浮层；内容面永远安静。

@@ -23,7 +23,8 @@
   border-right: 1px solid var(--color-border-subtle);
   background: var(--color-surface-elevated);
 }
-.wb__rail .icon-btn.is-active { background: var(--color-accent-soft); color: var(--color-accent-text); }
+/* [A] HIG Tab Bars：选中=明确但不抢戏；禁用 tab 按钮不可取（未实现项直接移除） */
+.wb__rail .icon-btn.is-active { background: var(--color-surface-sunken); color: var(--color-accent-text); }
 .wb__rail__spacer { flex: 1; }
 
 /* ── Pane 基础 ──────────────────────────────────────────── */
@@ -48,7 +49,20 @@
   -webkit-backdrop-filter: saturate(160%) blur(12px);
   backdrop-filter: saturate(160%) blur(12px);
   border-bottom: 1px solid var(--color-border-subtle);
+  transition: box-shadow var(--motion-standard) var(--ease-standard), padding var(--motion-standard) var(--ease-standard);
 }
+/* [A] Scroll edge effect（soft）：仅在滚动内容位于浮层之下时存在，非装饰 */
+.wb__header::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -16px; height: 16px;
+  background: linear-gradient(var(--color-background), transparent);
+  opacity: 0;
+  transition: opacity var(--motion-standard) var(--ease-standard);
+  pointer-events: none;
+}
+.wb__header.is-scrolled { box-shadow: var(--shadow-1); }
+.wb__header.is-scrolled::after { opacity: 1; }
+.wb__header.is-scrolled { padding-block: 6px; }
 .wb__tabs { display: flex; gap: var(--space-3xs); flex: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
 .wb__tabs::-webkit-scrollbar { display: none; }
 .wb__tab {
@@ -206,10 +220,11 @@
 }
 
 /* ── CommandPalette（左结果右预览）──────────────────────── */
-.wb-palette-scrim { position: fixed; inset: 0; z-index: var(--z-palette); background: rgba(0, 0, 0, 0.25); }
+/* [A] 搜索浮层不遮蔽应用（保持当前内容可见），仅透明点击捕获层 */
+.wb-palette-scrim { position: fixed; inset: 0; z-index: var(--z-palette); background: transparent; }
 .wb-palette {
   position: fixed;
-  top: 12vh; left: 50%; transform: translateX(-50%);
+  top: 60px; left: 50%; transform: translateX(-50%);
   z-index: var(--z-palette);
   width: min(760px, 92vw);
   display: grid;
@@ -346,3 +361,33 @@
 
 /* 覆盖 index.css 遗留的 main{max-width:48rem}（Work Surface 是全幅工作区） */
 .wb__pane--surface { max-width: none; margin: 0; padding: 0; }
+
+/* ── Compare focus depth（3R.1：焦点侧全亮，另一侧轻微退后，可逆）── */
+.wb__pane--surface, .wb__side__body, .wb__side__bar {
+  transition: opacity var(--motion-standard) var(--ease-standard);
+}
+@supports selector(:has(*)) {
+  .wb[data-layout="S3"]:has(.wb__side :focus-within) .wb__pane--surface { opacity: 0.86; }
+  .wb[data-layout="S3"]:has(.wb__pane--surface :focus-within) .wb__side { opacity: 0.86; }
+}
+
+/* ── 3R.1 标题升档：应用感 largeTitle ── */
+.wb-reader h1 { font-size: var(--text-largeTitle); line-height: var(--lh-largeTitle); }
+
+/* ── 3R.1 Header 分组（lead tabs | divider | actions）──────── */
+.wb__header { position: sticky; }
+.wb__header__divider { width: 1px; align-self: stretch; margin: 6px 6px; background: var(--color-border-subtle); }
+.wb__header__lead { flex: 1; min-width: 0; display: flex; }
+.wb__header .wb__tabs { flex: 1; }
+
+/* ── 3R.1 Side bar：与主 header 高度一致 + 自身 scroll edge（[A] HIG Scroll Views）── */
+.wb__side__bar { min-height: 56px; position: sticky; top: 0; z-index: 10; }
+.wb__side__bar::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -16px; height: 16px;
+  background: linear-gradient(var(--color-surface), transparent);
+  opacity: 0;
+  transition: opacity var(--motion-standard) var(--ease-standard);
+  pointer-events: none;
+}
+.wb__side__bar.is-scrolled::after { opacity: 1; }

@@ -163,8 +163,10 @@ function NoteReader({ note, onLink, onAnnotate }: {
       }
       if (e.key === "Escape" && findOpen) { setFindOpen(false); setFindQ(""); }
     };
+    const openFind = () => { setFindOpen(true); window.setTimeout(() => findInputRef.current?.focus(), 30); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("wb-find", openFind);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("wb-find", openFind); };
   }, [findOpen]);
 
   const onMouseUp = () => {
@@ -510,6 +512,8 @@ export default function Workbench() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [density, setDensity] = useState<Density>("standard");
+  const [scrolled, setScrolled] = useState(false);
+  const surfaceRef = useRef<HTMLElement>(null);
   const state = enforceMutualExclusion(rawState, narrow);
   const active = state.tabs.find((t) => t.key === state.activeKey);
   const side = state.side;
@@ -549,7 +553,12 @@ export default function Workbench() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const open = useCallback((obj: WorkObject) => dispatch({ type: "open", object: obj }), []);
+  // [A] scroll edge：内容滚入浮层之下时，边缘效果与紧凑态出现（HIG Scroll Views）
+  const onSurfaceScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    setScrolled(e.currentTarget.scrollTop > 8);
+  }, []);
+
+  const open = useCallback((obj: WorkObject) => { dispatch({ type: "open", object: obj }); if (surfaceRef.current) surfaceRef.current.scrollTop = 0; setScrolled(false); }, []);
   const openRight = useCallback((obj: WorkObject) => dispatch({ type: "openRight", object: obj }), []);
 
   const [peek, setPeek] = useState<{ title: string; x: number; y: number; obj: WorkObject | null } | null>(null);
@@ -570,7 +579,6 @@ export default function Workbench() {
         <IconButton icon="review" label="复习（进入专注）" className={active?.obj.kind === "review" ? "is-active" : ""} onClick={() => { open({ key: "review", obj: { kind: "review" }, title: "Review" }); dispatch({ type: "enterFocus" }); }} />
         <IconButton icon="tutor" label="Tutor" className={active?.obj.kind === "tutor" ? "is-active" : ""} onClick={() => open({ key: "tutor", obj: { kind: "tutor" }, title: "Tutor" })} />
         <span className="wb__rail__spacer" />
-        <IconButton icon="settings" label="设置（Phase 4）" disabled />
       </nav>
 
       {state.explorerOpen && (
@@ -579,8 +587,9 @@ export default function Workbench() {
         </aside>
       )}
 
-      <main className="wb__pane wb__pane--surface" aria-label="Work Surface">
-        <div className="wb__header">
+      <main ref={surfaceRef} className="wb__pane wb__pane--surface" aria-label="Work Surface" onScroll={onSurfaceScroll}>
+        <div className={`wb__header${scrolled ? " is-scrolled" : ""}`}>
+          <span className="wb__header__lead" />
           <div className="wb__tabs" role="tablist" aria-label="打开的工作对象">
             {state.tabs.map((t) => (
               <span key={t.key} style={{ display: "inline-flex" }}>
@@ -597,7 +606,11 @@ export default function Workbench() {
               </span>
             ))}
           </div>
+          <span className="wb__header__divider" aria-hidden="true" />
           <div className="wb__actions">
+            {active?.obj.kind === "note" && state.layout !== "S3" && (
+              <IconButton icon="search" label="在本文档中查找 ⌘F" onClick={() => window.dispatchEvent(new CustomEvent("wb-find"))} />
+            )}
             {state.layout !== "S3" && (
               <IconButton icon="graph" label={state.contextOpen ? "收起 Context" : "打开 Context"} className={state.contextOpen ? "is-active" : ""} onClick={() => dispatch({ type: "toggleContext" })} />
             )}
@@ -631,7 +644,10 @@ export default function Workbench() {
               window.dispatchEvent(new CustomEvent("wb-demo-link", { detail: side.title }));
             }}>Link</Button>
           </div>
-          <div className="wb__side__body">
+          <div className="wb__side__body" onScroll={(e) => {
+            const bar = e.currentTarget.parentElement?.querySelector(".wb__side__bar");
+            if (bar) bar.classList.toggle("is-scrolled", e.currentTarget.scrollTop > 8);
+          }}>
             <WorkSurfaceObject obj={side.obj} onLink={() => { /* 副对象内链接 3A 不展开 */ }} />
           </div>
         </section>
