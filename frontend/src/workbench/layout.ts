@@ -1,112 +1,57 @@
 /**
- * Workbench 布局引擎（3C-1 · D-01 修订版）。
- * Owner 修正 1：680 是 **Reading Measure 目标**，不是 Layout Engine 无条件的物理最小宽度。
- * 优先级：Work Surface > Context > Explorer > Decorative margin。
- * Context / Explorer 是**可让位 pane**（空间不足时转抽屉/遮挡式，而不是压缩 Work Surface）。
+ * Workbench 布局引擎 — VS Code 式紧凑布局（3C-3）。
+ *
+ * 核心模型：
+ *   Rail (48px) │ Explorer (240px, 可关) │ Editor Area (flexible)
+ *
+ * Editor Area 内可 Split（Note A │ Note B），也可单栏。
+ * Context / Inspector 不占固定列——按需以 overlay 浮层出现。
+ *
+ * Owner 裁定：
+ * - 左边放笔记导航栏
+ * - 可以双页面同屏
+ * - 不要为了把屏幕塞满而把没用的东西塞进去
+ * - 参考 VS Code：紧凑、内容密度高、没有多余 chrome
  */
+
 export interface LayoutInput {
   explorer: boolean;
-  context: boolean;
-  compare: boolean;
+  /** Editor 是否 Split（双页同屏） */
+  split: boolean;
   focus: boolean;
-  /** Inspector（Xcode 式属性栏，≥1440 才出现） */
-  inspector: boolean;
-  /** 视口宽度（px） */
   width: number;
 }
 
-export type PaneMode = "column" | "drawer" | "none";
-
 export interface LayoutPlan {
   railWidth: number;
-  columns: string;
-  areas: string;
-  explorerMode: PaneMode;
-  contextMode: PaneMode;
-  compareMode: PaneMode;
-  inspectorMode: PaneMode;
-  /** 阅读度量目标（px）：大屏可放宽，空间紧张时回落 */
+  explorerWidth: number;
+  /** true = Explorer 可见（column），false = 隐藏 */
+  explorerVisible: boolean;
+  /** true = Editor Area 分成两列 */
+  splitActive: boolean;
+  focus: boolean;
+  /** 阅读度量目标 */
   readerMeasure: number;
 }
 
-const RAIL = 52;
-const RAIL_LARGE = 56;
-const EXPLORER_W = 264;
-const CONTEXT_W = 320;
-const INSPECTOR_W = 250;
-/** Inspector 只在宽屏作为真实列存在（Xcode 模式） */
-const INSPECTOR_MIN_WIDTH = 1440;
-/** 当“可用宽度 - 所有 pane”低于此值时，次级 pane 让位（转抽屉） */
-const SURFACE_COMFORT = 720;
+const RAIL_W = 48;
+const EXPLORER_W = 240;
+const FOCUS_W = 48;
 
 export function computeLayout(i: LayoutInput): LayoutPlan {
-  const rail = i.width >= 1920 ? RAIL_LARGE : RAIL;
-  const available = Math.max(0, i.width - rail);
+  const rail = i.focus ? FOCUS_W : RAIL_W;
+  const explorerVisible = i.explorer && !i.focus;
+  const explorerW = explorerVisible ? EXPLORER_W : 0;
 
-  // S4 Focus：只留 Work Surface（Apple 可临时隐藏工具栏以获得无干扰体验）
-  if (i.focus) {
-    return {
-      railWidth: rail, columns: `${rail}px minmax(0, 1fr)`, areas: '"rail surface"',
-      explorerMode: "none", contextMode: "none", compareMode: "none", inspectorMode: "none",
-      readerMeasure: i.width >= 1920 ? 760 : 680,
-    };
-  }
-
-  // S3 Compare：连续空间被分成两个工作场（均分，Context/Explorer 让位）
-  if (i.compare) {
-    // 窄屏 Compare：单列 + 右侧全高 Sheet（不并排挤压）
-    if (i.width < 1024) {
-      return {
-        railWidth: 44, columns: "44px minmax(0, 1fr)", areas: '"rail surface"',
-        explorerMode: "none", contextMode: "none", compareMode: "drawer", inspectorMode: "none", readerMeasure: 680,
-      };
-    }
-    return {
-      railWidth: rail, columns: `${rail}px minmax(0, 1fr) minmax(0, 1fr)`, areas: '"rail surface side"',
-      explorerMode: "drawer", contextMode: "none", compareMode: "column", inspectorMode: "none",
-      readerMeasure: i.width >= 1920 ? 760 : 680,
-    };
-  }
-
-  // 窄屏：次级 pane 一律让位（抽屉），Work Surface 独占 [Owner 修正 1]
-  if (i.width < 1024) {
-    return {
-      railWidth: 44,
-      columns: "44px minmax(0, 1fr)",
-      areas: '"rail surface"',
-      explorerMode: i.explorer ? "drawer" : "none",
-      contextMode: i.context ? "drawer" : "none",
-      compareMode: "none",
-      inspectorMode: "none",
-      readerMeasure: 680,
-    };
-  }
-
-  const both = i.explorer && i.context;
-  const needed = (i.explorer ? EXPLORER_W : 0) + (i.context ? CONTEXT_W : 0);
-  const surfaceWouldBe = available - needed;
-
-  // 让位规则：Explorer 与 Context 同时开启且 Work Surface 不够舒适 → Context 让位为抽屉
-  const contextYields = both && surfaceWouldBe < SURFACE_COMFORT;
-  const explorerColumn = i.explorer;
-  const contextColumn = i.context && !contextYields;
-
-  const cols: string[] = [`${rail}px`];
-  const names: string[] = ["rail"];
-  if (explorerColumn) { cols.push(`${EXPLORER_W}px`); names.push("explorer"); }
-  cols.push("minmax(0, 1fr)"); names.push("surface");
-  if (contextColumn) { cols.push(`${CONTEXT_W}px`); names.push("context"); }
-  const inspectorColumn = i.inspector && i.width >= INSPECTOR_MIN_WIDTH;
-  if (inspectorColumn) { cols.push(`${INSPECTOR_W}px`); names.push("inspector"); }
+  // 阅读度量：≥1920 放宽到 760，其余 680
+  const readerMeasure = i.width >= 1920 ? 760 : 680;
 
   return {
     railWidth: rail,
-    columns: cols.join(" "),
-    areas: `"${names.join(" ")}"`,
-    explorerMode: explorerColumn ? "column" : i.explorer ? "drawer" : "none",
-    contextMode: contextColumn ? "column" : i.context ? "drawer" : "none",
-    compareMode: "none",
-    inspectorMode: inspectorColumn ? "column" : "none",
-    readerMeasure: i.width >= 1920 ? 760 : 680,
+    explorerWidth: explorerW,
+    explorerVisible,
+    splitActive: i.split,
+    focus: i.focus,
+    readerMeasure,
   };
 }

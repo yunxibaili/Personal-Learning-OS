@@ -5,7 +5,6 @@
  * 批注为内存态（持久化 = Phase 4 提案，ADR-031）。
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
-import { computeLayout } from "./layout";
 import { buildContextModel, buildBreadcrumb, type ContextModel } from "./contextModel";
 import { Icon } from "../components/icons/Icon";
 import { Button, IconButton } from "../components/ui/Button";
@@ -430,20 +429,6 @@ export default function Workbench() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // 3C-1：布局引擎（D-01 修订）—— Work Surface 优先，Context/Explorer 可让位
-  const plan = useMemo(
-    () =>
-      computeLayout({
-        explorer: state.explorerOpen,
-        context: state.contextOpen,
-        compare: !!state.side,
-        focus: state.layout === "S4",
-        inspector: inspectorOpen,
-        width: vw,
-      }),
-    [state.explorerOpen, state.contextOpen, state.side, state.layout, inspectorOpen, vw],
-  );
-
   // 底部面板拖拽改高（200–680）
   function startPanelDrag(e: React.PointerEvent) {
     const startY = e.clientY;
@@ -593,7 +578,7 @@ export default function Workbench() {
         <IconButton icon="tutor" label="底部面板 ⌘J" className={panel ? "is-active" : ""} onClick={() => setPanel((cur) => (cur ? null : "tutor"))} />
       </header>
 
-      <div className="wb__main" style={{ gridTemplateColumns: plan.columns, gridTemplateAreas: plan.areas }}>
+      <div className="wb__main" >
       <nav className="wb__rail" style={{ gridArea: "rail" }} aria-label="Activity Rail">
         <IconButton icon="notes" label="笔记（开关 Explorer）" className={state.explorerOpen ? "is-active" : ""} onClick={() => dispatch({ type: "toggleExplorer" })} />
         <IconButton icon="search" label="全局搜索 ⌘K" onClick={() => setPaletteOpen(true)} />
@@ -604,7 +589,7 @@ export default function Workbench() {
 
       {state.explorerOpen && (
         <aside
-          className={`wb__pane wb__pane--explorer${plan.explorerMode === "drawer" ? " wb__pane--drawer" : ""}`}
+          className={`wb__pane wb__pane--explorer${false ? " wb__pane--drawer" : ""}`}
           style={{ gridArea: "explorer" }}
           aria-label="Explorer"
         >
@@ -675,7 +660,7 @@ export default function Workbench() {
       </main>
 
       {side && (
-        <section className={`wb__side${plan.compareMode === "drawer" ? " wb__side--drawer" : ""}`} style={{ gridArea: "side" }} aria-label="并置对象">
+        <section className={`wb__side${false ? " wb__side--drawer" : ""}`} style={{ gridArea: "side" }} aria-label="并置对象">
           <span className="wb__gap">
             <IconButton icon="forward" label="交换为主对象" onClick={() => { const s = side; dispatch({ type: "closeSide" }); open(s); }} />
             <IconButton icon="close" label="关闭并置" onClick={() => dispatch({ type: "closeSide" })} />
@@ -695,7 +680,7 @@ export default function Workbench() {
         </section>
       )}
 
-      {(plan.contextMode === "column" || plan.contextMode === "drawer") && state.contextOpen && (
+      {(true) && state.contextOpen && (
         <ContextPane
           state={state}
           model={contextModel}
@@ -711,7 +696,7 @@ export default function Workbench() {
       )}
 
       {/* E. Inspector（≥1440；Xcode 模式：元数据 / 批注列表 / 导出） */}
-      {plan.inspectorMode === "column" && inspectorOpen && (
+      {inspectorOpen && vw >= 1440 && (
         <aside className="wb__inspector" style={{ gridArea: "inspector" }} aria-label="Inspector">
           <div className="wb-ctx__head"><span className="t-caption">Inspector</span></div>
           <div className="wb-ctx__section">
