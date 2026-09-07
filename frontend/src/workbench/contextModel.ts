@@ -35,6 +35,9 @@ export interface ContextModel {
   backlinks: BacklinkRef[];
   reviewDue: Array<{ concept_id: number; title: string; effective_now: number }>;
   hasAnnotations: boolean;
+  outline: OutlineItem[];
+  stats: NoteStats;
+  breadcrumb: string[];
 }
 
 export interface ContextSources {
@@ -47,6 +50,7 @@ export interface ContextSources {
   backlinks: BacklinkRef[];
   currentNoteId?: number;
   annotationCount: number;
+  breadcrumb?: string[];
 }
 
 /** 提取正文中的 wikilink 目标（去重、去空） */
@@ -129,5 +133,44 @@ export function buildContextModel(s: ContextSources): ContextModel {
     backlinks: s.backlinks.slice(0, 4),
     reviewDue: pickReviewDue(s.weakConcepts, relatedIds),
     hasAnnotations: s.annotationCount > 0,
+    outline: extractOutline(s.contentMd),
+    stats: computeStats(s.contentMd),
+    breadcrumb: s.breadcrumb ?? [],
   };
+}
+
+
+/* ── 3C-2b：文档结构信息（全部从 content_md / notes 列表推导）──── */
+
+export interface OutlineItem { level: number; text: string; }
+export interface NoteStats { chars: number; paragraphs: number; links: number; readingMin: number; }
+
+export function extractOutline(md: string): OutlineItem[] {
+  const out: OutlineItem[] = [];
+  for (const line of md.split("\n")) {
+    const m = /^(#{2,3})\s+(.+)/.exec(line);
+    if (m) out.push({ level: m[1].length, text: m[2].trim() });
+  }
+  return out;
+}
+
+export function computeStats(md: string): NoteStats {
+  const chars = md.replace(/\s+/g, "").length;
+  const paragraphs = md.split(/\n\s*\n/).filter((p) => p.trim()).length;
+  const links = (md.match(/\[\[([^\]]+)\]\]/g) ?? []).length;
+  return { chars, paragraphs, links, readingMin: Math.max(1, Math.ceil(chars / 300)) };
+}
+
+export function buildBreadcrumb(notes: Array<{ id: number; title: string; parent_id: number | null }>, noteId: number): string[] {
+  const map = new Map<number, { title: string; parent_id: number | null }>();
+  for (const n of notes) map.set(n.id, n);
+  const chain: string[] = [];
+  let cur = map.get(noteId);
+  let guard = 0;
+  while (cur && guard < 10) {
+    chain.unshift(cur.title);
+    cur = cur.parent_id != null ? map.get(cur.parent_id) : undefined;
+    guard++;
+  }
+  return chain;
 }

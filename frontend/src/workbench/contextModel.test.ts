@@ -72,6 +72,7 @@ describe("buildContextModel", () => {
     backlinks: [{ note_id: 9, title: "反向传播" } as BacklinkRef],
     currentNoteId: 1,
     annotationCount: 2,
+    breadcrumb: [],
   };
 
   it("当前概念 + 相关概念 + 回链 + 复习 + 批注存在性齐全", () => {

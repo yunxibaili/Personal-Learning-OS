@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { computeLayout } from "./layout";
-import { buildContextModel, type ContextModel } from "./contextModel";
+import { buildContextModel, buildBreadcrumb, type ContextModel } from "./contextModel";
 import { Icon } from "../components/icons/Icon";
 import { Button, IconButton } from "../components/ui/Button";
 import { SearchField } from "../components/ui/SearchField";
@@ -52,11 +52,12 @@ function ContextRow({
 }
 
 function ContextPane({
-  state, model, density, onOpen, onAnnotateNote, onCloseAnn, onClose, loading, recomposeKey,
+  state, model, density, outgoingLinks, onOpen, onAnnotateNote, onCloseAnn, onClose, loading, recomposeKey,
 }: {
   state: WorkbenchState;
   model: ContextModel | null;
   density: Density;
+  outgoingLinks: string[];
   onOpen: (obj: WorkObject) => void;
   onAnnotateNote: (id: string, note: string) => void;
   onCloseAnn: (id: string) => void;
@@ -83,6 +84,14 @@ function ContextPane({
           {/* Current：Work Object 本身 */}
           <div className="wb-ctx__section wb-ctx__section--current">
             <div className="wb-ctx__current">{active.title}</div>
+            {model && model.breadcrumb.length > 1 && (
+              <div className="wb-ctx__crumb">{model.breadcrumb.join(" ▸ ")}</div>
+            )}
+            {model && (
+              <div className="wb-ctx__stats">
+                {model.stats.chars} 字 · {model.stats.readingMin} 分钟 · {model.stats.links} 链接
+              </div>
+            )}
             {model?.currentConcept ? (
               <div className="wb-ctx__row-secondary">当前概念 · {model.currentConcept.title}</div>
             ) : (
@@ -98,6 +107,16 @@ function ContextPane({
                 <div className="wb-ctx__bar-track"><div className="wb-ctx__bar-fill" style={{ width: `${Math.round(model.currentConcept.effective_now * 100)}%` }} /></div>
                 <span className="wb-ctx__row-meta">{Math.round(model.currentConcept.effective_now * 100)}%</span>
               </div>
+            </div>
+          )}
+
+          {/* Outline（Standard+） */}
+          {density !== "minimal" && (model?.outline.length ?? 0) > 0 && (
+            <div className="wb-ctx__section">
+              <h3>大纲</h3>
+              {model!.outline.map((o, oi) => (
+                <ContextRow key={oi} primary={o.text} meta={o.level === 2 ? "H2" : "H3"} />
+              ))}
             </div>
           )}
 
@@ -173,6 +192,15 @@ function ContextPane({
             <div className="wb-ctx__section">
               <h3>Sources</h3>
               <p className="wb-ctx__row-meta" style={{ margin: 0 }}>批注来源清单随 Paper 能力（Phase 4）接入。</p>
+            </div>
+          )}
+
+          {density === "research" && outgoingLinks.length > 0 && (
+            <div className="wb-ctx__section">
+              <h3>出链</h3>
+              {outgoingLinks.map((l) => (
+                <ContextRow key={l} primary={l} />
+              ))}
             </div>
           )}
 
@@ -453,9 +481,23 @@ export default function Workbench() {
       relatedNotes: related,
       backlinks,
       currentNoteId: activeNoteId ?? undefined,
+      breadcrumb: notes ? buildBreadcrumb(notes, activeNoteId ?? 0) : [],
       annotationCount: state.annotations.filter((a) => a.objKey === active.key).length,
     });
   }, [active, noteContent, mastery, weak, related, backlinks, activeNoteId, state.annotations]);
+
+  // 出链清单（从当前笔记正文提取）
+  const noteLinks = useMemo(() => {
+    if (!noteContent) return [];
+    const out: string[] = [];
+    const re = /\[\[([^\]]+)\]\]/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(noteContent)) !== null) {
+      const t = m[1].trim();
+      if (t && !out.includes(t)) out.push(t);
+    }
+    return out;
+  }, [noteContent]);
 
   // 相关笔记（按当前概念的邻接关系）
   useEffect(() => {
@@ -663,6 +705,7 @@ export default function Workbench() {
           onCloseAnn={(id) => dispatch({ type: "removeAnnotation", id })}
           onClose={() => dispatch({ type: "toggleContext" })}
           loading={false}
+          outgoingLinks={noteLinks}
           recomposeKey={active?.key ?? "none"}
         />
       )}
