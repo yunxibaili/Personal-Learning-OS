@@ -139,7 +139,7 @@
   font-size: var(--text-headline); line-height: var(--lh-headline); font-weight: 700;
   margin: var(--space-xl) 0 var(--space-sm);
 }
-.wb-reader p { font-size: var(--text-reading); line-height: var(--lh-reading); margin: 0 0 var(--space-md); }
+.wb-reader p { font-size: var(--text-reading); line-height: var(--lh-reading); margin: 0.5em 0 0.8em; }
 .wb-reader ul { padding-left: var(--space-lg); margin: 0 0 var(--space-md); }
 .wb-reader li { font-size: var(--text-reading); line-height: var(--lh-reading); margin-bottom: var(--space-3xs); }
 .wb-reader blockquote {
@@ -611,4 +611,49 @@
 .wb-ctx__link:hover { color: var(--color-accent-text); }
 @media (prefers-reduced-motion: reduce) {
   .wb-ctx__body { animation: none; }
+}
+
+/* 3C-3：链接 resting 用 accent 文字，hover 才显下划线；共享概念（Compare）用 accent 底 */
+.wb-link {
+  background: transparent;
+  color: var(--color-accent-text);
+  text-decoration: none;
+}
+.wb-link:hover { background: var(--color-highlight); text-decoration: underline; }
+.wb-link--shared { background: var(--color-highlight); color: var(--color-accent-text); border-radius: 2px; }
+
+/* ── 3C-3 五区模型：TopBar │ (Rail│Explorer│Surface│Context│Inspector) │ Bottom Panel ── */
+.wb { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.wb__topbar {
+  display: flex; align-items: center; gap: var(--space-sm);
+  height: 44px; flex: 0 0 44px; padding: 0 var(--space-md);
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.wb__topbar__mark { font-weight: 700; font-size: var(--text-callout); letter-spacing: 0.08em; color: var(--color-text-tertiary); }
+.wb__topbar__title { font-size: var(--text-body-ui); font-weight: 600; color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb__topbar__spacer { flex: 1; }
+.wb__main { flex: 1; min-height: 0; display: grid; }
+.wb__panel {
+  flex: 0 0 auto; border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); display: flex; flex-direction: column; min-height: 0;
+}
+.wb__panel__bar {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-3xs) var(--space-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-elevated);
+  cursor: row-resize; user-select: none;
+}
+.wb__panel__body { flex: 1; min-height: 0; overflow: auto; }
+.wb__inspector {
+  overflow: auto; padding: var(--space-md);
+  border-left: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+}
+/* Work Surface 内容左对齐 + 左侧 margin 承载 Peek/边注（≥1920） */
+@media (min-width: 1920px) {
+  .wb-reader { margin: 0; padding-left: 160px; padding-right: var(--space-lg); }
 }

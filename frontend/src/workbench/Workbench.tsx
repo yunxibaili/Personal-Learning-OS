@@ -52,12 +52,11 @@ function ContextRow({
 }
 
 function ContextPane({
-  state, model, density, setDensity, onOpen, onAnnotateNote, onCloseAnn, onClose, loading, recomposeKey,
+  state, model, density, onOpen, onAnnotateNote, onCloseAnn, onClose, loading, recomposeKey,
 }: {
   state: WorkbenchState;
   model: ContextModel | null;
   density: Density;
-  setDensity: (d: Density) => void;
   onOpen: (obj: WorkObject) => void;
   onAnnotateNote: (id: string, note: string) => void;
   onCloseAnn: (id: string) => void;
@@ -73,11 +72,6 @@ function ContextPane({
     <aside className="wb__pane wb__pane--context wb-ctx" data-density={density} aria-label="Context">
       <div className="wb-ctx__head">
         <span className="t-caption">Context</span>
-        <IOS27Segmented
-          segments={["简", "标", "研"]}
-          selected={(["minimal", "standard", "research"] as const).indexOf(density)}
-          onChange={(i) => setDensity((["minimal", "standard", "research"] as const)[i])}
-        />
         <IconButton icon="close" label="收起 Context" onClick={onClose} style={{ width: 24, height: 24 }} />
       </div>
 
@@ -371,6 +365,10 @@ export default function Workbench() {
   const [noteContent, setNoteContent] = useState("");
   const [related, setRelated] = useState<RelatedNote[]>([]);
   const [backlinks, setBacklinks] = useState<BacklinkRef[]>([]);
+  // 3C-3：五区模型 —— D Inspector（≥1440 属性栏）+ F Bottom Panel（Tutor/Review/Trace）
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [panel, setPanel] = useState<null | "tutor" | "review" | "trace">(null);
+  const [panelHeight, setPanelHeight] = useState(320);
   const state = enforceMutualExclusion(rawState, narrow);
   const active = state.tabs.find((t) => t.key === state.activeKey);
   const side = state.side;
@@ -412,10 +410,37 @@ export default function Workbench() {
         context: state.contextOpen,
         compare: !!state.side,
         focus: state.layout === "S4",
+        inspector: inspectorOpen,
         width: vw,
       }),
-    [state.explorerOpen, state.contextOpen, state.side, state.layout, vw],
+    [state.explorerOpen, state.contextOpen, state.side, state.layout, inspectorOpen, vw],
   );
+
+  // 底部面板拖拽改高（200–680）
+  function startPanelDrag(e: React.PointerEvent) {
+    const startY = e.clientY;
+    const startH = panelHeight;
+    const onMove = (ev: PointerEvent) => {
+      const next = startH + (startY - ev.clientY);
+      setPanelHeight(Math.max(200, Math.min(680, Math.round(next))));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  // Inspector 数据：当前笔记元数据 + 批注数
+  const noteMeta = useMemo(() => {
+    const n = notes?.find((x) => active && active.obj.kind === "note" && x.id === (active.obj as { id: number }).id);
+    return {
+      tags: n?.tags?.join(" · ") ?? "",
+      updated: n ? new Date(n.updated_at).toLocaleDateString("zh-CN") : "",
+    };
+  }, [notes, active]);
+  const annCountForActive = state.annotations.filter((a) => a.objKey === active?.key).length;
 
   // 3C-2：Context 合成（companion data）
   const contextModel = useMemo<ContextModel | null>(() => {
@@ -475,6 +500,10 @@ export default function Workbench() {
         e.preventDefault();
         setPaletteOpen((v) => !v);
       }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") { e.preventDefault(); setInspectorOpen((v) => !v); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") { e.preventDefault(); setPanel((cur) => (cur ? null : "tutor")); }
+      if (e.key === "Escape" && panel) { setPanel(null); }
+
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -506,12 +535,23 @@ export default function Workbench() {
   }, [notes]);
 
   return (
-    <div
-      className="wb"
-      data-layout={state.layout}
-      data-scrolled={scrolled ? "true" : "false"}
-      style={{ gridTemplateColumns: plan.columns, gridTemplateAreas: plan.areas }}
-    >
+    <div className="wb" data-layout={state.layout} data-scrolled={scrolled ? "true" : "false"} data-panel={panel ?? "none"}>
+      {/* A. TopBar（全局，44px，玻璃） */}
+      <header className="wb__topbar">
+        <span className="wb__topbar__mark">OLOS</span>
+        <span className="wb__topbar__title">{active?.title ?? "Learning Workbench"}</span>
+        <span className="wb__topbar__spacer" />
+        <IOS27Segmented
+          segments={["简", "标", "研"]}
+          selected={(["minimal", "standard", "research"] as const).indexOf(density)}
+          onChange={(i) => setDensity((["minimal", "standard", "research"] as const)[i])}
+        />
+        <IconButton icon="search" label="全局搜索 ⌘K" onClick={() => setPaletteOpen(true)} />
+        <IconButton icon="settings" label="Inspector ⌘I" className={inspectorOpen ? "is-active" : ""} onClick={() => setInspectorOpen((v) => !v)} />
+        <IconButton icon="tutor" label="底部面板 ⌘J" className={panel ? "is-active" : ""} onClick={() => setPanel((cur) => (cur ? null : "tutor"))} />
+      </header>
+
+      <div className="wb__main" style={{ gridTemplateColumns: plan.columns, gridTemplateAreas: plan.areas }}>
       <nav className="wb__rail" style={{ gridArea: "rail" }} aria-label="Activity Rail">
         <IconButton icon="notes" label="笔记（开关 Explorer）" className={state.explorerOpen ? "is-active" : ""} onClick={() => dispatch({ type: "toggleExplorer" })} />
         <IconButton icon="search" label="全局搜索 ⌘K" onClick={() => setPaletteOpen(true)} />
@@ -618,7 +658,6 @@ export default function Workbench() {
           state={state}
           model={contextModel}
           density={density}
-          setDensity={setDensity}
           onOpen={open}
           onAnnotateNote={(id, note) => dispatch({ type: "updateAnnotation", id, note })}
           onCloseAnn={(id) => dispatch({ type: "removeAnnotation", id })}
@@ -626,6 +665,48 @@ export default function Workbench() {
           loading={false}
           recomposeKey={active?.key ?? "none"}
         />
+      )}
+
+      {/* E. Inspector（≥1440；Xcode 模式：元数据 / 批注列表 / 导出） */}
+      {plan.inspectorMode === "column" && inspectorOpen && (
+        <aside className="wb__inspector" style={{ gridArea: "inspector" }} aria-label="Inspector">
+          <div className="wb-ctx__head"><span className="t-caption">Inspector</span></div>
+          <div className="wb-ctx__section">
+            <h3>属性</h3>
+            <div className="wb-ctx__row"><span className="wb-ctx__row-primary">类型</span><span className="wb-ctx__row-meta">{active?.obj.kind ?? "-"}</span></div>
+            <div className="wb-ctx__row"><span className="wb-ctx__row-primary">标签</span><span className="wb-ctx__row-meta">{noteMeta.tags || "—"}</span></div>
+            <div className="wb-ctx__row"><span className="wb-ctx__row-primary">更新</span><span className="wb-ctx__row-meta">{noteMeta.updated || "—"}</span></div>
+          </div>
+          <div className="wb-ctx__section">
+            <h3>批注（内存态）</h3>
+            <p className="wb-ctx__row-meta" style={{ margin: 0 }}>{annCountForActive > 0 ? `${annCountForActive} 条` : "暂无"}</p>
+          </div>
+          <div className="wb-ctx__section">
+            <h3>动作</h3>
+            <div style={{ display: "flex", gap: "var(--space-xs)", flexWrap: "wrap" }}>
+              <Button size="sm" prominence="plain">导出</Button>
+              <Button size="sm" prominence="plain">复制链接</Button>
+            </div>
+          </div>
+        </aside>
+      )}
+      </div>
+
+      {/* F. Bottom Panel（默认收起；Tutor / Review / Trace） */}
+      {panel && (
+        <section className="wb__panel" style={{ height: panelHeight }} aria-label="Bottom Panel">
+          <div className="wb__panel__bar" onPointerDown={startPanelDrag}>
+            <span className="t-caption">{panel === "tutor" ? "Tutor" : panel === "review" ? "Review Focus" : "Trace"}</span>
+            <span className="wb__topbar__spacer" />
+            <Button size="sm" prominence="plain" onClick={() => setPanel(panel === "tutor" ? "review" : panel === "review" ? "trace" : "tutor")}>切换</Button>
+            <IconButton icon="close" label="关闭面板" style={{ width: 24, height: 24 }} onClick={() => setPanel(null)} />
+          </div>
+          <div className="wb__panel__body">
+            {panel === "tutor" && <TutorSlot />}
+            {panel === "review" && <ReviewSlot />}
+            {panel === "trace" && <div className="wb-empty"><WorkState kind="empty" title="Trace 待接入" hint="算法可视化在 Algorithm Lab 阶段接入（backend trace 已存在）。" /></div>}
+          </div>
+        </section>
       )}
 
       {peek && (

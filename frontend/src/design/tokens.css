@@ -34,7 +34,7 @@
 
   /* 语义别名（组件层只允许用语义名） */
   --color-focus-ring: rgba(255, 107, 53, 0.45);
-  --color-highlight: rgba(255, 214, 0, 0.45); /* 荧光笔黄：双链/记忆点 */
+  --color-highlight: rgba(255, 107, 53, 0.15);  /* 3C-3：accent 15% 背景 + accent 文字（去荧光笔黄网页感） */
 
   /* ── Radius（concentricity：内层 = 外层 − padding，取整到 2px）── */
   --radius-xs: 4px;

@@ -69,8 +69,8 @@ describe("design tokens 清单完整性", () => {
 
   it("typography 必须提供阅读双尺度（17px/1.75）", () => {
     const t = css("typography.css");
-    expect(t).toContain("--text-reading: 17px");
-    expect(t).toContain("--lh-reading: 1.75");
+    expect(t).toContain("--text-reading: 16px");
+    expect(t).toContain("--lh-reading: 1.8");
   });
 
   it("阅读度量 680px：token 在 tokens.css，消费 class 在 layout.css", () => {

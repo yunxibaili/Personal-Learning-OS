@@ -9,6 +9,8 @@ export interface LayoutInput {
   context: boolean;
   compare: boolean;
   focus: boolean;
+  /** Inspector（Xcode 式属性栏，≥1440 才出现） */
+  inspector: boolean;
   /** 视口宽度（px） */
   width: number;
 }
@@ -22,6 +24,7 @@ export interface LayoutPlan {
   explorerMode: PaneMode;
   contextMode: PaneMode;
   compareMode: PaneMode;
+  inspectorMode: PaneMode;
   /** 阅读度量目标（px）：大屏可放宽，空间紧张时回落 */
   readerMeasure: number;
 }
@@ -30,6 +33,9 @@ const RAIL = 52;
 const RAIL_LARGE = 56;
 const EXPLORER_W = 264;
 const CONTEXT_W = 320;
+const INSPECTOR_W = 250;
+/** Inspector 只在宽屏作为真实列存在（Xcode 模式） */
+const INSPECTOR_MIN_WIDTH = 1440;
 /** 当“可用宽度 - 所有 pane”低于此值时，次级 pane 让位（转抽屉） */
 const SURFACE_COMFORT = 720;
 
@@ -41,7 +47,7 @@ export function computeLayout(i: LayoutInput): LayoutPlan {
   if (i.focus) {
     return {
       railWidth: rail, columns: `${rail}px minmax(0, 1fr)`, areas: '"rail surface"',
-      explorerMode: "none", contextMode: "none", compareMode: "none",
+      explorerMode: "none", contextMode: "none", compareMode: "none", inspectorMode: "none",
       readerMeasure: i.width >= 1920 ? 760 : 680,
     };
   }
@@ -52,12 +58,12 @@ export function computeLayout(i: LayoutInput): LayoutPlan {
     if (i.width < 1024) {
       return {
         railWidth: 44, columns: "44px minmax(0, 1fr)", areas: '"rail surface"',
-        explorerMode: "none", contextMode: "none", compareMode: "drawer", readerMeasure: 680,
+        explorerMode: "none", contextMode: "none", compareMode: "drawer", inspectorMode: "none", readerMeasure: 680,
       };
     }
     return {
       railWidth: rail, columns: `${rail}px minmax(0, 1fr) minmax(0, 1fr)`, areas: '"rail surface side"',
-      explorerMode: "drawer", contextMode: "none", compareMode: "column",
+      explorerMode: "drawer", contextMode: "none", compareMode: "column", inspectorMode: "none",
       readerMeasure: i.width >= 1920 ? 760 : 680,
     };
   }
@@ -71,6 +77,7 @@ export function computeLayout(i: LayoutInput): LayoutPlan {
       explorerMode: i.explorer ? "drawer" : "none",
       contextMode: i.context ? "drawer" : "none",
       compareMode: "none",
+      inspectorMode: "none",
       readerMeasure: 680,
     };
   }
@@ -89,6 +96,8 @@ export function computeLayout(i: LayoutInput): LayoutPlan {
   if (explorerColumn) { cols.push(`${EXPLORER_W}px`); names.push("explorer"); }
   cols.push("minmax(0, 1fr)"); names.push("surface");
   if (contextColumn) { cols.push(`${CONTEXT_W}px`); names.push("context"); }
+  const inspectorColumn = i.inspector && i.width >= INSPECTOR_MIN_WIDTH;
+  if (inspectorColumn) { cols.push(`${INSPECTOR_W}px`); names.push("inspector"); }
 
   return {
     railWidth: rail,
@@ -97,6 +106,7 @@ export function computeLayout(i: LayoutInput): LayoutPlan {
     explorerMode: explorerColumn ? "column" : i.explorer ? "drawer" : "none",
     contextMode: contextColumn ? "column" : i.context ? "drawer" : "none",
     compareMode: "none",
+    inspectorMode: inspectorColumn ? "column" : "none",
     readerMeasure: i.width >= 1920 ? 760 : 680,
   };
 }

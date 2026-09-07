@@ -14,7 +14,7 @@
 
   /* 字阶（size/line-height 成对） */
   --text-display: 34px;   --lh-display: 40px;    --weight-display: 700;
-  --text-largeTitle: 28px; --lh-largeTitle: 34px; --weight-largeTitle: 700;
+  --text-largeTitle: 28px; --lh-largeTitle: 34px; --weight-largeTitle: 600;  /* 3C-3：600 而非 700，去“粗黑体网页感” */
   --text-title: 22px;     --lh-title: 28px;      --weight-title: 700;
   --text-headline: 17px;  --lh-headline: 24px;   --weight-headline: 600;
   --text-body-ui: 14px;   --lh-body-ui: 20px;    --weight-body-ui: 400;
@@ -24,7 +24,7 @@
   --text-code: 13px;      --lh-code: 20px;
 
   /* 阅读双尺度（Note Workspace 专用，Phase 4 消费） */
-  --text-reading: 17px;   --lh-reading: 1.75;
+  --text-reading: 16px;   --lh-reading: 1.8;   /* 3C-3：中文阅读 16/1.8（原 17/1.75） */
 
   --tracking-tight: -0.015em;  /* 大标题轻微收字距 */
 }
