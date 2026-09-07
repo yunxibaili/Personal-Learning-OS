@@ -391,3 +391,28 @@
   pointer-events: none;
 }
 .wb__side__bar.is-scrolled::after { opacity: 1; }
+
+/* ── 3R.2 中文长文阅读 + 分块度量（指令书 §8/§9）─────────────
+ * [A] HIG Layout："Align components... communicate organization and hierarchy"；
+ * 组内紧凑、组间留白；680 是 body 的 measure，code 可更宽。 */
+.wb-reader p { letter-spacing: 0.002em; }
+.wb-reader .wb-meta { font-variant-numeric: tabular-nums; }
+.wb-reader pre {
+  /* code breakout：更宽的度量（body 680 ± 外扩 80px） */
+  width: calc(100% + 160px);
+  margin-left: -80px;
+  max-width: none;
+}
+.wb-ctx .num, .wb-ctx__bar span { font-variant-numeric: tabular-nums; }
+
+/* Context 密度视觉分化（ Minimal=大留白无标签 / Research=紧凑全标签 ） */
+.wb-ctx[data-density="minimal"] .wb-ctx__section { margin-bottom: var(--space-2xl); }
+.wb-ctx[data-density="minimal"] .wb-ctx__section > h3 { display: none; }
+.wb-ctx[data-density="research"] .wb-ctx__section { margin-bottom: var(--space-md); }
+
+/* Compare 中缝：rest 40% → hover 100%（不抢注意力） */
+.wb__gap { opacity: 0.4; transition: opacity var(--motion-fast) var(--ease-standard); }
+.wb__side:hover .wb__gap, .wb__gap:hover, .wb__gap:focus-within { opacity: 1; }
+
+/* Rail 呼吸空间 */
+.wb__rail { padding-top: var(--space-md); }

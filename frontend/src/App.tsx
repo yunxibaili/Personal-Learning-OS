@@ -7,6 +7,7 @@ import TutorView from "./features/tutor/TutorView";
 import DesignPlayground from "./design/DesignPlayground";
 import ComponentLab from "./dev/ComponentLab";
 import ReferenceGallery from "./dev/ReferenceGallery";
+import AppleReference from "./dev/AppleReference";
 import Workbench from "./workbench/Workbench";
 
 type Tab = "notes" | "concepts" | "mastery" | "review" | "tutor";
@@ -47,6 +48,7 @@ export default function App() {
   const designParam = params.get("design");
   if (designParam === "components") return <ComponentLab />;
   if (designParam === "reference") return <ReferenceGallery />;
+  if (designParam === "apple-reference") return <AppleReference />;
   if (designParam !== null) return <DesignPlayground />;
   if (params.has("legacy")) return <LegacyApp />;
   return <Workbench />;
