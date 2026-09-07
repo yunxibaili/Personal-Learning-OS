@@ -69,7 +69,7 @@ function ContextPane({
   const openNote = (id: number, title: string) => onOpen({ key: objectKey({ kind: "note", id }), obj: { kind: "note", id }, title });
 
   return (
-    <aside className="wb__pane wb__pane--context wb-ctx" data-density={density} aria-label="Context">
+    <aside className="wb__pane wb__pane--context wb-ctx is-open" data-density={density} aria-label="Context">
       <div className="wb-ctx__head">
         <span className="t-caption">Context</span>
         <IconButton icon="close" label="收起 Context" onClick={onClose} style={{ width: 24, height: 24 }} />
@@ -680,8 +680,10 @@ export default function Workbench() {
         </section>
       )}
 
-      {(true) && state.contextOpen && (
-        <ContextPane
+      {state.contextOpen && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 55 }} onClick={() => dispatch({ type: "toggleContext" })} />
+          <ContextPane
           state={state}
           model={contextModel}
           density={density}
@@ -693,6 +695,7 @@ export default function Workbench() {
           outgoingLinks={noteLinks}
           recomposeKey={active?.key ?? "none"}
         />
+        </>
       )}
 
       {/* E. Inspector（≥1440；Xcode 模式：元数据 / 批注列表 / 导出） */}
