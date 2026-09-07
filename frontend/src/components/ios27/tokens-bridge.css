@@ -1,0 +1,53 @@
+/* ============================================================
+ * iOS27 → OLOS tokens bridge（MIT port）
+ * iOS27-design-system 的 CSS 变量映射到 OLOS design tokens。
+ * 语义映射：--color-blue → OLOS accent（保持 OLOS 身份，仅移植几何/动效）。
+ * ============================================================ */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --duration-fast: 140ms;
+  --duration-sheet-present: 380ms;
+  --duration-sheet-dismiss: 260ms;
+  --easing-apple-default: var(--ease-standard);
+  --easing-spring-gentle: var(--spring-gentle);
+  /* Apple 蓝 → OLOS 橙：几何/层级移植，色彩身份保持 OLOS */
+  --color-blue: var(--color-accent);
+  --white: #fff;
+  --black: #000;
+  --bg-primary: var(--color-surface-elevated);
+  --fill-primary: var(--color-surface-elevated);
+  --fill-secondary: var(--color-surface-sunken);
+  --fill-tertiary: var(--color-surface-sunken);
+  --label-primary: var(--color-text-primary);
+  --label-tertiary: var(--color-text-tertiary);
+  --text-body: 15px;
+  --text-subheadline: 13px;
+  --lh-body: 1.47;
+  --lh-subheadline: 1.4;
+  --ls-body: 0;
+  --ls-subheadline: 0;
+  --toolbar-height: 52px;
+  --glass-small-bg: var(--color-surface-glass);
+  --glass-small-border: color-mix(in srgb, #fff 55%, var(--color-border-subtle));
+  --glass-small-shadow-blur: 24px;
+  --glass-large-radius: 22px;
+}
+/* materials.css 所需材质/模糊变量（映射到 OLOS 玻璃参数域） */
+:root {
+  --material-chrome-opacity: 0.72;
+  --material-thick-opacity: 0.82;
+  --material-regular-opacity: 0.7;
+  --material-thin-opacity: 0.5;
+  --material-ultrathin-opacity: 0.35;
+  --blur-chrome: 20px;
+  --blur-thick: 30px;
+  --blur-regular: 20px;
+  --blur-thin: 12px;
+  --blur-ultrathin: 8px;
+}

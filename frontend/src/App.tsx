@@ -8,6 +8,7 @@ import DesignPlayground from "./design/DesignPlayground";
 import ComponentLab from "./dev/ComponentLab";
 import ReferenceGallery from "./dev/ReferenceGallery";
 import AppleReference from "./dev/AppleReference";
+import AppleSourceReference from "./dev/AppleSourceReference";
 import Workbench from "./workbench/Workbench";
 
 type Tab = "notes" | "concepts" | "mastery" | "review" | "tutor";
@@ -49,6 +50,7 @@ export default function App() {
   if (designParam === "components") return <ComponentLab />;
   if (designParam === "reference") return <ReferenceGallery />;
   if (designParam === "apple-reference") return <AppleReference />;
+  if (designParam === "apple-source-reference") return <AppleSourceReference />;
   if (designParam !== null) return <DesignPlayground />;
   if (params.has("legacy")) return <LegacyApp />;
   return <Workbench />;
