@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Icon } from "../components/icons/Icon";
 import { WorkState } from "./states";
+import { CodeSurface, DisplayMath } from "./CodeSurface";
 import { Button } from "../components/ui/Button";
 import type { NoteDetail } from "../api/notes";
 
@@ -9,12 +10,14 @@ type Block =
   | { t: "p"; text: string }
   | { t: "ul"; items: string[] }
   | { t: "quote"; text: string }
-  | { t: "code"; text: string }
+  | { t: "code"; text: string; lang?: string }
+  | { t: "math"; tex: string; display: boolean }
+  | { t: "table"; rows: string[][] }
   | { t: "img"; alt: string }
   | { t: "hr" };
 
-function parseBlocks(mdRaw: string): Block[] {
-  const md = mdRaw.split("\\[").join("[").split("\\]").join("]");
+export function parseBlocks(mdRaw: string): Block[] {
+  const md = mdRaw.split("\\[\\[").join("[[").split("\\]\\]").join("]]");
   const lines = md.split("\n");
   const blocks: Block[] = [];
   let i = 0;
@@ -26,11 +29,44 @@ function parseBlocks(mdRaw: string): Block[] {
     const line = lines[i];
     if (/^```/.test(line)) {
       flush();
+      const lang = line.replace(/^```/, "").trim() || undefined;
       const buf: string[] = [];
       i++;
       while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
       i++;
-      blocks.push({ t: "code", text: buf.join("\n") });
+      blocks.push({ t: "code", text: buf.join("\n"), lang });
+      continue;
+    }
+    /* Math 块：$$…$$（单/多行）与 \[…\] —— canonical LaTeX 原样进入 Math renderer [指令书 §2] */
+    if (/^\$\$/.test(line)) {
+      flush();
+      const single = /^\$\$(.+)\$\$$/.exec(line.trim());
+      if (single) { blocks.push({ t: "math", tex: single[1], display: true }); i++; continue; }
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length && !/^\$\$/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++;
+      blocks.push({ t: "math", tex: buf.join("\n"), display: true });
+      continue;
+    }
+    if (line.trim() === "\\[") {
+      flush();
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length && lines[i].trim() !== "\\]") { buf.push(lines[i]); i++; }
+      i++;
+      blocks.push({ t: "math", tex: buf.join("\n"), display: true });
+      continue;
+    }
+    /* 表格：| a | b | 且下一行为分隔行 */
+    if (/^\|.*\|/.test(line) && i + 1 < lines.length && /^\|[\s:-]+\|/.test(lines[i + 1])) {
+      flush();
+      const rows: string[][] = [];
+      const parseRow = (l: string) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      rows.push(parseRow(line));
+      i += 2; // 跳过分隔行
+      while (i < lines.length && /^\|.*\|/.test(lines[i])) { rows.push(parseRow(lines[i])); i++; }
+      blocks.push({ t: "table", rows });
       continue;
     }
     const h = /^(#{1,3})\s+(.*)$/.exec(line);
@@ -63,18 +99,22 @@ function parseBlocks(mdRaw: string): Block[] {
   return blocks;
 }
 
-/** 行内渲染：**bold** · `code` · [[链接]] */
+/** 行内渲染：$math$ · \(math\) · **bold** · `code` · [[链接]] */
 function Inline({ text: raw, onLink }: { text: string; onLink: (title: string, el: HTMLElement) => void }) {
   const parts = useMemo(() => {
-    const text = raw.split("\\[").join("[").split("\\]").join("]");
-    const out: Array<{ k: "text" | "link" | "bold" | "code"; v: string }> = [];
-    const re = /\[\[([^\]]+)\]\]|\*\*([^*]+)\*\*|`([^`]+)`/g;
+    const text = raw
+      .split("\\[").join("[[").split("\\]").join("]]")
+      .split("\\(").join("[").split("\\)").join("]");
+    const out: Array<{ k: "text" | "link" | "bold" | "code" | "math"; v: string }> = [];
+    const re = /\\\(([^)]+)\\\)|\$([^$\n]+)\$|\[\[([^\]]+)\]\]|\*\*([^*]+)\*\*|`([^`]+)`/g;
     let last = 0;
     for (const m of text.matchAll(re)) {
       if (m.index > last) out.push({ k: "text", v: text.slice(last, m.index) });
-      if (m[1] !== undefined) out.push({ k: "link", v: m[1] });
-      else if (m[2] !== undefined) out.push({ k: "bold", v: m[2] });
-      else out.push({ k: "code", v: m[3] });
+      if (m[1] !== undefined) out.push({ k: "math", v: m[1] });
+      else if (m[2] !== undefined) out.push({ k: "math", v: m[2] });
+      else if (m[3] !== undefined) out.push({ k: "link", v: m[3] });
+      else if (m[4] !== undefined) out.push({ k: "bold", v: m[4] });
+      else out.push({ k: "code", v: m[5] });
       last = m.index + m[0].length;
     }
     if (last < text.length) out.push({ k: "text", v: text.slice(last) });
@@ -84,6 +124,7 @@ function Inline({ text: raw, onLink }: { text: string; onLink: (title: string, e
     <>
       {parts.map((p, i) => {
         if (p.k === "link") return <button key={i} type="button" className="wb-link" onClick={(e) => onLink(p.v, e.currentTarget)}>{p.v}</button>;
+        if (p.k === "math") return <span key={i} className="wb-math-inline" data-math={p.v}>{p.v}</span>;
         if (p.k === "bold") return <strong key={i}>{p.v}</strong>;
         if (p.k === "code") return <code key={i} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-code)", background: "var(--color-surface-sunken)", borderRadius: "var(--radius-xs)", padding: "0 4px" }}>{p.v}</code>;
         return <span key={i}>{p.v}</span>;
@@ -181,7 +222,21 @@ export function NoteReader({ note, onLink, onAnnotate }: {
           case "quote":
             return <blockquote key={i}><p style={{ margin: 0, fontSize: "var(--text-reading)", lineHeight: "var(--lh-reading)" }}>{renderInline(b.text)}</p></blockquote>;
           case "code":
-            return <pre key={i}><code>{b.text}</code></pre>;
+            return <CodeSurface key={i} code={b.text} language={b.lang} breakout />;
+          case "math":
+            return <DisplayMath key={i} tex={b.tex} />;
+          case "table":
+            return (
+              <table key={i} className="wb-table">
+                <tbody>
+                  {b.rows.map((row, ri) => (
+                    <tr key={ri}>
+                      {row.map((c, ci) => (ri === 0 ? <th key={ci}>{c}</th> : <td key={ci}>{renderInline(c)}</td>))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
           case "img":
             return <span key={i} className="wb-img"><Icon name="notes" size={12} />{b.alt || "图片"}（尚未支持内嵌）</span>;
           case "hr":

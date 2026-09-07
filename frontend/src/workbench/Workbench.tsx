@@ -8,6 +8,12 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Icon } from "../components/icons/Icon";
 import { Button, IconButton } from "../components/ui/Button";
 import { SearchField } from "../components/ui/SearchField";
+import { Button as IOS27Button } from "../components/ios27/Button";
+import { SegmentedControl as IOS27Segmented } from "../components/ios27/SegmentedControl";
+import "../components/ios27/tokens-bridge.css";
+import "../components/ios27/materials.css";
+import "../components/ios27/Button.css";
+import "../components/ios27/SegmentedControl.css";
 import { listNotes, getNote, type NoteDetail, type NoteSummary } from "../api/notes";
 import { searchNotes } from "../api/search";
 import { listMastery, type MasteryEntry } from "../api/mastery";
@@ -47,20 +53,19 @@ function ContextPane({ state, notes, mastery, density, setDensity, onOpen, onAnn
   };
 
   const title = active?.title ?? "";
-  const linked = (mastery ?? []).filter((m) => title.includes(m.title) || (state.annotations.some((a) => a.objKey === active?.key && a.quote.includes(m.title))));
+  // 3B 精确匹配：概念 title 与对象标题全等优先，其次包含（[指令书 §4]）
+  const linked = (mastery ?? []).filter((m) => title === m.title || title.includes(m.title));
   const anns = state.annotations.filter((a) => a.objKey === active?.key);
 
   return (
     <aside className="wb__pane wb__pane--context wb-ctx" data-density={density} aria-label="Context">
       <div className="wb-ctx__head">
         <span className="t-caption">Context</span>
-        <span className="wb-ctx__density" role="group" aria-label="Context 密度">
-          {(["minimal", "standard", "research"] as const).map((d) => (
-            <button key={d} type="button" aria-pressed={density === d} onClick={() => setDensity(d)}>
-              {d === "minimal" ? "简" : d === "standard" ? "标" : "研"}
-            </button>
-          ))}
-        </span>
+        <IOS27Segmented
+          segments={["简", "标", "研"]}
+          selected={(["minimal", "standard", "research"] as const).indexOf(density)}
+          onChange={(i) => setDensity((["minimal", "standard", "research"] as const)[i])}
+        />
         <IconButton icon="close" label="收起 Context" onClick={onClose} style={{ width: 24, height: 24 }} />
       </div>
 
@@ -357,6 +362,13 @@ export default function Workbench() {
   const openRight = useCallback((obj: WorkObject) => dispatch({ type: "openRight", object: obj }), []);
 
   const [peek, setPeek] = useState<{ title: string; x: number; y: number; obj: WorkObject | null } | null>(null);
+  useEffect(() => {
+    if (!peek) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPeek(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [peek]);
+
   const onLink = useCallback((title: string, el: HTMLElement) => {
     const found = (notes ?? []).find((n) => n.title === title);
     const rect = el.getBoundingClientRect();
@@ -412,7 +424,7 @@ export default function Workbench() {
             {state.layout === "S4"
               ? <Button size="sm" onClick={() => dispatch({ type: "exitFocus" })}>退出专注</Button>
               : active?.obj.kind === "review"
-                ? <Button size="sm" prominence="prominent" onClick={() => dispatch({ type: "enterFocus" })}>进入专注</Button>
+                ? <IOS27Button variant="filled" size="small" onClick={() => dispatch({ type: "enterFocus" })}>进入专注</IOS27Button>
                 : null}
           </div>
         </div>
