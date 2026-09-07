@@ -125,3 +125,33 @@ v3 截图结论：B/C 档玻璃下网格线与橙条在边缘弯折放大，折�
 4. **打开动词分级**：click=替换 / ⌘=tab / ⇧=并置（Tana 转译，键盘具体值 OLOS 自定）。
 5. **Compare focus depth**：焦点侧全亮、对侧 .86 退后（:has 实现，可逆）。
 6. **Glass 位置冻结**：Rail 头部渐隐/Palette/Peek=浮层；内容面永远安静。
+
+---
+
+## Round 4 — System-Level Refinement（3R.2，2026-09-07）
+
+依据：HIG Layout（"Align components... communicate organization and hierarchy"；"Group related items... negative space, background shapes, colors, materials, or separator lines"）+ 指令书 §8 中文排版专项 / §9 分块度量 / §34 长会话硬门。场景基准页：`?design=apple-reference`（AppleReference.tsx，真实 1200 字中文长文 fixture 驱动）。
+
+### 结构重构
+
+- NoteReader/WorkState 抽出为独立文件（`NoteReader.tsx`/`states.tsx`），Workbench 瘦身——供场景页与后续视图复用。
+- `richNoteFixture.ts`：1240 字真实中文知识长文（H2/H3/列表/引用/代码/wikilink/图片占位/hr），**内存对象不写 vault**。
+
+### 本轮落地
+
+| 项 | 实现 |
+|---|---|
+| 中文排版专项 | 正文 letter-spacing 0.002em；meta/数字 tabular-nums；标题/正文字阶对比（largeTitle 28 vs 17/1.75） |
+| 分块度量 | **code breakout ±80px**（body 680 内、代码外扩 860 度量）；图片占位居中 |
+| Context 密度视觉分化 | `data-density` 属性驱动：Minimal=大留白+无 section 标签；Research=紧凑全标签；Standard 居中 |
+| Compare 中缝 affordance | rest 40% → hover/focus 100%（不抢注意力 [指令书 §19]） |
+| Rail 呼吸 | padding-top 提升；铁律维持（无 disabled 钮、无 hover 动画工厂） |
+| AppleReference 场景页 | 5 场景（Reading/Note+Context/Compare/Peek/Review）真实组件+真实长文 |
+
+### 长会话硬门（§34，加速模拟）
+
+120 交互（palette/tab/compare/context/滚动循环 ×15）：**DOM 85→85 零增长 · 0 pageerror · 0 残留浮层** → **PASS**（截图 `tmp/audit/long-session-final.png`）。
+
+### Round 4 weakest-3（已修）
+
+① 中文正文密度无 letter-spacing 层 → 0.002em；② 代码块被 680 锁死 → breakout；③ Context 密度"文档有、视觉无" → data-density 三态分化。
