@@ -4,7 +4,8 @@
  * 用户层不见 S0–S4；布局由动作派生（model.ts）。颜色全部走 design token。
  * 批注为内存态（持久化 = Phase 4 提案，ADR-031）。
  */
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
+import { computeLayout } from "./layout";
 import { Icon } from "../components/icons/Icon";
 import { Button, IconButton } from "../components/ui/Button";
 import { SearchField } from "../components/ui/SearchField";
@@ -313,7 +314,11 @@ export default function Workbench() {
   const [narrow, setNarrow] = useState(false);
   const [density, setDensity] = useState<Density>("standard");
   const [scrolled, setScrolled] = useState(false);
+  const [vw, setVw] = useState(() => (typeof window === "undefined" ? 1440 : window.innerWidth));
   const surfaceRef = useRef<HTMLElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+  const [indicator, setIndicator] = useState({ x: 0, w: 0, ready: false });
   const state = enforceMutualExclusion(rawState, narrow);
   const active = state.tabs.find((t) => t.key === state.activeKey);
   const side = state.side;
@@ -325,6 +330,38 @@ export default function Workbench() {
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // 3C-1：布局引擎（D-01 修订）—— Work Surface 优先，Context/Explorer 可让位
+  const plan = useMemo(
+    () =>
+      computeLayout({
+        explorer: state.explorerOpen,
+        context: state.contextOpen,
+        compare: !!state.side,
+        focus: state.layout === "S4",
+        width: vw,
+      }),
+    [state.explorerOpen, state.contextOpen, state.side, state.layout, vw],
+  );
+
+  // Tab Morph Indicator（3C-1）：选中态=持续存在的空间实体（支持 retarget）
+  useLayoutEffect(() => {
+    const move = () => {
+      const tab = activeTabRef.current;
+      if (!tab) return;
+      setIndicator({ x: tab.offsetLeft, w: tab.offsetWidth, ready: true });
+    };
+    move();
+    const ro = new ResizeObserver(move);
+    if (tabsRef.current) ro.observe(tabsRef.current);
+    return () => ro.disconnect();
+  }, [state.activeKey, state.tabs.length, vw]);
 
   // 默认对象：跳过测试/未命名残留，选最近更新的真实笔记（[C] 启发式）
   useEffect(() => {
@@ -379,8 +416,13 @@ export default function Workbench() {
   }, [notes]);
 
   return (
-    <div className="wb" data-layout={state.layout}>
-      <nav className="wb__rail" aria-label="Activity Rail">
+    <div
+      className="wb"
+      data-layout={state.layout}
+      data-scrolled={scrolled ? "true" : "false"}
+      style={{ gridTemplateColumns: plan.columns, gridTemplateAreas: plan.areas }}
+    >
+      <nav className="wb__rail" style={{ gridArea: "rail" }} aria-label="Activity Rail">
         <IconButton icon="notes" label="笔记（开关 Explorer）" className={state.explorerOpen ? "is-active" : ""} onClick={() => dispatch({ type: "toggleExplorer" })} />
         <IconButton icon="search" label="全局搜索 ⌘K" onClick={() => setPaletteOpen(true)} />
         <IconButton icon="review" label="复习（进入专注）" className={active?.obj.kind === "review" ? "is-active" : ""} onClick={() => { open({ key: "review", obj: { kind: "review" }, title: "Review" }); dispatch({ type: "enterFocus" }); }} />
@@ -389,18 +431,39 @@ export default function Workbench() {
       </nav>
 
       {state.explorerOpen && (
-        <aside className="wb__pane wb__pane--explorer" aria-label="Explorer">
+        <aside
+          className={`wb__pane wb__pane--explorer${plan.explorerMode === "drawer" ? " wb__pane--drawer" : ""}`}
+          style={{ gridArea: "explorer" }}
+          aria-label="Explorer"
+        >
           <ExplorerPane notes={notes} error={error} activeKey={state.activeKey} onOpen={open} onOpenRight={openRight} />
         </aside>
       )}
 
-      <main ref={surfaceRef} className="wb__pane wb__pane--surface" aria-label="Work Surface" onScroll={onSurfaceScroll}>
+      <main
+        ref={surfaceRef}
+        className="wb__pane wb__pane--surface"
+        style={{ gridArea: "surface" }}
+        aria-label="Work Surface"
+        onScroll={onSurfaceScroll}
+      >
         <div className={`wb__header${scrolled ? " is-scrolled" : ""}`}>
-          <span className="wb__header__lead" />
-          <div className="wb__tabs" role="tablist" aria-label="打开的工作对象">
+          {/* leading：Explorer 开关（导航属于前缘，且始终可用 [A] HIG Toolbars） */}
+          {/* leading：紧凑标题（Explorer 开合已在 Rail，避免重复控件） */}
+          <div className="wb__header__lead">
+            <span className="wb__header__title" aria-hidden={!scrolled}>{active?.title ?? ""}</span>
+          </div>
+          {/* center：tabs（含 morph indicator） */}
+          <div className="wb__tabs" role="tablist" aria-label="打开的工作对象" ref={tabsRef} style={{ position: "relative" }}>
+            <span
+              className="wb__tabs__indicator"
+              aria-hidden="true"
+              style={{ transform: `translateX(${indicator.x}px)`, width: indicator.w, opacity: indicator.ready && state.tabs.length > 0 ? 1 : 0 }}
+            />
             {state.tabs.map((t) => (
               <span key={t.key} style={{ display: "inline-flex" }}>
                 <button
+                  ref={t.key === state.activeKey ? activeTabRef : undefined}
                   type="button" role="tab" className="wb__tab"
                   aria-current={t.key === state.activeKey}
                   onClick={() => dispatch({ type: "activate", key: t.key })}
@@ -440,7 +503,7 @@ export default function Workbench() {
       </main>
 
       {side && (
-        <section className="wb__side" aria-label="并置对象">
+        <section className={`wb__side${plan.compareMode === "drawer" ? " wb__side--drawer" : ""}`} style={{ gridArea: "side" }} aria-label="并置对象">
           <span className="wb__gap">
             <IconButton icon="forward" label="交换为主对象" onClick={() => { const s = side; dispatch({ type: "closeSide" }); open(s); }} />
             <IconButton icon="close" label="关闭并置" onClick={() => dispatch({ type: "closeSide" })} />
@@ -460,7 +523,7 @@ export default function Workbench() {
         </section>
       )}
 
-      {state.contextOpen && (
+      {(plan.contextMode === "column" || plan.contextMode === "drawer") && state.contextOpen && (
         <ContextPane
           state={state}
           notes={notes}

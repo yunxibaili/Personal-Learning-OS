@@ -10,10 +10,10 @@
   color: var(--color-text-primary);
   grid-template-columns: 52px 1fr;
 }
-.wb[data-layout="S1"] { grid-template-columns: 52px 264px minmax(0, 1fr); }
-.wb[data-layout="S2"] { grid-template-columns: 52px 264px minmax(0, 1fr) 304px; }
-.wb[data-layout="S3"] { grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr); }
-.wb[data-layout="S4"] { grid-template-columns: 52px 1fr; }
+/* .wb[data-layout="S1"] { grid-template-columns: 52px 264px minmax(0, 1fr);  — 由布局引擎(layout.ts)接管 */}
+/* .wb[data-layout="S2"] { grid-template-columns: 52px 264px minmax(0, 1fr) 304px;  — 由布局引擎(layout.ts)接管 */}
+/* .wb[data-layout="S3"] { grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr);  — 由布局引擎(layout.ts)接管 */}
+/* .wb[data-layout="S4"] { grid-template-columns: 52px 1fr;  — 由布局引擎(layout.ts)接管 */}
 
 /* ── Rail：最轻的导航层 ─────────────────────────────────── */
 .wb__rail {
@@ -505,3 +505,64 @@
 .wb-table { width: 100%; border-collapse: collapse; margin: 0 0 var(--space-lg); font-size: var(--text-callout); }
 .wb-table th, .wb-table td { text-align: left; padding: var(--space-3xs) var(--space-sm); border-bottom: 1px solid var(--color-border-subtle); }
 .wb-table th { font-weight: 600; color: var(--color-text-secondary); }
+
+/* ── 3C-1 布局引擎（D-01 修订）：列由 JS 计算，以下仅定义区域样式与让位行为 ── */
+.wb { display: grid; min-height: 100vh; }
+/* 让位 pane（抽屉/遮挡式）：不挤压 Work Surface [Owner 修正 1] */
+.wb__pane--drawer {
+  position: fixed; top: 0; bottom: 0; width: 320px;
+  z-index: var(--z-drawer);
+  box-shadow: var(--shadow-4);
+}
+.wb__pane--explorer.wb__pane--drawer { left: 52px; border-right: 1px solid var(--color-border-subtle); }
+.wb__pane--context.wb__pane--drawer { right: 0; border-left: 1px solid var(--color-border-subtle); }
+
+/* Header 三区：leading(标题) │ center(tabs) │ trailing(actions) [A] HIG Toolbars */
+.wb__header__lead { display: flex; align-items: center; min-width: 0; gap: var(--space-xs); }
+.wb__header__title {
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--text-body-ui); font-weight: 600; color: var(--color-text-primary);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--spring-gentle);
+}
+.wb__header.is-scrolled .wb__header__title { opacity: 1; transform: translateY(0); }
+
+/* Tab Morph Indicator：选中态=持续存在的空间实体（retarget 由 CSS transition 保证） */
+.wb__tabs__indicator {
+  position: absolute; top: 0; left: 0; height: 34px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-1);
+  transition:
+    transform var(--motion-standard) var(--spring-gentle),
+    width var(--motion-standard) var(--spring-gentle),
+    opacity var(--motion-fast) var(--ease-standard);
+  pointer-events: none;
+}
+.wb__tab { position: relative; z-index: 1; }
+.wb__tab[aria-current="true"] { background: transparent; border-color: transparent; box-shadow: none; }
+
+/* Large Title → Compact Title（滚动时正文标题收缩，标题进入 header） */
+.wb-reader h1 {
+  transition: font-size var(--motion-standard) var(--spring-gentle), margin var(--motion-standard) var(--ease-standard);
+}
+.wb[data-scrolled="true"] .wb-reader h1 { font-size: 22px; }
+@media (prefers-reduced-motion: reduce) {
+  .wb__tabs__indicator { transition: none; }
+  .wb-reader h1 { transition: none; }
+  .wb__header__title { transition: none; }
+}
+
+/* 窄屏 Compare：并置对象成为右侧全高 Sheet */
+.wb__side.wb__side--drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 44px;
+  z-index: var(--z-drawer);
+  box-shadow: var(--shadow-4);
+}
+
+/* 3C-1：桌面式窗口——Work Surface / 各 pane 独立滚动（VS Code/Tana 同构），
+   这样才能有 pane 级 scroll edge 与大标题→紧凑标题的滚动过渡。 */
+.wb { height: 100vh; overflow: hidden; }
+.wb__pane { min-height: 0; }
+.wb__pane--surface { overflow: auto; }
