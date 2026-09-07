@@ -542,7 +542,7 @@ export default function Workbench() {
         <span className="wb__topbar__title">{active?.title ?? "Learning Workbench"}</span>
         <span className="wb__topbar__spacer" />
         <IOS27Segmented
-          segments={["简", "标", "研"]}
+          segments={["极简", "标准", "研究"]}
           selected={(["minimal", "standard", "research"] as const).indexOf(density)}
           onChange={(i) => setDensity((["minimal", "standard", "research"] as const)[i])}
         />
