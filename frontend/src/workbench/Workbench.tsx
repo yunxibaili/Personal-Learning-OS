@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { computeLayout } from "./layout";
+import { buildContextModel, type ContextModel } from "./contextModel";
 import { Icon } from "../components/icons/Icon";
 import { Button, IconButton } from "../components/ui/Button";
 import { SearchField } from "../components/ui/SearchField";
@@ -17,7 +18,9 @@ import "../components/ios27/Button.css";
 import "../components/ios27/SegmentedControl.css";
 import { listNotes, getNote, type NoteDetail, type NoteSummary } from "../api/notes";
 import { searchNotes } from "../api/search";
-import { listMastery, type MasteryEntry } from "../api/mastery";
+import { listMastery, listWeakConcepts, type MasteryEntry } from "../api/mastery";
+import { getBacklinks, type BacklinkRef } from "../api/notes";
+import { getConceptRelatedNotes, type RelatedNote } from "../api/concepts";
 import { presentError } from "../api/errors";
 import {
   workbenchReducer, initialWorkbench, objectKey, enforceMutualExclusion,
@@ -30,13 +33,29 @@ import { WorkState } from "./states";
 /* ── 迷你 Markdown 渲染（阅读环境最小集）────────────────────── */
 import { NoteReader } from "./NoteReader";
 
-/* ── Context Pane：三档密度（Minimal/Standard/Research）────── */
+/* ── Context v2（3C-2）：伴随当前 Work Object 的第二层信息，不是 card column ──
+ * 视觉权重递减：Work Object → Primary context → Secondary context → Controls → Meta → Ambient。
+ * 验收：不得形成独立 Card Column；项=排版行 + hairline，无背景/圆角卡片。
+ */
 type Density = "minimal" | "standard" | "research";
 
-function ContextPane({ state, notes, mastery, density, setDensity, onOpen, onAnnotateNote, onCloseAnn, onClose, loading }: {
+function ContextRow({
+  primary, secondary, meta, onClick,
+}: { primary: string; secondary?: string; meta?: string; onClick?: () => void }) {
+  return (
+    <button type="button" className="wb-ctx__row" onClick={onClick}>
+      <span className="wb-ctx__row-primary">{primary}</span>
+      {secondary && <span className="wb-ctx__row-secondary">{secondary}</span>}
+      {meta && <span className="wb-ctx__row-meta">{meta}</span>}
+    </button>
+  );
+}
+
+function ContextPane({
+  state, model, density, setDensity, onOpen, onAnnotateNote, onCloseAnn, onClose, loading, recomposeKey,
+}: {
   state: WorkbenchState;
-  notes: NoteSummary[] | null;
-  mastery: MasteryEntry[] | null;
+  model: ContextModel | null;
   density: Density;
   setDensity: (d: Density) => void;
   onOpen: (obj: WorkObject) => void;
@@ -44,19 +63,11 @@ function ContextPane({ state, notes, mastery, density, setDensity, onOpen, onAnn
   onCloseAnn: (id: string) => void;
   onClose: () => void;
   loading: boolean;
+  recomposeKey: string;
 }) {
   const active = state.tabs.find((t) => t.key === state.activeKey);
-  const show = {
-    mastery: density !== "minimal",
-    annotations: density !== "minimal",
-    related: density === "standard" || density === "research",
-    research: density === "research",
-  };
-
-  const title = active?.title ?? "";
-  // 3B 精确匹配：概念 title 与对象标题全等优先，其次包含（[指令书 §4]）
-  const linked = (mastery ?? []).filter((m) => title === m.title || title.includes(m.title));
   const anns = state.annotations.filter((a) => a.objKey === active?.key);
+  const openNote = (id: number, title: string) => onOpen({ key: objectKey({ kind: "note", id }), obj: { kind: "note", id }, title });
 
   return (
     <aside className="wb__pane wb__pane--context wb-ctx" data-density={density} aria-label="Context">
@@ -73,69 +84,105 @@ function ContextPane({ state, notes, mastery, density, setDensity, onOpen, onAnn
       {loading ? <WorkState kind="loading" title="加载中…" /> : !active ? (
         <WorkState kind="empty" title="没有焦点对象" hint="打开一个对象后，这里显示它与你的学习关系。" />
       ) : (
-        <>
-          <div className="wb-ctx__section">
-            <div className="t-body-ui" style={{ fontWeight: 700 }}>{title}</div>
-            {active.obj.kind === "note" && <p className="t-caption" style={{ margin: "2px 0 0" }}>note · id {active.obj.id}</p>}
+        /* recomposition：焦点对象变化时整层重组（不是追加面板） */
+        <div className="wb-ctx__body" key={recomposeKey}>
+          {/* Current：Work Object 本身 */}
+          <div className="wb-ctx__section wb-ctx__section--current">
+            <div className="wb-ctx__current">{active.title}</div>
+            {model?.currentConcept ? (
+              <div className="wb-ctx__row-secondary">当前概念 · {model.currentConcept.title}</div>
+            ) : (
+              <div className="wb-ctx__row-meta">尚未建立概念关联</div>
+            )}
           </div>
 
-          {show.mastery && (
+          {/* Mastery（默认） */}
+          {model?.currentConcept && (
             <div className="wb-ctx__section">
-              <h3>提到的概念 · 掌握度</h3>
-              {linked.length === 0 ? (
-                <p className="t-callout" style={{ margin: 0 }}>未匹配到概念。</p>
-              ) : (
-                <div className="wb-ctx__mastery">
-                  {linked.slice(0, 6).map((m) => (
-                    <div key={m.concept_id} className="wb-ctx__bar">
-                      <div>
-                        <div className="t-caption">{m.title}</div>
-                        <div className="wb-ctx__bar-track"><div className="wb-ctx__bar-fill" style={{ width: `${Math.round(m.effective_now * 100)}%` }} /></div>
-                      </div>
-                      <span className="t-caption">{Math.round(m.effective_now * 100)}%</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <h3>掌握度</h3>
+              <div className="wb-ctx__bar">
+                <div className="wb-ctx__bar-track"><div className="wb-ctx__bar-fill" style={{ width: `${Math.round(model.currentConcept.effective_now * 100)}%` }} /></div>
+                <span className="wb-ctx__row-meta">{Math.round(model.currentConcept.effective_now * 100)}%</span>
+              </div>
             </div>
           )}
 
-          {show.annotations && (
+          {/* Related Concepts（Standard+） */}
+          {density !== "minimal" && (model?.relatedConcepts.length ?? 0) > 0 && (
             <div className="wb-ctx__section">
-              <h3>批注（内存态 · Phase 4 持久化）</h3>
-              {anns.length === 0 ? <p className="t-callout" style={{ margin: 0 }}>选中正文文字即可标注。</p> : null}
-              {anns.map((a) => (
-                <div key={a.id} className="wb-ann">
-                  <div className="t-caption" style={{ marginBottom: 4 }}>“{a.quote}”</div>
-                  <textarea value={a.note} placeholder="为什么重要？" onChange={(e) => onAnnotateNote(a.id, e.target.value)} />
-                  <button type="button" className="t-caption" style={{ border: "none", background: "transparent", cursor: "pointer", color: "var(--color-text-tertiary)", padding: 0 }} onClick={() => onCloseAnn(a.id)}>删除</button>
-                </div>
+              <h3>相关概念</h3>
+              {model!.relatedConcepts.map((c) => (
+                <ContextRow key={c.concept_id} primary={c.title} meta={`${Math.round(c.effective_now * 100)}%`} />
               ))}
             </div>
           )}
 
-          {show.research && (
+          {/* Prerequisites（Research；或 Standard 有数据时） */}
+          {density === "research" && (model?.prerequisiteConcepts.length ?? 0) > 0 && (
             <div className="wb-ctx__section">
-              <h3>Sources</h3>
-              <p className="t-callout" style={{ margin: 0 }}>批注来源清单将随 Paper 能力（Phase 4）接入。</p>
+              <h3>前提</h3>
+              {model!.prerequisiteConcepts.map((c) => (
+                <ContextRow key={c.concept_id} primary={c.title} meta="推导" />
+              ))}
             </div>
           )}
 
-          {(density === "standard" || density === "research") && (
+          {/* Backlinks（Standard+） */}
+          {density !== "minimal" && (model?.backlinks.length ?? 0) > 0 && (
+            <div className="wb-ctx__section">
+              <h3>回链</h3>
+              {model!.backlinks.map((b) => (
+                <ContextRow key={b.note_id} primary={b.title} secondary={b.snippet} onClick={() => openNote(b.note_id, b.title)} />
+              ))}
+            </div>
+          )}
+
+          {/* Related notes（Standard+） */}
+          {density !== "minimal" && (model?.relatedNotes.length ?? 0) > 0 && (
             <div className="wb-ctx__section">
               <h3>相关笔记</h3>
-              {notes === null ? <WorkState kind="loading" title="加载中…" /> : (
-                <div className="wb-ctx__rel">
-                  {notes.slice(0, 4).map((n) => (
-                    <button key={n.id} type="button" className="wb-explorer__item" onClick={() => onOpen({ key: objectKey({ kind: "note", id: n.id }), obj: { kind: "note", id: n.id }, title: n.title })}>
-                      {n.title}
-                    </button>
-                  ))}
-                </div>
+              {model!.relatedNotes.map((n) => (
+                <ContextRow key={n.note_id} primary={n.title} secondary={n.reason} onClick={() => openNote(n.note_id, n.title)} />
+              ))}
+            </div>
+          )}
+
+          {/* Review Due（Standard+） */}
+          {density !== "minimal" && (model?.reviewDue.length ?? 0) > 0 && (
+            <div className="wb-ctx__section">
+              <h3>复习到期</h3>
+              {model!.reviewDue.map((r) => (
+                <ContextRow key={r.concept_id} primary={r.title} meta={`${Math.round(r.effective_now * 100)}%`} onClick={() => onOpen({ key: "review", obj: { kind: "review" }, title: "Review" })} />
+              ))}
+            </div>
+          )}
+
+          {/* Annotations（Standard+） */}
+          {density !== "minimal" && (
+            <div className="wb-ctx__section">
+              <h3>批注（内存态 · Phase 4 持久化）</h3>
+              {anns.length === 0 ? (
+                <p className="wb-ctx__row-meta" style={{ margin: 0 }}>选中正文文字即可标注。</p>
+              ) : (
+                anns.map((a) => (
+                  <div key={a.id} className="wb-ann">
+                    <div className="wb-ctx__row-secondary">“{a.quote}”</div>
+                    <textarea value={a.note} placeholder="为什么重要？" onChange={(e) => onAnnotateNote(a.id, e.target.value)} />
+                    <button type="button" className="wb-ctx__row-meta wb-ctx__link" onClick={() => onCloseAnn(a.id)}>删除</button>
+                  </div>
+                ))
               )}
             </div>
           )}
 
+          {density === "research" && (
+            <div className="wb-ctx__section">
+              <h3>Sources</h3>
+              <p className="wb-ctx__row-meta" style={{ margin: 0 }}>批注来源清单随 Paper 能力（Phase 4）接入。</p>
+            </div>
+          )}
+
+          {/* Tutor（默认） */}
           <div className="wb-ctx__section">
             <h3>学习动作</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-xs)" }}>
@@ -145,7 +192,7 @@ function ContextPane({ state, notes, mastery, density, setDensity, onOpen, onAnn
               )}
             </div>
           </div>
-        </>
+        </div>
       )}
     </aside>
   );
@@ -319,6 +366,11 @@ export default function Workbench() {
   const tabsRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
   const [indicator, setIndicator] = useState({ x: 0, w: 0, ready: false });
+  // 3C-2 Context v2 数据源
+  const [weak, setWeak] = useState<MasteryEntry[]>([]);
+  const [noteContent, setNoteContent] = useState("");
+  const [related, setRelated] = useState<RelatedNote[]>([]);
+  const [backlinks, setBacklinks] = useState<BacklinkRef[]>([]);
   const state = enforceMutualExclusion(rawState, narrow);
   const active = state.tabs.find((t) => t.key === state.activeKey);
   const side = state.side;
@@ -330,6 +382,21 @@ export default function Workbench() {
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  useEffect(() => {
+    listWeakConcepts().then(setWeak).catch(() => setWeak([]));
+  }, []);
+
+  // 当前笔记正文（用于解析 [[链接]]）+ 回链
+  const activeNoteId = active?.obj.kind === "note" ? active.obj.id : null;
+  useEffect(() => {
+    if (activeNoteId === null) { setNoteContent(""); setBacklinks([]); return; }
+    let alive = true;
+    getNote(activeNoteId).then((n) => { if (alive) setNoteContent(n.content_md); }).catch(() => { if (alive) setNoteContent(""); });
+    getBacklinks(activeNoteId).then((b) => { if (alive) setBacklinks(b); }).catch(() => { if (alive) setBacklinks([]); });
+    return () => { alive = false; };
+  }, [activeNoteId]);
+
 
   useEffect(() => {
     const onResize = () => setVw(window.innerWidth);
@@ -350,6 +417,29 @@ export default function Workbench() {
     [state.explorerOpen, state.contextOpen, state.side, state.layout, vw],
   );
 
+  // 3C-2：Context 合成（companion data）
+  const contextModel = useMemo<ContextModel | null>(() => {
+    if (!active) return null;
+    return buildContextModel({
+      noteTitle: active.title,
+      contentMd: noteContent,
+      mastery: mastery ?? [],
+      weakConcepts: weak,
+      relatedNotes: related,
+      backlinks,
+      currentNoteId: activeNoteId ?? undefined,
+      annotationCount: state.annotations.filter((a) => a.objKey === active.key).length,
+    });
+  }, [active, noteContent, mastery, weak, related, backlinks, activeNoteId, state.annotations]);
+
+  // 相关笔记（按当前概念的邻接关系）
+  useEffect(() => {
+    if (!contextModel?.currentConcept) { setRelated([]); return; }
+    let alive = true;
+    getConceptRelatedNotes(contextModel.currentConcept.concept_id)
+      .then((r) => { if (alive) setRelated(r); }).catch(() => { if (alive) setRelated([]); });
+    return () => { alive = false; };
+  }, [contextModel?.currentConcept?.concept_id]);
   // Tab Morph Indicator（3C-1）：选中态=持续存在的空间实体（支持 retarget）
   useLayoutEffect(() => {
     const move = () => {
@@ -526,8 +616,7 @@ export default function Workbench() {
       {(plan.contextMode === "column" || plan.contextMode === "drawer") && state.contextOpen && (
         <ContextPane
           state={state}
-          notes={notes}
-          mastery={mastery}
+          model={contextModel}
           density={density}
           setDensity={setDensity}
           onOpen={open}
@@ -535,6 +624,7 @@ export default function Workbench() {
           onCloseAnn={(id) => dispatch({ type: "removeAnnotation", id })}
           onClose={() => dispatch({ type: "toggleContext" })}
           loading={false}
+          recomposeKey={active?.key ?? "none"}
         />
       )}
 

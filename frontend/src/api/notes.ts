@@ -74,3 +74,32 @@ export async function saveNoteContent(noteId: number, contentMd: string): Promis
   const summary = asSummary(note);
   return { ...summary, content_md: asString((note as Record<string, unknown>).content_md, "content_md") };
 }
+
+// Backlinks：后端 `/api/v1/notes/{note_id}/backlinks`（schema 已存在，此处补消费端窄化）
+export interface BacklinkRef {
+  note_id: number;
+  title: string;
+  /** 引用所在片段（后端可能缺省） */
+  snippet?: string;
+}
+
+type BacklinkPath = "/api/v1/notes/{note_id}/backlinks";
+const BACKLINK_PATH: BacklinkPath = "/api/v1/notes/{note_id}/backlinks";
+function backlinkPath(noteId: number): BacklinkPath {
+  return BACKLINK_PATH.replace("{note_id}", String(noteId)) as BacklinkPath;
+}
+
+export async function getBacklinks(noteId: number): Promise<BacklinkRef[]> {
+  const res = await api.get(backlinkPath(noteId));
+  const raw = (res as { backlinks?: unknown }).backlinks ?? (res as { items?: unknown }).items;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((b) => {
+      if (!isRecord(b)) return null;
+      const id = b.note_id ?? b.id;
+      if (typeof id !== "number") return null;
+      const snippet = typeof b.snippet === "string" ? b.snippet : typeof b.context === "string" ? b.context : undefined;
+      return { note_id: id, title: asString(b.title, "backlink.title"), ...(snippet ? { snippet } : {}) };
+    })
+    .filter((b): b is BacklinkRef => b !== null);
+}
