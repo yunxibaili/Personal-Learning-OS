@@ -1,8 +1,10 @@
 /* Ported from ios27-design-system (MIT) — Copyright (c) 2026 Dcode Labs (Seunghan Kim).
- * Source: https://github.com/seunghan91/ios27-design-system · Adapted for OLOS (tokens bridge, import paths). */
+ * Adapted for OLOS 3C-2: Apple UISegmentedControl pill-slide spec. */
 import {
   forwardRef,
+  useLayoutEffect,
   useRef,
+  useState,
   type HTMLAttributes,
   type KeyboardEvent,
 } from 'react'
@@ -10,32 +12,19 @@ import { cn, useControllableState } from './lib'
 
 export interface SegmentedControlProps
   extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
-  /** Segment labels, rendered left-to-right. */
   segments: string[]
-  /** Controlled selected segment index. */
   selected?: number
-  /** Initial selected segment index (uncontrolled). @default 0 */
   defaultSelected?: number
-  /** Fires with the newly selected segment index. */
   onChange?: (index: number) => void
 }
 
 /**
- * iOS 27 Segmented Control — a horizontal single-select between mutually
- * exclusive options.
+ * iOS 27 Segmented Control — pill-slide variant.
  *
- * Controllable via `selected` / `defaultSelected` / `onChange` (index-based).
+ * Active indicator is a persistent sliding entity (not per-item bg swap).
+ * `transform: translateX()` + `width` transition → CSS retarget on rapid A→B→C.
  *
- * Accessibility: container `role="tablist"`; each segment is a real `<button>`
- * with `role="tab"` + `aria-selected`. Left/Right arrow keys move selection
- * (roving), Home/End jump to the first/last segment.
- *
- * @example
- * <SegmentedControl
- *   segments={['Day', 'Week', 'Month']}
- *   defaultSelected={0}
- *   onChange={setRange}
- * />
+ * Accessibility: `role="tablist"` + `role="tab"` + `aria-selected`; roving ← → Home End.
  */
 export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps>(
   function SegmentedControl(
@@ -48,7 +37,21 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
       onChange,
     })
 
-    const buttonsRef = useRef<(HTMLButtonElement | null)[]>([])
+    const listRef = useRef<HTMLDivElement>(null)
+    const activeRef = useRef<HTMLButtonElement>(null)
+    const [pill, setPill] = useState({ x: 0, w: 0, ready: false })
+
+    useLayoutEffect(() => {
+      const move = () => {
+        const el = activeRef.current
+        if (!el) return
+        setPill({ x: el.offsetLeft, w: el.offsetWidth, ready: true })
+      }
+      move()
+      const ro = new ResizeObserver(move)
+      if (listRef.current) ro.observe(listRef.current)
+      return () => ro.disconnect()
+    }, [value, segments])
 
     const select = (index: number) => {
       if (index !== value) setValue(index)
@@ -61,6 +64,8 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
       buttonsRef.current[next]?.focus()
       select(next)
     }
+
+    const buttonsRef = useRef<(HTMLButtonElement | null)[]>([])
 
     const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
       switch (event.key) {
@@ -88,7 +93,16 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
     }
 
     return (
-      <div ref={ref} role="tablist" className={cn('ios27-segmented', className)} {...rest}>
+      <div ref={(n) => { listRef.current = n; if (typeof ref === "function") ref(n); else if (ref) (ref as any).current = n; }} role="tablist" className={cn('ios27-segmented', className)} {...rest}>
+        <span
+          className="ios27-segmented__pill"
+          aria-hidden="true"
+          style={{
+            transform: `translateX(${pill.x}px)`,
+            width: pill.w,
+            opacity: pill.ready ? 1 : 0,
+          }}
+        />
         {segments.map((label, index) => {
           const isActive = index === value
           return (
@@ -100,10 +114,10 @@ export const SegmentedControl = forwardRef<HTMLDivElement, SegmentedControlProps
               tabIndex={isActive ? 0 : -1}
               ref={(node) => {
                 buttonsRef.current[index] = node
+                if (isActive) activeRef.current = node
               }}
               className={cn(
                 'ios27-segmented-item',
-                'text-subheadline',
                 isActive && 'is-active',
               )}
               onClick={() => select(index)}

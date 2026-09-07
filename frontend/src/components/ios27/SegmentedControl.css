@@ -1,64 +1,78 @@
-/* Ported from ios27-design-system (MIT) — Copyright (c) 2026 Dcode Labs (Seunghan Kim). */
-/* ==========================================================================
-   iOS 27 — Segmented Control
-   Requires foundation CSS (tokens.css). Component classes are `ios27-`
-   prefixed to avoid collisions in consumer apps.
-   ========================================================================== */
+/* Ported from ios27-design-system (MIT) — Copyright (c) 2026 Dcode Labs (Seunghan Kim).
+ * Rewritten for OLOS 3C-2: Apple UISegmentedControl pill-slide spec.
+ * Container = tertiary fill; active pill = system background + subtle shadow;
+ * sliding entity (not per-item bg swap); text hierarchy 400/600. */
 
 .ios27-segmented {
   display: inline-flex;
   align-items: stretch;
-  gap: var(--space-1);
   padding: 2px;
-  border-radius: 10px;
-  background-color: var(--fill-tertiary);
+  border-radius: 6px;
+  background-color: var(--color-surface-sunken);
+  position: relative;
+}
+
+/* 滑动 pill：同一空间实体在 segment 间移动（非 per-item bg swap） */
+.ios27-segmented__pill {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: calc(100% - 4px);
+  background: var(--color-surface-elevated);
+  border-radius: 4px;
+  box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.06);
+  transition:
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  will-change: transform, width;
 }
 
 .ios27-segmented-item {
-  flex: 1 1 0;
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  padding: var(--space-1) var(--space-3);
+  min-height: 24px;
+  padding: 0 12px;
   border: none;
-  border-radius: 8px;
-  background-color: transparent;
-  color: var(--label-primary);
-  font-family: var(--font-family);
-  font-weight: var(--weight-medium);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   appearance: none;
   -webkit-appearance: none;
-  transition:
-    background-color var(--duration-fast) var(--easing-apple-default),
-    color var(--duration-fast) var(--easing-apple-default),
-    transform var(--duration-fast) var(--easing-apple-default);
+  transition: color 150ms ease;
+}
+
+.ios27-segmented-item:hover:not(.is-active) {
+  color: var(--color-text-primary);
 }
 
 .ios27-segmented-item:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-blue) 35%, transparent);
+  box-shadow: var(--shadow-focus);
+  border-radius: 4px;
 }
 
-.ios27-segmented-item:active {
+.ios27-segmented-item:active:not(.is-active) {
   transform: scale(0.97);
 }
 
 .ios27-segmented-item.is-active {
-  background-color: var(--bg-primary);
-  font-weight: var(--weight-semibold);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--black) 12%, transparent);
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ios27-segmented-item {
-    transition: none;
-  }
-  .ios27-segmented-item:active {
-    transform: none;
-  }
+  .ios27-segmented__pill { transition: none; }
+  .ios27-segmented-item { transition: none; }
+  .ios27-segmented-item:active { transform: none; }
 }
